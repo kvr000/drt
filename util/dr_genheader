@@ -249,6 +249,7 @@ sub addTagMethod($$$)
 	my $md			= shift;
 	my $cxxname		= shift;
 	foreach my $cname (expandClassNames($cld)) {
+		push(@tag_defs, sprintf("%s\t%s\t/^%s\$/;\"\tf\tclass:%s\tsignature:%s", $md->{decl}, $cxxname, escapeTagFind($md->{line}), $cld->{class}, "()"));
 	}
 }
 
@@ -394,6 +395,7 @@ sub printClass($$)
 			push(@{$cld->{methods}}, { specs => [ "protected" ], ret => "void", "decl" => "prep_$sqd->{name}()" });
 			push(@{$cld->{ats}}, { access => "protected", def => "Ref<dr::sql::SqlStatement>\tst_$sqd->{name};", line => $sqd->{line}, lineno => $sqd->{lineno} });
 			$sql->printf("\nvoid %s::prep_%s()\n{\n\tst_%s.setNoref(db_connection->prepareStatement(\"%s\"));\n}\n", $cld->{class}, $sqd->{name}, $sqd->{name}, escapeCString($sqd->{query}));
+			addTagMethod($cld, { ret => "void", decl => "prep_$sqd->{name}", line => $sqd->{line}, lineno => $sqd->{lineno} }, $cxxname);
 		}
 	}
 
