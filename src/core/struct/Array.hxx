@@ -122,6 +122,7 @@ public:
 	DR_NINLINE void			resizeInit(unsigned nsize, const V &iv);
 	DR_NINLINE void			shrinkEnd(unsigned nsize)		{ p_trunc(count()-nsize); }
 	DR_RINLINE void			append(const V &i);
+	DR_RINLINE V *			accAppendingNew();
 	DR_RINLINE void			remove(size_t idx);
 
 	DR_MINLINE void			sort()					{ Array_c::sort_g(tsize); }
@@ -288,6 +289,13 @@ template <typename V, typename Compar_, typename Allocator_>
 DR_RINLINE void SArray<V, Compar_, Allocator_>::append(const V &iv)
 {
 	resizeInit(len/sizeof(V)+1, iv);
+}
+
+template <typename V, typename Compar_, typename Allocator_>
+DR_RINLINE V *SArray<V, Compar_, Allocator_>::accAppendingNew()
+{
+	resize(len/sizeof(V)+1);
+	return (V *)(data+len-sizeof(V));
 }
 
 template <typename V, typename Compar_, typename Allocator_>

@@ -83,6 +83,7 @@ public:
 
 public:
 	virtual bool			fetchRow();
+	virtual void			store();
 
 public:
 	virtual Sint64			getInt(unsigned column);
@@ -122,9 +123,10 @@ protected:
 	StringIndex			col_names;
 	SArray<MYSQL_BIND, ComparInv<MYSQL_BIND> > res_bindings;
 
-	bool				res_binding_done:1;
-
 	conversion *			res_conversions;
+
+	bool				res_binding_done:1;
+	bool				stored:1;
 
 protected:
 	static void			resConv_String(ResultSet_mysql5 *this_, conversion *conv);

@@ -59,8 +59,9 @@ ResultSet_mysql5::ResultSet_mysql5(SqlStatement_mysql5 *statement_):
 	statement(statement_, true),
 	stmt(statement_->stmt),
 	col_names((size_t)0, (const String *)NULL),
+	res_conversions(NULL),
 	res_binding_done(false),
-	res_conversions(NULL)
+	stored(false)
 {
 }
 
@@ -282,6 +283,16 @@ bool ResultSet_mysql5::fetchRow()
 	default:
 		SqlConnection_mysql5::throwSqlExcept(mysql_stmt_sqlstate(stmt), mysql_stmt_error(stmt));
 		return false;
+	}
+}
+
+void ResultSet_mysql5::store()
+{
+	if (stored)
+		return;
+	stored = true;
+	if (mysql_stmt_store_result(stmt) != 0) {
+		SqlConnection_mysql5::throwSqlExcept(mysql_stmt_sqlstate(stmt), mysql_stmt_error(stmt));
 	}
 }
 

@@ -73,7 +73,9 @@ public:
 	virtual void			bindResult(unsigned column, Variant **value) = 0;
 	virtual void			bindResult(const String &column, Variant **value) = 0;
 
+public:
 	virtual bool			fetchRow() = 0;
+	virtual void			store() = 0;
 
 public:
 	virtual bool			isNull(unsigned column) = 0;
