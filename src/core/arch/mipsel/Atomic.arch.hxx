@@ -60,7 +60,7 @@ DR_RINLINE bool Atomic::cmpxchg(void *volatile *val, void *cmpval, void *newval)
 {
 	void *loaded;
 	__asm__ __volatile__(
-			".	.set	push		\n"
+			"	.set	push		\n"
 			"	.set	noat		\n"
 			"	.set	mips3		\n"
 			"1:				\n"
