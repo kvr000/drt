@@ -1067,6 +1067,21 @@ sub postprocRegisterClassAttr
 	my $attr		= shift;
 }
 
+sub resolveDatatype
+{
+	my $this		= shift;
+	my $type_xi		= shift;
+
+	doDie("type_xi undefined") unless (defined $type_xi);
+	if (exists $this->{datatype_xi}->{$type_xi}) {
+		return $this->{datatype_xi}->{$type_xi};
+	}
+	elsif (exists $this->{class_xi}->{$type_xi}) {
+		return $this->{class_xi}->{$type_xi};
+	}
+	die "xmi_id $type_xi not defined as datatype";
+}
+
 sub postprocRefPackage
 {
 	my $this		= shift;
@@ -1098,23 +1113,11 @@ sub postprocRefClass
 	foreach my $attr (@{$class->{attr_list}}) {
 		$this->postprocRefClassAttr($attr);
 	}
+	if (defined $class->{ancestor_xid}) {
+		Scalar::Util::weaken($class->{ancestor} = $this->resolveDatatype($class->{ancestor_xid}));
+	}
 
 	return $resolved;
-}
-
-sub resolveDatatype
-{
-	my $this		= shift;
-	my $type_xi		= shift;
-
-	doDie("type_xi undefined") unless (defined $type_xi);
-	if (exists $this->{datatype_xi}->{$type_xi}) {
-		return $this->{datatype_xi}->{$type_xi};
-	}
-	elsif (exists $this->{class_xi}->{$type_xi}) {
-		return $this->{class_xi}->{$type_xi};
-	}
-	die "xmi_id $type_xi not defined as datatype";
 }
 
 sub postprocRefClassAttr

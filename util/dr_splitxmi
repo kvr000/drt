@@ -131,6 +131,9 @@ sub genClass
 	$fd->print(formatPair("package", $xmi->getPrefixName($class)));
 	$fd->print(formatPair("name", $class->{name}));
 	$fd->print(formatPair("type", $class->{type}));
+	if (defined $class->{ancestor}) {
+		$fd->print(formatPair("ancestor", $xmi->formatDatatype($class->{ancestor})));
+	}
 	$fd->print(formatComment(0, $class->{comment}));
 	if ($class->{type} eq "typedef") {
 		$fd->print(formatPair("base", $xmi->formatDatatype($class->getTypedefSource())));
@@ -139,8 +142,8 @@ sub genClass
 		foreach my $literal (@{$class->{literal_list}}) {
 			$fd->print(formatPair("enum", $literal->{name}));
 			$fd->print(formatComment(1, $literal->{comment}));
-			if (defined $literal->{value}) {
-				$fd->print("\t".formatPair("value", $literal->{value}));
+			if (defined $literal->{default}) {
+				$fd->print("\t".formatPair("value", $literal->{default}));
 			}
 		}
 	}

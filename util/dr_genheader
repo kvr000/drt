@@ -95,38 +95,6 @@ sub nsToMacroEnd($)
 	return nsToMacro(shift)."_END";
 }
 
-sub formatMethodDecl($$)
-{
-	my $ret			= shift;
-	my $decl		= shift;
-
-	my $full = $ret;
-	if (length($full) < 32) {
-		$full .= "\t"x((39-length($full))/8);
-	}
-	else {
-		$full .= " ";
-	}
-	$full .= $decl;
-	return $full;
-}
-
-sub formatMemberDecl($$)
-{
-	my $type		= shift;
-	my $name		= shift;
-
-	my $full = $type;
-	if (length($full) < 32) {
-		$full .= "\t"x((39-length($full))/8);
-	}
-	else {
-		$full .= " ";
-	}
-	$full .= $name;
-	return $full;
-}
-
 sub readContent($$$)
 {
 	my $fd			= shift;
@@ -187,6 +155,19 @@ sub readParagraph($$)
 	die "didn't find empty line of paragraph starting at $startline";
 }
 
+sub tablength($)
+{
+	my $str			= shift;
+
+	my $pos = 0;
+	while ($str =~ m/^(.*?)\t(\t*)(.*)$/) {
+		$pos += length($1)+8+length($2)*8;
+		$pos -= $pos%8;
+		$str = $3;
+	}
+	$pos += length($str);
+	return $pos;
+}
 
 our %opts;
 getopts('i', \%opts);
@@ -229,12 +210,18 @@ our %MODEL_FUNC = (
 	compos			=> \&readModelCompos,
 	drcom			=> \&readModelDrcom,
 	comment			=> \&readModelComment,
+	enum			=> \&readModelEnum,
 );
 
 our %MODEL_ATTR_FUNC = (
 	type			=> \&readModelAttrValue,
 	drcom			=> \&readModelAttrDrcom,
 	comment			=> \&readModelAttrComment,
+);
+
+our %MODEL_ENUM_FUNC = (
+	value			=> \&readModelEnumValue,
+	comment			=> \&readModelEnumComment,
 );
 
 sub readModelValue
@@ -326,6 +313,51 @@ sub readModelAttrComment
 	push(@{$attr->{comment}}, $val);
 }
 
+sub readModelEnum
+{
+	my $model		= shift;
+	my $base		= shift;
+	my $key			= shift;
+	my $val			= shift;
+
+	my $enum = {
+		name			=> $val,
+		value			=> undef,
+		comment			=> [],
+	};
+	my $reader = $base->getSubLeveler();
+	while (my ($k, $v) = $reader->getPair()) {
+		if (my $func = $MODEL_ENUM_FUNC{$k}) {
+			&$func($enum, $reader, $k, $v);
+		}
+		else {
+			die "unknown key $k";
+		}
+	}
+
+	push(@{$model->{enums}}, $enum);
+}
+
+sub readModelEnumValue
+{
+	my $enum		= shift;
+	my $base		= shift;
+	my $key			= shift;
+	my $val			= shift;
+
+	$enum->{value} = $val;
+}
+
+sub readModelEnumComment
+{
+	my $enum		= shift;
+	my $base		= shift;
+	my $key			= shift;
+	my $val			= shift;
+
+	push(@{$enum->{comment}}, $val);
+}
+
 sub readModelAssoc
 {
 	my $model		= shift;
@@ -350,15 +382,24 @@ sub readModelCompos
 	$reader->skipRecursive();
 }
 
-sub readModel($)
+sub readModel($$$)
 {
 	my $name		= shift;
+	my $ns			= shift;
+	my $class		= shift;
 
 	my $model = {
 		drcom_list		=> [],
 		drcom_hash		=> {},
 		comment			=> [],
+		enums			=> [],
 	};
+	if ($name =~ m/^(.*)\/\.$/) {
+		$name = $1;
+		$ns =~ s/::/\//g;
+		$class =~ s/::/\//g;
+		$name .= "/$ns/$class";
+	}
 	my $reader = dr::IndentReader->new("$name.clsdef")->getBaseLeveler();
 
 	eval {
@@ -498,6 +539,99 @@ sub printIndented($$$)
 	}
 }
 
+sub formatMultiComment($)
+{
+	my $comment		= shift;
+
+	my $out = "/**\n";
+	foreach (@$comment) {
+		$out .= " * $_\n";
+	}
+	$out .= " */\n";
+}
+
+sub formatShortComment($)
+{
+	my $comment		= shift;
+
+	my $out = "/**< ";
+	foreach (@$comment) {
+		$out .= "$_ ";
+	}
+	$out .= "*/";
+	return $out;
+}
+
+sub formatMethodDecl($$)
+{
+	my $ret			= shift;
+	my $decl		= shift;
+
+	my $full = $ret;
+	if (tablength($full) < 32) {
+		$full .= "\t"x((39-tablength($full))/8);
+	}
+	else {
+		$full .= " ";
+	}
+	$full .= $decl;
+	return $full;
+}
+
+sub formatMemberDecl($$)
+{
+	my $type		= shift;
+	my $name		= shift;
+
+	my $full = $type;
+	if (tablength($full) < 32) {
+		$full .= "\t"x((39-tablength($full))/8);
+	}
+	else {
+		$full .= " ";
+	}
+	$full .= $name;
+	return $full;
+}
+
+sub formatEnumLiteral($$$)
+{
+	my $name			= shift;
+	my $value			= shift;
+	my $comment			= shift;
+
+	my $pre;
+	if (@$comment > 1) {
+		$pre = formatMultiComment($comment);
+		$comment = [];
+	}
+	else {
+		$pre = "";
+	}
+	my $full = $name;
+	if (defined $value) {
+		if (tablength($full) < 32) {
+			$full .= "\t"x((39-tablength($full))/8);
+		}
+		else {
+			$full .= " ";
+		}
+		$full .= " = $value";
+	}
+	$full .= ",";
+	if (@$comment) {
+		if (tablength($full) < 80) {
+			$full .= "\t"x((87-tablength($full))/8);
+		}
+		else {
+			$full .= " ";
+		}
+		$full .= formatShortComment($comment);
+	}
+	$full .= "\n";
+	return $full;
+}
+
 sub printObjectHeader($$)
 {
 	my $cld			= shift;
@@ -543,8 +677,9 @@ sub printClass($$)
 		$cld->{type} = $cld->{model}->{type};
 		$cld->{type} = "object" if ($cld->{type} eq "class");
 		$cld->{type} = "object" if ($cld->{type} eq "association");
+		$cld->{ancestor} = $cld->{model}->{ancestor} unless (defined $cld->{ancestor});
 	}
-	die "$cxxname:$cld->{lineno}: class $cld->{class} has no ancestor" if (!defined $cld->{ancestor} && !($cld->{type} eq "struct" || $cld->{type} eq "typedef"));
+	die "$cxxname:$cld->{lineno}: class $cld->{class} has no ancestor" if (!defined $cld->{ancestor} && !($cld->{type} eq "struct" || $cld->{type} eq "typedef" || $cld->{type} eq "enum"));
 
 	if ($cld->{doc}) {
 		my $doc = $cld->{doc};
@@ -553,6 +688,10 @@ sub printClass($$)
 		printIndented($hxx, $level, $doc);
 	}
 	addTagClass($cld, $cxxname);
+	my $has_inner = 1;
+	if ($cld->{model} && @{$cld->{model}->{comment}}) {
+		printIndented($hxx, $level, formatMultiComment($cld->{model}->{comment}));
+	}
 	if ($cld->{type} eq "object") {
 		printObjectHeader($cld, $level);
 	}
@@ -571,8 +710,17 @@ sub printClass($$)
 		}
 	}
 	elsif ($cld->{type} eq "typedef") {
+		$has_inner = 0;
 		die "$cxxname:$cld->{lineno}: typedef $cld->{class} has no base class" unless (defined $cld->{model} && defined $cld->{model}->{base});
 		printIndented($hxx, $level, formatMethodDecl("typedef ".mapUmlType($cld->{model}->{base}), $cld->{iname}).";\n");
+	}
+	elsif ($cld->{type} eq "enum") {
+		$has_inner = 0;
+		printIndented($hxx, $level, "enum $cld->{iname}\n{\n");
+		foreach my $literal (@{$cld->{model}->{enums}}) {
+			printIndented($hxx, $level+1, formatEnumLiteral($literal->{name}, $literal->{value}, $literal->{comment}));
+		}
+		printIndented($hxx, $level, "};");
 	}
 	else {
 		die "$cxxname:$cld->{lineno}: invalid implementation type $cld->{type} specified for $cld->{class}";
@@ -583,10 +731,11 @@ sub printClass($$)
 		printIndented($hxx, $level, $cld->{cont});
 	}
 
-	for (my $found = 1; $found;) {
+	for (my $found = 1; $found; ) {
 		$found = 0;
 		foreach (@cl_list) {
 			if ($_->{class} =~ m/^$cld->{class}::\w+$/) {
+				die "no sub class allowed for $cld->{class}: $_->{class}" unless ($has_inner);
 				$found = 1;
 				printDirect($hxx, "\n");
 				printIndented($hxx, $level, "public:\n");
@@ -670,11 +819,11 @@ sub printClass($$)
 	if (@{$cld->{friends}}) {
 		printIndented($hxx, $level, "\npublic:\n");
 		foreach my $friend (@{$cld->{friends}}) {
-			printIndented($hxx, $level, sprintf("\t%s;\n", formatMethodDecl("friend", $friend)));
+			printIndented($hxx, $level, sprintf("\t%s\n", formatMethodDecl("friend", $friend)));
 		}
 	}
 
-	if ($cld->{type} ne "typedef") {
+	if ($has_inner) {
 		printIndented($hxx, $level, sprintf("};\n"));
 	}
 }
@@ -793,9 +942,11 @@ MAIN: while (<$cxx>) {
 					$cld->{line} = $_;
 				}
 				elsif ($key eq "model") {
+					STDERR->print("$cxxname:$lineno: fatal: ns undefined\n"), exit(1) unless (defined $ns);
+					STDERR->print("$cxxname:$lineno: fatal: class undefined\n"), exit(1) unless (defined $cld->{class});
 					STDERR->print("$cxxname:$lineno: only one model allowed\n") if (defined $cld->{model});
 					$cld->{model} = eval {
-						readModel($val);
+						readModel($val, $ns, $cld->{class});
 					}
 						or STDERR->print("$cxxname:$lineno: failed to read model: $@\n"), $errors++;
 				}
