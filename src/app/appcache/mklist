@@ -1,0 +1,6 @@
+.cdef SD_APPCACHE	.
+
+SOURCES:
+	no:${SD_APPCACHE}/mklist:g=t
+	:${SD_APPCACHE}/ApplicationCache.cxx:g=s,t,gh,di
+

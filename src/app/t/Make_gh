@@ -1,0 +1,7 @@
+BUILD=_build
+BUILD_=$(BUILD)/
+GEN=$(BUILD_)_gen
+GEN_=$(GEN)/
+gh_gh: gh_targall
+
+gh_targall:

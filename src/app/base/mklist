@@ -1,0 +1,6 @@
+.cdef SD_BASE	.
+
+SOURCES:
+	no:${SD_BASE}/mklist:g=t
+	:${SD_BASE}/def.hxx:g=di,t
+
