@@ -119,6 +119,7 @@ String HttpServer::readRequest()
 				req_body_size = -1;
 				req_version = 0x100;
 				connection_state = 2;
+				read_stream.ptrCache()->removeLeft(n+1);
 				return req_uri;
 			}
 			for (; b < c && *b++ != '/';);

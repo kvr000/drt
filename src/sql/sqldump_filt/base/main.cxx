@@ -115,7 +115,7 @@ static void processExtract(QueueManager *queue_manager)
 
 int main(int argc, char **argv)
 {
-	//MM::enableThreadCaching(1);
+	MM::enableThreadCache(1);
 	ERef<QueueManager> queue_manager(new QueueManager());
 
 	processOptions(argv, queue_manager);
