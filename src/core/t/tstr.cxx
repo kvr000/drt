@@ -73,8 +73,8 @@ void test()
 	s = "blediese"; s.removeLeft(3); DR_Assert(s == "diese");
 	s = "blediese"; s.removeMid(3); DR_Assert(s == "ble");
 	s = "blediese"; s.removeMid(3, 2); DR_Assert(s == "bleese");
-	s = "    blekeke    "; s.stripSpaces(); DR_Assert(s == "blekeke");
-	s = "        "; s.stripSpaces(); DR_Assert(s == "");
+	s = "    blekeke    "; s.trimSpaces(); DR_Assert(s == "blekeke");
+	s = "        "; s.trimSpaces(); DR_Assert(s == "");
 }
 TESTNSE(op);
 #endif

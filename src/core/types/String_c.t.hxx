@@ -690,7 +690,7 @@ String_c<Subtype> String_c<Subtype>::removeRightGet(size_t size)
 }
 
 template <typename Subtype>
-void String_c<Subtype>::stripSpaces()
+void String_c<Subtype>::trimSpaces()
 {
 	size_t start_pos, end_pos;
 
@@ -703,6 +703,13 @@ void String_c<Subtype>::stripSpaces()
 	}
 
 	*this = mid(start_pos, end_pos-start_pos);
+}
+
+template <typename Subtype>
+ssize_t String_c<Subtype>::skipSpaces(size_t start_pos)
+{
+	for (; start_pos < d->size && isspace(d->str()[start_pos]); start_pos++) ;
+	return start_pos;
 }
 
 template <typename Subtype>

@@ -206,7 +206,20 @@ public:
 	String_c			removeMidGet(size_t pos, size_t size);
 	String_c			removeRightGet(size_t size);
 
-	void				stripSpaces();
+	/**
+	 * removes all surrounding space at the beginning and end of the string
+	 */
+	void				trimSpaces();
+
+	/**
+	 * Skips the spaces starting at position pos
+	 *
+	 * @return the length of the string
+	 * 	in case there is only whitespace
+	 * @return the position of the first non-space character
+	 *	in case there is any
+	 */
+	ssize_t				skipSpaces(size_t pos);
 
 	ssize_t				find(TC chr) const;
 	ssize_t				find(TC chr, size_t start_pos) const;

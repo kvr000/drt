@@ -78,13 +78,13 @@ void RowAssignConfig::initialize(StreamBuffer *stream)
 		ssize_t p;
 		if ((p = line.find('#')) >= 0)
 			line.removeMid(p);
-		line.stripSpaces();
+		line.trimSpaces();
 		if (line.getSize() == 0)
 			continue;
 		if ((p = line.find('=')) < 0)
 			continue;
-		key = line.left(p); key.stripSpaces();
-		value = line.mid(p+1); value.stripSpaces();
+		key = line.left(p); key.trimSpaces();
+		value = line.mid(p+1); value.trimSpaces();
 		content[String(key.toStr(), key.getSize())] = String(value.toStr(), value.getSize());
 	}
 }
