@@ -181,9 +181,12 @@ sub translateSqlTypeDecl($$)
 	my $main		= shift;
 	my $attr		= shift;
 
+	my $has_default = 0;
+
 	my $sql_type = translateSqlType($attr);
 	if (defined (my $db_mandatory = $main->checkDrTagValue("db_mandatory"))) {
 		$sql_type .= " not null default $db_mandatory";
+		$has_default = 1;
 	}
 	elsif ($main->{mandatory} eq 0) {
 		$sql_type .= " null";
@@ -197,11 +200,13 @@ sub translateSqlTypeDecl($$)
 	if ($main->checkDrTagValue("serial")) {
 		$sql_type .= " auto_increment";
 	}
-	if (defined (my $db_default = $main->checkDrTagValue("db_default"))) {
-		$sql_type .= " default $db_default";
-	}
-	elsif (defined (my $default = $main->{default})) {
-		$sql_type .= " default $default";
+	if (!$has_default) {
+		if (defined (my $db_default = $main->checkDrTagValue("db_default"))) {
+			$sql_type .= " default $db_default";
+		}
+		elsif (defined (my $default = $main->{default})) {
+			$sql_type .= " default $default";
+		}
 	}
 	return $sql_type;
 }
