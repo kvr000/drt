@@ -127,6 +127,10 @@ sub new
 	my $this		= shift;
 
 	$this = $this->SUPER::new(@_);
+
+	$this->{ancestor_xid} = undef;
+
+	return $this;
 }
 
 sub addAttribute
@@ -168,7 +172,7 @@ sub getAttrType
 		return $attr->{type_primitive};
 	}
 	else {
-		return $this->{owner}->resolveDatatype($attr->{type_xmi_id});
+		return $this->{owner}->resolveDatatype($attr->{type_xid});
 	}
 }
 
@@ -238,6 +242,20 @@ sub new
 		or die sprintf("%s:0:0: failed to postprocess: %s", $this->{fname}, $@);
 
 	return $this;
+}
+
+sub doDie
+{
+	my $msg			= shift;
+
+	my $stack = "";
+	for (my $i = 0; ; $i++) {
+		my ($pack, $fn, $ln, $sub) = caller($i)
+			or last;
+		$stack .= "$sub ($fn:$ln)\n";
+	}
+	$stack =~ s/^/\t/gm;
+	die "$msg\nstack:\n$stack";
 }
 
 sub read_doDie
@@ -572,6 +590,10 @@ sub read_processClass
 			$this->read_processNestedClassifier();
 			next;
 		}
+		elsif ($name eq "generalization") {
+			$this->read_processClassGeneralization();
+			next;
+		}
 		else {
 			$this->read_unknownNode();
 			next;
@@ -717,6 +739,17 @@ sub read_processClassComment
 	$this->read_needNodeEnd();
 }
 
+sub read_processClassGeneralization
+{
+	my $this		= shift;
+
+	my $reader		= $this->{reader};
+
+	$this->{read_context}->{ancestor_xid} = $this->read_getMandatoryAttr("general");
+
+	$this->read_needNodeEnd();
+}
+
 sub read_processClassMemberEnd
 {
 	my $this		= shift;
@@ -747,7 +780,7 @@ sub read_processOwnedAttribute
 		name			=> $name,
 		type_type		=> undef,
 		type_primitive		=> undef,
-		type_xmi_id		=> undef,
+		type_xid		=> undef,
 		default_value		=> undef,
 		comment			=> dr::XmiParser::Comment->new(),
 	};
@@ -806,7 +839,7 @@ sub read_processOwnedAttributeType
 	}
 	elsif ($type_type eq "uml:Class") {
 		$this->{read_attr}->{type_type} = "class";
-		$this->{read_attr}->{type_xmi_id} = $this->read_getMandatoryAttr("xmi:idref");
+		$this->{read_attr}->{type_xid} = $this->read_getMandatoryAttr("xmi:idref");
 	}
 	else {
 		$this->read_doDie("unknown type type: $type_type");
@@ -1043,13 +1076,13 @@ sub postprocRefPackage
 
 	$this->{package_xi}->{$package->{xmi_id}} = $package;
 
+	STDERR->print("postprocessing $package->{name}\n");
+
 	foreach my $ch_package (@{$package->{package_list}}) {
-		Scalar::Util::weaken($ch_package->{parent} = $package);
-		$this->postprocessPackage($ch_package);
+		$this->postprocRefPackage($ch_package);
 	}
-	foreach my $ch_class (@{$this->{class_list}}) {
-		Scalar::Util::weaken($ch_class->{parent} = $package);
-		$this->postprocessClass($ch_class);
+	foreach my $ch_class (@{$package->{class_list}}) {
+		$this->postprocRefClass($ch_class);
 	}
 
 	return $resolved;
@@ -1063,8 +1096,7 @@ sub postprocRefClass
 	my $resolved = 0;
 
 	foreach my $attr (@{$class->{attr_list}}) {
-		Scalar::Util::weaken($attr->{parent} = $class);
-		$this->postprocessClassAttr($attr);
+		$this->postprocRefClassAttr($attr);
 	}
 
 	return $resolved;
@@ -1075,6 +1107,7 @@ sub resolveDatatype
 	my $this		= shift;
 	my $type_xi		= shift;
 
+	doDie("type_xi undefined") unless (defined $type_xi);
 	if (exists $this->{datatype_xi}->{$type_xi}) {
 		return $this->{datatype_xi}->{$type_xi};
 	}
@@ -1091,7 +1124,11 @@ sub postprocRefClassAttr
 
 	my $resolved = 0;
 
-	$attr->{datatype} = $this->resolveDatatype($attr->{type_xi});
+	eval {
+		$attr->{datatype} = $attr->{type_primitive} || $this->resolveDatatype($attr->{type_xid});
+		1;
+	}
+		or die "$attr->{parent}->{name}.$attr->{name}: $@";
 
 	return $resolved;
 }

@@ -41,59 +41,112 @@ use warnings;
 sub new
 {
 	my $class = shift; $class = ref($class) || $class;
-	my $fd			= shift;
+	my $fname		= shift;
+
+	my $fd = FileHandle->new($fname, "<")
+		or die "$fname:0: failed to open";
 
 	my $this = bless {
+		fname			=> $fname,
+		lineno			=> 0,
 		fd			=> $fd,
-		level			=> "",
 		pending			=> undef,
 	}, $class;
 
 	return $this;
 }
 
-sub advance
-{
-	my $this		= shift;
-
-	$this->{level} .= "\t";
-}
-
-sub lower
-{
-	my $this		= shift;
-
-	die "lowering level under 0" if ($this->{level} eq "");
-	$this->{level} = substr($this->{level}, 0, -1);
-}
-
-sub getLine
+sub cacheLine
 {
 	my $this		= shift;
 
 	if (!defined $this->{pending}) {
-		return unless (defined ($this->{pending} = <$this->{fd}>));
+		return unless (defined ($this->{pending} = $this->{fd}->getline()));
+		$this->{lineno}++;
 	}
-	$this->{pending} =~ m/^(\t*)/;
-	die "section $this->{pending} not read" if (length($1) > length($this->{level}));
-	return unless (length($1) < length($this->{level}));
-	die "invalid content: $this->{pending}" unless ($this->{pending} =~ m/^(\t*)(\w+)(\s+)(.*)$/);
-	undef $this->{pending};
-	return ( $2, $4 );
+	return $this->{pending};
 }
 
-sub skipSubLevels
+sub resetLine
 {
 	my $this		= shift;
 
-	for (;;) {
-		if (!defined $this->{pending}) {
-			return unless (defined ($this->{pending} = <$this->{fd}>));
+	undef $this->{pending};
+}
+
+sub getBaseLeveler
+{
+	my $this		= shift;
+
+	return dr::IndentReader::Leveler->new($this, 0);
+}
+
+sub getContext
+{
+	my $this		= shift;
+
+	return "$this->{fname}:$this->{lineno}";
+}
+
+
+package dr::IndentReader::Leveler;
+
+use strict;
+use warnings;
+
+sub new
+{
+	my $class = shift; $class = ref($class) || $class;
+	my $reader		= shift;
+	my $level		= shift;
+
+	my $this = bless {
+		reader			=> $reader,
+		level			=> $level,
+	}, $class;
+
+	return $this;
+}
+
+sub getPair
+{
+	my $this		= shift;
+
+	if (defined (my $line = $this->{reader}->cacheLine())) {
+		if ($line !~ m/^(\t*)(\w+)\s+(.*)$/) {
+			die "invalid format: $line";
 		}
-		$this->{pending} =~ m/^(\t*)/;
-		return if (length($1) <= length($this->{level}));
-		undef $this->{pending};
+		return if (length($1) < $this->{level});
+		die "sub level not read" if (length($1) > $this->{level});
+		$this->{reader}->resetLine();
+		return ( $2, $3 );
 	}
+	else {
+		return;
+	}
+}
+
+sub skipRecursive
+{
+	my $this		= shift;
+
+	while (my ($k, $v) = $this->getPair()) {
+		$this->getSubLeveler()->skipRecursive();
+	}
+}
+
+sub getSubLeveler
+{
+	my $this		= shift;
+
+	return $this->new($this->{reader}, $this->{level}+1);
+}
+
+sub getContext
+{
+	my $this		= shift;
+
+	return $this->{reader}->getContext();
 }
 
 

@@ -5,7 +5,7 @@ SOURCES:
 	:${SD_EMIT}/emits.cxx:g=s,t
 	:${SD_EMIT}/emits.cxx.hxx:g=t
 	:${SD_EMIT}/emits.hxx:g=di,t
-	gen:${SD_EMIT}/genemits.pl:o=${SD_EMIT}/emits.hxx ${SD_EMIT}/emits.cxx.hxx;a=${SD_EMIT}/emits.hxx ${SD_EMIT}/emits.cxx.hxx;g=g,t,C
+	gen:${SD_EMIT}/genemits.pl:c=./${SD_EMIT}/genemits.pl;o=${SD_EMIT}/emits.hxx ${SD_EMIT}/emits.cxx.hxx;a=${SD_EMIT}/emits.hxx ${SD_EMIT}/emits.cxx.hxx;g=g,t,C
 
 FCHECK:
 	${SD_EMIT}/*.hxx:${SD_EMIT}/emits.cxx.hxx:s=di,didev

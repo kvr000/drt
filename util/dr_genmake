@@ -1027,15 +1027,11 @@ sub createOutput
 			$sd->{prio} = -1;
 		}
 		elsif ($sd->{prog} eq "gen") {
-			my $cmd = $sd->{src};
-			my $args;
-			if (!defined ($sd->{out} = dr::build::flagsOne($sd->{opts}, "o"))) {
-				die "$vars->{mkname}: source $sd->{src}: requiring option o=\n";
+			my $cmd = $sd->{command};
+			if (defined $sd->{args}) {
+				$cmd .= " $sd->{args}";
 			}
-			if (defined ($args = dr::build::flagsOne($sd->{opts}, "a"))) {
-				$cmd .= " $args";
-			}
-			$mf->print("$sd->{out}: $sd->{src}\n\t./$cmd\n");
+			$mf->print("$sd->{out}: $sd->{in}\n\t$cmd\n");
 		}
 		else {
 			die "unknown build-prog $sd->{prog}\n";
@@ -1102,6 +1098,9 @@ sub createOutput
 					$mf->print("\trm -f $ftarg; ln -s ../\$(DIRM_)$_->{src} $ftarg\n");
 				}
 				next;
+			}
+			elsif ($od->{prog} eq "no") {
+				$ftarg = $od->{out};
 			}
 			else {
 				die "unknown build-prog $od->{prog}\n";
@@ -1333,15 +1332,12 @@ EOT
 		elsif ($sd->{prog} eq "lshlib") {
 		}
 		elsif ($sd->{prog} eq "gen") {
-			my $cmd = $sd->{src};
-			my $args;
-			if (!defined ($sd->{out} = dr::build::flagsOne($sd->{opts}, "o"))) {
-				die "$vars->{mkname}: source $sd->{src}: requiring option o=\n";
+			my $cmd = $sd->{command};
+			$cmd =~ s/\//\\/g;
+			if (defined $sd->{args}) {
+				$cmd .= " $sd->{args}";
 			}
-			if (defined ($args = dr::build::flagsOne($sd->{opts}, "a"))) {
-				$cmd .= " $args";
-			}
-			$mf->print("$sd->{out}: $sd->{src}\n\t.\\$cmd\n");
+			$mf->print("$sd->{out}: $sd->{in}\n\t$cmd\n");
 		}
 		else {
 			die "unknown build-prog $sd->{prog}\n";
@@ -1950,6 +1946,16 @@ sub generateDir
 				}
 				elsif ($sd->{prog} eq "gen") {
 					$sd->{out_used} = 1;
+					if (!defined ($sd->{command} = dr::build::flagsOne($sd->{opts}, "c"))) {
+						die "$mkname:0: source $sd->{src}: requiring option c= (command)\n";
+					}
+					if (!defined ($sd->{out} = dr::build::flagsOne($sd->{opts}, "o"))) {
+						die "$mkname:0: source $sd->{src}: requiring option o= (output)\n";
+					}
+					if (!defined ($sd->{in} = dr::build::flagsOne($sd->{opts}, "i"))) {
+						$sd->{in} = $sd->{src};
+					}
+					$sd->{args} = dr::build::flagsOne($sd->{opts}, "a");
 				}
 
 				$by_prog{$sd->{prog}} = [] unless ($by_prog{$sd->{prog}});
@@ -2044,6 +2050,8 @@ sub generateDir
 			}
 			elsif ($prog eq "exec") {
 				$od->{in_source} = $generator->filterSources([ sortSources(@{$od->{in_source}}) ]);
+			}
+			elsif ($prog eq "no") {
 			}
 			elsif ($prog eq "script") {
 			}

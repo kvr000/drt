@@ -46,6 +46,7 @@ use File::Basename;
 use lib dirname($0)."/perl";
 use dr::FileTransaction;
 use dr::XmiParser;
+use dr::IndentReader;
 
 sub fileToName($$)
 {
@@ -218,6 +219,164 @@ our $ns;
 our @ns_use = ();
 our @forwards = ();
 
+our %MODEL_FUNC = (
+	package			=> \&readModelValue,
+	name			=> \&readModelValue,
+	type			=> \&readModelValue,
+	base			=> \&readModelValue,
+	attr			=> \&readModelAttr,
+	assoc			=> \&readModelAssoc,
+	compos			=> \&readModelCompos,
+	drcom			=> \&readModelDrcom,
+	comment			=> \&readModelComment,
+);
+
+our %MODEL_ATTR_FUNC = (
+	type			=> \&readModelAttrValue,
+	drcom			=> \&readModelAttrDrcom,
+	comment			=> \&readModelAttrComment,
+);
+
+sub readModelValue
+{
+	my $model		= shift;
+	my $base		= shift;
+	my $key			= shift;
+	my $val			= shift;
+
+	$model->{$key} = $val;
+}
+
+sub readModelDrcom
+{
+	my $model		= shift;
+	my $base		= shift;
+	my $key			= shift;
+	my $val			= shift;
+
+	die "invalid format of drcom: $val" unless ($val =~ m/^(\S+)\s+(\S.*)$/);
+	my $drcom = { name => $1, value => $2 };
+	push(@{$model->{drcom_list}}, $drcom);
+	$model->{drcom_hash}->{$1} = $drcom;
+}
+
+sub readModelComment
+{
+	my $model		= shift;
+	my $base		= shift;
+	my $key			= shift;
+	my $val			= shift;
+
+	push(@{$model->{comment}}, $val);
+}
+
+sub readModelAttr
+{
+	my $model		= shift;
+	my $base		= shift;
+	my $key			= shift;
+	my $val			= shift;
+
+	my $reader		= $base->getSubLeveler();
+
+	my $attr = {
+		name			=> $val,
+	};
+
+	while (my ($k, $v ) = $reader->getPair()) {
+		if (my $func = $MODEL_ATTR_FUNC{$k}) {
+			&$func($attr, $reader, $k, $v);
+		}
+		else {
+			die "unknown key $k";
+		}
+	}
+}
+
+sub readModelAttrValue
+{
+	my $attr		= shift;
+	my $base		= shift;
+	my $key			= shift;
+	my $val			= shift;
+
+	$attr->{$key} = $val;
+}
+
+sub readModelAttrDrcom
+{
+	my $attr		= shift;
+	my $base		= shift;
+	my $key			= shift;
+	my $val			= shift;
+
+	die "invalid format of drcom: $val" unless ($val =~ m/^(\S+)\s+(\S.*)$/);
+	my $drcom = { name => $1, value => $2 };
+	push(@{$attr->{drcom_list}}, $drcom);
+	$attr->{drcom_hash}->{$1} = $drcom;
+}
+
+sub readModelAttrComment
+{
+	my $attr		= shift;
+	my $base		= shift;
+	my $key			= shift;
+	my $val			= shift;
+
+	push(@{$attr->{comment}}, $val);
+}
+
+sub readModelAssoc
+{
+	my $model		= shift;
+	my $base		= shift;
+	my $key			= shift;
+	my $val			= shift;
+
+	my $reader		= $base->getSubLeveler();
+
+	$reader->skipRecursive();
+}
+
+sub readModelCompos
+{
+	my $model		= shift;
+	my $base		= shift;
+	my $key			= shift;
+	my $val			= shift;
+
+	my $reader		= $base->getSubLeveler();
+
+	$reader->skipRecursive();
+}
+
+sub readModel($)
+{
+	my $name		= shift;
+
+	my $model = {
+		drcom_list		=> [],
+		drcom_hash		=> {},
+		comment			=> [],
+	};
+	my $reader = dr::IndentReader->new("$name.clsdef")->getBaseLeveler();
+
+	eval {
+		while (my ( $k, $v )= $reader->getPair()) {
+			if (my $func = $MODEL_FUNC{$k}) {
+				&$func($model, $reader, $k, $v);
+			}
+			else {
+				die "unknown key $k";
+			}
+		}
+		1;
+	}
+		or die "\n".$reader->getContext().": $@";
+
+	return $model;
+}
+
 sub expandClassNames($)
 {
 	my $cld			= shift;
@@ -304,6 +463,17 @@ sub printDirect($$)
 	}
 }
 
+sub mapUmlType($)
+{
+	my $type		= shift;
+
+	return "Sint64" if ($type eq "long");
+	return "Sint32" if ($type eq "int");
+	return "Time::SysTime" if ($type eq "systime");
+
+	die "unknown UML type $type";
+}
+
 sub addIndent($)
 {
 	my $s			= shift;
@@ -368,7 +538,13 @@ sub printClass($$)
 		}
 	}
 
-	die "$cxxname:$cld->{lineno}: class $cld->{class} has no ancestor" if ($cld->{type} ne "struct" && !defined $cld->{ancestor});
+	if ($cld->{type} eq "model") {
+		die "$cxxname:$cld->{lineno}: no model loaded for class $cld->{class}" unless ($cld->{model});
+		$cld->{type} = $cld->{model}->{type};
+		$cld->{type} = "object" if ($cld->{type} eq "class");
+		$cld->{type} = "object" if ($cld->{type} eq "association");
+	}
+	die "$cxxname:$cld->{lineno}: class $cld->{class} has no ancestor" if (!defined $cld->{ancestor} && !($cld->{type} eq "struct" || $cld->{type} eq "typedef"));
 
 	if ($cld->{doc}) {
 		my $doc = $cld->{doc};
@@ -394,8 +570,12 @@ sub printClass($$)
 			printIndented($hxx, $level, sprintf("%s %s %s\n{", "struct", nsToPub($ns), $cld->{iname}));
 		}
 	}
+	elsif ($cld->{type} eq "typedef") {
+		die "$cxxname:$cld->{lineno}: typedef $cld->{class} has no base class" unless (defined $cld->{model} && defined $cld->{model}->{base});
+		printIndented($hxx, $level, formatMethodDecl("typedef ".mapUmlType($cld->{model}->{base}), $cld->{iname}).";\n");
+	}
 	else {
-		die "$cxxname:$cld->{lineno}: invalid implementation type specified for $cld->{class}";
+		die "$cxxname:$cld->{lineno}: invalid implementation type $cld->{type} specified for $cld->{class}";
 	}
 
 	if ($cld->{cont} ne "") {
@@ -494,7 +674,9 @@ sub printClass($$)
 		}
 	}
 
-	printIndented($hxx, $level, sprintf("};\n"));
+	if ($cld->{type} ne "typedef") {
+		printIndented($hxx, $level, sprintf("};\n"));
+	}
 }
 
 sub parseConstDef($)
@@ -548,7 +730,7 @@ MAIN: while (<$cxx>) {
 			$l = $2;
 		}
 	}
-	if (m,^/\*drt\s*$,) {
+	if (m/^\/\*drt\s*$/) {
 		if (defined $cld) {
 			if ($cld->{class}) {
 				$cld->{type} = "object" unless (defined $cld->{type});
@@ -604,11 +786,18 @@ MAIN: while (<$cxx>) {
 					}
 				}
 				elsif ($key eq "class") {
-					STDERR->printf("$cxxname:$lineno: fatal: ns undefined\n"), exit(1) unless (defined $ns);
+					STDERR->print("$cxxname:$lineno: fatal: ns undefined\n"), exit(1) unless (defined $ns);
 					$cld->{class} = $val;
 					($cld->{class_last} = $cld->{class}) =~ s/.*:://;
 					$cld->{lineno} = $lineno;
 					$cld->{line} = $_;
+				}
+				elsif ($key eq "model") {
+					STDERR->print("$cxxname:$lineno: only one model allowed\n") if (defined $cld->{model});
+					$cld->{model} = eval {
+						readModel($val);
+					}
+						or STDERR->print("$cxxname:$lineno: failed to read model: $@\n"), $errors++;
 				}
 				elsif ($key eq "ancestor") {
 					$cld->{ancestor} = $val;
