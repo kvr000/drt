@@ -141,7 +141,7 @@ void MM_impl::setThreadImpl(void (*impl_initingThread_)(), void (*impl_closingTh
 
 void MM::s_init()
 {
-	int set_level = MM_impl::MMD_THREAD;
+	int set_level = 0;
 	void (*method)(const char *opts, int level) = NULL;
 	const char *opts;
 	if (MM_impl::debug_options >= 0)
@@ -152,6 +152,10 @@ void MM::s_init()
 			switch (*opts) {
 			case 'H':
 				set_level &= ~MM_impl::MMD_THREAD;
+				break;
+
+			case 'h':
+				set_level |= MM_impl::MMD_THREAD;
 				break;
 
 			case '.':
