@@ -62,6 +62,8 @@ public:
 	virtual void			bindResult(const String &column, Sint32 *value) = 0;
 	virtual void			bindResult(unsigned column, Sint64 *value) = 0;
 	virtual void			bindResult(const String &column, Sint64 *value) = 0;
+	virtual void			bindResult(unsigned column, double *value) = 0;
+	virtual void			bindResult(const String &column, double *value) = 0;
 	virtual void			bindResult(unsigned column, String *value) = 0;
 	virtual void			bindResult(const String &column, String *value) = 0;
 	virtual void			bindResult(unsigned column, Blob *value) = 0;

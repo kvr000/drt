@@ -68,6 +68,8 @@ public:
 	virtual void			bindResult(const String &column, Sint32 *value);
 	virtual void			bindResult(unsigned column, Sint64 *value);
 	virtual void			bindResult(const String &column, Sint64 *value);
+	virtual void			bindResult(unsigned column, double *value);
+	virtual void			bindResult(const String &column, double *value);
 	virtual void			bindResult(unsigned column, String *value);
 	virtual void			bindResult(const String &column, String *value);
 	virtual void			bindResult(unsigned column, Blob *date);

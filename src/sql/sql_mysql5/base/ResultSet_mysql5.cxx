@@ -175,6 +175,18 @@ void ResultSet_mysql5::bindResult(const String &column, Sint64 *value)
 	return bindResult(getColumnIdDirect(column), value);
 }
 
+void ResultSet_mysql5::bindResult(unsigned column, double *value)
+{
+	MYSQL_BIND *rb = allocResBinding(column);
+	rb->buffer_type = MYSQL_TYPE_DOUBLE;
+	rb->buffer = value;
+}
+
+void ResultSet_mysql5::bindResult(const String &column, double *value)
+{
+	return bindResult(getColumnIdDirect(column), value);
+}
+
 void ResultSet_mysql5::bindResult(unsigned column, String *value)
 {
 	addResConversion(&resConv_String, column, 0, value);
