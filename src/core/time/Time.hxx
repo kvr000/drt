@@ -56,7 +56,15 @@ public:
 	static const SysTime INVAL_TIME	= (((SysTime)-1)<<(sizeof(SysTime)*8-1));
 
 public:
+	/**
+	 * gets the current time
+	 */
 	static SysTime			getTime();
+
+	/**
+	 * gets the current time with second precision
+	 */
+	static SysTime			getTimePrecSec();
 
 public:
 	static void			setInvalid(SysTime *time);

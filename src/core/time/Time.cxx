@@ -34,6 +34,7 @@
  **/
 
 #include <time.h>
+#include <sys/time.h>
 
 #include <dr/x_kw.hxx>
 #include <dr/Const.hxx>
@@ -45,6 +46,18 @@ DR_NS_BEGIN
 
 
 SysTime Time::getTime()
+{
+	if (SEC_BASE == 1) {
+		return time(NULL)*SEC_BASE;
+	}
+	else {
+		struct timeval tv;
+		gettimeofday(&tv, NULL);
+		return tv.tv_sec*SEC_BASE+tv.tv_usec/(1000000/SEC_BASE);
+	}
+}
+
+SysTime Time::getTimePrecSec()
 {
 	return time(NULL)*SEC_BASE;
 }
