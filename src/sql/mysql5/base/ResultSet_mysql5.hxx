@@ -83,6 +83,7 @@ public:
 	virtual void			bindNullHandler(const String &column, void (*handler)(void *value));
 
 public:
+	virtual void			seek(Sint64 row);
 	virtual bool			next();
 	virtual void			store();
 

@@ -33,8 +33,6 @@
  * @license	http://www.gnu.org/licenses/lgpl.txt GNU Lesser General Public License v3
  **/
 
-#include <stdio.h>
-
 #include <dr/x_kw.hxx>
 #include <dr/Const.hxx>
 #include <dr/Exception.hxx>
@@ -265,6 +263,11 @@ void ResultSet_mysql5::bindNullHandler(unsigned column, void (*handler)(void *va
 void ResultSet_mysql5::bindNullHandler(const String &column, void (*handler)(void *value))
 {
 	return bindNullHandler(getColumnIdDirect(column), handler);
+}
+
+void ResultSet_mysql5::seek(Sint64 row)
+{
+	mysql_stmt_data_seek(stmt, row);
 }
 
 bool ResultSet_mysql5::next()

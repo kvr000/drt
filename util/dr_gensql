@@ -237,7 +237,7 @@ foreach my $model (@models) {
 				foreach my $pa (@tprimary) {
 					$sqlin->printObj("\t$pa->{name}");
 					$sqlin->printAligned(translateSqlTypeDecl($attr, $pa->{attr}), 40);
-					$sqlin->printAlignedAdd("-- $attr->{name}: $pa->{attr}->{owner}->{full}.$pa->{attr}->{name}", 72);
+					$sqlin->printAlignedAdd("-- $pa->{attr}->{owner}->{full}.$pa->{attr}->{name}", 72);
 					push(@primary, $pa->{name}) if ($attr->{stype} eq "compos");
 				}
 				if ($attr->{stype} eq "assoc" && $attr->getRole()->{primary}) {

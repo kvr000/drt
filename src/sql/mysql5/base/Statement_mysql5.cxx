@@ -185,6 +185,8 @@ void Statement_mysql5::bindParam(unsigned column, double value)
 
 void Statement_mysql5::bindParam(unsigned column, const String &value)
 {
+	if (value.isNull())
+		bindParamNull(column);
 	MYSQL_BIND *b = allocParBinding(column);
 	b->buffer_type = MYSQL_TYPE_VAR_STRING;
 	b->buffer = Alloc::alloc(value.utf8().getSize());
@@ -194,6 +196,8 @@ void Statement_mysql5::bindParam(unsigned column, const String &value)
 
 void Statement_mysql5::bindParam(unsigned column, const Blob &value)
 {
+	if (value.isNull())
+		bindParamNull(column);
 	MYSQL_BIND *b = allocParBinding(column);
 	b->buffer_type = MYSQL_TYPE_VAR_STRING;
 	b->buffer = Alloc::alloc(value.getSize());

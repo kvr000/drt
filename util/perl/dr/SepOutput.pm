@@ -138,10 +138,6 @@ sub DESTROY
 {
 	my $this		= shift;
 
-	if (defined $this->{add}) {
-		$this->{fd}->print($this->{add});
-		undef $this->{add};
-	}
 	if ($this->{state} != 0) {
 		if (defined $this->{add}) {
 			if (defined $this->{align_add}) {
@@ -151,9 +147,13 @@ sub DESTROY
 			$this->{pending} .= $this->{add};
 			undef $this->{add};
 		}
-		$this->{fd}->print($this->{sep_all});
 		$this->{fd}->print($this->{pending});
+		$this->{fd}->print($this->{sep_all});
 		$this->{pending} = "";
+	}
+	elsif (defined $this->{add}) {
+		$this->{fd}->print($this->{add});
+		undef $this->{add};
 	}
 }
 

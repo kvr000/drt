@@ -77,6 +77,7 @@ public:
 	virtual void			bindNullHandler(const String &column, void (*handler)(void *value)) = 0;
 
 public:
+	virtual void			seek(Sint64 row) = 0;
 	virtual bool			next() = 0;
 	virtual void			store() = 0;
 
