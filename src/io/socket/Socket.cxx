@@ -130,5 +130,10 @@ Blob Socket::getSockOptionStr(const String &name)
 	return Socket_sysiface::getSockOptionStr(this, name);
 }
 
+void *Socket::getOsHandle()
+{
+	return os_handle;
+}
+
 
 DR_IO_NS_END
