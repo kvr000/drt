@@ -127,14 +127,14 @@ if ($opts{l}) {
 	my %leak_stat;
 	foreach my $md (sort({ $a->{order} <=> $b->{order} } values %mem)) {
 		next if ($md->{backtrace} =~ m/$ok_leaks/o);
-		$leak_stat{$md->{backtrace}} = 0 unless (defined $leak_stat{$md->{backtrace}});
-		$leak_stat{$md->{backtrace}}++;
+		$leak_stat{$md->{backtrace}} = { count => 0, first => $md->{seq} } unless (defined $leak_stat{$md->{backtrace}});
+		$leak_stat{$md->{backtrace}}->{count}++;
 	}
 	printf("Leak statistics (%d):\n\n", (scalar keys %leak_stat)/2);
-	foreach my $b (sort({ $leak_stat{$b} <=> $leak_stat{$a} } keys %leak_stat)) {
+	foreach my $b (sort({ $leak_stat{$b}->{count} <=> $leak_stat{$a}->{count} || $leak_stat{$a}->{first} <=> $leak_stat{$b}->{first} } keys %leak_stat)) {
 		my $indb = $b;
 		$indb =~ s/^/\t/mg;
-		print("$leak_stat{$b} leaks:\n$indb\n");
+		print("$leak_stat{$b}->{count} leaks:\n$indb\n");
 	}
 }
 

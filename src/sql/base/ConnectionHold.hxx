@@ -122,7 +122,7 @@ public:
 
 protected:
 	ConnectionPool *		pool;
-	Ref<Connection>		connection;
+	Ref<Connection>			connection;
 	SysTime				created;
 	THash<String, Ref<Object> >	db_layers;
 

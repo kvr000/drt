@@ -75,7 +75,7 @@ void test()
 
 	wm->setMaxWorkers(16);
 
-	for (int i = 0; i < 1024; i++) {
+	for (int i = 0; i < 32*1024; i++) {
 		wm->addWork(tref(new Variant((Sint64)i)));
 		tref(wm->checkWorkResult());
 	}

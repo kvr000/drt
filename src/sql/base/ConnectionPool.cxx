@@ -130,7 +130,7 @@ ConnectionHold *ConnectionPool::getConnectionPing()
 void ConnectionPool::releaseConnection(ConnectionHold *connection)
 {
 	MutexCondLocker list_mutex_locker(list_mutex);
-	connection_list.insert(IRef<ConnectionHold>(connection));
+	connection_list.insert(nref(connection));
 	list_mutex->signal();
 }
 
