@@ -62,10 +62,11 @@ public:
 	class DR_PUB Man
 	{
 	public:
-		pthread_mutexattr_t	mut_attr;
-		pthread_condattr_t	cond_attr;
-		DR_DINLINE Man() { pthread_mutexattr_init(&mut_attr); pthread_mutexattr_settype(&mut_attr, PTHREAD_MUTEX_RECURSIVE); pthread_condattr_init(&cond_attr); }
-		DR_DINLINE ~Man() { pthread_condattr_destroy(&cond_attr); pthread_mutexattr_destroy(&mut_attr); }
+		bool				inited;
+		pthread_mutexattr_t		mut_attr;
+		pthread_condattr_t		cond_attr;
+		DR_DINLINE			Man()					{ if (inited) return; inited = true;  pthread_mutexattr_init(&mut_attr); pthread_mutexattr_settype(&mut_attr, PTHREAD_MUTEX_RECURSIVE); pthread_condattr_init(&cond_attr); }
+		DR_DINLINE			~Man()					{ pthread_condattr_destroy(&cond_attr); pthread_mutexattr_destroy(&mut_attr); }
 	};
 	static Man man;
 };
@@ -88,6 +89,12 @@ DR_DINLINE MutexCond_pthread::~MutexCond_pthread()
 
 DR_EXPORT_MET MutexCond *MutexCond::create()
 {
+#if 0
+	if (!MutexCond_pthread::man.inited)
+		new (&MutexCond_pthread::man) MutexCond_pthread::Man;
+#else
+	DR_Assert(MutexCond_pthread::man.inited);
+#endif
 	return new MutexCond_pthread();
 }
 

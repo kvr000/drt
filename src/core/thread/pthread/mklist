@@ -2,8 +2,8 @@
 
 SOURCES:
 	no:${SD_THREAD_posix}/mklist:g=t
-	:${SD_THREAD_posix}/Mutex_pthread.cxx:g=s,t;C=s.posix_th;prio=68
-	:${SD_THREAD_posix}/MutexCond_pthread.cxx:g=s,t;C=s.posix_th
+	:${SD_THREAD_posix}/Mutex_pthread.cxx:g=s,t;C=s.posix_th;prio=10
+	:${SD_THREAD_posix}/MutexCond_pthread.cxx:g=s,t;C=s.posix_th;prio=12
 	:${SD_THREAD_posix}/RWLock_pthread.cxx:g=s,t;C=s.posix_th
 	:${SD_THREAD_posix}/Thread_pthread.cxx:g=s,t;C=s.posix_th;prio=72
 
