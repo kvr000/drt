@@ -40,6 +40,8 @@
 use strict;
 use warnings;
 
+use Getopt::Std;
+
 our $ok_leaks = "[(<](".join("|", qw(
 	_ZN2dr5Const
 	_ZN2dr6Static6create
@@ -51,6 +53,11 @@ our $ok_leaks = "[(<](".join("|", qw(
 	_ZN2dr3net9RpcHelper12StructMapperC1EPKNS_6StringElPFvPNS0_10RpcDecoderEPvES5_z
 )).")";
 
+our %opts;
+
+getopts('s', \%opts);
+
+my %frequent;
 my %mem;
 
 my $order = 0;
@@ -68,11 +75,11 @@ for (;;) {
 		my ( $op, $block, $length, $thread, $backtrace ) = ( $1, $2, $3, undef, undef );
 		if (defined ($pending = <>) && ++$lineno && $pending =~ m/^\x00?--- Thread (\w+|\(nil\)) backtrace:$/) {
 			$thread = $1;
-			$backtrace = $pending;
+			$backtrace = "";
 			while (defined ($pending = <>)) {
 				++$lineno;
-				$backtrace .= $pending;
 				undef $pending, last if ($pending =~ m/^\x00?--- Thread (\w+|\(nil\)) end$/);
+				$backtrace .= $pending;
 			}
 		}
 		if ($op eq "allocated") {
@@ -90,6 +97,11 @@ for (;;) {
 				order		=> $order++,
 				seq		=> $seq,
 			};
+			if ($opts{s} && defined $backtrace && $backtrace !~ m/$ok_leaks/o) {
+				my $c = \$frequent{$backtrace};
+				$$c = 0 unless (defined $$c);
+				$$c++;
+			}
 		}
 		else {
 			my $md = $mem{$block};
@@ -107,6 +119,15 @@ for (;;) {
 }
 
 foreach my $md (sort({ $a->{order} <=> $b->{order} } values %mem)) {
-	next if ($md->{backtrace} =~ m/$ok_leaks/);
+	next if ($md->{backtrace} =~ m/$ok_leaks/o);
 	print("memory $md->{block} ($md->{length}) seq=$md->{seq} not freed (line $md->{lineno}):\n$md->{backtrace}\n");
+}
+
+if ($opts{s}) {
+	printf("Allocation statistics (%d):\n\n", scalar %frequent/2);
+	foreach my $b (sort({ $frequent{$b} <=> $frequent{$a} } keys %frequent)) {
+		my $indb = $b;
+		$indb =~ s/^/\t/mg;
+		print("$frequent{$b} allocations:\n$indb\n");
+	}
 }

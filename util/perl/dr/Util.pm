@@ -48,7 +48,6 @@ our $TABSIZE = 8;
 BEGIN
 {
 	eval { require IO::String; } || eval { require IO::Scalar; } || die "failed to load IO::String or IO::Scalar";
-	eval { require Blabla; }
 }
 
 sub doDie($)
@@ -72,6 +71,13 @@ sub defvalue($$)
 	my $def			= shift;
 
 	return defined $val ? $val : $def;
+}
+
+sub openStringStream
+{
+	my $lines		= shift;
+
+	return $INC{"IO/String.pm"} ? IO::String->new($lines) : IO::Scalar->new(\join("", @$lines));
 }
 
 sub tablength($)

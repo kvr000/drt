@@ -258,9 +258,7 @@ sub getConfig($$$)
 	my $fnames	= shift;
 	my $addopt	= shift;
 
-	my $config_cont	= $INC{"IO/String.pm"} ?
-		IO::String->new(map({ ".include $_\n" } split(",", $fnames))) :
-		IO::Scalar->new(\join("", map({ ".include $_\n" } split(",", $fnames))));
+	my $config_cont	= dr::Util::openStringStream(map({ ".include $_\n" } split(",", $fnames)));
 
 	my $fd = eval {
 		dr::build::DotReader->new($dir, $config_cont);
