@@ -130,6 +130,7 @@ WorkerPoolThread::WorkMessage *WorkerPoolThread::checkNextWork()
 	}
 
 	// without the lock wait for message specified interval
+	MM::flushThreadCache();
 	if (Message *msg = waitAnyMessageTimeout(manager->worker_timeout_ns)) {
 		wmsg.setNoref((WorkMessage *)msg->getIfaceUnref(WorkMessage::comp_name));
 		goto out;
