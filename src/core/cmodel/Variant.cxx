@@ -189,6 +189,51 @@ Variant::~Variant()
 }
 
 DR_MET(public virtual)
+long Variant::hash() const
+{
+	switch ((VType)vtype) {
+	case VT_Invalid:
+		return -2;
+
+	case VT_Null:
+		return -1;
+
+	case VT_Bool:
+		return bool_val;
+
+	case VT_Int:
+		return (long)int_val;
+
+	case VT_Double:
+		if (double_val == 0)
+			return 0;
+		if (sizeof(long) >= sizeof(double_val)) {
+			return *(long *)&double_val;
+		}
+		else {
+			long h = *(long *)&double_val;
+			for (size_t i = 1; i < sizeof(double_val)/sizeof(long); i++) {
+				h ^= ((long *)&double_val)[i];
+			}
+			return h;
+		}
+
+	case VT_Binary:
+		return ((Blob *)binary_val)->getHash();
+
+	case VT_String:
+		return ((String *)string_val)->getHash();
+
+	case VT_Object:
+		if (object_val == NULL)
+			return -1;
+		return object_val->hash();
+	}
+	DR_AssertInvalid();
+	return 0;
+}
+
+DR_MET(public virtual)
 bool Variant::eq(const Iface *vs_) const
 {
 	if (!vs_) {

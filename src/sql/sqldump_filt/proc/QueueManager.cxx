@@ -84,6 +84,8 @@ void QueueManager::addRuleFile(dr::io::StreamBuffer *stream)
 			s++;
 			tname.setUtf8(t, te-t);
 		}
+		if (evaluators[tname].isNull())
+			evaluators[tname].setNoref(new RList<Evaluator>);
 		evaluators[tname]->append(tref(new IntEvaluator(String::createUtf8(s, line.toStr()+line.getSize()-s))));
 	}
 }

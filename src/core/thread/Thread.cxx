@@ -386,5 +386,10 @@ DR_EXPORT_MTS int Thread::createMessageSerial()
 	return serial;
 }
 
+void Thread::sleep(Sint64 timeout_ns)
+{
+	current()->manager->threadSleep(1000000000);
+}
+
 
 DR_NS_END

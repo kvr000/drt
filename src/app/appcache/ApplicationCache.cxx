@@ -136,7 +136,7 @@ Avl_c::Node_c *ApplicationCache::TimedTree::node_def(const void *key, const void
 }
 
 DR_MET(protected virtual)
-void ApplicationCache::TimedTree::node_updateValue(Node_c *node_, const void *value_)
+void ApplicationCache::TimedTree::node_set(Node_c *node_, const void *value_)
 {
 	Node *node = (Node *)node_;
 	ValueHashNode *value = (ValueHashNode *)value_;
@@ -434,6 +434,16 @@ SysTime ApplicationCache::expire(SysTime time)
 		}
 		timed_tree.remove(lowest_time);
 	}
+}
+
+DR_MET(public virtual)
+/**
+ * cleans the object
+ */
+void ApplicationCache::clean()
+{
+	MutexLocker locker(access_lock);
+	timed_tree.clean();
 }
 
 

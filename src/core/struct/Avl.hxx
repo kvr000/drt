@@ -81,12 +81,13 @@ protected:
 protected: // interface to template
 	virtual int			node_cmp(Node_c *node, const void *key) const = 0;
 	virtual Node_c *		node_def(const void *key, const void *val) = 0;
-	virtual void			node_updateValue(Node_c *node, const void *key) = 0;
+	virtual void			node_set(Node_c *node, const void *key) = 0;
 	virtual void			node_destroy(Node_c *p) = 0;
 
 protected:
 	Node_c *			find_g(const void *key) const;
 	bool				create_g(const void *key, const void *value);
+	Node_c *			ncreate_g(const void *key, const void *value);
 	bool				replace_g(const void *key, const void *value);
 	bool				remove_g(const void *key);
 	void				clean_g();
@@ -161,7 +162,7 @@ public:
 protected:
 	DR_MINLINE virtual int		node_cmp(Node_c *pair, const void *key) const	{ return comp().kcmp(((Node *)pair)->k, *(const K *)key); }
 	DR_MINLINE virtual Node_c *	node_def(const void *key, const void *val)	{ return allc().alloc2(*(const K *)key, *(const V *)val); }
-	DR_MINLINE virtual void		node_updateValue(Node_c *node, const void *value){ ((Node *)node)->v = *(V *)value; }
+	DR_MINLINE virtual void		node_set(Node_c *node, const void *value)	{ ((Node *)node)->v = *(V *)value; }
 	DR_MINLINE virtual void		node_destroy(Node_c *p)				{ allc().freePair((Node *)p); }
 
 public:
@@ -181,6 +182,7 @@ public:
 	DR_MINLINE bool			create(const K &k, const V &v)			{ return Avl_c::create_g(&k, &v); }
 	DR_MINLINE bool			replace(const K &k, const V &v)			{ return Avl_c::replace_g(&k, &v); }
 	DR_MINLINE bool			remove(const K &k)				{ return Avl_c::remove_g(&k); }
+	DR_MINLINE V *			accCreating(const K &k)				{ V dummy; return &((Node *)Avl_c::ncreate_g(&k, &dummy))->v; }
 	DR_MINLINE void			clean()						{ clean_g(); }
 	DR_MINLINE void			run(Eslot1<void, Node *> &cb)			{ run_g((Eslot1<void, Node_c *> &)cb); }
 

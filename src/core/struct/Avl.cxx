@@ -162,13 +162,37 @@ bool Avl_c::create_g(const void *key, const void *value)
 	return true;
 }
 
+Avl_c::Node_c *Avl_c::ncreate_g(const void *key, const void *value)
+{
+	Node_c **cur;
+	int last_step = 0;
+	for (cur = &root; *cur && (last_step = -node_cmp(*cur, key)) != 0; cur = &(*cur)->refs[1+last_step]) ;
+	if (*cur) {
+		return *cur;
+	}
+	*cur = node_def(key, value);
+	item_count++;
+	(*cur)->balance = 0;
+	if (((*cur)->direction = last_step) == 0) {
+		(*cur)->parent = NULL;
+		lowest = *cur;
+	}
+	else {
+		(*cur)->parent = (Node_c *)(((char *)(void *)(cur-(1+last_step)))-(((char *)(void *)&((Node_c *)1024)->refs[0])-(char *)(void *)((Node_c *)1024)));
+		if ((*cur)->parent == lowest && (*cur)->direction < 0)
+			lowest = *cur;
+		rebalanceAdded_g(*cur);
+	}
+	return *cur;
+}
+
 bool Avl_c::replace_g(const void *key, const void *value)
 {
 	Node_c **cur;
 	int last_step = 0;
 	for (cur = &root; *cur && (last_step = -node_cmp(*cur, key)) != 0; cur = &(*cur)->refs[1+last_step]) ;
 	if (*cur) {
-		node_updateValue(*cur, value);
+		node_set(*cur, value);
 		return false;
 	}
 	*cur = node_def(key, value);

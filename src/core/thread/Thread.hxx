@@ -196,6 +196,8 @@ public:
 	static bool			processMessages(int wait_answer = -1);
 	static void			processOneMessage();
 
+	static void			sleep(Sint64 timeout_ns);
+
 protected:
 	DR_CONSTRUCT			Thread();
 	DR_CONSTRUCT			Thread(const None &);
