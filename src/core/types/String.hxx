@@ -232,6 +232,7 @@ public:
 public:
 	bool				isNull() const;
 	bool				isEmpty() const;
+	bool				isNullEmpty() const;
 	bool				beq(const String &s) const;
 	int				bcmp(const String &s) const;
 	bool				eqUtf8(const char *str, size_t size);

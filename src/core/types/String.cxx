@@ -1688,6 +1688,11 @@ DR_EXPORT_MET bool String::isNull() const
 
 DR_EXPORT_MET bool String::isEmpty() const
 {
+	return d->length == 0;
+}
+
+DR_EXPORT_MET bool String::isNullEmpty() const
+{
 	return d->length <= 0;
 }
 
@@ -1800,7 +1805,7 @@ DR_EXPORT_MET String &String::replace(const String &what, const String &rep)
 
 DR_EXPORT_MET String &String::replace(const String &what, const String &rep, size_t count)
 {
-	if (what.isEmpty())
+	if (what.isNullEmpty())
 		return *this;
 	for (ssize_t p = 0; (p = find(what, p)) >= 0; p += rep.getLength())
 		*this = left(p)+rep+mid(p+what.getLength());

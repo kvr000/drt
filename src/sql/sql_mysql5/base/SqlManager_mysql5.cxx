@@ -73,7 +73,7 @@ SqlConnection *SqlManager_mysql5::openConnection(THash<String, String> *args)
 		if (mysql_real_connect(handle, host.toStr(), user.toStr(), pass.toStr(), db.toStr(), atoi(port.toStr()), NULL, CLIENT_FOUND_ROWS)) {
 			xtry {
 				String charset((*args)["charset"]);
-				if (!charset.isEmpty() && mysql_set_character_set(handle, charset.utf8()) != 0) {
+				if (!charset.isNullEmpty() && mysql_set_character_set(handle, charset.utf8()) != 0) {
 					SqlConnection_mysql5::throwSqlExcept(mysql_sqlstate(handle), mysql_error(handle));
 				}
 				SqlConnection_mysql5 *c = new dr::sql::mysql5::SqlConnection_mysql5(handle);

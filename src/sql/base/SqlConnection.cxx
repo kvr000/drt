@@ -63,7 +63,7 @@ SqlConnection *SqlConnection::openConnection(const String &conn_str, THash<Strin
 			xthrownew(UnsupportedExcept(NULL, "", conn_str.mid(pos, newpos-1), ""));
 		(*pars)[conn_str.mid(pos, eq-pos)] = conn_str.mid(eq+1, newpos-eq-1);
 	}
-	if ((driver = (*pars)["driver"]).isEmpty())
+	if ((driver = (*pars)["driver"]).isNullEmpty())
 		xthrownew(UnsupportedExcept(NULL, "", "driver", "not specified"));
 
 	Subsystem *sys = Subsystem::getSubsystem(driver, NULL);

@@ -168,12 +168,12 @@ HttpClient::~HttpClient()
 void HttpClient::sendRequest(const String &method, const String &uri, const THash<String, String> &headers, const Blob &content)
 {
 	BString request;
-	request.append(method.isEmpty() ? "GET" : method.utf8().toStr()).append(" ").append(uri.utf8()).append(" HTTP/1.0\r\n");
+	request.append(method.isNullEmpty() ? "GET" : method.utf8().toStr()).append(" ").append(uri.utf8()).append(" HTTP/1.0\r\n");
 	if (String *v = headers.accValue("host")) {
 		(void)v;
 		//request += "host: "; request += v->utf8(); request += "\r\n";
 	}
-	else if (!host.isEmpty()) {
+	else if (!host.isNullEmpty()) {
 		request.append("host: ").append(host.utf8()).append("\r\n");
 	}
 	for (THash<String, String>:: Node *f = headers.iterFirst(); f; f = headers.iterNext(f)) {
@@ -191,12 +191,12 @@ void HttpClient::sendRequest(const String &method, const String &uri, const THas
 void HttpClient::partialRequest(const String &method, const String &uri, const THash<String, String> &headers)
 {
 	BString request;
-	request.append(method.isEmpty() ? "GET" : method.utf8().toStr()).append(" ").append(uri.utf8()).append(" HTTP/1.0\r\n");
+	request.append(method.isNullEmpty() ? "GET" : method.utf8().toStr()).append(" ").append(uri.utf8()).append(" HTTP/1.0\r\n");
 	if (String *v = headers.accValue("host")) {
 		(void)v;
 		//request += "host: "; request += v->utf8(); request += "\r\n";
 	}
-	else if (!host.isEmpty()) {
+	else if (!host.isNullEmpty()) {
 		request.append("host: ").append(host.utf8()).append("\r\n");
 	}
 	for (THash<String, String>:: Node *f = headers.iterFirst(); f; f = headers.iterNext(f)) {
