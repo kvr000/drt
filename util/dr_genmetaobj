@@ -206,14 +206,14 @@ foreach my $model (@models) {
 				}
 			}
 			$form->print(tabalign("\tmandatory", 24).$attr->{mandatory}."\n");
+			my $roles = defvalue($attr->checkDrTagValue("role"), "")."";
+			$roles .= "," if ($roles ne "");
+			$roles .= "serial," if ($attr->checkDrTagValue("serial"));
+			$roles = substr($roles, 0, -1);
+			$form->print(tabalign("\trole", 24).$roles."\n");
 			if ($attr->{stype} eq "attr") {
 				my ( $type, $tagger ) = $attr->getFinalTypeWithTagger();
-				my $roles = defvalue($tagger->checkTagValue("role"), "")."";
 				$form->print(tabalign("\ttext", 24).defvalue($tagger->checkTagValue("text"), $attr->{name})."\n");
-				$roles .= "," if ($roles ne "");
-				$roles .= "serial," if ($tagger->checkTagValue("serial"));
-				$roles = substr($roles, 0, -1);
-				$form->print(tabalign("\trole", 24).$roles."\n");
 				$form->print(tabalign("\ttype", 24).translateFormType($attr)."\n");
 				$form->print(tabalign("\tlogical", 24).$tagger->getTag("logical")->{value}."\n");
 				$form->print(tabalign("\tdisplay", 24).$tagger->getTag("display")->{value}."\n");
@@ -271,7 +271,7 @@ foreach my $model (@models) {
 	foreach my $action (@{$model->{view_list}}) {
 		eval {
 			$form->print(tabalign("view", 16).$action->{name}."\n");
-			foreach (qw(supplier renderer compos_mand)) {
+			foreach (qw(supplier renderer addcompos compos_mand)) {
 				if (defined (my $v = $action->checkDrTagValue($_))) {
 					$form->print(tabalign("\t$_", 24).$v."\n")
 				}

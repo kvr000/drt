@@ -127,8 +127,8 @@ sub translateSqlType($)
 		my ( $type, $tagger ) = $attr->getFinalTypeWithTagger();
 
 		if (defined (my $db_type = defvalue($tagger->checkTagValue("db_type"), $tagger->checkTagValue("db_conversion")))) {
-			if ($db_type eq "enum" && $type->{stype} eq "enum") {
-				return "enum(".join(", ", map({
+			if (($db_type eq "enum" || $db_type eq "set") && $type->{stype} eq "enum") {
+				return "$db_type(".join(", ", map({
 							$_->getDrTagger()->getTag("db_value")->{value}
 						} @{$type->{literal_list}})).")";
 			}
