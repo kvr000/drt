@@ -33,6 +33,16 @@
  * @license	http://www.gnu.org/licenses/lgpl.txt GNU Lesser General Public License v3
  **/
 
+/*drt
+ * include:	dr/Hash.hxx
+ * include:	dr/io/StreamBuffer.hxx
+ * include:	dr/io/NetAddress.hxx
+ * include:	dr/io/SocketStream.hxx
+ * include:	dr/net/HttpConst.hxx
+ *
+ * ns:		dr::net
+ */
+
 #include <dr/x_kw.hxx>
 #include <dr/Const.hxx>
 
@@ -42,15 +52,25 @@
 #include <dr/io/NetAddressInet4.hxx>
 
 #include <dr/net/HttpException.hxx>
+
 #include <dr/net/HttpClient.hxx>
+#include "_gen/HttpClient-all.hxx"
 
 DR_NET_NS_BEGIN
 
 
-DR_OBJECT_DEF(DR_NET_NS_STR, HttpClient, Object);
-DR_OBJECT_IMPL_SIMPLE(HttpClient);
+/*drt
+ * class:	HttpClient
+ * type:	object
+ * ancestor:	dr::Object
+ *
+ * at:	StreamBuffer			read_stream;
+ * at:	String				host;
+ * at:	THash<String, String>		response_headers;
+ * at:	Sint64				response_size;
+ */
 
-
+DR_MET(public)
 HttpClient::HttpClient(const String &server_address_):
 	read_stream(NULL),
 	host(server_address_)
@@ -60,12 +80,20 @@ HttpClient::HttpClient(const String &server_address_):
 	createConnection(tref(new NetAddressInet4(host)));
 }
 
+DR_MET(public)
 HttpClient::HttpClient(NetAddress *server_address):
 	read_stream(NULL)
 {
 	createConnection(server_address);
 }
 
+DR_MET(public virtual)
+void HttpClient::setTimeLimit(Time::SysTime abs_time)
+{
+	read_stream.setTimeLimit(abs_time);
+}
+
+DR_MET(public virtual)
 int HttpClient::readHeaders(String *message)
 {
 	int resp_code;
@@ -112,6 +140,7 @@ int HttpClient::readHeaders(String *message)
 	return resp_code;
 }
 
+DR_MET(public virtual)
 String HttpClient::getHeader(const String &key)
 {
 	if (String *f = response_headers.accValue(key))
@@ -119,6 +148,7 @@ String HttpClient::getHeader(const String &key)
 	return Null();
 }
 
+DR_MET(public virtual)
 Blob HttpClient::readContent(size_t maxsize)
 {
 	Blob data;
@@ -126,11 +156,13 @@ Blob HttpClient::readContent(size_t maxsize)
 	return data;
 }
 
+DR_MET(public virtual)
 ssize_t HttpClient::readContent(Blob *content, size_t maxsize)
 {
 	return read_stream.read(content, maxsize);
 }
 
+DR_MET(public virtual)
 Blob HttpClient::readFullContent()
 {
 	Blob data;
@@ -144,6 +176,7 @@ Blob HttpClient::readFullContent()
 	return data;
 }
 
+DR_MET(public virtual)
 ssize_t HttpClient::readFullContent(Blob *content)
 {
 	if (response_size >= 0) {
@@ -156,17 +189,12 @@ ssize_t HttpClient::readFullContent(Blob *content)
 	return content->getSize();
 }
 
-void HttpClient::createConnection(NetAddress *addr)
-{
-	ERef<SocketStream> server_conn(new SocketStream(SocketStream::domain_inet4, "tcp"));
-	server_conn->connect(addr);
-	read_stream.reinit(server_conn);
-}
-
+DR_MET(protected virtual)
 HttpClient::~HttpClient()
 {
 }
 
+DR_MET(public virtual)
 void HttpClient::sendRequest(const String &method, const String &uri, const THash<String, String> &headers, const Blob &content)
 {
 	BString request;
@@ -190,6 +218,7 @@ void HttpClient::sendRequest(const String &method, const String &uri, const THas
 	((SocketStream *)read_stream.accHandle())->shutdown(2);
 }
 
+DR_MET(public virtual)
 void HttpClient::partialRequest(const String &method, const String &uri, const THash<String, String> &headers)
 {
 	BString request;
@@ -207,6 +236,7 @@ void HttpClient::partialRequest(const String &method, const String &uri, const T
 	read_stream.writeFull(request);
 }
 
+DR_MET(public virtual)
 void HttpClient::partialHeader(const String &key, const String &value)
 {
 	BString request(key.utf8());
@@ -214,6 +244,7 @@ void HttpClient::partialHeader(const String &key, const String &value)
 	read_stream.writeFull(request);
 }
 
+DR_MET(public virtual)
 void HttpClient::partialNoBody()
 {
 	BString request("\r\n");
@@ -221,6 +252,7 @@ void HttpClient::partialNoBody()
 	((SocketStream *)read_stream.accHandle())->shutdown(2);
 }
 
+DR_MET(public virtual)
 void HttpClient::partialSendBody(const Blob &content)
 {
 	BString request("content-length: ");
@@ -229,12 +261,14 @@ void HttpClient::partialSendBody(const Blob &content)
 	read_stream.writeFull(content);
 }
 
+DR_MET(public virtual)
 void HttpClient::partialStartBodyChunked()
 {
 	BString request("transfer-encoding: chunked\r\n\r\n");
 	read_stream.writeFull(request);
 }
 
+DR_MET(public virtual)
 void HttpClient::partialBodyChunked(const Blob &data)
 {
 	BString request; request.appendNumber(data.getSize(), 16).append("\r\n");
@@ -243,12 +277,14 @@ void HttpClient::partialBodyChunked(const Blob &data)
 	read_stream.writeFull(Blob("\r\n"));
 }
 
+DR_MET(public virtual)
 void HttpClient::partialFinishBodyChunked()
 {
 	BString request("0\r\n\r\n");
 	read_stream.writeFull(request);
 }
 
+DR_MET(public static)
 Blob HttpClient::processEasy(const String &url)
 {
 	int code;
@@ -268,11 +304,19 @@ Blob HttpClient::processEasy(const String &url)
 	}
 
 	HttpClient client(addr);
-	client.sendRequest("GET", uri, THash<String, String>());
+	client.sendRequest("GET", uri, THash<String, String>(), Null());
 	if ((code = client.readHeaders(&msg)) != 200) {
 		xthrownew(HttpException(code, msg));
 	}
 	return client.readFullContent();
+}
+
+DR_MET(protected virtual)
+void HttpClient::createConnection(NetAddress *addr)
+{
+	ERef<SocketStream> server_conn(new SocketStream(SocketStream::domain_inet4, "tcp"));
+	server_conn->connect(addr);
+	read_stream.reinit(server_conn);
 }
 
 

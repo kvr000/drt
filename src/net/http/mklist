@@ -4,8 +4,7 @@ SOURCES:
 	no:${SD_HTTP}/mklist:g=t
 	:${SD_HTTP}/HttpConst.cxx:g=s,t
 	:${SD_HTTP}/HttpConst.hxx:g=di,t
-	:${SD_HTTP}/HttpClient.cxx:g=s,t;dep=${SD_HTTP}/HttpConst.cxx
-	:${SD_HTTP}/HttpClient.hxx:g=di,t
+	:${SD_HTTP}/HttpClient.cxx:g=s,t,gh,di;dep=${SD_HTTP}/HttpConst.cxx
 	:${SD_HTTP}/HttpServer.cxx:g=s,t,gh,di;dep=${SD_HTTP}/HttpConst.cxx
 	:${SD_HTTP}/HttpException.cxx:g=s,t,gh,di
 

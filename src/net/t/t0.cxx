@@ -101,7 +101,7 @@ void testBasic()
 	xtry {
 		Ref<HttpClient> hclient;
 		createClientServer(&hclient, &hserver_thr);
-		hclient->sendRequest("GET", "/", None());
+		hclient->sendRequest("GET", "/", None(), Null());
 		hclient->readHeaders(NULL);
 		CHECK(hclient->readFullContent() == "resp:");
 	}

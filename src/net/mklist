@@ -2,9 +2,10 @@
 .def SD_EXCEPT		except
 .def SD_HTTP		http
 .def SD_RPC		rpc
+.def SD_SNMP		snmp
 .def SD_META		meta
 
-.def SUBDIRS		${SD_BASE},${SD_EXCEPT},${SD_HTTP},${SD_RPC},${SD_META}
+.def SUBDIRS		${SD_BASE},${SD_EXCEPT},${SD_HTTP},${SD_RPC},${SD_SNMP},${SD_META}
 .def ESUBDIRS		{${SUBDIRS}}
 
 .include ${ESUBDIRS}/mklist

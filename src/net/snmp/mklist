@@ -1,0 +1,10 @@
+.cdef SD_SNMP		.
+
+SOURCES:
+	no:${SD_SNMP}/mklist:g=t
+	:${SD_SNMP}/SnmpAgent.cxx:g=s,t,gh,di
+	lshlib:snmp:g=s
+	lshlib:netsnmp:g=s
+	lshlib:netsnmpagent:g=s
+	lshlib:netsnmphelpers:g=s
+
