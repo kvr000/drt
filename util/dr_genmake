@@ -221,7 +221,10 @@ package dr::build;
 use strict;
 use warnings;
 
-use IO::String;
+BEGIN
+{
+	eval { require IO::String; } || eval { require IO::Scalar; } || die "failed to load IO::String or IO::Scalar";
+}
 
 sub addConfig($$$)
 {
@@ -256,7 +259,9 @@ sub getConfig($$$)
 	my $fnames	= shift;
 	my $addopt	= shift;
 
-	my $config_cont	= IO::String->new(map({ ".include $_\n" } split(",", $fnames)));
+	my $config_cont	= $INC{"IO::String"} ?
+		IO::String->new(map({ ".include $_\n" } split(",", $fnames))) :
+		IO::Scalar->new(\join("", map({ ".include $_\n" } split(",", $fnames))));
 
 	my $fd = eval {
 		dr::build::DotReader->new($dir, $config_cont);
