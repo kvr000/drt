@@ -52,6 +52,5 @@ int main(void)
 	connpool->releaseConnection(conn1); conn1.setNull();
 	test_sleep(1);
 	conn1.setNoref(connpool->getConnectionPing());
-	conn1->ref();
 	return 0;
 }
