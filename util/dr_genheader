@@ -454,7 +454,7 @@ MAIN: while (<$cxx>) {
 		}
 		$cld = {
 			cont		=> "",
-			typeflag	=> [],
+			typeflag	=> {},
 			ifaces		=> [],
 			methods		=> [],
 			ats		=> [],
