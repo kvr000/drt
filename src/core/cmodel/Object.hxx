@@ -48,6 +48,26 @@ class WeakRef_g;
 template <typename T> class WeakRef;
 
 
+#ifdef DR_IS_DOX
+
+#define DR_METHOD_REDIR0(to, rettype, name)
+#define DR_METHOD_REDIR1(to, rettype, name, A1)
+#define DR_METHOD_REDIR2(to, rettype, name, A1, A2)
+#define DR_METHOD_REDIR3(to, rettype, name, A1, A2, A3)
+#define DR_METHOD_REDIR4(to, rettype, name, A1, A2, A3, A4)
+#define DR_METHOD_REDIR5(to, rettype, name, A1, A2, A3, A4, A5)
+
+#define DR_METHOD_REDIR0C(to, rettype, name)
+#define DR_METHOD_REDIR1C(to, rettype, name, A1)
+#define DR_METHOD_REDIR2C(to, rettype, name, A1, A2)
+#define DR_METHOD_REDIR3C(to, rettype, name, A1, A2, A3)
+#define DR_METHOD_REDIR4C(to, rettype, name, A1, A2, A3, A4)
+#define DR_METHOD_REDIR5C(to, rettype, name, A1, A2, A3, A4, A5)
+
+#define DR_NODOX(cont)
+
+#else
+
 #define DR_METHOD_REDIR0(to, rettype, name) \
 	virtual rettype			name()					{ return to::name(); }
 #define DR_METHOD_REDIR1(to, rettype, name, A1) \
@@ -73,6 +93,10 @@ template <typename T> class WeakRef;
 	virtual rettype			name(A1 a1, A2 a2, A3 a3, A4 a4) const	{ return to::name(a1, a2, a3, a4); }
 #define DR_METHOD_REDIR5C(to, rettype, name, A1, A2, A3, A4, A5) \
 	virtual rettype			name(A1 a1, A2 a2, A3 a3, A4 a4, A5 a5) const { return to::name(a1, a2, a3, a4, a5); }
+
+#define DR_NODOX(cont)	cont
+
+#endif
 
 #define DR_SUPER_REDIR0(rettype, name) \
 	DR_METHOD_REDIR0(Super, rettype, name)
@@ -112,12 +136,12 @@ public: \
 	DR_SUPER_REDIR1C(Object *, getCheckFinal, const DR_NSP(String) &); \
 	DR_SUPER_REDIR1C(Object *, accCheckFinal, const DR_NSP(String) &); \
 	virtual const DR_NSP(String) &	classname() const			{ return comp_name; } \
-	virtual const DR_NSP(Static) *	getObjectStatic() const; \
+	DR_NODOX(virtual const DR_NSP(Static) *	getObjectStatic() const;) \
  \
 public: \
 	static const DR_NSP(String)	comp_name; \
 private: \
-	static const DR_NSP(Static) *	comp_static
+	DR_NODOX(static const DR_NSP(Static) *	comp_static)
 
 
 #define DR_OBJECT_DECL(objname, ancestor) \
@@ -159,7 +183,7 @@ public: \
 
 #define DR_OBJECT_DEF(NS_STR, objname, ancestor) \
 	DR_EXPORT_DTS const DR_NSP(String)	objname::comp_name(DR_NSP(Const)::string(NS_STR #objname)); \
-	DR_EXPORT_DTS const DR_NSP(Static) *	objname::comp_static
+	DR_NODOX(DR_EXPORT_DTS const DR_NSP(Static) *	objname::comp_static)
 
 
 #define DR_OBJECT_IMPL_SIMPLE_getObjectStatic(objname) \

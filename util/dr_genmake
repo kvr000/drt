@@ -1776,7 +1776,9 @@ sub new
 		generator	=> $generator,
 	}, $class;
 
-	$this->{dist_full} = FileHandle->new("dist_full.list", ">")
+	$this->{dist_map} = FileHandle->new("dist_full.map", ">")
+		or die "failed to open dist_full.map: $!";
+	$this->{dist_list} = FileHandle->new("dist_full.list", ">")
 		or die "failed to open dist_full.list: $!";
 
 	return $this;
@@ -1999,7 +2001,8 @@ sub generateDir
 				next if ($locations{$target_loc});
 				$locations{$target_loc} = $gd;
 				foreach my $sd (dr::build::findGroups($vars{SOURCES}->{list}, [ $group ])) {
-					$this->{dist_full}->print("$target_loc/$sd->{base_src}: $dir_$sd->{src}\n");
+					$this->{dist_map}->print("$target_loc/$sd->{base_src}: $dir_$sd->{src}\n");
+					$this->{dist_list}->print(" $dir_$sd->{src}") if ($sd->{src} =~ m/\.hxx$/);
 				}
 			}
 			else {
