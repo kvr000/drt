@@ -238,7 +238,7 @@ foreach my $model (@models) {
 			$form->print(tabalign("\trole", 24).$roles."\n");
 			if ($attr->{stype} eq "attr") {
 				my ( $type, $tagger ) = $attr->getFinalTypeWithTagger();
-				foreach (qw(db_conversion align)) {
+				foreach (qw(db_conversion align gui_init)) {
 					if (defined (my $val = $tagger->checkTagValue($_))) {
 						$form->print(tabalign("\t$_", 24).$val."\n");
 					}
@@ -292,7 +292,7 @@ foreach my $model (@models) {
 			$form->print(tabalign("\ttext", 24).defvalue($action->checkDrTagValue("text"), $action->{name})."\n");
 			$form->print(tabalign("\tclassify", 24).join(",", keys %{$action->{classify}})."\n");
 			$form->print(tabalign("\treq_role", 24).$action->getDrTagValue("req_role")."\n");
-			foreach (qw(req_sys req_view gui_def)) {
+			foreach (qw(req_sys req_view gui_def gui_actions)) {
 				if (defined (my $v = $action->checkDrTagValue($_))) {
 					$form->print(tabalign("\t$_", 24).$v."\n")
 				}
