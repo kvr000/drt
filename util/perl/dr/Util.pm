@@ -227,5 +227,48 @@ sub splitAttributes($)
 	return \%ats;
 }
 
+sub findEndParenthesis($)
+{
+	my $str			= shift;
+
+	my $level = 1;
+	my $p;
+	for ($p = 0; $level > 0; $p++) {
+		my $o = index($str, "(", $p); $o = length($str) if ($o < 0);
+		my $c = index($str, ")", $p); $c = length($str) if ($c < 0);
+		my $q = index($str, "\"", $p); $q = length($str) if ($q < 0);
+		my $a = index($str, "\'", $p); $a = length($str) if ($a < 0);
+
+		if ($c <= $o && $c <= $q && $c <= $a) {
+			die "cannot find matching end parenthesis in string $str" if ($c == length($str));
+			$p = $c;
+			$level--;
+		}
+		elsif ($o < $q && $o < $a) {
+			$level++;
+			$p = $o;
+		}
+		elsif ($q < $a) {
+			for ($p = $q;;) {
+				die "cannot find end of quote in $str" if (($q = index($str, "\"", $p+1)) < 0);
+				my $b = index($str, "\\", $p+1);
+				last if ($b < 0 || $b > $q);
+				$p = $b+1;
+			}
+			$p = $q;
+		}
+		else {
+			for ($p = $a;;) {
+				die "cannot find end of apostrophe in $str" if (($a = index($str, "\"", $p+1)) < 0);
+				my $b = index($str, "\\", $p+1);
+				last if ($b < 0 || $b > $a);
+				$p = $b+1;
+			}
+			$p = $a;
+		}
+	}
+	return $p;
+}
+
 
 1;

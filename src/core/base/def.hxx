@@ -89,6 +89,7 @@
 #define DR_CONSTRUCT
 #define DR_DESTRUCT
 #define DR_MET(modifiers)
+#define DR_INIT(inits)
 
 #if (defined DR_OS_UNIX)
 # define DR_IMPORT_FUN

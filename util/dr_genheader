@@ -530,7 +530,12 @@ sub printClass($$)
 				$content =~ s/^/$ind/mg;
 				$content = "\n$content";
 			}
-			printIndented($hxx, $level, sprintf("\t%s%s\n", formatMethodDecl("$mods$met->{ret}", "$met->{decl}$abstr"), $content));
+			my $decl = $met->{decl};
+			while ($decl =~ m/^(.*?)\s*DR_INIT\((.*)$/) {
+				my $end = dr::Util::findEndParenthesis($2);
+				$decl = "$1 = ".substr($2, 0, $end).substr($2, $end+1);
+			}
+			printIndented($hxx, $level, sprintf("\t%s%s\n", formatMethodDecl("$mods$met->{ret}", "$decl$abstr"), $content));
 		}
 	}
 
