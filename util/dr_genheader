@@ -44,7 +44,7 @@ sub new
 {
 	my $class = shift; $class = ref($class) || $class;
 
-	return bless { opers => [] }, $class;
+	return bless { opers => [], umask => eval { my $u = umask(0); umask($u); $u } }, $class;
 }
 
 sub commit
@@ -57,6 +57,7 @@ sub commit
 			if ($op->{fd}->error()) {
 				die "failed to write to $op->{fname}: ".$op->{fd}->error();
 			}
+			chmod((stat($op->{fd}))[2]&07555, $op->{fd}) if (defined $this->{umask});
 			close($op->{fd});
 			undef $op->{fd};
 		}
@@ -70,6 +71,9 @@ sub createTruncated
 	my $this		= shift;
 	my $fname		= shift;
 
+	if (my @st = stat($fname)) {
+		chmod(($st[2]&07777)|(0222&~$this->{umask}), $fname);
+	}
 	my $fd = FileHandle->new($fname, ">")
 		or die "failed to open file $fname: $!";
 	binmode($fd);
