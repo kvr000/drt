@@ -279,7 +279,7 @@ foreach my $model (@models) {
 			$form->print(tabalign("action", 16).$action->{name}."\n");
 			$form->print(tabalign("\ttext", 24).defvalue($action->checkDrTagValue("text"), $action->{name})."\n");
 			$form->print(tabalign("\tclassify", 24).join(",", keys %{$action->{classify}})."\n");
-			foreach (qw(req_sys req_view req_role)) {
+			foreach (qw(req_sys req_view req_role gui_def)) {
 				if (defined (my $v = $action->checkDrTagValue($_))) {
 					$form->print(tabalign("\t$_", 24).$v."\n")
 				}
