@@ -517,7 +517,7 @@ sub readClassAttr
 	my $attr = dr::ModelStore::Attr->new($this, { stype => "attr", name => $val });
 	$attr->load($base->getSubLeveler());
 
-	push(@{$this->{attr_list}}, $attr);
+	push(@{$this->{attr_list}}, $attr) unless ($attr->checkDrTagValue("disabled"));
 }
 
 sub readClassAssoc
