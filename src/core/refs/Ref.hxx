@@ -376,7 +376,8 @@ public:
 	}
 
 private:
-	IRef &				operator=(Type *s);
+	template <typename T>
+	IRef &				operator=(T *s);
 };
 
 /**
@@ -427,7 +428,36 @@ public:
 	}
 
 private:
-	ERef &				operator=(Type *s);
+	template <typename T>
+	ERef &				operator=(T *s);
+};
+
+/**
+ * Reference holder with explicit auto-reference
+ *
+ * This holder extends basic holder by noauto-reference for constructor
+ */
+template <typename Type>
+class NRef: public Ref<Type>
+{
+	typedef Ref<Type>		Base;
+
+public:
+	template <typename TS>
+	DR_MINLINE			NRef(TS *s): Base(s, false)
+	{
+	}
+
+	DR_MINLINE			~NRef()
+	{
+		this->obj = NULL;
+	}
+
+private:
+	template <typename T>
+	NRef &				operator=(T *s);
+	template <typename T>
+	NRef &				operator=(const Ref<T> &s);
 };
 
 
@@ -502,6 +532,9 @@ ERef<Type> tref(const Ref<Type> &o)
  * Implicit reference
  *
  * create an auto destroy reference for the passed object, referencing it first
+ *
+ * @note iref makes the object to be out of control so it is safe to use only in
+ * case when there is no chance of exception until the object is hold again
  */
 template <typename Type>
 Type *iref(Type *o)
@@ -545,6 +578,17 @@ template <typename Type>
 ERef<Type> mref(const Ref<Type> *o)
 {
 	return o->getAndNull();
+}
+
+/**
+ * No reference
+ *
+ * create a reference holder for the passed object without referencing it
+ */
+template <typename Type>
+NRef<Type> nref(Type *o)
+{
+	return o;
 }
 
 
