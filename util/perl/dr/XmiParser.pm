@@ -749,12 +749,50 @@ sub read_processClassExtensionTypedef
 	my $this		= shift;
 
 	my $reader		= $this->{reader};
+	my $exit_depth		= $reader->depth;
 
 	$this->{read_context}->{type} = "typedef";
+	$this->{read_context}->{typedef} = { type_type => undef, type_primitive => undef, type_xid => undef };
 
-	$this->{read_context}->{typedef} = { base_name => $this->read_getMandatoryAttr("base"), base_xid => $this->read_getOptionalAttr("xmi:idref") };
+	for (;;) {
+		my ($type, $name, $depth) = $this->readNode()
+			or $this->read_doDie("unexpected end of XML");
+		last if ($depth == $exit_depth);
 
-	$this->read_needNodeEnd();
+		if ($name eq "base") {
+			$this->read_processClassExtensionTypedefBase();
+		}
+		else {
+			$this->read_unknownNode();
+		}
+	}
+
+	$this->read_doDie("base undefined for typedef") unless (defined $this->{read_context}->{typedef}->{type_type});
+}
+
+sub read_processClassExtensionTypedefBase
+{
+	my $this		= shift;
+
+	my $reader		= $this->{reader};
+
+	my $type_type = $this->read_getMandatoryAttr("xmi:type");
+	if ($type_type eq "uml:PrimitiveType") {
+		$this->{read_context}->{typedef}->{type_type} = "primitive";
+		if ($this->read_getMandatoryAttr("href") !~ m/.*#(\w+)$/) {
+			$this->read_doDie("invalid format for type href");
+		}
+		if (!defined ($this->{read_context}->{typedef}->{base_name} = $UML_PRIMITIVE_TYPES{$1})) {
+			$this->read_doDie("unknown UML primitive type: $1");
+		}
+	}
+	elsif ($type_type eq "uml:Class") {
+		$this->{read_context}->{typedef}->{type_type} = "class";
+		$this->{read_context}->{typedef}->{base_xid} = $this->read_getMandatoryAttr("xmi:idref");
+	}
+	else {
+		$this->read_doDie("unknown type type: $type_type");
+	}
 }
 
 sub read_processClassComment

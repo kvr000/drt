@@ -71,6 +71,9 @@ sub formatPair($$)
 	my $p0			= shift;
 	my $p1			= shift;
 
+	dr::Util::doDie("p0 undefined") unless (defined $p0);
+	dr::Util::doDie("p1 undefined") unless (defined $p1);
+
 	return tabalign($p0, 32).$p1."\n";
 }
 
@@ -79,6 +82,10 @@ sub formatTriplet($$$)
 	my $p0			= shift;
 	my $p1			= shift;
 	my $p2			= shift;
+
+	dr::Util::doDie("p0 undefined") unless (defined $p0);
+	dr::Util::doDie("p1 undefined") unless (defined $p1);
+	dr::Util::doDie("p2 undefined") unless (defined $p2);
 
 	return tabalign(tabalign($p0, 32).$p1, 64).$p2."\n";
 }
