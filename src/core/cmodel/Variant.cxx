@@ -76,12 +76,7 @@
  * }co
  */
 
-#include <dr/Const.hxx>
-#include <dr/Ref.hxx>
-
-#include <dr/Variant.hxx>
-
-#include "_gen/Variant-def.hxx"
+#include "_gen/Variant-all.hxx"
 
 DR_NS_BEGIN
 
@@ -153,28 +148,28 @@ String Variant::getName()
 {
 	switch ((VType)vtype) {
 	case VT_Invalid:
-		return "invalid";
+		return DR_STR(invalid);
 
 	case VT_Null:
-		return "null";
+		return DR_STR(null);
 
 	case VT_Bool:
-		return "bool";
+		return DR_STR(bool);
 
 	case VT_Int:
-		return "int";
+		return DR_STR(int);
 
 	case VT_Double:
-		return "double";
+		return DR_STR(double);
 
 	case VT_Binary:
-		return "binary";
+		return DR_STR(binary);
 
 	case VT_String:
-		return "string";
+		return DR_STR(string);
 
 	case VT_Object:
-		return object_val == NULL ? "null" : object_val->classname();
+		return object_val == NULL ? DR_STR(null) : object_val->classname();
 	}
 
 	DR_AssertMsg("Invalid type for Variant Type");
@@ -312,7 +307,7 @@ String Variant::toString()
 		return Null();
 
 	case VT_Bool:
-		return bool_val ? "1" : "0";
+		return bool_val ? DR_STR(1) : DR_STR(0);
 
 	case VT_Int:
 		return String::createNumber(int_val);
@@ -343,7 +338,7 @@ BString Variant::toUtf8()
 		return Null();
 
 	case VT_Bool:
-		return bool_val ? "1" : "0";
+		return bool_val ? DR_BSTR(1) : DR_BSTR(0);
 
 	case VT_Int:
 		return BString::createNumber(int_val);
@@ -374,7 +369,7 @@ Blob Variant::toBinary()
 		return Null();
 
 	case VT_Bool:
-		return bool_val ? "1" : "0";
+		return bool_val ? DR_BSTR(1) : DR_BSTR(0);
 
 	case VT_Int:
 		return BString::createNumber(int_val);

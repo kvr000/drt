@@ -1,5 +1,40 @@
 #!/usr/bin/perl
 
+###
+## drt library
+##
+## drt multiplatform development toolkit
+##
+## ----------------------------------------------------------------------------------
+##
+## Copyright (C) 2004-2008 Zbyněk Vyškovský
+##
+## ----------------------------------------------------------------------------------
+##
+## LICENSE:
+##
+## This file is part of drt
+##
+## drt is free software; you can redistribute it and/or modify it under the
+## terms of the GNU Lesser General Public License as published by the Free
+## Software Foundation; either version 3 of the License, or (at your option)
+## any later version.
+##
+## drt is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+## FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for
+## more details.
+##
+## You should have received a copy of the GNU Lesser General Public License
+## along with drt; if not, write to the Free Software Foundation, Inc., 51
+## Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+##
+## @copyright	2004-2008 Zbyněk Vyškovský
+## @link	mailto:kvr@matfyz.cz
+## @link	http://kvr.matfyz.cz/drt/
+## @license	http://www.gnu.org/licenses/lgpl.txt GNU Lesser General Public License v3
+###
+
 package dr::GenHeader::FileTransaction;
 
 use strict;
@@ -15,15 +50,30 @@ sub new
 sub commit
 {
 	my $this		= shift;
+
+	foreach my $op (@{$this->{opers}}) {
+		if ($op->{fd}) {
+			$op->{fd}->flush();
+			if ($op->{fd}->error()) {
+				die "failed to write to $op->{fname}: ".$op->{fd}->error();
+			}
+			close($op->{fd});
+			undef $op->{fd};
+		}
+	}
+
 	$this->{opers} = [];
 }
 
-sub addCreated
+sub createTruncated
 {
 	my $this		= shift;
 	my $fname		= shift;
 
-	push(@{$this->{opers}}, { op => "rm", name => $fname });
+	my $fd = FileHandle->new($fname, ">")
+		or die "failed to open file $fname: $!";
+	push(@{$this->{opers}}, { op => "rm", fname => $fname, fd => $fd });
+	return $fd;
 }
 
 sub DESTROY
@@ -31,8 +81,12 @@ sub DESTROY
 	my $this		= shift;
 
 	foreach my $op (@{$this->{opers}}) {
+		if ($op->{fd}) {
+			close($op->{fd});
+			undef $op->{fd};
+		}
 		if ($op->{op} eq "rm") {
-			unlink($op->{name});
+			unlink($op->{fname});
 		}
 		else {
 			die "unsupported operation: $op->{op}";
@@ -48,6 +102,17 @@ use warnings;
 
 use FileHandle;
 use Data::Dumper;
+use Getopt::Std;
+
+sub fileToName($$)
+{
+	my $ns			= shift;
+	my $file		= shift;
+
+	$file =~ s/.*\///;
+	$ns =~ s/::/\//g;
+	return "${ns}/${file}";
+}
 
 sub fileToHeader($$)
 {
@@ -121,7 +186,10 @@ sub readContent($$$)
 }
 
 
-die "Usage: $0 cxx_file gen_file_base" unless (@ARGV == 2);
+our %opts;
+getopts('i', \%opts);
+
+die "Usage: $0 [-i] cxx_file gen_file_base" unless (@ARGV == 2);
 my $cxxname = shift(@ARGV);
 die "passed file does not end with suffix .cxx" unless ($cxxname =~ m/(.*)\.cxx$/);
 my $basename = shift(@ARGV);
@@ -130,21 +198,31 @@ my $defname = "$basename-def.hxx";
 
 our $file_trans = dr::GenHeader::FileTransaction->new();
 
+our $hxx;
+our $def;
+our $str;
+our $all;
+
 our $cxx = FileHandle->new($cxxname, "<")
 	or die "failed to open $cxxname: $!";
-our $hxx = FileHandle->new($hxxname, ">")
-	or die "failed to open $hxxname: $!";
-$file_trans->addCreated($hxxname);
-our $def = FileHandle->new($defname, ">")
-	or die "failed to open $defname: $!";
-$file_trans->addCreated($defname);
 
 our @cl_list;
 
+our %gen = ();
 our @includes = ();
 our $ns;
 our @ns_use = ();
 our @forwards = ();
+
+sub printDirect($$)
+{
+	my $fd			= shift;
+	my $text		= shift;
+
+	if ($fd) {
+		$fd->print($text);
+	}
+}
 
 sub printIndented($$$)
 {
@@ -152,11 +230,13 @@ sub printIndented($$$)
 	my $level		= shift;
 	my $text		= shift;
 
-	if ($level > 0) {
-		my $ind = "\t" x $level;
-		$text =~ s/^(.)/$ind$1/gm;
+	if ($fd) {
+		if ($level > 0) {
+			my $ind = "\t" x $level;
+			$text =~ s/^(.)/$ind$1/gm;
+		}
+		$fd->print($text);
 	}
-	$fd->print($text);
 }
 
 sub printClass($$);
@@ -185,9 +265,9 @@ sub printClass($$)
 	if ($cld->{type} eq "object") {
 		printIndented($hxx, $level, sprintf("%s %s: public %s%s\n{\n", "class", $iname, $cld->{ancestor}, join("", map({ ", $_" } @{$cld->{ifaces}}))));
 		printIndented($hxx, $level, sprintf("\tDR_OBJECT_DECL_SIMPLE(%s, %s);\n", $iname, $cld->{ancestor}));
-		$def->printf("\n");
-		$def->printf("DR_OBJECT_IMPL_IFACE%d(%s%s);\n", scalar @{$cld->{ifaces}}, $cld->{class}, join("", map({ ", $_" } @{$cld->{ifaces}})));
-		$def->printf("DR_OBJECT_DEF(%s_STR, %s, %s);\n", nsToMacro($ns), $cld->{class}, $cld->{ancestor});
+		printDirect($def, "\n");
+		printDirect($def, sprintf("DR_OBJECT_IMPL_IFACE%d(%s%s);\n", scalar @{$cld->{ifaces}}, $cld->{class}, join("", map({ ", $_" } @{$cld->{ifaces}}))));
+		printDirect($def, sprintf("DR_OBJECT_DEF(%s_STR, %s, %s);\n", nsToMacro($ns), $cld->{class}, $cld->{ancestor}));
 	}
 	elsif ($cld->{type} eq "noinfo") {
 		printIndented($hxx, $level, sprintf("%s %s: public %s\n{", "class", $iname, $cld->{ancestor}));
@@ -205,7 +285,7 @@ sub printClass($$)
 	}
 
 	if ($cld->{cont} ne "") {
-		$hxx->print("\n");
+		printDirect($hxx, "\n");
 		printIndented($hxx, $level, $cld->{cont});
 	}
 
@@ -214,7 +294,7 @@ sub printClass($$)
 		foreach (@cl_list) {
 			if ($_->{class} =~ m/^$cld->{class}::\w+$/) {
 				$found = 1;
-				$hxx->print("\n");
+				printDirect($hxx, "\n");
 				printIndented($hxx, $level, "public:\n");
 				printClass($_, $level+1);
 				last
@@ -235,12 +315,12 @@ sub printClass($$)
 			while ($mods =~ s/\b(\w+)\b\s(.*\b\1\b)/$2/) {}
 			my $allmod = "-$access-$mods-";
 			if ($allmod ne $last_allmod) {
-				$hxx->print("\n");
+				printDirect($hxx, "\n");
 				printIndented($hxx, $level, "$access:\n");
 				$last_allmod = $allmod;
 			}
 			elsif (defined $met->{comment}) {
-				$hxx->print("\n");
+				printDirect($hxx, "\n");
 			}
 			if (defined $met->{comment}) {
 				my $c = $met->{comment};
@@ -254,7 +334,7 @@ sub printClass($$)
 	}
 
 	if (@{$cld->{ats}}) {
-		$hxx->print("\n");
+		printDirect($hxx, "\n");
 		if (0) {
 			if ($cld->{type} eq "struct") {
 				printIndented($hxx, $level, "public:\n");
@@ -297,6 +377,9 @@ my @methods;
 my @ats;
 my @friends;
 my $doc;
+my @strings;
+my @wstrings;
+my @bstrings;
 
 my $errors = 0;
 
@@ -308,6 +391,27 @@ my $func_decl;
 MAIN: while (<$cxx>) {
 	$lineno++;
 
+	if (m/DR_STR\(([^)]*)\)/) {
+		my $l = $_;
+		while ($l =~ m/DR_STR\(([^)]*)\)(.*)$/) {
+			push(@strings, $1);
+			$l = $2;
+		}
+	}
+	if (m/DR_BSTR\(([^)]*)\)/) {
+		my $l = $_;
+		while ($l =~ m/DR_BSTR\(([^)]*)\)(.*)$/) {
+			push(@bstrings, $1);
+			$l = $2;
+		}
+	}
+	if (m/DR_WSTR\(([^)]*)\)/) {
+		my $l = $_;
+		while ($l =~ m/DR_WSTR\(([^)]*)\)(.*)$/) {
+			push(@wstrings, $1);
+			$l = $2;
+		}
+	}
 	if (m,^/\*drt\s*$,) {
 		if (defined $class) {
 			push(@cl_list, {
@@ -348,7 +452,11 @@ MAIN: while (<$cxx>) {
 					push(@includes, $val);
 				}
 				elsif ($key eq "ns") {
+					STDERR->printf("$cxxname:$lineno: fatal: ns already defined\n"), exit(1) if (defined $ns);
 					$ns = $val;
+				}
+				elsif ($key eq "gen") {
+					%gen = map({ ( $_ => 1 ) } split(/\s+/, $val));
 				}
 				elsif ($key eq "use") {
 					push(@ns_use, $val);
@@ -360,6 +468,7 @@ MAIN: while (<$cxx>) {
 					$type = $val;
 				}
 				elsif ($key eq "class") {
+					STDERR->printf("$cxxname:$lineno: fatal: ns undefined\n"), exit(1) unless (defined $ns);
 					$class = $val;
 					($class_last = $class) =~ s/.*:://;
 					$defline = $lineno;
@@ -406,7 +515,6 @@ MAIN: while (<$cxx>) {
 				}
 			}
 			elsif (m/^\s*\*\/\s*$/) {
-				STDERR->printf("$cxxname:$lineno: fatal: ns undefined\n"), exit(1) unless (defined $ns);
 				last;
 			}
 			else {
@@ -499,52 +607,117 @@ else {
 	}
 }
 
-STDERR->printf("$cxxname:$lineno: fatal: namespace undefined\n"), $errors++ unless (defined $ns);
+if (!%gen) {
+	%gen = map({ ( $_ => 1 ) } ( "def", "hxx", "all" ));
+	$gen{str} = 1 if (@strings);
+}
+
+if ($gen{hxx} || $gen{def}) {
+	STDERR->printf("$cxxname:$lineno: fatal: namespace undefined\n"), $errors++ unless (defined $ns);
+}
 exit(1) if ($errors);
 
-$hxx->printf("/* The file is generated from %s, do not modify */\n", $cxxname);
-$hxx->printf("/* The same license applies to use of header file */\n\n");
-$hxx->printf("#ifndef %s\n# define %s\n\n", fileToHeader($ns, $hxxname), fileToHeader($ns, $hxxname));
-foreach my $inc (@includes) {
-	$hxx->printf("#include <$inc>\n");
+if ($gen{hxx} && !$opts{i}) {
+	$hxx = $file_trans->createTruncated("$basename.hxx");
 }
-$hxx->printf("\n%s\n", nsToMacroBegin($ns));
-if (@ns_use) {
-	$hxx->printf("\n");
-	foreach my $use (@ns_use) {
-		$hxx->printf("%s_USE;\n", nsToMacro($use));
-	}
+if ($gen{def}) {
+	$def = $file_trans->createTruncated("$basename-def.hxx");
 }
-$hxx->printf("\n");
-if (@forwards) {
-	$hxx->printf("\n");
-	foreach my $forward (@forwards) {
-		$hxx->printf("%s\n", $forward);
-	}
+if ($gen{str}) {
+	$str = $file_trans->createTruncated("$basename-str.hxx");
 }
-$hxx->printf("\n");
+if ($gen{all}) {
+	$all = $file_trans->createTruncated("$basename-all.hxx");
+}
 
-$def->printf("#include <dr/Const.hxx>\n\n");
-$def->printf("%s\n\n", nsToMacroBegin($ns));
+if ($all) {
+	my $name = $basename;
+	$name =~ s/.*\///;
+	$all->printf("/* The file is generated from %s, do not modify */\n", $cxxname);
+	if ($hxx) {
+		$all->printf("#include <%s>\n", fileToName($ns, $hxxname));
+	}
+	foreach (keys %gen) {
+		next if ($_ eq "all" || $_ eq "hxx");
+		$all->printf("#include \"_gen/%s-%s.hxx\"\n", $name, $_);
+	}
+}
+
+if ($str) {
+	$str->printf("/* The file is generated from %s, do not modify */\n", $cxxname);
+	$str->printf("#include <dr/Const.hxx>\n\n");
+	my %printed;
+	foreach (@strings) {
+		next if ($printed{$_});
+		$printed{$_} = 1;
+		$str->printf("static const dr::String drstr_%s(dr::Const::string(\"%s\"));\n", $_, $_);
+	}
+	my %bprinted;
+	foreach (@bstrings) {
+		next if ($bprinted{$_});
+		$bprinted{$_} = 1;
+		$str->printf("static const dr::BString drbstr_%s(dr::Const::bstring(\"%s\"));\n", $_, $_);
+	}
+	my %wprinted;
+	foreach (@wstrings) {
+		next if ($wprinted{$_});
+		$wprinted{$_} = 1;
+		$str->printf("static const dr::WString drwstr_%s(dr::Const::wstring(\"%s\"));\n", $_, $_);
+	}
+}
+
+if ($hxx) {
+	$hxx->printf("/* The file is generated from %s, do not modify */\n", $cxxname);
+	$hxx->printf("/* The same license applies to use of header file */\n\n");
+	$hxx->printf("#ifndef %s\n# define %s\n\n", fileToHeader($ns, $hxxname), fileToHeader($ns, $hxxname));
+	foreach my $inc (@includes) {
+		$hxx->printf("#include <$inc>\n");
+	}
+	$hxx->printf("\n%s\n", nsToMacroBegin($ns));
+	if (@ns_use) {
+		$hxx->printf("\n");
+		foreach my $use (@ns_use) {
+			$hxx->printf("%s_USE;\n", nsToMacro($use));
+		}
+	}
+	$hxx->printf("\n");
+	if (@forwards) {
+		$hxx->printf("\n");
+		foreach my $forward (@forwards) {
+			$hxx->printf("%s\n", $forward);
+		}
+	}
+	$hxx->printf("\n");
+}
+
+if ($def) {
+	$def->printf("#include <dr/Const.hxx>\n\n");
+	$def->printf("%s\n\n", nsToMacroBegin($ns));
+}
 
 #STDERR->print(Dumper(\@cl_list));
-while (@cl_list) {
-	my $selected;
-	foreach (@cl_list) {
-		$selected = $_, last if ($_->{class} !~ m/::/);
+if (@cl_list) {
+	die "class list specified but header not open" unless ($gen{hxx});
+	while (@cl_list) {
+		my $selected;
+		foreach (@cl_list) {
+			$selected = $_, last if ($_->{class} !~ m/::/);
+		}
+		die "$cxxname:$lineno: cannot find any base class in the list: ".Dumper(\@cl_list) unless (defined $selected);
+		printClass($selected, 0);
 	}
-	die "$cxxname:$lineno: cannot find any base class in the list: ".Dumper(\@cl_list) unless (defined $selected);
-	printClass($selected, 0);
 }
-$def->printf("\n\n%s\n", nsToMacroEnd($ns));
-$hxx->printf("\n\n%s\n\n#endif\n", nsToMacroEnd($ns));
+if ($def) {
+	$def->printf("\n\n%s\n", nsToMacroEnd($ns));
+}
+if ($hxx) {
+	$hxx->printf("\n\n%s\n\n#endif\n", nsToMacroEnd($ns));
+}
 
-
-$hxx->flush();
-$hxx->error()
-	and die "failed to write hxx file: ".$hxx->error();
-$def->flush();
-$def->error()
-	and die "failed to write hxx file: ".$def->error();
-
-$file_trans->commit();
+if ($file_trans->commit()) {
+	my $dummy = FileHandle->new("$basename.gen", ">");
+	$dummy->printf("ok\n");
+	if (!$dummy->close()) {
+		die "failed to update dummy file $basename.gen: $!";
+	}
+}

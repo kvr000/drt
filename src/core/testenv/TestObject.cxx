@@ -50,9 +50,7 @@
 #include <dr/Const.hxx>
 #include <dr/Ref.hxx>
 
-#include <dr/testenv/TestObject.hxx>
-
-#include "_gen/TestObject-def.hxx"
+#include "_gen/TestObject-all.hxx"
 
 DR_TESTENV_NS_BEGIN
 
@@ -61,7 +59,8 @@ Refcnt TestObject::living_count = 0;
 
 DR_MET(public)
 TestObject::TestObject(int id_):
-	id(id_)
+	id(id_),
+	value(DR_STR(unknown))
 {
 	living_count++;
 }

@@ -652,7 +652,7 @@ sub createOutput
 	my $targ_pre	= "";
 	my $targ_util	= "";
 	my $targ_init	= "";
-	my $targ_local	= "";
+	my $targ_build	= "";
 	my $targ_post	= "";
 
 	my $gh_targall	= "";
@@ -728,10 +728,17 @@ sub createOutput
 		$mf->print(genParallelAction("deltags", "ldeltags", $vars)."\n");
 	}
 
+	# automatic header generation
+	$mf->print(genParallelAction("gh", "lgh", $vars)."\n");
+	if (!$config->{make}->{noautogh}) {
+		$mf->print("include Make_gh\n");
+		$targ_init .= " gh_gh";
+	}
+
 	if (defined (my $deps = $vars->{DEPS})) {
 		foreach (@$deps) {
 			printSubBuild($config, $mf, "dep_$_", [], undef, "\$(MAKE) -C $_", undef);
-			$targ_local .= " dep_$_";
+			$targ_build .= " dep_$_";
 		}
 		$mf->print("\n");
 	}
@@ -762,6 +769,41 @@ sub createOutput
 		}
 	}
 
+	# distribute includes
+	{
+		my $dist_inc = "";
+		foreach my $did (values %{$vars->{DIST_INC}->{locations}}) {
+			$mf->print("\$(INCDIR_)$did->{location}:\n\tmkdir -p \$(INCDIR_)$did->{location}\n");
+			my $full_location = "../include/$did->{location}";
+			mkpath($full_location, 0, 0777);
+		}
+
+		foreach my $group (values %{$vars->{DIST_INC}->{groups}}) {
+			my @list = dr::build::findGroups($vars->{SOURCES}->{list}, [$group->{name}]);
+			$mf->print("DIST_INC_$group->{name}: \$(INCDIR_)$group->{location}");
+			my $deps = "";
+			my $perf = "";
+			foreach (@list) {
+				my $fname = $_->{src};
+				if (dr::build::findArray("gh", $_->{groups}) >= 0) {
+					$fname =~ s/\.cxx$/.hxx/; $fname =~ s/.*\///;
+					$fname = "\$(GEN)/$fname";
+					$_->{mark_header} = 1;
+				}
+				my $base_src = $fname;
+				$base_src =~ s#.*/##;
+				$deps .= " \$(INCDIR_)$group->{location}/$base_src";
+				$perf .= "\$(INCDIR_)$group->{location}/$base_src: $fname\n\trm -f \$(INCDIR_)$group->{location}/$base_src; ln -sf ../$group->{rev_location}\$(DIRM_)$fname \$(INCDIR_)$group->{location}/$base_src\n";
+			}
+			$mf->printf("%s\n%s\n", $deps, $perf);
+			$dist_inc .= " DIST_INC_$group->{name}";
+		}
+
+		$mf->printf("ldistinc:$dist_inc\n\n");
+		$mf->print(genRecursiveAction("distinc", "ldistinc", $vars)."\n");
+		$targ_init .= " ldistinc";
+	}
+
 	foreach my $sd (@{$vars->{SOURCES}->{list}}) {
 		next if ($sd->{disable});
 		next if (!$sd->{out_used});
@@ -785,9 +827,16 @@ sub createOutput
 			push(@{$dp->{files}}, $sd);
 			if (dr::build::findArray("gh", $sd->{groups}) >= 0) {
 				my $base = basename($sd->{src}); $base =~ s/\.\w+$//; $base =~ s/.*\///;
-				printBuild($config, $mgh, "\$(GEN_)$base.hxx \$(GEN_)$base-def.hxx", [ $sd->{src} ], undef, "dr_genheader", [ $sd->{src}, "\$(GEN_)$base" ]);
-				printDependency($config, $mf, $sd->{out}, [ "\$(GEN_)$base.hxx", "\$(GEN_)$base-def.hxx" ]);
-				$gh_targall .= " \$(GEN_)$base.hxx";
+				printDependency($config, $mf, $sd->{out}, [ "\$(GEN_)$base.gen" ]);
+				if ($config->{make}->{noautogh}) {
+					printBuild($config, $mf, "\$(GEN_)$base.gen", [ $sd->{src} ], undef, "dr_genheader -i", [ $sd->{src}, "\$(GEN_)$base" ]);
+					printBuild($config, $mgh, "\$(GEN_)$base.gen".($sd->{mark_header} ? " \$(GEN_)$base.hxx" : ""), [ $sd->{src} ], undef, "dr_genheader", [ $sd->{src}, "\$(GEN_)$base" ]);
+					$gh_targall .= " \$(GEN_)$base.hxx" if ($sd->{mark_header});
+				}
+				else {
+					printBuild($config, $mgh, "\$(GEN_)$base.gen".($sd->{mark_header} ? " \$(GEN_)$base.hxx" : ""), [ $sd->{src} ], undef, "dr_genheader", [ $sd->{src}, "\$(GEN_)$base" ]);
+					$gh_targall .= " \$(GEN_)$base.hxx" if ($sd->{mark_header});
+				}
 			}
 		}
 		elsif ($sd->{prog} eq "lshlib") {
@@ -814,39 +863,6 @@ sub createOutput
 		push(@sources, $sd);
 	}
 
-	# distribute includes
-	{
-		my $dist_inc = "";
-		foreach my $did (values %{$vars->{DIST_INC}->{locations}}) {
-			$mf->print("\$(INCDIR_)$did->{location}:\n\tmkdir -p \$(INCDIR_)$did->{location}\n");
-			my $full_location = "../include/$did->{location}";
-			mkpath($full_location, 0, 0777);
-		}
-
-		foreach my $group (values %{$vars->{DIST_INC}->{groups}}) {
-			my @list = dr::build::findGroups($vars->{SOURCES}->{list}, [$group->{name}]);
-			$mf->print("DIST_INC_$group->{name}: \$(INCDIR_)$group->{location}");
-			my $deps = "";
-			my $perf = "";
-			foreach (@list) {
-				my $fname = $_->{src};
-				if (dr::build::findArray("gh", $_->{groups}) >= 0) {
-					$fname =~ s/\.cxx$/.hxx/; $fname =~ s/.*\///;
-					$fname = "\$(GEN)/$fname";
-				}
-				my $base_src = $fname;
-				$base_src =~ s#.*/##;
-				$deps .= " \$(INCDIR_)$group->{location}/$base_src";
-				$perf .= "\$(INCDIR_)$group->{location}/$base_src: $fname\n\trm -f \$(INCDIR_)$group->{location}/$base_src; ln -sf ../$group->{rev_location}\$(DIRM_)$fname \$(INCDIR_)$group->{location}/$base_src\n";
-			}
-			$mf->printf("%s\n%s\n", $deps, $perf);
-			$dist_inc .= " DIST_INC_$group->{name}";
-		}
-
-		$mf->printf("ldistinc:$dist_inc\n\n");
-		$mf->print(genRecursiveAction("distinc", "ldistinc", $vars)."\n");
-		$targ_init .= " ldistinc";
-	}
 	$mf->print("\$(GEN):\n\tmkdir -p \$(GEN)\n");
 	$mf->print("\$(OBJDIR):\n\tmkdir -p \$(OBJDIR)\n");
 	#$targ_util .= " \$(GEN) \$(OBJDIR)";
@@ -909,7 +925,7 @@ sub createOutput
 			else {
 				die "unknown build-prog $od->{prog}\n";
 			}
-			$targ_local .= " $ftarg";
+			$targ_build .= " $ftarg";
 		}
 	}
 
@@ -975,7 +991,7 @@ sub createOutput
 
 	if (defined (my $postsubs = $vars->{POSTSUBS})) {
 		foreach (@$postsubs) {
-			$mf->printf("sub_%s: targ_local %s\n\t\$(MAKE) -C %s\n\n", $_->{name}, join(" ", map({ "sub_$_" } @{$_->{deps}})), $_->{name});
+			$mf->printf("sub_%s: targ_build %s\n\t\$(MAKE) -C %s\n\n", $_->{name}, join(" ", map({ "sub_$_" } @{$_->{deps}})), $_->{name});
 			$targ_post .= " sub_$_->{name}";
 		}
 		$mf->print("\n");
@@ -1001,33 +1017,32 @@ sub createOutput
 		$mf->print("include \$(OBJDIR)/all_deps.mi\n\n");
 	}
 
-	# automatic header generation
-	$mf->print(genParallelAction("gh", "lgh", $vars)."\n");
-	if (!$config->{make}->{noautogh}) {
-		$mf->print("include Make_gh\n");
-	}
 	$mf->print("\n");
 
 	if (0) {
 		$mf->print("targ_pre:$targ_pre\n");
 		$mf->print("targ_util: targ_pre$targ_util\n");
 		$mf->print("targ_init: targ_pre targ_util$targ_init\n");
-		$mf->print("targ_local: targ_init$targ_local\n");
-		$mf->print("targ_post: targ_local$targ_post\n");
-		$mf->print("targ_all: targ_pre targ_util targ_init targ_local targ_post\n\n");
+		$mf->print("targ_build: targ_init$targ_build\n");
+		$mf->print("targ_post: targ_build$targ_post\n");
+		$mf->print("targ_all: targ_pre targ_util targ_init targ_build targ_post\n\n");
 	}
 	else {
 		$mf->print("targ_pre:$targ_pre\n");
 		$mf->print("targ_util:$targ_util\n");
 		$mf->print("targ_init:$targ_init\n");
-		$mf->print("targ_local:$targ_local\n");
+		$mf->print("targ_build:$targ_build\n");
 		$mf->print("targ_post:$targ_post\n");
 		$mf->print("targ_all:\n");
 		$mf->print("\t\$(MAKE) targ_pre\n") if ($targ_pre);
 		$mf->print("\t\$(MAKE) targ_util\n") if ($targ_util);
 		$mf->print("\t\$(MAKE) targ_init\n") if ($targ_init);
-		$mf->print("\t\$(MAKE) targ_local\n") if ($targ_local);
+		$mf->print("\t\$(MAKE) targ_build\n") if ($targ_build);
 		$mf->print("\t\$(MAKE) targ_post\n") if ($targ_post);
+		$mf->print("lall ldefault:\n");
+		$mf->print("\t\$(MAKE) targ_util\n") if ($targ_util);
+		$mf->print("\t\$(MAKE) targ_init\n") if ($targ_init);
+		$mf->print("\t\$(MAKE) targ_build\n") if ($targ_build);
 	}
 	$mf->close()
 		or die "failed to close file $dir/Makefile";

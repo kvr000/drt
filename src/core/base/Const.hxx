@@ -57,6 +57,9 @@ public:
 	static const String &		string(const wchar_t *str);
 };
 
+#define DR_STR(str) drstr_##str
+#define DR_BSTR(str) drbstr_##str
+#define DR_WSTR(str) drwstr_##str
 
 DR_NS_END
 
