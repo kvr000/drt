@@ -37,14 +37,14 @@
 #include <dr/pe_error.hxx>
 
 #include <dr/Ref.hxx>
-#include <dr/Except.hxx>
+#include <dr/Exception.hxx>
 #include <dr/ThreadSimple.hxx>
 
 #include <dr/io/Vfs.hxx>
 #include <dr/io/File.hxx>
 #include <dr/io/Directory.hxx>
-#include <dr/io/IoExcept.hxx>
-#include <dr/io/FileNotFoundExcept.hxx>
+#include <dr/io/IoException.hxx>
+#include <dr/io/FileNotFoundException.hxx>
 #include <dr/io/SocketStream.hxx>
 #include <dr/io/SocketServer.hxx>
 #include <dr/io/SocketDatagram.hxx>
@@ -70,7 +70,7 @@ void test()
 		ERef<File> file(new File("testfile", File::M_WRITE|File::M_CREATE));
 		file->write("blekeke\n");
 	}
-	xcatch (Except, ex) {
+	xcatch (Exception, ex) {
 		Fatal::plog("caught exception: %s\n", ex->stringify().utf8().toStr());
 	}
 	xend;
@@ -91,7 +91,7 @@ void test()
 			printf("%s\n", entry.utf8().toStr());
 		}
 	}
-	xcatch (Except, ex) {
+	xcatch (Exception, ex) {
 		Fatal::plog("caught exception: %s\n", ex->stringify().utf8().toStr());
 	}
 	xend;
@@ -118,7 +118,7 @@ void sender_th(unsigned short port)
 			Fatal::plog("sender: did not received any data within 2s\n");
 		}
 	}
-	xcatch (Except, ex) {
+	xcatch (Exception, ex) {
 		Fatal::plog("sender: catched unexpected exception: %s\n", ex->stringify().utf8().toStr());
 	}
 	xend;
@@ -132,7 +132,7 @@ void connectInet4_th(NetAddress *server_address)
 		sock->write("tt0");
 		Fatal::plog("client read: %s\n", sock->read(1024).toStr());
 	}
-	xcatch (Except, ex) {
+	xcatch (Exception, ex) {
 		Fatal::plog("connect inet sender: catched unexpected exception: %s\n", ex->stringify().utf8().toStr());
 	}
 	xend;
@@ -145,7 +145,7 @@ void connectLocal_th(NetAddress *server_address)
 	xtry {
 		File::unlink(client_address->getPath());
 	}
-	xcatch (FileNotFoundExcept, ex) {
+	xcatch (FileNotFoundException, ex) {
 	}
 	xend;
 	sock->bind(client_address);
@@ -163,7 +163,7 @@ void test()
 		sock->connect(tref(new NetAddressInet4("localhost:22")));
 		sock->write("bflm\n");
 	}
-	xcatch (Except, ex) {
+	xcatch (Exception, ex) {
 		Fatal::plog("caught exception: %s\n", ex->stringify().utf8().toStr());
 	}
 	xend;
@@ -188,7 +188,7 @@ void test()
 		xend;
 		sender->wait();
 	}
-	xcatch (Except, ex) {
+	xcatch (Exception, ex) {
 		Fatal::plog("caught exception: %s\n", ex->stringify().utf8().toStr());
 	}
 	xend;
@@ -202,7 +202,7 @@ void test()
 		xtry {
 			sock->write("bflm\n");
 		}
-		xcatch (Except, ex) {
+		xcatch (Exception, ex) {
 			Fatal::plog("caught ok exception: %s\n", ex->stringify().utf8().toStr());
 		}
 		xend;
@@ -210,7 +210,7 @@ void test()
 		xtry {
 			sockv->write("bla");
 		}
-		xcatch (Except, ex) {
+		xcatch (Exception, ex) {
 			Fatal::plog("caught rel exception: %s\n", ex->stringify().utf8().toStr());
 		}
 		xend;
@@ -234,7 +234,7 @@ void test()
 		xend;
 		sender->wait();
 	}
-	xcatch (Except, ex2) {
+	xcatch (Exception, ex2) {
 		Fatal::plog("caught exception: %s\n", ex2->stringify().utf8().toStr());
 	}
 	xend;
@@ -247,7 +247,7 @@ void test()
 		xtry {
 			File::unlink(server_address->getPath());
 		}
-		xcatch (FileNotFoundExcept, ex) {
+		xcatch (FileNotFoundException, ex) {
 		}
 		xend;
 		sock->bind(server_address);
@@ -266,7 +266,7 @@ void test()
 		xend;
 		cl_thread->wait();
 	}
-	xcatch (Except, ex) {
+	xcatch (Exception, ex) {
 		Fatal::plog("caught exception: %s\n", ex->stringify().utf8().toStr());
 	}
 	xend;

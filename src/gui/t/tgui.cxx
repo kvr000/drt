@@ -120,7 +120,7 @@ void test()
 	xtry {
 		guio->open();
 	}
-	xcatch (Except, ex) {
+	xcatch (Exception, ex) {
 		Fatal::plog("failed to open GUI: %s\n", (const char *)ex->stringify().utf8());
 		guio->unref();
 		guio = NULL;

@@ -36,7 +36,7 @@
 #include <stdlib.h>
 
 #include <dr/MM.hxx>
-#include <dr/MemExcept.hxx>
+#include <dr/MemException.hxx>
 #include <dr/dev/MM_impl.hxx>
 #include <dr/dev/MM_native.hxx>
 
@@ -56,7 +56,7 @@ void *MM_native::impl_alloc(size_t size)
 {
 	if (void *mem = ::malloc(size))
 		return mem;
-	MemExcept::throwInstance(size);
+	MemException::throwInstance(size);
 	return NULL;
 }
 
@@ -69,7 +69,7 @@ void *MM_native::impl_realloc(void *m, size_t newsize)
 {
 	if (void *mem = ::realloc(m, newsize))
 		return mem;
-	MemExcept::throwInstance(newsize);
+	MemException::throwInstance(newsize);
 	return NULL;
 }
 

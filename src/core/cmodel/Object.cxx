@@ -43,8 +43,8 @@
 #include <dr/GroupRef.hxx>
 #include <dr/WeakRef.hxx>
 #include <dr/String.hxx>
-#include <dr/CastExcept.hxx>
-#include <dr/UnsupportedExcept.hxx>
+#include <dr/CastException.hxx>
+#include <dr/UnsupportedException.hxx>
 
 DR_NS_BEGIN
 
@@ -184,7 +184,7 @@ void *Object::getIface(const String &iface) const
 		if (node->name.d->beq(ifd))
 			goto found;
 	}
-	CastExcept::throwInstance(ref(), iface);
+	CastException::throwInstance(ref(), iface);
 
 found:
 	SintPtr offs = node->offs;
@@ -196,7 +196,7 @@ found:
 	else {
 		if (void *ret = node->create_func(const_cast<Object *>(this), offs))
 			return ret;
-		CastExcept::throwInstance(ref(), iface);
+		CastException::throwInstance(ref(), iface);
 		return NULL;
 	}
 }
@@ -236,7 +236,7 @@ void *Object::getIfaceUnref(const String &iface) const
 		if (node->name.d->beq(ifd))
 			goto found;
 	}
-	CastExcept::throwInstance(const_cast<Object *>(this), iface);
+	CastException::throwInstance(const_cast<Object *>(this), iface);
 
 found:
 	SintPtr offs = node->offs;
@@ -257,7 +257,7 @@ found:
 				return ret;
 			}
 			else {
-				CastExcept::throwInstance(const_cast<Object *>(this), iface);
+				CastException::throwInstance(const_cast<Object *>(this), iface);
 				return NULL;
 			}
 		}
@@ -381,12 +381,12 @@ int Object::cmp(const Iface *obj2_) const
 
 void Object::serializeTo(SerializeEncoder *serializer) const
 {
-	xthrownew(UnsupportedExcept(this, classname(), "serialize", Null()));
+	xthrownew(UnsupportedException(this, classname(), "serialize", Null()));
 }
 
 void Object::unserializeFrom(SerializeDecoder *serializer)
 {
-	xthrownew(UnsupportedExcept(this, classname(), "unserialize", Null()));
+	xthrownew(UnsupportedException(this, classname(), "unserialize", Null()));
 }
 
 void Object::object_reserved_static()

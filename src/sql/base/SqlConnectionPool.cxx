@@ -35,7 +35,7 @@
 
 #include <dr/x_kw.hxx>
 #include <dr/Const.hxx>
-#include <dr/Except.hxx>
+#include <dr/Exception.hxx>
 
 #include <dr/Array.hxx>
 

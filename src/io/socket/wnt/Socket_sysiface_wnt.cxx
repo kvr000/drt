@@ -45,9 +45,9 @@
 
 #include <dr/Const.hxx>
 #include <dr/io/BadHostName.hxx>
-#include <dr/UnsupportedExcept.hxx>
-#include <dr/io/IoExcept.hxx>
-#include <dr/io/NonblockExcept.hxx>
+#include <dr/UnsupportedException.hxx>
+#include <dr/io/IoException.hxx>
+#include <dr/io/NonblockException.hxx>
 #include <dr/io/NetAddress.hxx>
 #include <dr/io/NetAddressInet4.hxx>
 #include <dr/io/NetAddressLocal.hxx>
@@ -68,7 +68,7 @@ static bool initializeWsa()
 {
 	WSADATA data;
 	if (WSAStartup(MAKEWORD(2, 2), &data) != 0) {
-		DR_THROWNEW(UnsupportedExcept(NULL, Socket_sysiface_wnt::comp_name, "version", "2.2"));
+		DR_THROWNEW(UnsupportedException(NULL, Socket_sysiface_wnt::comp_name, "version", "2.2"));
 	}
 	return true;
 }
@@ -207,10 +207,10 @@ void Socket_sysiface_wnt::throwSysException(Socket *handle, const String &operat
 {
 	switch (wsa_err) {
 	case WSAEWOULDBLOCK:
-		DR_THROWNEW(NonblockExcept(handle, operation, DRP_EAGAIN, wsa_err));
+		DR_THROWNEW(NonblockException(handle, operation, DRP_EAGAIN, wsa_err));
 	default:
 		/* TODO */
-		DR_THROWNEW(IoExcept(handle, operation, mapWsaErrorToPosix(wsa_err), wsa_err));
+		DR_THROWNEW(IoException(handle, operation, mapWsaErrorToPosix(wsa_err), wsa_err));
 	}
 }
 
@@ -223,7 +223,7 @@ int Socket_sysiface_wnt::getDomainNum(const String &domain)
 		return PF_INET6;
 #endif
 
-	DR_THROWNEW(UnsupportedExcept(NULL, comp_name, domain_string, domain));
+	DR_THROWNEW(UnsupportedException(NULL, comp_name, domain_string, domain));
 	return -1;
 }
 
@@ -237,14 +237,14 @@ int Socket_sysiface_wnt::getProtoNum(const String &proto)
 	else if (proto == "ip")
 		return IPPROTO_IP;
 	else
-		xthrownew(UnsupportedExcept(NULL, comp_name, proto_string, proto));
+		xthrownew(UnsupportedException(NULL, comp_name, proto_string, proto));
 	return -1;
 #else
 	struct protoent *pe;
 	if ((pe = getprotobyname(proto.utf8().toStr())) == NULL) {
 		int err = WSAGetLastError();
 		(void)err;
-		DR_THROWNEW(UnsupportedExcept(NULL, comp_name, proto_string, proto));
+		DR_THROWNEW(UnsupportedException(NULL, comp_name, proto_string, proto));
 	}
 	return pe->p_proto;
 #endif
@@ -276,7 +276,7 @@ Blob Socket_sysiface_wnt::getNetAddress(NetAddress *addr_)
 	}
 #endif
 	else {
-		DR_THROWNEW(UnsupportedExcept(addr_, comp_name));
+		DR_THROWNEW(UnsupportedException(addr_, comp_name));
 	}
 	return interp;
 }
@@ -298,7 +298,7 @@ NetAddress *Socket_sysiface_wnt::createNetAddress(const Blob &addr_sysiface)
 		}
 #endif
 	default:
-		DR_THROWNEW(UnsupportedExcept(NULL, comp_name, address_family_string, String().appendNumber(sa->sa_family)));
+		DR_THROWNEW(UnsupportedException(NULL, comp_name, address_family_string, String().appendNumber(sa->sa_family)));
 	}
 	return NULL;
 }
@@ -318,7 +318,7 @@ void Socket_sysiface_wnt::setSockOption(Socket *socket, const String &name, long
 {
 	int opt;
 	if ((opt = socket_opt_vals.find(name)) < 0)
-		xthrownew(UnsupportedExcept(socket, Socket::comp_name, name, "set"));
+		xthrownew(UnsupportedException(socket, Socket::comp_name, name, "set"));
 	switch (opt) {
 	case SO_REUSEADDR:
 		{
@@ -329,7 +329,7 @@ void Socket_sysiface_wnt::setSockOption(Socket *socket, const String &name, long
 		break;
 
 	default:
-		xthrownew(UnsupportedExcept(socket, Socket::comp_name, name, "long"));
+		xthrownew(UnsupportedException(socket, Socket::comp_name, name, "long"));
 		break;
 	}
 }
@@ -338,11 +338,11 @@ void Socket_sysiface_wnt::setSockOptionStr(Socket *socket, const String &name, c
 {
 	int opt;
 	if ((opt = socket_opt_vals.find(name)) < 0)
-		xthrownew(UnsupportedExcept(socket, Socket::comp_name, name, String(value)));
+		xthrownew(UnsupportedException(socket, Socket::comp_name, name, String(value)));
 	switch (opt) {
 	default:
 		DR_AssertInvalid();
-		xthrownew(UnsupportedExcept(socket, Socket::comp_name, name, "blob"));
+		xthrownew(UnsupportedException(socket, Socket::comp_name, name, "blob"));
 		break;
 	}
 }
@@ -351,7 +351,7 @@ long Socket_sysiface_wnt::getSockOption(Socket *socket, const String &name)
 {
 	int opt;
 	if ((opt = socket_opt_vals.find(name)) < 0)
-		xthrownew(UnsupportedExcept(socket, Socket::comp_name, name, "read"));
+		xthrownew(UnsupportedException(socket, Socket::comp_name, name, "read"));
 	switch (opt) {
 	case SO_REUSEADDR:
 		{
@@ -365,7 +365,7 @@ long Socket_sysiface_wnt::getSockOption(Socket *socket, const String &name)
 
 	default:
 		DR_AssertInvalid();
-		xthrownew(UnsupportedExcept(socket, Socket::comp_name, name, "long"));
+		xthrownew(UnsupportedException(socket, Socket::comp_name, name, "long"));
 		break;
 	}
 	return 0;
@@ -375,11 +375,11 @@ Blob Socket_sysiface_wnt::getSockOptionStr(Socket *socket, const String &name)
 {
 	int opt;
 	if ((opt = socket_opt_vals.find(name)) < 0)
-		xthrownew(UnsupportedExcept(socket, Socket::comp_name, name, "read"));
+		xthrownew(UnsupportedException(socket, Socket::comp_name, name, "read"));
 	switch (opt) {
 	default:
 		DR_AssertInvalid();
-		xthrownew(UnsupportedExcept(socket, Socket::comp_name, name, "blob"));
+		xthrownew(UnsupportedException(socket, Socket::comp_name, name, "blob"));
 		break;
 	}
 	return Null();

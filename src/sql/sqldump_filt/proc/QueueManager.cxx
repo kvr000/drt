@@ -37,7 +37,7 @@
 #include <dr/x_kw.hxx>
 #include <dr/Const.hxx>
 #include <dr/IntEvaluator.hxx>
-#include <dr/InvalidFormatExcept.hxx>
+#include <dr/InvalidFormatException.hxx>
 
 #include <dr/sql/sqldump_filt/QueueManager.hxx>
 
@@ -79,7 +79,7 @@ void QueueManager::addRuleFile(dr::io::StreamBuffer *stream)
 			for (te = t; isalnum(*te) || *te == '_'; te++) ;
 			for (s = te; isspace(*s); s++) ;
 			if (te == t || *s != ':') {
-				xthrownew(InvalidFormatExcept("rule syntax", "missing table name or colon"));
+				xthrownew(InvalidFormatException("rule syntax", "missing table name or colon"));
 			}
 			s++;
 			tname.setUtf8(t, te-t);
@@ -237,7 +237,7 @@ ssize_t QueueManager::getNextValues(SArray<Blob> *values, Blob *ins_string, cons
 	switch (line[pos]) {
 	case ';':
 		if (pos+1 != line_data.getSize() && (line[pos+1] != '\n' || pos+2 != line_data.getSize())) {
-			xthrownew(InvalidFormatExcept("INSERT", "line not finished with ;\\n"));
+			xthrownew(InvalidFormatException("INSERT", "line not finished with ;\\n"));
 		}
 		return -1;
 
@@ -246,7 +246,7 @@ ssize_t QueueManager::getNextValues(SArray<Blob> *values, Blob *ins_string, cons
 		break;
 
 	default:
-		xthrownew(InvalidFormatExcept("INSERT", "missing left parenthesis"));
+		xthrownew(InvalidFormatException("INSERT", "missing left parenthesis"));
 		break;
 	}
 
@@ -278,7 +278,7 @@ ssize_t QueueManager::getNextValues(SArray<Blob> *values, Blob *ins_string, cons
 						/* fall through */
 					case '\0':
 						if (pos == line_data.getSize()) {
-							xthrownew(InvalidFormatExcept("INSERT", "missing closing apostrophe"));
+							xthrownew(InvalidFormatException("INSERT", "missing closing apostrophe"));
 						}
 						/* fall through */
 					default:
@@ -289,7 +289,7 @@ end_quote:
 				break;
 			case '\0':
 				if (pos == line_data.getSize()) {
-					xthrownew(InvalidFormatExcept("INSERT", "missing right parenthesis"));
+					xthrownew(InvalidFormatException("INSERT", "missing right parenthesis"));
 				}
 				/* fall through */
 			default:
@@ -367,7 +367,7 @@ Blob QueueManager::processOneData(Sint64 line_no, const Blob &line_data)
 				if (!n->v->evaluate(args))
 					continue;
 			}
-			xcatch (Except, ex) {
+			xcatch (Exception, ex) {
 				fprintf(stderr, "failed to evaluate expression %s: %s\n", n->v->getExpression().utf8().toStr(), ex->stringify().utf8().toStr());
 				continue;
 			}

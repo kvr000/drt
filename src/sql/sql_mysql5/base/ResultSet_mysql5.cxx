@@ -37,11 +37,11 @@
 
 #include <dr/x_kw.hxx>
 #include <dr/Const.hxx>
-#include <dr/Except.hxx>
-#include <dr/UnsupportedExcept.hxx>
+#include <dr/Exception.hxx>
+#include <dr/UnsupportedException.hxx>
 
-#include <dr/sql/SqlExcept.hxx>
-#include <dr/sql/SqlParseExcept.hxx>
+#include <dr/sql/SqlException.hxx>
+#include <dr/sql/SqlParseException.hxx>
 
 #include <dr/sql/Date.hxx>
 #include <dr/sql/mysql5/SqlConnection_mysql5.hxx>
@@ -257,7 +257,7 @@ void ResultSet_mysql5::bindResult(const String &column, Variant **value)
 void ResultSet_mysql5::bindNullHandler(unsigned column, void (*handler)(void *value))
 {
 	if (res_bindings[column].buffer == NULL) {
-		xthrownew(SqlExcept(-1, "null handler allowed only on basic scalar types"));
+		xthrownew(SqlException(-1, "null handler allowed only on basic scalar types"));
 	}
 	addResConversion(&resConv_nullHandler, column, 0, (void *)handler);
 }
@@ -490,7 +490,7 @@ Date ResultSet_mysql5::getDate(unsigned column)
 	switch (mysql_stmt_fetch_column(stmt, &b, column, 0)) {
 	case 0:
 		/* TODO: convert to date */
-		xthrownew(UnsupportedExcept(this, comp_name, "Date", ""));
+		xthrownew(UnsupportedException(this, comp_name, "Date", ""));
 		break;
 
 	default:

@@ -36,11 +36,11 @@
 #include <unistd.h>
 
 #include <dr/x_kw.hxx>
-#include <dr/Except.hxx>
+#include <dr/Exception.hxx>
 #include <dr/Array.hxx>
 #include <dr/List.hxx>
 #include <dr/Hash.hxx>
-#include <dr/InvalidFormatExcept.hxx>
+#include <dr/InvalidFormatException.hxx>
 #include <dr/io/File.hxx>
 #include <dr/io/StreamBuffer.hxx>
 #include <dr/IntEvaluator.hxx>
@@ -69,7 +69,7 @@ static void processOptions(char **argv, QueueManager *queue_manager)
 					ERef<dr::io::StreamBuffer> stream(new dr::io::StreamBuffer(file));
 					queue_manager->addRuleFile(stream);
 				}
-				xcatch (Except, ex) {
+				xcatch (Exception, ex) {
 					fprintf(stderr, "failed to read rules %s: %s\n", *argv, ex->stringify().utf8().toStr());
 					exit(2);
 				}

@@ -37,7 +37,7 @@
 
 #include <dr/x_kw.hxx>
 #include <dr/Const.hxx>
-#include <dr/Except.hxx>
+#include <dr/Exception.hxx>
 
 #include <dr/sql/SqlConnection.hxx>
 #include <dr/sql/SqlStatement.hxx>
@@ -77,7 +77,7 @@ int main(void)
 	xtry {
 		tref(conn->prepareStatement("insert into sample0 (i, s) values(4, 'he')"))->executeUpdate();
 	}
-	xcatch (Except, ex) {
+	xcatch (Exception, ex) {
 		printf("caught exception: %s\n", ex->stringify().utf8().toStr());
 	}
 	xend;

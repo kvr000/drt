@@ -35,11 +35,11 @@
 
 #include <dr/x_kw.hxx>
 #include <dr/Const.hxx>
-#include <dr/Except.hxx>
+#include <dr/Exception.hxx>
 
 #include <mysql/mysql.h>
 
-#include <dr/sql/SqlExcept.hxx>
+#include <dr/sql/SqlException.hxx>
 
 #include <dr/sql/mysql5/SqlConnection_mysql5.hxx>
 #include <dr/sql/mysql5/SqlStatement_mysql5.hxx>
@@ -98,7 +98,7 @@ SqlConnection *SqlManager_mysql5::openConnection(THash<String, String> *args)
 			xend;
 		}
 	}
-	xthrownew(SqlExcept(-1, "failed to create mysql object"));
+	xthrownew(SqlException(-1, "failed to create mysql object"));
 	return NULL;
 }
 

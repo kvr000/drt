@@ -38,7 +38,7 @@
 
 #include <dr/x_kw.hxx>
 #include <dr/Mem.hxx>
-#include <dr/DataNotFoundExcept.hxx>
+#include <dr/DataNotFoundException.hxx>
 
 #include <dr/testenv/testenv.hxx>
 
@@ -84,7 +84,7 @@ void test()
 		CHECK(evaluator->evaluate(arguments) == 0);
 		DR_AssertInvalid();
 	}
-	xcatch (DataNotFoundExcept, ex) {
+	xcatch (DataNotFoundException, ex) {
 	}
 	xend;
 	evaluator.setNoref(new IntEvaluator("a*c+e/c-f+\\1/\\0"));
@@ -95,7 +95,7 @@ void test()
 		evaluator->evaluate(arguments);
 		DR_AssertInvalid();
 	}
-	xcatch (DataNotFoundExcept, ex) {
+	xcatch (DataNotFoundException, ex) {
 	}
 	xend;
 

@@ -45,9 +45,9 @@
 
 #include <dr/io/File.hxx>
 
-#include <dr/UnsupportedExcept.hxx>
-#include <dr/OverflowExcept.hxx>
-#include <dr/io/FileFailedExcept.hxx>
+#include <dr/UnsupportedException.hxx>
+#include <dr/OverflowException.hxx>
+#include <dr/io/FileFailedException.hxx>
 
 DR_IO_NS_BEGIN
 
@@ -151,7 +151,7 @@ DR_RINLINE void *File_sysiface_wnt::open(const String &file, Handle::Mode mode)
 		break;
 	case Handle::M_EXCL:
 	case (int)Handle::M_EXCL|Handle::M_TRUNC:
-		DR_THROWNEW(UnsupportedExcept(NULL, File::comp_name, "open_mode", "M_EXCL|M_TRUNC"));
+		DR_THROWNEW(UnsupportedException(NULL, File::comp_name, "open_mode", "M_EXCL|M_TRUNC"));
 		return (void *)INVALID_HANDLE_VALUE;
 	case Handle::M_CREATE:
 		oflags = OPEN_ALWAYS;

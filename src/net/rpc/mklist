@@ -16,8 +16,8 @@ SOURCES:
 	:${SD_RPC}/RpcDecoder.hxx:g=di,t
 	:${SD_RPC}/RpcHelper.cxx:g=s,t
 	:${SD_RPC}/RpcHelper.hxx:g=di,t
-	:${SD_RPC}/RpcExcept.cxx:g=s,t
-	:${SD_RPC}/RpcExcept.hxx:g=di,t
+	:${SD_RPC}/RpcException.cxx:g=s,t
+	:${SD_RPC}/RpcException.hxx:g=di,t
 
 FCHECK:
 	${ESUBDIRS}/*.cxx::s=t

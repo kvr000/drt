@@ -36,7 +36,7 @@
 #include <stdio.h>
 
 #include <dr/x_kw.hxx>
-#include <dr/Except.hxx>
+#include <dr/Exception.hxx>
 #include <dr/Hash.hxx>
 
 DR_NS_BEGIN

@@ -38,7 +38,7 @@
 
 #include <dr/x_kw.hxx>
 #include <dr/Const.hxx>
-#include <dr/Except.hxx>
+#include <dr/Exception.hxx>
 
 #include <dr/Time.hxx>
 
@@ -116,7 +116,7 @@ void Time::timeToUtcCalendar(SysTime tvalue, int *year, int *mon, int *day, int 
 		gmtime_r(&tt, &t) == NULL
 #endif
 		) {
-		xthrownew(Except());
+		xthrownew(Exception());
 	}
 	*year = t.tm_year+1900;
 	*mon = t.tm_mon;
@@ -137,7 +137,7 @@ void Time::timeToUtcCalendarMsec(SysTime tvalue, int *year, int *mon, int *day, 
 		gmtime_r(&tt, &t) == NULL
 #endif
 		) {
-		xthrownew(Except());
+		xthrownew(Exception());
 	}
 	*year = t.tm_year+1900;
 	*mon = t.tm_mon;

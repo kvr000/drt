@@ -2,7 +2,7 @@
 
 SOURCES:
 	no:${SD_EXCEPT}/mklist:g=t
-	:${SD_EXCEPT}/XmlExcept.cxx:g=s,t
-	:${SD_EXCEPT}/XmlExcept.hxx:g=di,t
+	:${SD_EXCEPT}/XmlException.cxx:g=s,t
+	:${SD_EXCEPT}/XmlException.hxx:g=di,t
 
 

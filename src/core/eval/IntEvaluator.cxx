@@ -38,8 +38,8 @@
 #include <dr/Array.hxx>
 #include <dr/Hash.hxx>
 #include <dr/List.hxx>
-#include <dr/DataNotFoundExcept.hxx>
-#include <dr/InvalidFormatExcept.hxx>
+#include <dr/DataNotFoundException.hxx>
+#include <dr/InvalidFormatException.hxx>
 
 #include <dr/IntEvaluator.hxx>
 
@@ -71,7 +71,7 @@ Sint64 IntEvaluator::IntUnaryExpression::evaluate(Arguments *args)
 	case IntEvaluator::OP_UnNot:
 		return !operand->evaluate(args);
 	default:
-		xthrownew(DataNotFoundExcept("unary operand", String::createNumber(operation_id)));
+		xthrownew(DataNotFoundException("unary operand", String::createNumber(operation_id)));
 	}
 	return 0;
 }
@@ -106,7 +106,7 @@ Sint64 IntEvaluator::IntBinaryExpression::evaluate(Arguments *args)
 	case IntEvaluator::OP_BinXor:
 		return !operands[0]->evaluate(args) ^ !operands[1]->evaluate(args);
 	default:
-		xthrownew(InvalidFormatExcept("binary operand", String::createNumber(operation_id)));
+		xthrownew(InvalidFormatException("binary operand", String::createNumber(operation_id)));
 	}
 	return 0;
 }
@@ -204,11 +204,11 @@ Evaluator::TokenType IntEvaluator::parseNextToken(const char **expr, ParserState
 				return TT_Operator;
 			}
 			else {
-				xthrownew(InvalidFormatExcept("binary operator =", "missing left operand"));
+				xthrownew(InvalidFormatException("binary operator =", "missing left operand"));
 			}
 		}
 		else {
-			xthrownew(InvalidFormatExcept("token", String(*expr, 1)));
+			xthrownew(InvalidFormatException("token", String(*expr, 1)));
 		}
 		break;
 
@@ -224,7 +224,7 @@ Evaluator::TokenType IntEvaluator::parseNextToken(const char **expr, ParserState
 				return TT_Operator;
 			}
 			else {
-				xthrownew(InvalidFormatExcept("binary operator =", "missing left operand"));
+				xthrownew(InvalidFormatException("binary operator =", "missing left operand"));
 			}
 			break;
 
@@ -236,7 +236,7 @@ Evaluator::TokenType IntEvaluator::parseNextToken(const char **expr, ParserState
 				return TT_Operator;
 			}
 			else {
-				xthrownew(InvalidFormatExcept("unary operator !", "unexpected left operand"));
+				xthrownew(InvalidFormatException("unary operator !", "unexpected left operand"));
 			}
 			break;
 		}
@@ -251,7 +251,7 @@ Evaluator::TokenType IntEvaluator::parseNextToken(const char **expr, ParserState
 			return TT_Operator;
 		}
 		else {
-			xthrownew(InvalidFormatExcept("binary operator /", "missing left operand"));
+			xthrownew(InvalidFormatException("binary operator /", "missing left operand"));
 		}
 		break;
 
@@ -264,7 +264,7 @@ Evaluator::TokenType IntEvaluator::parseNextToken(const char **expr, ParserState
 			return TT_Operator;
 		}
 		else {
-			xthrownew(InvalidFormatExcept("binary operator /", "missing left operand"));
+			xthrownew(InvalidFormatException("binary operator /", "missing left operand"));
 		}
 		break;
 
@@ -280,7 +280,7 @@ Evaluator::TokenType IntEvaluator::parseNextToken(const char **expr, ParserState
 				return TT_Operator;
 			}
 			else {
-				xthrownew(InvalidFormatExcept("binary operator <=", "missing left operand"));
+				xthrownew(InvalidFormatException("binary operator <=", "missing left operand"));
 			}
 			break;
 
@@ -292,7 +292,7 @@ Evaluator::TokenType IntEvaluator::parseNextToken(const char **expr, ParserState
 				return TT_Operator;
 			}
 			else {
-				xthrownew(InvalidFormatExcept("binary operator <", "missing left operand"));
+				xthrownew(InvalidFormatException("binary operator <", "missing left operand"));
 			}
 			break;
 		}
@@ -310,7 +310,7 @@ Evaluator::TokenType IntEvaluator::parseNextToken(const char **expr, ParserState
 				return TT_Operator;
 			}
 			else {
-				xthrownew(InvalidFormatExcept("binary operator <=", "missing left operand"));
+				xthrownew(InvalidFormatException("binary operator <=", "missing left operand"));
 			}
 			break;
 
@@ -322,7 +322,7 @@ Evaluator::TokenType IntEvaluator::parseNextToken(const char **expr, ParserState
 				return TT_Operator;
 			}
 			else {
-				xthrownew(InvalidFormatExcept("binary operator <", "missing left operand"));
+				xthrownew(InvalidFormatException("binary operator <", "missing left operand"));
 			}
 			break;
 		}
@@ -339,11 +339,11 @@ Evaluator::TokenType IntEvaluator::parseNextToken(const char **expr, ParserState
 				return TT_Operator;
 			}
 			else {
-				xthrownew(InvalidFormatExcept("operator ||", "missing operator"));
+				xthrownew(InvalidFormatException("operator ||", "missing operator"));
 			}
 		}
 		else {
-			xthrownew(InvalidFormatExcept("token", String(*expr, 1)));
+			xthrownew(InvalidFormatException("token", String(*expr, 1)));
 		}
 
 	case '&':
@@ -357,11 +357,11 @@ Evaluator::TokenType IntEvaluator::parseNextToken(const char **expr, ParserState
 				return TT_Operator;
 			}
 			else {
-				xthrownew(InvalidFormatExcept("operator &&", "missing operator"));
+				xthrownew(InvalidFormatException("operator &&", "missing operator"));
 			}
 		}
 		else {
-			xthrownew(InvalidFormatExcept("token", String(*expr, 1)));
+			xthrownew(InvalidFormatException("token", String(*expr, 1)));
 		}
 
 	case '^':
@@ -375,11 +375,11 @@ Evaluator::TokenType IntEvaluator::parseNextToken(const char **expr, ParserState
 				return TT_Operator;
 			}
 			else {
-				xthrownew(InvalidFormatExcept("operator &&", "missing operator"));
+				xthrownew(InvalidFormatException("operator &&", "missing operator"));
 			}
 		}
 		else {
-			xthrownew(InvalidFormatExcept("token", String(*expr, 1)));
+			xthrownew(InvalidFormatException("token", String(*expr, 1)));
 		}
 
 	case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9':
@@ -389,7 +389,7 @@ Evaluator::TokenType IntEvaluator::parseNextToken(const char **expr, ParserState
 			return TT_Expression;
 		}
 		else {
-			xthrownew(InvalidFormatExcept("constant", "missing operator"));
+			xthrownew(InvalidFormatException("constant", "missing operator"));
 		}
 		break;
 
@@ -403,24 +403,24 @@ Evaluator::TokenType IntEvaluator::parseNextToken(const char **expr, ParserState
 			return TT_Expression;
 		}
 		else {
-			xthrownew(InvalidFormatExcept("variable", "missing operator"));
+			xthrownew(InvalidFormatException("variable", "missing operator"));
 		}
 
 	case '\\':
 		++*expr;
 		if (state == PS_Expression) {
 			if (!isdigit(**expr)) {
-				xthrownew(InvalidFormatExcept("substitute", "missing id"));
+				xthrownew(InvalidFormatException("substitute", "missing id"));
 			}
 			DR_REF_XCHG(ret_expression, (Expression *)new ValueExpression(strtol(*expr, (char **)expr, 0)));
 			return TT_Expression;
 		}
 		else {
-			xthrownew(InvalidFormatExcept("substitute", "missing operator"));
+			xthrownew(InvalidFormatException("substitute", "missing operator"));
 		}
 
 	default:
-		xthrownew(InvalidFormatExcept("token", String(*expr, 1)));
+		xthrownew(InvalidFormatException("token", String(*expr, 1)));
 	}
 	return TT_Finish;
 }

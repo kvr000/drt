@@ -40,7 +40,7 @@
 
 #include <dr/Const.hxx>
 #include <dr/Subsystem.hxx>
-#include <dr/BadSubsysExcept.hxx>
+#include <dr/BadSubsysException.hxx>
 #include <dr/MsgSync.hxx>
 #include <dr/x_kw.hxx>
 
@@ -96,7 +96,7 @@ void Gui_x11::open(Gui *gui_)
 	setlocale(LC_ALL, "");
 
 	if ((display = XOpenDisplay(NULL)) == NULL)
-		xthrownew(BadSubsysExcept(Const::string("Gui_SS_x11"), "failed to open display"));
+		xthrownew(BadSubsysException(Const::string("Gui_SS_x11"), "failed to open display"));
 	gui = gui_;
 
 	if ((xim = XOpenIM(display, NULL, NULL, NULL)) != NULL) {
@@ -110,8 +110,8 @@ void Gui_x11::open(Gui *gui_)
 	xtry {
 		sock_sync.setNoref((MsgSync_Socket *)Thread::getMsgIface(MsgSync_Socket::iface_name));
 	}
-	xcatch (Except, ex) {
-		xthrownew(BadSubsysExcept(ex.getAndNull(), Const::string("Gui_SS_x11"), "failed to get MsgSync_Socket interface"));
+	xcatch (Exception, ex) {
+		xthrownew(BadSubsysException(ex.getAndNull(), Const::string("Gui_SS_x11"), "failed to get MsgSync_Socket interface"));
 	}
 	xend;
 	xtry {

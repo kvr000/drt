@@ -40,9 +40,9 @@
 #include <dr/x_kw.hxx>
 
 #include <dr/io/File.hxx>
-#include <dr/io/IoExcept.hxx>
-#include <dr/io/NonblockExcept.hxx>
-#include <dr/io/FileNotFoundExcept.hxx>
+#include <dr/io/IoException.hxx>
+#include <dr/io/NonblockException.hxx>
+#include <dr/io/FileNotFoundException.hxx>
 
 #include <dr/io/dev/File_sysiface_wnt.hxx>
 
@@ -248,11 +248,11 @@ void File_sysiface_wnt::throwSysException(File *handle, const String &operation,
 	int perr = mapWntErrorToPosix(err);
 	switch (perr) {
 	case DRP_EAGAIN:
-		xthrownew(NonblockExcept(handle, operation, perr, err));
+		xthrownew(NonblockException(handle, operation, perr, err));
 		break;
 
 	default:
-		xthrownew(IoExcept(handle, operation, perr, err));
+		xthrownew(IoException(handle, operation, perr, err));
 		break;
 	}
 }
@@ -262,11 +262,11 @@ void File_sysiface_wnt::throwFileStaticSysException(const String &filename, cons
 	int perr = mapWntErrorToPosix(err);
 	switch (perr) {
 	case DRP_ENOENT:
-		xthrownew(FileNotFoundExcept(filename, operation, perr, err));
+		xthrownew(FileNotFoundException(filename, operation, perr, err));
 		break;
 
 	default:
-		xthrownew(FileFailedExcept(filename, operation, perr, err));
+		xthrownew(FileFailedException(filename, operation, perr, err));
 		break;
 	}
 }

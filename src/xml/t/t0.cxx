@@ -40,7 +40,7 @@
 #include <dr/pe_error.hxx>
 
 #include <dr/Ref.hxx>
-#include <dr/Except.hxx>
+#include <dr/Exception.hxx>
 
 #include <dr/io/File.hxx>
 
@@ -85,7 +85,7 @@ void test()
 		Fatal::plog("Found Ela[n=zz]: %s\n", ela->getAttribute("v").utf8().toStr());
 		doc->execPathElements("/Data/Ela", &handleEla);
 	}
-	xcatch (Except, ex) {
+	xcatch (Exception, ex) {
 		Fatal::plog("caught exception: %s\n", ex->stringify().utf8().toStr());
 	}
 	xend;
@@ -119,7 +119,7 @@ void test()
 		CHECK(tref(docs[1]->findPathElement("/Data/El"))->getTexts() == "Cont1");
 		dr::io::File::unlink("testfile.xml");
 	}
-	xcatch (Except, ex) {
+	xcatch (Exception, ex) {
 		Fatal::plog("caught exception: %s\n", ex->stringify().utf8().toStr());
 	}
 	xend;

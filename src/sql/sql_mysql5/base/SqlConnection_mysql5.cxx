@@ -35,12 +35,12 @@
 
 #include <dr/x_kw.hxx>
 #include <dr/Const.hxx>
-#include <dr/Except.hxx>
+#include <dr/Exception.hxx>
 
 #include <mysql/mysql.h>
 
-#include <dr/sql/SqlExcept.hxx>
-#include <dr/sql/SqlUniqueConstraintExcept.hxx>
+#include <dr/sql/SqlException.hxx>
+#include <dr/sql/SqlUniqueConstraintException.hxx>
 
 #include <dr/sql/mysql5/SqlStatement_mysql5.hxx>
 #include <dr/sql/mysql5/SqlStatement_mysql5_direct.hxx>
@@ -186,14 +186,14 @@ int SqlConnection_mysql5::parseSqlCode(const char *code_str)
 void SqlConnection_mysql5::throwSqlExcept(const char *code_str, const char *error_desc)
 {
 	int code = parseSqlCode(code_str);
-	SqlExcept *ex;
+	SqlException *ex;
 	switch (code) {
 	case 23000:
-		ex = new SqlUniqueConstraintExcept(code, error_desc);
+		ex = new SqlUniqueConstraintException(code, error_desc);
 		break;
 
 	default:
-		ex = new SqlExcept(code, error_desc);
+		ex = new SqlException(code, error_desc);
 		break;
 	}
 	xthrowmove(ex);

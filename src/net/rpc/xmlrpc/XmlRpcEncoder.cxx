@@ -37,9 +37,9 @@
 #include <dr/Const.hxx>
 #include <dr/Mem.hxx>
 
-#include <dr/EndOfDataExcept.hxx>
-#include <dr/OverflowExcept.hxx>
-#include <dr/InvalidFormatExcept.hxx>
+#include <dr/EndOfDataException.hxx>
+#include <dr/OverflowException.hxx>
+#include <dr/InvalidFormatException.hxx>
 #include <dr/MemBase64.hxx>
 
 #include <dr/io/NetAddressInet4.hxx>

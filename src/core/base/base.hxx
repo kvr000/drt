@@ -60,9 +60,9 @@
 #include <dr/Shared.hxx>
 #include <dr/Throw.hxx>
 #include <dr/Error.hxx>
-//#include <dr/Except.hxx>
+//#include <dr/Exception.hxx>
 #include <dr/Assert.hxx>
-#include <dr/CastExcept.hxx>
+#include <dr/CastException.hxx>
 
 
 #endif

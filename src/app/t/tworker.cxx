@@ -40,7 +40,7 @@
 #include <dr/pe_error.hxx>
 
 #include <dr/Ref.hxx>
-#include <dr/Except.hxx>
+#include <dr/Exception.hxx>
 #include <dr/Variant.hxx>
 
 #include <dr/app/WorkerPoolManager.hxx>

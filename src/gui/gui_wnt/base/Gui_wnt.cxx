@@ -39,7 +39,7 @@
 
 #include <dr/Const.hxx>
 #include <dr/Subsystem.hxx>
-#include <dr/BadSubsysExcept.hxx>
+#include <dr/BadSubsysException.hxx>
 #include <dr/MsgSync.hxx>
 
 #include <dr/gui/wnt/Gui_wnt.hxx>
@@ -87,8 +87,8 @@ void Gui_wnt::open(Gui *gui_)
 	xtry {
 		msg_sync = (MsgSync_WntMsg *)Thread::getMsgIface(MsgSync_WntMsg::iface_name);
 	}
-	xcatch (Except, ex) {
-		xthrownew(BadSubsysExcept(ex.getAndNull(), Const::string("Gui_SS_wnt"), "failed to get MsgSync_WntMsg interface"));
+	xcatch (Exception, ex) {
+		xthrownew(BadSubsysException(ex.getAndNull(), Const::string("Gui_SS_wnt"), "failed to get MsgSync_WntMsg interface"));
 	}
 	xend;
 	xtry {
@@ -121,7 +121,7 @@ void Gui_wnt::open(Gui *gui_)
 		HFONT font = CreateFontW(80, 0, 0, 0, FW_EXTRABOLD, FALSE, FALSE, FALSE, ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Arial");
 #endif
 		if (!font) {
-			DR_THROWNEW(BadSubsysExcept(Const::string("Gui_SS_wnt"), "failed to create font"));
+			DR_THROWNEW(BadSubsysException(Const::string("Gui_SS_wnt"), "failed to create font"));
 		}
 		default_font.setNoref(new Font_wnt(this, font));
 	}

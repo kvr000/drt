@@ -36,8 +36,8 @@
 #include <dr/x_kw.hxx>
 #include <dr/Const.hxx>
 
-#include <dr/sql/SqlExcept.hxx>
-#include <dr/sql/SqlParseExcept.hxx>
+#include <dr/sql/SqlException.hxx>
+#include <dr/sql/SqlParseException.hxx>
 
 #include <dr/sql/mysql5/SqlConnection_mysql5.hxx>
 

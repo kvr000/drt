@@ -1,5 +1,5 @@
 #include <dr/x_kw.hxx>
-#include <dr/Except.hxx>
+#include <dr/Exception.hxx>
 #include <dr/Ref.hxx>
 #include <dr/Variant.hxx>
 #include <dr/io/File.hxx>
@@ -28,7 +28,7 @@ int main(int argc, char **argv)
 		fd.setNoref(new dr::io::File(String(argv[1]), dr::io::File::M_WRITE|dr::io::File::M_CREATE|dr::io::File::M_APPEND));
 		pos = fd->seek(0, 2);
 	}
-	xcatch (Except, ex) {
+	xcatch (Exception, ex) {
 		Fatal::plog("Failed to open file %s for writing: %s\n", filename.utf8().toStr(), ex->stringify().utf8().toStr());
 		return 1;
 	}
@@ -46,7 +46,7 @@ int main(int argc, char **argv)
 		}
 		fd.setNull();
 	}
-	xcatch (Except, ex) {
+	xcatch (Exception, ex) {
 		Fatal::plog("Failed to write to file %s: %s\n", filename.utf8().toStr(), ex->stringify().utf8().toStr());
 		return 1;
 	}

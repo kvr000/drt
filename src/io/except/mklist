@@ -2,10 +2,10 @@
 
 SOURCES:
 	no:${SD_EXCEPT}/mklist:g=t
-	:${SD_EXCEPT}/IoExcept.cxx:g=s,t
-	:${SD_EXCEPT}/IoExcept.hxx:g=di,t
-	:${SD_EXCEPT}/NonblockExcept.cxx:g=s,t
-	:${SD_EXCEPT}/NonblockExcept.hxx:g=di,t
+	:${SD_EXCEPT}/IoException.cxx:g=s,t
+	:${SD_EXCEPT}/IoException.hxx:g=di,t
+	:${SD_EXCEPT}/NonblockException.cxx:g=s,t
+	:${SD_EXCEPT}/NonblockException.hxx:g=di,t
 	:${SD_EXCEPT}/BadHostName.cxx:g=s,t
 	:${SD_EXCEPT}/BadHostName.hxx:g=di,t
 

@@ -37,9 +37,9 @@
 #include <dr/Const.hxx>
 
 #include <dr/MethodConv.hxx>
-#include <dr/EndOfDataExcept.hxx>
-#include <dr/UnsupportedExcept.hxx>
-#include <dr/TimeoutExcept.hxx>
+#include <dr/EndOfDataException.hxx>
+#include <dr/UnsupportedException.hxx>
+#include <dr/TimeoutException.hxx>
 #include <dr/Thread.hxx>
 
 #include <dr/io/NetAddressInet4.hxx>
@@ -88,7 +88,7 @@ String HttpServer::readRequest()
 			xtry {
 				n = read_stream.tryReadUntilChar('\n');
 			}
-			xcatch (TimeoutExcept, ex) {
+			xcatch (TimeoutException, ex) {
 				if (read_stream.ptrCache()->getSize() != 0)
 					xthrowref(ex);
 				n = -1;
@@ -99,17 +99,17 @@ String HttpServer::readRequest()
 					connection_state = 2;
 					return Null();
 				}
-				xthrownew(EndOfDataExcept("http", "method"));
+				xthrownew(EndOfDataException("http", "method"));
 			}
 			const char *b = read_stream.ptrCache()->toStr();
 			const char *a = b;
 			char *c;
 			for (c = (char *)b+n; b < c && !isspace(*b); b++) ;
 			if (b == c)
-				xthrownew(EndOfDataExcept("http", "method"));
+				xthrownew(EndOfDataException("http", "method"));
 			req_method = String::createLowerUtf8(a, b-a);
 			if ((method_type = (HttpConst::MethodType)HttpConst::method_type_map.find(req_method)) < 0) {
-				xthrownew(UnsupportedExcept(this, "HttpServer", "method", req_method));
+				xthrownew(UnsupportedException(this, "HttpServer", "method", req_method));
 			}
 			for (; b < c && isspace(*b); b++) ;
 			for (a = b; b < c && !isspace(*b); b++) ;
@@ -141,7 +141,7 @@ String HttpServer::readRequest()
 		for (;;) {
 			ssize_t n = read_stream.readUntilChar('\n');
 			if (n < 0) {
-				xthrownew(EndOfDataExcept("http", "header"));
+				xthrownew(EndOfDataException("http", "header"));
 			}
 			const char *b = read_stream.ptrCache()->toStr();
 			const char *e = b+n;
@@ -153,7 +153,7 @@ String HttpServer::readRequest()
 			}
 			for (c = b; c < e && *c != ':'; c++) ;
 			if (c == e)
-				xthrownew(EndOfDataExcept("http", ":"));
+				xthrownew(EndOfDataException("http", ":"));
 			String key(String::createLowerUtf8(b, c-b));
 			for (c++; c < e && isspace(*c); c++) ;
 			String val(String::createLowerUtf8(c, e-c));
@@ -201,7 +201,7 @@ String HttpServer::readRequest()
 						}
 						for (c = b; c < e && *c != ':'; c++) ;
 						if (c == e)
-							xthrownew(EndOfDataExcept("http", ":"));
+							xthrownew(EndOfDataException("http", ":"));
 						String key(String::createLowerUtf8(b, c-b));
 						for (c++; c < e && isspace(*c); c++) ;
 						String val(String::createLowerUtf8(c, e-c));
@@ -281,7 +281,7 @@ bool HttpServer::updateNextChunk()
 			}
 			for (c = b; c < e && *c != ':'; c++) ;
 			if (c == e)
-				xthrownew(EndOfDataExcept("http", ":"));
+				xthrownew(EndOfDataException("http", ":"));
 			String key(String::createLowerUtf8(b, c-b));
 			for (c++; c < e && isspace(*c); c++) ;
 			String val(String::createLowerUtf8(c, e-c));

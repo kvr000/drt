@@ -46,7 +46,7 @@
  */
 
 #include <dr/x_kw.hxx>
-#include <dr/DataNotFoundExcept.hxx>
+#include <dr/DataNotFoundException.hxx>
 
 #include <dr/app/ApplicationCache.hxx>
 

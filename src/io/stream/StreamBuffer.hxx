@@ -74,7 +74,7 @@ public:
 	 * @param search
 	 * 	character to be found
 	 * @return position before the character
-	 * @throw EndOfDataExcept 	if the character is not found
+	 * @throw EndOfDataException 	if the character is not found
 	 */
 	virtual ssize_t			readUntilChar(char search);
 	virtual ssize_t			read(Blob *data, size_t maxsize);

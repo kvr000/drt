@@ -45,7 +45,7 @@
 #include <dr/String_c.t.hxx>
 #include <dr/Throw.hxx>
 #include <dr/CharConv.hxx>
-#include <dr/CharConvExcept.hxx>
+#include <dr/CharConvException.hxx>
 #include <dr/List.hxx>
 
 #include <dr/String.hxx>

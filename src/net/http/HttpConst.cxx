@@ -37,7 +37,7 @@
 #include <dr/Const.hxx>
 
 #include <dr/MethodConv.hxx>
-#include <dr/EndOfDataExcept.hxx>
+#include <dr/EndOfDataException.hxx>
 
 #include <dr/io/NetAddressInet4.hxx>
 

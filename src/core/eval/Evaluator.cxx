@@ -38,10 +38,10 @@
 #include <dr/Array.hxx>
 #include <dr/Hash.hxx>
 #include <dr/List.hxx>
-#include <dr/DataNotFoundExcept.hxx>
+#include <dr/DataNotFoundException.hxx>
 #include <dr/BString.hxx>
-#include <dr/EndOfDataExcept.hxx>
-#include <dr/InvalidFormatExcept.hxx>
+#include <dr/EndOfDataException.hxx>
+#include <dr/InvalidFormatException.hxx>
 
 #include <dr/Evaluator.hxx>
 
@@ -128,7 +128,7 @@ void Evaluator::parseExpression()
 	token_type = parseNextToken(&expr_str, state, &num_args, expr_obj.mem(), &priority);
 	switch (token_type) {
 	case TT_Finish:
-		xthrownew(EndOfDataExcept("expression", "empty"));
+		xthrownew(EndOfDataException("expression", "empty"));
 
 	case TT_Operator:
 		parse_stack.accAppendingNew()->initOperation(expr_obj, priority, num_args);
@@ -152,7 +152,7 @@ void Evaluator::parseExpression()
 		
 	case TT_CloseParenthesis:
 	default:
-		xthrownew(InvalidFormatExcept("expression", "unary operator or number"));
+		xthrownew(InvalidFormatException("expression", "unary operator or number"));
 	}
 
 	for (;;) {
@@ -163,14 +163,14 @@ void Evaluator::parseExpression()
 				while (StackNode *last = parse_stack.iterLast()) {
 					switch (last->v.type) {
 					case ParseElement::PE_OpenParenthesis:
-						xthrownew(InvalidFormatExcept("expression", "missing right parenthesis"));
+						xthrownew(InvalidFormatException("expression", "missing right parenthesis"));
 						break;
 
 					//case ParseElement::PE_Expression:
 					case ParseElement::PE_Operation:
 						if (last->v.num_args > 0) {
 							if (last->v.num_args > operands.count()) {
-								xthrownew(InvalidFormatExcept("expression", "missing operands"));
+								xthrownew(InvalidFormatException("expression", "missing operands"));
 							}
 							last->v.expression->setOperands(&operands[operands.count()-last->v.num_args]);
 							operands.shrinkEnd(last->v.num_args);
@@ -182,7 +182,7 @@ void Evaluator::parseExpression()
 					case ParseElement::PE_Function:
 						if (last->v.num_args> 0) {
 							if (last->v.num_args > operands.count()) {
-								xthrownew(InvalidFormatExcept("expression", "missing parameters"));
+								xthrownew(InvalidFormatException("expression", "missing parameters"));
 							}
 							last->v.expression->setOperands(&operands[operands.count()-last->v.num_args]);
 							operands.shrinkEnd(last->v.num_args);
@@ -196,7 +196,7 @@ void Evaluator::parseExpression()
 					}
 				}
 				if (operands.count() != 1) {
-					xthrownew(InvalidFormatExcept("expression", "missing operand?"));
+					xthrownew(InvalidFormatException("expression", "missing operand?"));
 				}
 				expression_tree = operands[0];
 				return;
@@ -219,7 +219,7 @@ void Evaluator::parseExpression()
 						break;
 					if (last->v.num_args > 0) {
 						if (last->v.num_args > operands.count()) {
-							xthrownew(InvalidFormatExcept("expression", "missing operands"));
+							xthrownew(InvalidFormatException("expression", "missing operands"));
 						}
 						last->v.expression->setOperands(&operands[operands.count()-last->v.num_args]);
 						operands.shrinkEnd(last->v.num_args);
@@ -250,7 +250,7 @@ void Evaluator::parseExpression()
 					else if (last->v.type == ParseElement::PE_Function) {
 						if (last->v.num_args> 0) {
 							if (last->v.num_args > operands.count()) {
-								xthrownew(InvalidFormatExcept("expression", "missing parameters"));
+								xthrownew(InvalidFormatException("expression", "missing parameters"));
 							}
 							last->v.expression->setOperands(&operands[operands.count()-last->v.num_args]);
 							operands.shrinkEnd(last->v.num_args);
@@ -261,7 +261,7 @@ void Evaluator::parseExpression()
 					else if (last->v.type == ParseElement::PE_Operation) {
 						if (last->v.num_args > 0) {
 							if (last->v.num_args > operands.count()) {
-								xthrownew(InvalidFormatExcept("expression", "missing operands"));
+								xthrownew(InvalidFormatException("expression", "missing operands"));
 							}
 							last->v.expression->setOperands(&operands[operands.count()-last->v.num_args]);
 							operands.shrinkEnd(last->v.num_args);

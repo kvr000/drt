@@ -43,7 +43,7 @@
 #include <dr/List.hxx>
 #include <dr/ThreadSimple.hxx>
 #include <dr/Mutex.hxx>
-#include <dr/CastExcept.hxx>
+#include <dr/CastException.hxx>
 #include <dr/Ref.hxx>
 #include <dr/Throw.hxx>
 #include <dr/DummyObject.hxx>
@@ -333,16 +333,16 @@ DR_OBJECT_IMPL_SIMPLE(T0);
 
 T0::~T0()
 {
-	DR_THROWNEW(Except());
+	DR_THROWNEW(Exception());
 }
 
 void test()
 {
 	DR_TRY {
 		ERef<T0> t(new T0);
-		DR_THROWNEW(Except());
+		DR_THROWNEW(Exception());
 	}
-	DR_CATCH (Except, ex) {
+	DR_CATCH (Exception, ex) {
 		Fatal::plog("caught expected exception\n");
 	}
 	DR_ENDTRY
@@ -766,7 +766,7 @@ void test()
 		DR_TRY {
 			t0->getIface("non-existing");
 		}
-		DR_CATCH (CastExcept, ex) {
+		DR_CATCH (CastException, ex) {
 			Fatal::plog("caught cast-exception: %s\n", ex->stringify().utf8().toStr());
 			ok = true;
 		}
@@ -776,7 +776,7 @@ void test()
 		DR_TRY {
 			t0->getIfaceUnref("non-existing");
 		}
-		DR_CATCH (CastExcept, ex) {
+		DR_CATCH (CastException, ex) {
 			Fatal::plog("caught cast-exception: %s\n", ex->stringify().utf8().toStr());
 			ok = true;
 		}

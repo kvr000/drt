@@ -39,7 +39,7 @@
 #include <dr/x_kw.hxx>
 #include <dr/Mem.hxx>
 #include <dr/MutexCond.hxx>
-#include <dr/DataNotFoundExcept.hxx>
+#include <dr/DataNotFoundException.hxx>
 
 #include <dr/testenv/testenv.hxx>
 

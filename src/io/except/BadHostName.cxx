@@ -40,7 +40,7 @@
 DR_IO_NS_BEGIN
 
 
-DR_THROW_DEF(DR_IO_NS_STR, BadHostName, Except);
+DR_THROW_DEF(DR_IO_NS_STR, BadHostName, Exception);
 DR_THROW_IMPL_SIMPLE(BadHostName);
 
 DR_EXPORT_MET BadHostName::BadHostName(const String &host_name_):

@@ -4,8 +4,8 @@ SOURCES:
 	no:${SD_TYPES}/mklist:g=t
 	:${SD_TYPES}/CharConv.cxx:g=s,t
 	:${SD_TYPES}/CharConv.hxx:g=di,t
-	:${SD_TYPES}/CharConvExcept.hxx:g=di,t
-	:${SD_TYPES}/CharConvExcept.cxx:g=s,t
+	:${SD_TYPES}/CharConvException.hxx:g=di,t
+	:${SD_TYPES}/CharConvException.cxx:g=s,t
 	:${SD_TYPES}/BString.cxx:g=s,t
 	:${SD_TYPES}/BString.hxx:g=di,t
 	:${SD_TYPES}/Blob.cxx:g=s,t

@@ -37,12 +37,12 @@
 
 #include <dr/x_kw.hxx>
 #include <dr/Const.hxx>
-#include <dr/Except.hxx>
-#include <dr/UnsupportedExcept.hxx>
-#include <dr/InvalidFormatExcept.hxx>
+#include <dr/Exception.hxx>
+#include <dr/UnsupportedException.hxx>
+#include <dr/InvalidFormatException.hxx>
 
-#include <dr/sql/SqlExcept.hxx>
-#include <dr/sql/SqlParseExcept.hxx>
+#include <dr/sql/SqlException.hxx>
+#include <dr/sql/SqlParseException.hxx>
 
 #include <dr/sql/Date.hxx>
 #include <dr/sql/mysql5/SqlConnection_mysql5.hxx>
@@ -133,7 +133,7 @@ void SqlStatement_mysql5::prepare()
 	}
 	if (mysql_stmt_prepare(stmt, s.utf8().toStr(), s.utf8().getSize()) != 0) {
 		//printf("err=%s\n", mysql_stmt_error(stmt));
-		xthrownew(SqlParseExcept(s, SqlConnection_mysql5::parseSqlCode(mysql_stmt_sqlstate(stmt)), mysql_stmt_error(stmt)));
+		xthrownew(SqlParseException(s, SqlConnection_mysql5::parseSqlCode(mysql_stmt_sqlstate(stmt)), mysql_stmt_error(stmt)));
 	}
 }
 
@@ -238,7 +238,7 @@ void SqlStatement_mysql5::bindParam(unsigned column, Variant *value)
 		break;
 
 	default:
-		xthrownew(InvalidFormatExcept("sql type", value->getName()));
+		xthrownew(InvalidFormatException("sql type", value->getName()));
 		break;
 	}
 }
@@ -246,7 +246,7 @@ void SqlStatement_mysql5::bindParam(unsigned column, Variant *value)
 void SqlStatement_mysql5::bindParams(Variant **values, size_t values_count)
 {
 	if (mysql_stmt_param_count(stmt) != values_count)
-		xthrownew(SqlExcept(-1, "incorrect count of bindings"));
+		xthrownew(SqlException(-1, "incorrect count of bindings"));
 	while (values_count-- > 0) {
 		bindParam(values_count, values[values_count]);
 	}
@@ -264,7 +264,7 @@ void SqlStatement_mysql5::executeUpdate()
 retry:
 	if (par_bindings.count()) {
 		if (mysql_stmt_param_count(stmt) != par_bindings.count())
-			xthrownew(SqlExcept(-1, "missing binding"));
+			xthrownew(SqlException(-1, "missing binding"));
 		if (mysql_stmt_bind_param(stmt, &par_bindings[0]) != 0) {
 			SqlConnection_mysql5::throwSqlExcept(mysql_stmt_sqlstate(stmt), mysql_stmt_error(stmt));
 		}
@@ -286,7 +286,7 @@ ResultSet *SqlStatement_mysql5::executeQuery()
 retry:
 	if (par_bindings.count()) {
 		if (mysql_stmt_param_count(stmt) != par_bindings.count())
-			xthrownew(SqlExcept(-1, "missing binding"));
+			xthrownew(SqlException(-1, "missing binding"));
 		if (mysql_stmt_bind_param(stmt, &par_bindings[0]) != 0) {
 			SqlConnection_mysql5::throwSqlExcept(mysql_stmt_sqlstate(stmt), mysql_stmt_error(stmt));
 		}

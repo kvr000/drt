@@ -36,11 +36,11 @@
 #include <dr/x_kw.hxx>
 #include <dr/Const.hxx>
 #include <dr/Array.hxx>
-#include <dr/InvalidFormatExcept.hxx>
+#include <dr/InvalidFormatException.hxx>
 
 #include <dr/net/RpcDecoder.hxx>
 #include <dr/net/RpcEncoder.hxx>
-#include <dr/net/RpcExcept.hxx>
+#include <dr/net/RpcException.hxx>
 
 #include <dr/net/RpcHelper.hxx>
 
@@ -124,13 +124,13 @@ void RpcHelper::readStruct(RpcDecoder *decoder, void *struct_addr, StructMapper 
 			xtry {
 				(*m)->reader_func(decoder, (char *)struct_addr+(*m)->offset);
 			}
-			xcatch (Except, ex) {
-				xthrownew(RpcExcept(ex, String("failed to read ")+name));
+			xcatch (Exception, ex) {
+				xthrownew(RpcException(ex, String("failed to read ")+name));
 			}
 			xend;
 		}
 		else {
-			xthrownew(InvalidFormatExcept("rpc::unknown_member", name));
+			xthrownew(InvalidFormatException("rpc::unknown_member", name));
 		}
 	}
 }

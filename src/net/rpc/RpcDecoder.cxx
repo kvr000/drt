@@ -36,7 +36,7 @@
 #include <dr/x_kw.hxx>
 #include <dr/Const.hxx>
 
-#include <dr/EndOfDataExcept.hxx>
+#include <dr/EndOfDataException.hxx>
 
 #include <dr/io/NetAddressInet4.hxx>
 

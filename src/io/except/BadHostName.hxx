@@ -36,7 +36,7 @@
 #ifndef dr__io__BadHostName__hxx__
 # define dr__io__BadHostName__hxx__
 
-#include <dr/Except.hxx>
+#include <dr/Exception.hxx>
 
 #include <dr/io/def_io.hxx>
 
@@ -50,9 +50,9 @@ class Handle;
  *
  * Caused by input/output failure
  */
-class DR_IO_PUB BadHostName: public Except
+class DR_IO_PUB BadHostName: public Exception
 {
-	DR_THROW_DECL_SIMPLE(BadHostName, Except);
+	DR_THROW_DECL_SIMPLE(BadHostName, Exception);
 
 public:
 	/**

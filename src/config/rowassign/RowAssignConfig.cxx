@@ -39,7 +39,7 @@
 #include <dr/io/File.hxx>
 #include <dr/io/StreamBuffer.hxx>
 
-#include <dr/config/NoValueExcept.hxx>
+#include <dr/config/NoValueException.hxx>
 
 #include <dr/config/RowAssignConfig.hxx>
 
@@ -93,7 +93,7 @@ String RowAssignConfig::getValue(const String &key)
 {
 	if (String *v = content.accValue(key))
 		return *v;
-	xthrownew(NoValueExcept(this, key));
+	xthrownew(NoValueException(this, key));
 	return Null();
 }
 

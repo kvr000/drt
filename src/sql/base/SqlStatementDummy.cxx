@@ -35,9 +35,9 @@
 
 #include <dr/x_kw.hxx>
 #include <dr/Const.hxx>
-#include <dr/Except.hxx>
-#include <dr/UnsupportedExcept.hxx>
-#include <dr/sql/SqlExcept.hxx>
+#include <dr/Exception.hxx>
+#include <dr/UnsupportedException.hxx>
+#include <dr/sql/SqlException.hxx>
 
 #include <dr/sql/SqlStatementDummy.hxx>
 
@@ -127,7 +127,7 @@ void SqlStatementDummy::executeUpdate()
 
 ResultSet *SqlStatementDummy::executeQuery()
 {
-	xthrownew(UnsupportedExcept(this, "sql", "executeQuery", ""));
+	xthrownew(UnsupportedException(this, "sql", "executeQuery", ""));
 	return NULL;
 }
 
@@ -138,7 +138,7 @@ Uint64 SqlStatementDummy::getAffectedRows()
 
 Uint64 SqlStatementDummy::getInsertId()
 {
-	xthrownew(UnsupportedExcept(this, "sql", "getInsertId", ""));
+	xthrownew(UnsupportedException(this, "sql", "getInsertId", ""));
 	return 0;
 }
 

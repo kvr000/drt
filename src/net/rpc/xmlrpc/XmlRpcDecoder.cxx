@@ -37,9 +37,9 @@
 #include <dr/Const.hxx>
 #include <dr/Mem.hxx>
 
-#include <dr/EndOfDataExcept.hxx>
-#include <dr/OverflowExcept.hxx>
-#include <dr/InvalidFormatExcept.hxx>
+#include <dr/EndOfDataException.hxx>
+#include <dr/OverflowException.hxx>
+#include <dr/InvalidFormatException.hxx>
 #include <dr/MemBase64.hxx>
 
 #include <dr/io/NetAddressInet4.hxx>
@@ -68,10 +68,10 @@ size_t XmlRpcDecoder::readGenLength(size_t length_octets)
 	Uint64 length = 0;
 	length_octets += length_add;
 	if (pos > end+length_octets)
-		xthrownew(EndOfDataExcept("char", "bool"));
+		xthrownew(EndOfDataException("char", "bool"));
 	Mem::copyPartialLe(&length, sizeof(length), pos, length_octets); pos += length_octets;
 	if (length != (size_t)length)
-		xthrownew(OverflowExcept("size_t"));
+		xthrownew(OverflowException("size_t"));
 	return (size_t)length;
 }
 #endif
@@ -81,7 +81,7 @@ int XmlRpcDecoder::moveToNextElement(const char **start, size_t *length)
 	for (;;) {
 next_step:
 		if (pos == end) {
-			xthrownew(EndOfDataExcept("char", "element"));
+			xthrownew(EndOfDataException("char", "element"));
 		}
 		if (isspace(*pos)) {
 			pos++;
@@ -91,7 +91,7 @@ next_step:
 		case '<':
 			for (++pos; ; pos++) {
 				if (pos == end)
-					xthrownew(EndOfDataExcept("char", "element"));
+					xthrownew(EndOfDataException("char", "element"));
 				if (isspace(*pos))
 					continue;
 				break;
@@ -99,7 +99,7 @@ next_step:
 			if (*pos == '/') {
 				for (++pos; ; pos++) {
 					if (pos == end)
-						xthrownew(EndOfDataExcept("char", "element"));
+						xthrownew(EndOfDataException("char", "element"));
 					if (isspace(*pos))
 						continue;
 					break;
@@ -107,7 +107,7 @@ next_step:
 				*start = (const char *)pos;
 				for (; ; pos++) {
 					if (pos == end)
-						xthrownew(EndOfDataExcept("char", "element name"));
+						xthrownew(EndOfDataException("char", "element name"));
 					if (isalnum(*pos) || *pos == '_' || *pos == '.')
 						continue;
 					break;
@@ -115,13 +115,13 @@ next_step:
 				*length = (const char *)pos-*start;
 				for (; ; pos++) {
 					if (pos == end)
-						xthrownew(EndOfDataExcept("char", "element"));
+						xthrownew(EndOfDataException("char", "element"));
 					if (isspace(*pos))
 						continue;
 					break;
 				}
 				if (*pos != '>') {
-					xthrownew(InvalidFormatExcept("end tag", ">"));
+					xthrownew(InvalidFormatException("end tag", ">"));
 				}
 				pos++;
 				return 1;
@@ -130,7 +130,7 @@ next_step:
 				if (pos < end+3 && memcmp(++pos, "--", 2) == 0) {
 					for (pos += 2; ; pos++) {
 						if (pos >= end-2)
-							xthrownew(EndOfDataExcept("char", "element"));
+							xthrownew(EndOfDataException("char", "element"));
 						if (pos[0] == '-' && pos[1] == '-' && pos[2] == '>') {
 							pos += 3;
 							goto next_step;
@@ -138,13 +138,13 @@ next_step:
 					}
 				}
 				else {
-					xthrownew(InvalidFormatExcept("comment", "--"));
+					xthrownew(InvalidFormatException("comment", "--"));
 				}
 			}
 			else {
 				for (; ; pos++) {
 					if (pos == end)
-						xthrownew(EndOfDataExcept("char", "element"));
+						xthrownew(EndOfDataException("char", "element"));
 					if (isspace(*pos))
 						continue;
 					break;
@@ -152,7 +152,7 @@ next_step:
 				*start = (const char *)pos;
 				for (; ; pos++) {
 					if (pos == end)
-						xthrownew(EndOfDataExcept("char", "element name"));
+						xthrownew(EndOfDataException("char", "element name"));
 					if (isalnum(*pos) || *pos == '_' || *pos == '.')
 						continue;
 					break;
@@ -160,13 +160,13 @@ next_step:
 				*length = (const char *)pos-*start;
 				for (; ; pos++) {
 					if (pos == end)
-						xthrownew(EndOfDataExcept("char", "element"));
+						xthrownew(EndOfDataException("char", "element"));
 					if (isspace(*pos))
 						continue;
 					break;
 				}
 				if (*pos != '>') {
-					xthrownew(InvalidFormatExcept("end tag", ">"));
+					xthrownew(InvalidFormatException("end tag", ">"));
 				}
 				pos++;
 				return 0;
@@ -174,7 +174,7 @@ next_step:
 			break;
 
 		default:
-			xthrownew(InvalidFormatExcept("xml", "unexpected character"));
+			xthrownew(InvalidFormatException("xml", "unexpected character"));
 		}
 	}
 }
@@ -184,17 +184,17 @@ size_t XmlRpcDecoder::moveToNextValue(const char **type_start)
 	for (;;) {
 		size_t type_length;
 		if (moveToNextElement(type_start, &type_length) != 0) {
-			xthrownew(InvalidFormatExcept("xmlrpc", "value"));
+			xthrownew(InvalidFormatException("xmlrpc", "value"));
 		}
 		if (type_length == 5 && memcmp(*type_start, "value", type_length) == 0) {
 			if (moveToNextElement(type_start, &type_length) != 0) {
-				xthrownew(InvalidFormatExcept("xmlrpc", "value"));
+				xthrownew(InvalidFormatException("xmlrpc", "value"));
 			}
 			return type_length;
 		}
 		if (type_length == 5 && memcmp(*type_start, "param", type_length) == 0)
 			continue;
-		xthrownew(InvalidFormatExcept("xmlrpc", String("value")));
+		xthrownew(InvalidFormatException("xmlrpc", String("value")));
 	}
 }
 
@@ -203,7 +203,7 @@ void XmlRpcDecoder::skipValueEnd(const char *type_start, size_t type_length)
 	const char *el_start;
 	size_t el_length;
 	if (moveToNextElement(&el_start, &el_length) != 1) {
-		xthrownew(InvalidFormatExcept("xmlrpc", String("endvalue")));
+		xthrownew(InvalidFormatException("xmlrpc", String("endvalue")));
 	}
 	moveToNextElementReqEnd("value");
 	const unsigned char *save_pos = pos;
@@ -217,7 +217,7 @@ void XmlRpcDecoder::moveToNextElementReqStart(const BString &tag_name)
 	const char *start;
 	size_t length;
 	if (moveToNextElement(&start, &length) != 0 || length != tag_name.getSize() || memcmp(start, tag_name, length) != 0) {
-		xthrownew(InvalidFormatExcept("xmlrpc", String(tag_name)));
+		xthrownew(InvalidFormatException("xmlrpc", String(tag_name)));
 	}
 }
 
@@ -226,7 +226,7 @@ void XmlRpcDecoder::moveToNextElementReqEnd(const BString &tag_name)
 	const char *start;
 	size_t length;
 	if (moveToNextElement(&start, &length) != 1 || length != tag_name.getSize() || memcmp(start, tag_name, length) != 0) {
-		xthrownew(InvalidFormatExcept("xmlrpc", String(tag_name)));
+		xthrownew(InvalidFormatException("xmlrpc", String(tag_name)));
 	}
 }
 
@@ -254,7 +254,7 @@ String XmlRpcDecoder::convertToString(const char *str, size_t len)
 				*os++ = '\"';
 			}
 			else {
-				xthrownew(InvalidFormatExcept("xmlspecial", "&"));
+				xthrownew(InvalidFormatException("xmlspecial", "&"));
 			}
 			break;
 
@@ -272,11 +272,11 @@ int XmlRpcDecoder::readHeader()
 	const char *el_start;
 	size_t el_length;
 	if (memcmp(pos, "<?xml version=\"1.0\"?>", 21) != 0)
-		xthrownew(InvalidFormatExcept("rpc::header", "unexpected header"));
+		xthrownew(InvalidFormatException("rpc::header", "unexpected header"));
 	pos += 21;
 	const unsigned char *save_pos = pos;
 	if (moveToNextElement(&el_start, &el_length) != 0) {
-		xthrownew(InvalidFormatExcept("xmlrpc", "header"));
+		xthrownew(InvalidFormatException("xmlrpc", "header"));
 	}
 	if (el_length == 10 && memcmp(el_start, "methodCall", el_length) == 0) {
 		pos = save_pos;
@@ -284,7 +284,7 @@ int XmlRpcDecoder::readHeader()
 	}
 	else if (el_length == 14 && memcmp(el_start, "methodResponse", el_length) == 0) {
 		if (moveToNextElement(&el_start, &el_length) != 0) {
-			xthrownew(InvalidFormatExcept("xmlrpc", "header"));
+			xthrownew(InvalidFormatException("xmlrpc", "header"));
 		}
 		if (el_length == 6 && memcmp(el_start, "params", el_length) == 0) {
 			pos = save_pos;
@@ -295,12 +295,12 @@ int XmlRpcDecoder::readHeader()
 			return 2;
 		}
 		else {
-			xthrownew(InvalidFormatExcept("xmlrpc", "header"));
+			xthrownew(InvalidFormatException("xmlrpc", "header"));
 			return -1;
 		}
 	}
 	else {
-		xthrownew(InvalidFormatExcept("xmlrpc", "header"));
+		xthrownew(InvalidFormatException("xmlrpc", "header"));
 		return -1;
 	}
 }
@@ -315,7 +315,7 @@ retry_element:
 		return -1;
 	switch (moveToNextElement(&el_start, &el_length)) {
 	case -1:
-		xthrownew(InvalidFormatExcept("xmlrpc", "value"));
+		xthrownew(InvalidFormatException("xmlrpc", "value"));
 		return -1;
 
 	case 0:
@@ -325,7 +325,7 @@ retry_element:
 			if (moveToNextElement(&el_start, &el_length) == 0) {
 				if (el_length == 14 && memcmp(el_start, "methodResponse", el_length) == 0) {
 					if (moveToNextElement(&el_start, &el_length) != 0) {
-						xthrownew(InvalidFormatExcept("xmlrpc", "header"));
+						xthrownew(InvalidFormatException("xmlrpc", "header"));
 					}
 					pos = save_pos;
 					if (el_length == 6 && memcmp(el_start, "params", el_length) == 0) {
@@ -365,20 +365,20 @@ retry_element:
 					return 13;
 				}
 				else {
-					xthrownew(InvalidFormatExcept("xmlrpc", "value"));
+					xthrownew(InvalidFormatException("xmlrpc", "value"));
 				}
 			}
 		}
-		xthrownew(InvalidFormatExcept("xmlrpc", "value"));
+		xthrownew(InvalidFormatException("xmlrpc", "value"));
 
 	case 1:
 		if ((el_length == 6 && memcmp(el_start, "params", el_length) == 0) || (el_length == 5 && memcmp(el_start, "fault", el_length) == 0)) {
 			return -1;
 		}
-		xthrownew(InvalidFormatExcept("xmlrpc", "value"));
+		xthrownew(InvalidFormatException("xmlrpc", "value"));
 		break;
 	}
-	xthrownew(InvalidFormatExcept("xmlrpc", "value"));
+	xthrownew(InvalidFormatException("xmlrpc", "value"));
 	return -1;
 }
 
@@ -435,7 +435,7 @@ void XmlRpcDecoder::readSkip()
 		}
 		break;
 	default:
-		xthrownew(InvalidFormatExcept("rpc::type", "unknown type"));
+		xthrownew(InvalidFormatException("rpc::type", "unknown type"));
 	}
 }
 
@@ -501,7 +501,7 @@ Sint32 XmlRpcDecoder::readInt32()
 		return val;
 	}
 	else {
-		xthrownew(InvalidFormatExcept("rpc::int::code", String::createUtf8(el_start, el_length)));
+		xthrownew(InvalidFormatException("rpc::int::code", String::createUtf8(el_start, el_length)));
 		return 0;
 	}
 }
@@ -523,7 +523,7 @@ Sint64 XmlRpcDecoder::readInt64()
 		return val;
 	}
 	else {
-		xthrownew(InvalidFormatExcept("rpc::int::code", String::createUtf8(el_start, el_length)));
+		xthrownew(InvalidFormatException("rpc::int::code", String::createUtf8(el_start, el_length)));
 		return 0;
 	}
 }
@@ -542,11 +542,11 @@ bool XmlRpcDecoder::readBool()
 			return true;
 		else if (cont_length == 5 && memcmp(cont_start, "false", cont_length) == 0)
 			return false;
-		xthrownew(InvalidFormatExcept("rpc::bool::content", String::createUtf8(cont_start, cont_length)));
+		xthrownew(InvalidFormatException("rpc::bool::content", String::createUtf8(cont_start, cont_length)));
 		return false;
 	}
 	else {
-		xthrownew(InvalidFormatExcept("rpc::bool::code", String::createUtf8(el_start, el_length)));
+		xthrownew(InvalidFormatException("rpc::bool::code", String::createUtf8(el_start, el_length)));
 		return false;
 	}
 }
@@ -565,7 +565,7 @@ double XmlRpcDecoder::readDouble()
 		return val;
 	}
 	else {
-		xthrownew(InvalidFormatExcept("rpc::double::code", String::createUtf8(el_start, el_length)));
+		xthrownew(InvalidFormatException("rpc::double::code", String::createUtf8(el_start, el_length)));
 		return 0;
 	}
 }
@@ -583,7 +583,7 @@ String XmlRpcDecoder::readString()
 		return String::createUtf8(cont_start, cont_length);
 	}
 	else {
-		xthrownew(InvalidFormatExcept("rpc::string::code", String::createUtf8(el_start, el_length)));
+		xthrownew(InvalidFormatException("rpc::string::code", String::createUtf8(el_start, el_length)));
 		return Null();
 	}
 }
@@ -603,7 +603,7 @@ Blob XmlRpcDecoder::readBinary()
 		return val;
 	}
 	else {
-		xthrownew(InvalidFormatExcept("rpc::base64::code", String::createUtf8(el_start, el_length)));
+		xthrownew(InvalidFormatException("rpc::base64::code", String::createUtf8(el_start, el_length)));
 		return Null();
 	}
 }
@@ -620,21 +620,21 @@ SysTime XmlRpcDecoder::readTime()
 		skipValueEnd(el_start, el_length);
 		int year = 0, mon = 0, mday = 0, hour = 0, min = 0, sec = 0, tz = 0;
 		if (cont_length < 1 || !isdigit(*cont_start))
-			xthrownew(InvalidFormatExcept("rpc::date::format", String(cont_start, cont_length)));
+			xthrownew(InvalidFormatException("rpc::date::format", String(cont_start, cont_length)));
 		for (size_t i = 4; i > 0 && cont_length > 0 && isdigit(*cont_start); i--, cont_length--)
 			year = year*10+*cont_start++-'0';
 		if (cont_length > 0 && *cont_start == '-') {
 			cont_length--; cont_start++;
 		}
 		if (cont_length < 1 || !isdigit(*cont_start))
-			xthrownew(InvalidFormatExcept("rpc::date::format", String(cont_start, cont_length)));
+			xthrownew(InvalidFormatException("rpc::date::format", String(cont_start, cont_length)));
 		for (size_t i = 2; i > 0 && cont_length > 0 && isdigit(*cont_start); i--, cont_length--)
 			mon = mon*10+*cont_start++-'0';
 		if (cont_length > 0 && *cont_start == '-') {
 			cont_length--; cont_start++;
 		}
 		if (cont_length < 1 || !isdigit(*cont_start))
-			xthrownew(InvalidFormatExcept("rpc::date::format", String(cont_start, cont_length)));
+			xthrownew(InvalidFormatException("rpc::date::format", String(cont_start, cont_length)));
 		for (size_t i = 2; i > 0 && cont_length > 0 && isdigit(*cont_start); i--, cont_length--)
 			mday = mday*10+*cont_start++-'0';
 		if (cont_length > 0 && (*cont_start == 'T' || *cont_start == 't' || *cont_start == ' ')) {
@@ -642,7 +642,7 @@ SysTime XmlRpcDecoder::readTime()
 		}
 		if (cont_length >= 1) {
 			if (!isdigit(*cont_start))
-				xthrownew(InvalidFormatExcept("rpc::date::format", String(cont_start, cont_length)));
+				xthrownew(InvalidFormatException("rpc::date::format", String(cont_start, cont_length)));
 			for (size_t i = 2; i > 0 && cont_length > 0 && isdigit(*cont_start); i--, cont_length--)
 				hour = hour*10+*cont_start++-'0';
 			if (cont_length > 0 && *cont_start == ':') {
@@ -650,7 +650,7 @@ SysTime XmlRpcDecoder::readTime()
 			}
 			if (cont_length >= 1) {
 				if (!isdigit(*cont_start))
-					xthrownew(InvalidFormatExcept("rpc::date::format", String(cont_start, cont_length)));
+					xthrownew(InvalidFormatException("rpc::date::format", String(cont_start, cont_length)));
 				for (size_t i = 2; i > 0 && cont_length > 0 && isdigit(*cont_start); i--, cont_length--)
 					min = min*10+*cont_start++-'0';
 				if (cont_length > 0 && *cont_start == ':') {
@@ -658,7 +658,7 @@ SysTime XmlRpcDecoder::readTime()
 				}
 				if (cont_length >= 1) {
 					if (!isdigit(*cont_start))
-						xthrownew(InvalidFormatExcept("rpc::date::format", String(cont_start, cont_length)));
+						xthrownew(InvalidFormatException("rpc::date::format", String(cont_start, cont_length)));
 					for (size_t i = 2; i > 0 && cont_length > 0 && isdigit(*cont_start); i--, cont_length--)
 						sec = sec*10+*cont_start++-'0';
 					if (cont_length > 0 && *cont_start == ':') {
@@ -672,7 +672,7 @@ SysTime XmlRpcDecoder::readTime()
 		return Time::convertUtcTime(year, mon-1, mday-1, hour, min, sec, -tz);
 	}
 	else {
-		xthrownew(InvalidFormatExcept("rpc::bool::code", String::createUtf8(el_start, el_length)));
+		xthrownew(InvalidFormatException("rpc::bool::code", String::createUtf8(el_start, el_length)));
 		return 0;
 	}
 }
@@ -686,7 +686,7 @@ ssize_t XmlRpcDecoder::readStructLength()
 		return -1;
 	}
 	else {
-		xthrownew(InvalidFormatExcept("rpc::struct::code", String::createUtf8(el_start, el_length)));
+		xthrownew(InvalidFormatException("rpc::struct::code", String::createUtf8(el_start, el_length)));
 		return -1;
 	}
 }
@@ -701,7 +701,7 @@ ssize_t XmlRpcDecoder::readArrayLength()
 		return -1;
 	}
 	else {
-		xthrownew(InvalidFormatExcept("rpc::struct::code", String::createUtf8(el_start, el_length)));
+		xthrownew(InvalidFormatException("rpc::struct::code", String::createUtf8(el_start, el_length)));
 		return -1;
 	}
 }
@@ -746,7 +746,7 @@ retry:
 			return false;
 		}
 		else {
-			xthrownew(InvalidFormatExcept("rpc::struct::code", String(el_start, el_length)));
+			xthrownew(InvalidFormatException("rpc::struct::code", String(el_start, el_length)));
 			return false;
 		}
 	}
@@ -762,7 +762,7 @@ retry:
 			pos = save_pos;
 			return true;
 		}
-		xthrownew(InvalidFormatExcept("rpc::struct::code", String(el_start, el_length)));
+		xthrownew(InvalidFormatException("rpc::struct::code", String(el_start, el_length)));
 		return false;
 	}
 }

@@ -36,7 +36,7 @@
 #include <dr/Const.hxx>
 #include <dr/Subsystem.hxx>
 #include <dr/Thread.hxx>
-#include <dr/BadSubsysExcept.hxx>
+#include <dr/BadSubsysException.hxx>
 
 #include <dr/gui/Gui.hxx>
 #include <dr/gui/Widget.hxx>
@@ -82,7 +82,7 @@ DR_EXPORT_MET void Gui::setOptions(const String &options_)
 DR_EXPORT_MET void Gui::open(const Eslot1<bool, Gui *> &check_impl)
 {
 	unsigned i;
-	Ref<Except> ex_saved;
+	Ref<Exception> ex_saved;
 	int ex_prio = -1;
 
 	for (i = 0; i < sizeof(gui_impls)/sizeof(gui_impls[0]); i++) {
@@ -91,7 +91,7 @@ DR_EXPORT_MET void Gui::open(const Eslot1<bool, Gui *> &check_impl)
 		xtry {
 			sys = Subsystem::getSubsystem(gui_impls[i], NULL);
 		}
-		xcatch (Except, ex) {
+		xcatch (Exception, ex) {
 			if (ex_prio < 0) {
 				ex_saved.setNoref(ex.getAndNull());
 				ex_prio = 0;
@@ -102,7 +102,7 @@ DR_EXPORT_MET void Gui::open(const Eslot1<bool, Gui *> &check_impl)
 		xtry {
 			impl_ = (Gui_impl *)sys->create(String(Null()), Gui_impl::comp_name);
 		}
-		xcatch (Except, ex) {
+		xcatch (Exception, ex) {
 			if (ex_prio < 2) {
 				ex_saved.setNoref(ex.getAndNull());
 				ex_prio = 2;
@@ -113,7 +113,7 @@ DR_EXPORT_MET void Gui::open(const Eslot1<bool, Gui *> &check_impl)
 		xtry {
 			impl_->open(this);
 		}
-		xcatch (Except, ex) {
+		xcatch (Exception, ex) {
 			if (ex_prio < 4) {
 				ex_saved.setNoref(ex.getAndNull());
 				ex_prio = 4;
@@ -124,11 +124,11 @@ DR_EXPORT_MET void Gui::open(const Eslot1<bool, Gui *> &check_impl)
 		impl = impl_;
 		xtry {
 			if (!check_impl.isNull() && !check_impl(this))
-				xthrownew(BadSubsysExcept(gui_impls[i], "Not satisfied with implementation"));
+				xthrownew(BadSubsysException(gui_impls[i], "Not satisfied with implementation"));
 			sys->releaseSubsystem();
 			goto have_impl;
 		}
-		xcatch (Except, ex) {
+		xcatch (Exception, ex) {
 			impl = NULL;
 			if (ex_prio < 6) {
 				ex_saved.setNoref(ex.getAndNull());
@@ -144,7 +144,7 @@ next:
 			impl_->unref();
 	}
 	if (!ex_saved)
-		ex_saved.setNoref(new BadSubsysExcept("", "No subsystem available"));
+		ex_saved.setNoref(new BadSubsysException("", "No subsystem available"));
 	xthrowmove(ex_saved.getAndNull());
 
 have_impl:

@@ -47,7 +47,7 @@
 #include <dr/io/dev/File_sysiface.hxx>
 #include <dr/Time.hxx>
 
-#include <dr/io/FileFailedExcept.hxx>
+#include <dr/io/FileFailedException.hxx>
 
 #include <dr/x_kw.hxx>
 #include <dr/pe_error.hxx>

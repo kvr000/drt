@@ -36,9 +36,9 @@
 #include <errno.h>
 
 #include <dr/io/File.hxx>
-#include <dr/io/IoExcept.hxx>
-#include <dr/io/NonblockExcept.hxx>
-#include <dr/io/FileNotFoundExcept.hxx>
+#include <dr/io/IoException.hxx>
+#include <dr/io/NonblockException.hxx>
+#include <dr/io/FileNotFoundException.hxx>
 
 #include <dr/io/dev/File_sysiface.hxx>
 
@@ -58,10 +58,10 @@ void File_sysiface_posix::throwSysException(File *handle, const String &operatio
 #if EAGAIN != EWOULDBLOCK
 	case EWOULDBLOCK:
 #endif
-		xthrownew(NonblockExcept(handle, operation, DRP_EAGAIN, errno));
+		xthrownew(NonblockException(handle, operation, DRP_EAGAIN, errno));
 
 	default:
-		xthrownew(IoExcept(handle, operation, errno, errno));
+		xthrownew(IoException(handle, operation, errno, errno));
 	}
 }
 
@@ -72,13 +72,13 @@ void File_sysiface_posix::throwFileStaticSysException(const String &filename, co
 #if EAGAIN != EWOULDBLOCK
 	case EWOULDBLOCK:
 #endif
-		xthrownew(NonblockExcept(NULL, operation, DRP_EAGAIN, errno));
+		xthrownew(NonblockException(NULL, operation, DRP_EAGAIN, errno));
 
 	case ENOENT:
-		xthrownew(FileNotFoundExcept(filename, operation, errno, errno));
+		xthrownew(FileNotFoundException(filename, operation, errno, errno));
 
 	default:
-		xthrownew(FileFailedExcept(filename, operation, errno, errno));
+		xthrownew(FileFailedException(filename, operation, errno, errno));
 	}
 }
 

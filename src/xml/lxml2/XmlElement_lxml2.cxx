@@ -36,7 +36,7 @@
 #include <dr/x_kw.hxx>
 #include <dr/Const.hxx>
 
-#include <dr/xml/XmlExcept.hxx>
+#include <dr/xml/XmlException.hxx>
 
 #include <dr/xml/XmlElement_lxml2.hxx>
 
@@ -71,7 +71,7 @@ String XmlElement_lxml2::getAttribute(const String &name)
 		if (xmlStrEqual(a->name, (const xmlChar *)name8.toStr()) && a->children && a->children->type == XML_TEXT_NODE)
 			return (const char *)a->children->content;
 	}
-	xthrownew(XmlExcept(String("attribute not found: ")+name));
+	xthrownew(XmlException(String("attribute not found: ")+name));
 	return String();
 }
 

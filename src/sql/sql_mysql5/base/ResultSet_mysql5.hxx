@@ -114,7 +114,7 @@ protected:
 
 protected:
 	void				initColNames();
-	inline int			getColumnIdDirect(const String &name)	{ int column_id; if (col_names.isEmpty()) initColNames(); if ((column_id = col_names.findXchg(name)) < 0) DR_THROWNEW(SqlExcept(42703, "invalid column")); return column_id; }
+	inline int			getColumnIdDirect(const String &name)	{ int column_id; if (col_names.isEmpty()) initColNames(); if ((column_id = col_names.findXchg(name)) < 0) DR_THROWNEW(SqlException(42703, "invalid column")); return column_id; }
 	MYSQL_BIND *			allocResBinding(unsigned idx);
 
 protected:

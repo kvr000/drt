@@ -36,7 +36,7 @@
 #include <dr/x_kw.hxx>
 #include <dr/Const.hxx>
 
-#include <dr/EndOfDataExcept.hxx>
+#include <dr/EndOfDataException.hxx>
 
 #include <dr/BinaryMemWriter.hxx>
 
@@ -84,7 +84,7 @@ void *BinaryMemWriter::currentPos()
 void BinaryMemWriter::writeNat8(Uint8 value, const String &value_name)
 {
 	if (end_pos-current_pos < 1)
-		xthrownew(EndOfDataExcept("Uint8", value_name));
+		xthrownew(EndOfDataException("Uint8", value_name));
 	current_pos += 1;
 	current_pos[-1] = value;
 }
@@ -92,7 +92,7 @@ void BinaryMemWriter::writeNat8(Uint8 value, const String &value_name)
 void BinaryMemWriter::writeNat16(Uint16 value, const String &value_name)
 {
 	if (end_pos-current_pos < 2)
-		xthrownew(EndOfDataExcept("Uint16", value_name));
+		xthrownew(EndOfDataException("Uint16", value_name));
 	current_pos += 2;
 	memcpy(current_pos-2, &value, 2);
 }
@@ -100,7 +100,7 @@ void BinaryMemWriter::writeNat16(Uint16 value, const String &value_name)
 void BinaryMemWriter::writeNat32(Uint32 value, const String &value_name)
 {
 	if (end_pos-current_pos < 4)
-		xthrownew(EndOfDataExcept("Uint32", value_name));
+		xthrownew(EndOfDataException("Uint32", value_name));
 	current_pos += 4;
 	memcpy(current_pos-4, &value, 4);
 }
@@ -108,7 +108,7 @@ void BinaryMemWriter::writeNat32(Uint32 value, const String &value_name)
 void BinaryMemWriter::writeNat64(Uint64 value, const String &value_name)
 {
 	if (end_pos-current_pos < 8)
-		xthrownew(EndOfDataExcept("Uint64", value_name));
+		xthrownew(EndOfDataException("Uint64", value_name));
 	current_pos += 8;
 	memcpy(current_pos-8, &value, 8);
 }
@@ -116,7 +116,7 @@ void BinaryMemWriter::writeNat64(Uint64 value, const String &value_name)
 void BinaryMemWriter::writeLe8(Uint8 value, const String &value_name)
 {
 	if (end_pos-current_pos < 1)
-		xthrownew(EndOfDataExcept("Uint8", value_name));
+		xthrownew(EndOfDataException("Uint8", value_name));
 	current_pos += 1;
 	current_pos[-1] = value;
 }
@@ -124,7 +124,7 @@ void BinaryMemWriter::writeLe8(Uint8 value, const String &value_name)
 void BinaryMemWriter::writeLe16(Uint16 value, const String &value_name)
 {
 	if (end_pos-current_pos < 2)
-		xthrownew(EndOfDataExcept("Uint16", value_name));
+		xthrownew(EndOfDataException("Uint16", value_name));
 	current_pos += 2;
 	current_pos[-2] = value>>0;
 	current_pos[-1] = value>>8;
@@ -133,7 +133,7 @@ void BinaryMemWriter::writeLe16(Uint16 value, const String &value_name)
 void BinaryMemWriter::writeLe32(Uint32 value, const String &value_name)
 {
 	if (end_pos-current_pos < 4)
-		xthrownew(EndOfDataExcept("Uint32", value_name));
+		xthrownew(EndOfDataException("Uint32", value_name));
 	current_pos += 4;
 	current_pos[-4] = value>>0;
 	current_pos[-3] = value>>8;
@@ -144,7 +144,7 @@ void BinaryMemWriter::writeLe32(Uint32 value, const String &value_name)
 void BinaryMemWriter::writeLe64(Uint64 value, const String &value_name)
 {
 	if (end_pos-current_pos < 8)
-		xthrownew(EndOfDataExcept("Uint64", value_name));
+		xthrownew(EndOfDataException("Uint64", value_name));
 	current_pos += 8;
 	current_pos[-8] = (Uint8)(value>>0);
 	current_pos[-7] = (Uint8)(value>>8);
@@ -159,7 +159,7 @@ void BinaryMemWriter::writeLe64(Uint64 value, const String &value_name)
 void BinaryMemWriter::writeBe8(Uint8 value, const String &value_name)
 {
 	if (end_pos-current_pos < 1)
-		xthrownew(EndOfDataExcept("Uint8", value_name));
+		xthrownew(EndOfDataException("Uint8", value_name));
 	current_pos += 1;
 	current_pos[-1] = value;
 }
@@ -167,7 +167,7 @@ void BinaryMemWriter::writeBe8(Uint8 value, const String &value_name)
 void BinaryMemWriter::writeBe16(Uint16 value, const String &value_name)
 {
 	if (end_pos-current_pos < 2)
-		xthrownew(EndOfDataExcept("Uint16", value_name));
+		xthrownew(EndOfDataException("Uint16", value_name));
 	current_pos += 2;
 	current_pos[-1] = value>>0;
 	current_pos[-2] = value>>8;
@@ -176,7 +176,7 @@ void BinaryMemWriter::writeBe16(Uint16 value, const String &value_name)
 void BinaryMemWriter::writeBe32(Uint32 value, const String &value_name)
 {
 	if (end_pos-current_pos < 4)
-		xthrownew(EndOfDataExcept("Uint32", value_name));
+		xthrownew(EndOfDataException("Uint32", value_name));
 	current_pos += 4;
 	current_pos[-1] = value>>0;
 	current_pos[-2] = value>>8;
@@ -187,7 +187,7 @@ void BinaryMemWriter::writeBe32(Uint32 value, const String &value_name)
 void BinaryMemWriter::writeBe64(Uint64 value, const String &value_name)
 {
 	if (end_pos-current_pos < 8)
-		xthrownew(EndOfDataExcept("Uint64", value_name));
+		xthrownew(EndOfDataException("Uint64", value_name));
 	current_pos += 8;
 	current_pos[-1] = (Uint8)(value>>0);
 	current_pos[-2] = (Uint8)(value>>8);
@@ -208,7 +208,7 @@ void BinaryMemWriter::writeVarint32(Uint32 value, const String &value_name)
 		b[++p] = value|0x80;
 	}
 	if (end_pos-current_pos <= (ssize_t)p)
-		xthrownew(EndOfDataExcept("Varint", value_name));
+		xthrownew(EndOfDataException("Varint", value_name));
 	while (p >= 0)
 		*current_pos++ = b[p--];
 }
@@ -222,7 +222,7 @@ void BinaryMemWriter::writeVarint64(Uint64 value, const String &value_name)
 		b[++p] = (Uint8)value|0x80;
 	}
 	if (end_pos-current_pos <= (ssize_t)p)
-		xthrownew(EndOfDataExcept("Varint", value_name));
+		xthrownew(EndOfDataException("Varint", value_name));
 	while (p >= 0)
 		*current_pos++ = b[p--];
 }
@@ -230,7 +230,7 @@ void BinaryMemWriter::writeVarint64(Uint64 value, const String &value_name)
 void BinaryMemWriter::writeBytes(const void *data, size_t count, const String &value_name)
 {
 	if (end_pos-current_pos < (ssize_t)count)
-		xthrownew(EndOfDataExcept("Array", value_name));
+		xthrownew(EndOfDataException("Array", value_name));
 	current_pos += count;
 	memcpy(current_pos-count, data, count);
 }

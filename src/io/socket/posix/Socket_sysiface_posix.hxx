@@ -40,7 +40,7 @@
 #include <sys/socket.h>
 #include <sys/poll.h>
 
-#include <dr/Except.hxx>
+#include <dr/Exception.hxx>
 
 #include <dr/io/NetAddress.hxx>
 #include <dr/io/dev/Socket_sysiface.hxx>

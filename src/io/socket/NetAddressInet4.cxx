@@ -37,7 +37,7 @@
 
 #include <dr/x_kw.hxx>
 
-#include <dr/InvalidFormatExcept.hxx>
+#include <dr/InvalidFormatException.hxx>
 #include <dr/io/dev/Socket_sysiface.hxx>
 
 #include <dr/io/NetAddressInet4.hxx>
@@ -58,7 +58,7 @@ NetAddressInet4::NetAddressInet4(const String &addr_str)
 {
 	ssize_t p;
 	if ((p = addr_str.rfind(":")) < 0) {
-		xthrownew(InvalidFormatExcept("host name", addr_str));
+		xthrownew(InvalidFormatException("host name", addr_str));
 	}
 	else {
 		host = Socket_sysiface::lookupInet4Host(addr_str.left(p));

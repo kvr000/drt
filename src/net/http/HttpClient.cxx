@@ -36,7 +36,7 @@
 #include <dr/x_kw.hxx>
 #include <dr/Const.hxx>
 
-#include <dr/EndOfDataExcept.hxx>
+#include <dr/EndOfDataException.hxx>
 
 #include <dr/io/NetAddressInet4.hxx>
 
@@ -73,7 +73,7 @@ int HttpClient::readHeaders(String *message)
 		char *c;
 		for (c = (char *)b+n; b < c && !isspace(*b); b++) ;
 		if (b == c)
-			xthrownew(EndOfDataExcept("http", "status"));
+			xthrownew(EndOfDataException("http", "status"));
 		resp_code = strtol(b, &c, 10);
 		for (b += n; b > c && isspace(b[-1]); b--) ;
 		for (; c < b && isspace(*c); c++) ;
@@ -94,7 +94,7 @@ int HttpClient::readHeaders(String *message)
 		}
 		for (c = b; c < e && *c != ':'; c++) ;
 		if (c == e)
-			xthrownew(EndOfDataExcept("http", ":"));
+			xthrownew(EndOfDataException("http", ":"));
 		String key(String::createLowerUtf8(b, c-b));
 		for (c++; c < e && isspace(*c); c++) ;
 		String val(String::createLowerUtf8(c, e-c));

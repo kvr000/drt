@@ -40,7 +40,7 @@
 #include <dr/x_kw.hxx>
 
 #include <dr/Subsystem.hxx>
-#include <dr/Except.hxx>
+#include <dr/Exception.hxx>
 
 #include <dr/testenv/testenv.hxx>
 
@@ -56,13 +56,13 @@ void test()
 {
 	String error;
 	Subsystem *sub = NULL;
-	Ref<Except> ex;
+	Ref<Exception> ex;
 
 	printf("loading subsys\n");
 	xtry {
 		sub = Subsystem::getSubsystem(String("drGui_x11"), NULL);
 	}
-	xcatch (Except, exc) {
+	xcatch (Exception, exc) {
 		ex = exc;
 	}
 	xend;

@@ -45,7 +45,7 @@
 #include <dr/Mutex.hxx>
 #include <dr/Subsystem.hxx>
 #include <dr/MM.hxx>
-#include <dr/MemExcept.hxx>
+#include <dr/MemException.hxx>
 #include <dr/dev/Thread_impl.hxx>
 #include <dr/dev/MM_impl.hxx>
 
@@ -108,7 +108,7 @@ void *MM_default::impl_alloc(size_t size_)
 
 	if (size > 1024) {
 		if (!(out = (char *)::malloc(size+DR_ALIGN_ALLOC)+DR_ALIGN_ALLOC-sizeof(SintPtr)))
-			MemExcept::throwInstance(size+DR_ALIGN_ALLOC);
+			MemException::throwInstance(size+DR_ALIGN_ALLOC);
 	}
 	else {
 		char *add = NULL;
@@ -242,7 +242,7 @@ go_alloc:
 			char *cur;
 
 			if (!(add = (char *)::malloc(alloc)))
-				MemExcept::throwInstance(alloc);
+				MemException::throwInstance(alloc);
 			end = add+alloc;
 			add += DR_ALIGN_ALLOC-sizeof(SintPtr);
 

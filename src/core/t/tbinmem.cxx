@@ -39,7 +39,7 @@
 #include <dr/x_kw.hxx>
 #include <dr/Mem.hxx>
 #include <dr/BinaryMemReader.hxx>
-#include <dr/EndOfDataExcept.hxx>
+#include <dr/EndOfDataException.hxx>
 
 #include <dr/testenv/testenv.hxx>
 
@@ -103,7 +103,7 @@ void test()
 	xtry {
 		mr.readLe8("except");
 	}
-	xcatch (Except, ex) {
+	xcatch (Exception, ex) {
 		printf("ok except: %s\n", ex->stringify().utf8().toStr());
 		excepted = true;
 	}

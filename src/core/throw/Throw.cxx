@@ -34,7 +34,7 @@
  **/
 
 #include <dr/Const.hxx>
-#include <dr/Except.hxx>
+#include <dr/Exception.hxx>
 #include <dr/dev/Thread_impl.hxx>
 
 #include <dr/Throw.hxx>
@@ -109,7 +109,7 @@ retry:
 	try {
 		obj->unref();
 	}
-	catch (Except *ex) {
+	catch (Exception *ex) {
 		throw_inactivate();
 		obj = ex;
 		goto retry;
@@ -123,7 +123,7 @@ retry:
 	try {
 		obj->unref();
 	}
-	catch (Except *ex) {
+	catch (Exception *ex) {
 		throw_inactivate();
 		obj = ex;
 		goto retry;

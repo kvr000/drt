@@ -39,7 +39,7 @@
 #include <dr/Hash.hxx>
 #include <dr/Array.hxx>
 #include <dr/Ref.hxx>
-#include <dr/DataNotFoundExcept.hxx>
+#include <dr/DataNotFoundException.hxx>
 
 DR_NS_BEGIN
 
@@ -144,7 +144,7 @@ protected:
 		DR_CONSTRUCT			VariableExpression(const String &var_name_): var_name(var_name_) {}
 
 	public:
-		virtual Sint64			evaluate(Arguments *args)	{ if (Sint64 *v = args->constants->accValue(var_name)) { return *v; } xthrownew(DataNotFoundExcept("constant", var_name)); return 0; }
+		virtual Sint64			evaluate(Arguments *args)	{ if (Sint64 *v = args->constants->accValue(var_name)) { return *v; } xthrownew(DataNotFoundException("constant", var_name)); return 0; }
 
 	protected:
 		String				var_name;
@@ -157,7 +157,7 @@ protected:
 		DR_CONSTRUCT			ValueExpression(unsigned column_id_): column_id(column_id_) {}
 
 	public:
-		virtual Sint64			evaluate(Arguments *args)	{ if (Sint64 *v = args->values->accValue(column_id)) { return *v; } xthrownew(DataNotFoundExcept("value", String::createNumber(column_id))); return 0;}
+		virtual Sint64			evaluate(Arguments *args)	{ if (Sint64 *v = args->values->accValue(column_id)) { return *v; } xthrownew(DataNotFoundException("value", String::createNumber(column_id))); return 0;}
 
 	protected:
 		unsigned			column_id;

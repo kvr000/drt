@@ -2,6 +2,6 @@
 
 SOURCES:
 	no:${SD_EXCEPT}/mklist:g=t
-	:${SD_EXCEPT}/NoValueExcept.cxx:g=s,t
-	:${SD_EXCEPT}/NoValueExcept.hxx:g=di,t
+	:${SD_EXCEPT}/NoValueException.cxx:g=s,t
+	:${SD_EXCEPT}/NoValueException.hxx:g=di,t
 

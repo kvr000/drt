@@ -37,7 +37,7 @@
 #include <dr/pe_error.hxx>
 
 #include <dr/Ref.hxx>
-#include <dr/Except.hxx>
+#include <dr/Exception.hxx>
 #include <dr/ThreadSimple.hxx>
 
 #include <dr/io/SocketServer.hxx>
@@ -74,7 +74,7 @@ static void runServer(Ref<SocketServer> sserver)
 		body = Blob("resp:")+body;
 		hserver->sendContent(body);
 	}
-	xcatch (Except, ex) {
+	xcatch (Exception, ex) {
 		Fatal::plog("http exception: %s\n", ex->stringify().utf8().toStr());
 	}
 	xend;
@@ -105,7 +105,7 @@ void testBasic()
 		hclient->readHeaders(NULL);
 		CHECK(hclient->readFullContent() == "resp:");
 	}
-	xcatch (Except, ex) {
+	xcatch (Exception, ex) {
 		Fatal::plog("http exception: %s\n", ex->stringify().utf8().toStr());
 		return;
 	}
@@ -128,7 +128,7 @@ void testChunked()
 		hclient->readHeaders(NULL);
 		CHECK(hclient->readFullContent() == "resp:part0next part longer than 16 bytes");
 	}
-	xcatch (Except, ex) {
+	xcatch (Exception, ex) {
 		Fatal::plog("http exception: %s\n", ex->stringify().utf8().toStr());
 	}
 	xend;

@@ -57,7 +57,7 @@
 #include <dr/Hash.hxx>
 
 #include <dr/Subsystem.hxx>
-#include <dr/BadSubsysExcept.hxx>
+#include <dr/BadSubsysException.hxx>
 
 DR_NS_BEGIN
 
@@ -97,17 +97,17 @@ Subsystem *Subsystem::getSubsystem(const String &name, Subsystem *(*create_func)
 #if (defined DR_OS_UNIX)
 			char libfile[64];
 			if ((unsigned)snprintf(libfile, sizeof(libfile), "lib%s.so", name.utf8().toStr()) >= sizeof(libfile))
-				xthrownew(BadSubsysExcept(name, "too long name"));
+				xthrownew(BadSubsysException(name, "too long name"));
 			for (int ic = 0; libfile[ic] != '\0'; ic++)
 				libfile[ic] = (char)tolower(libfile[ic]);
 			if ((dl = dlopen(libfile, RTLD_NOW|RTLD_GLOBAL)) == NULL)
-				xthrownew(BadSubsysExcept(name, String("unable to load library ").append(libfile).append(": ").append(dlerror())));
+				xthrownew(BadSubsysException(name, String("unable to load library ").append(libfile).append(": ").append(dlerror())));
 			if ((unsigned)snprintf(libfile, sizeof(libfile), "createSS_%s", name.utf8().toStr()) >= sizeof(libfile))
-				xthrownew(BadSubsysExcept(name, String("too long function name")));
+				xthrownew(BadSubsysException(name, String("too long function name")));
 			if ((create_func = (Subsystem *(*)(const String &))dlsym(dl, libfile)) == NULL)
-				xthrownew(BadSubsysExcept(name, String("cannot find function ").append(libfile)));
+				xthrownew(BadSubsysException(name, String("cannot find function ").append(libfile)));
 #elif (defined DR_OS_SYMBIAN)
-			xthrownew(BadSubsysExcept(name, "dynamic subsystem not supported on symbian"));
+			xthrownew(BadSubsysException(name, "dynamic subsystem not supported on symbian"));
 #elif (defined DR_OS_WNT)
 			union {
 				WCHAR libfile[64];
@@ -120,7 +120,7 @@ Subsystem *Subsystem::getSubsystem(const String &name, Subsystem *(*create_func)
 				StringCbPrintfW(libfile, sizeof(libfile), L"%s.dll", name.wide().toStr()) != 0
 #endif
 			)
-				xthrownew(BadSubsysExcept(name, "too long name"));
+				xthrownew(BadSubsysException(name, "too long name"));
 			if (
 #ifdef DR_LIBC_CYGWIN
 					(dl = LoadLibraryExA(libfunc, NULL, 0))
@@ -128,7 +128,7 @@ Subsystem *Subsystem::getSubsystem(const String &name, Subsystem *(*create_func)
 					(dl = LoadLibraryExW(libfile, NULL, 0))
 #endif
 					== NULL) {
-				xthrownew(BadSubsysExcept(name, "unable to load library "));
+				xthrownew(BadSubsysException(name, "unable to load library "));
 			}
 			if (
 #ifdef DR_LIBC_CYGWIN
@@ -137,7 +137,7 @@ Subsystem *Subsystem::getSubsystem(const String &name, Subsystem *(*create_func)
 					StringCbPrintfA(libfunc, sizeof(libfile)/sizeof(libfile[0]), "createSS_%S", name.wide().toStr()) != 0
 #endif
 			)
-				xthrownew(BadSubsysExcept(name, "too long function name"));
+				xthrownew(BadSubsysException(name, "too long function name"));
 			if ((create_func = (Subsystem *(*)(const String &))
 #ifdef DR_OS_WCE
 				GetProcAddressA
@@ -145,7 +145,7 @@ Subsystem *Subsystem::getSubsystem(const String &name, Subsystem *(*create_func)
 				GetProcAddress
 #endif
 				((HMODULE)dl, libfunc)) == NULL)
-				xthrownew(BadSubsysExcept(name, "too long function name"));
+				xthrownew(BadSubsysException(name, "too long function name"));
 #else
 # error unknown system
 #endif
@@ -154,7 +154,7 @@ Subsystem *Subsystem::getSubsystem(const String &name, Subsystem *(*create_func)
 			subsystem_struct sss;
 			sss.name = name;
 			if ((subsys = sss.subsys = create_func(name)) == NULL)
-				xthrownew(BadSubsysExcept(name, "create_func returned NULL"));
+				xthrownew(BadSubsysException(name, "create_func returned NULL"));
 			sss.library = dl;
 			subsystems[name] = sss;
 			dl = NULL;

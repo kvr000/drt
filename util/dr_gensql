@@ -57,8 +57,8 @@ sub fixModelInfo($)
 	if (defined $model->{db_table}) {
 		# ok
 	}
-	elsif (defined $model->{drcom_hash}->{db_table}) {
-		$model->{db_table} = $model->{drcom_hash}->{db_table}->{value};
+	elsif (defined (my $db_table = $model->checkDrTag("db_table"))) {
+		$model->{db_table} = $db_table;
 	}
 	else {
 		($model->{db_table} = $model->{name}) =~ s/([[:lower:]])([[:upper:]])/$1_$2/g;
@@ -127,7 +127,7 @@ sub translateSqlType($)
 		if (defined (my $db_type = $tagger->checkTag("db_type"))) {
 			if ($type->{stype} eq "enum") {
 				return "enum(".join(", ", map({
-							$_->{drtag}->getTag("db_value")->{value}
+							$_->getDrTagger()->getTag("db_value")->{value}
 						} @{$type->{literal_list}})).")";
 			}
 			else {

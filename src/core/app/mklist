@@ -6,6 +6,6 @@ SOURCES:
 	:${SD_APP}/App.hxx:g=di,t
 	:${SD_APP}/Subsystem.cxx:g=s,t
 	:${SD_APP}/Subsystem.hxx:g=di,t
-	:${SD_APP}/BadSubsysExcept.cxx:g=s,t
-	:${SD_APP}/BadSubsysExcept.hxx:g=di,t
+	:${SD_APP}/BadSubsysException.cxx:g=s,t
+	:${SD_APP}/BadSubsysException.hxx:g=di,t
 

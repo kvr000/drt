@@ -197,7 +197,7 @@ public:
 	 * @param iface
 	 * 	the requested interface
 	 *
-	 * @throws CastExcept
+	 * @throws CastException
 	 * 	if the interface cannot be found
 	 */
 	virtual void *			getIface(const String &iface) const = 0;
@@ -208,7 +208,7 @@ public:
 	 * @param iface
 	 * 	the requested interface
 	 *
-	 * @throws CastExcept
+	 * @throws CastException
 	 * 	if the interface cannot be found, the original object is
 	 * 	unreferenced in this case
 	 */

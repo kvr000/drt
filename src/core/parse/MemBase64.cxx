@@ -36,7 +36,7 @@
 #include <dr/x_kw.hxx>
 #include <dr/Const.hxx>
 
-#include <dr/InvalidFormatExcept.hxx>
+#include <dr/InvalidFormatException.hxx>
 
 #include <dr/MemBase64.hxx>
 
@@ -94,12 +94,12 @@ retry_char:
 			}
 			signed char v = *(const unsigned char *)src; src = (const char *)src+1;
 			if (v > 122) {
-				xthrownew(InvalidFormatExcept("base64", String((char *)&v, 1)));
+				xthrownew(InvalidFormatException("base64", String((char *)&v, 1)));
 				return -1;
 			}
 			else if ((v = cd64[v]) < 0) {
 				if (v == -1) {
-					xthrownew(InvalidFormatExcept("base64", String((char *)&v, 1)));
+					xthrownew(InvalidFormatException("base64", String((char *)&v, 1)));
 					return -1;
 				}
 				if (v == -2) {

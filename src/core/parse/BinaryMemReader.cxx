@@ -36,8 +36,8 @@
 #include <dr/x_kw.hxx>
 #include <dr/Const.hxx>
 
-#include <dr/EndOfDataExcept.hxx>
-#include <dr/OverflowExcept.hxx>
+#include <dr/EndOfDataException.hxx>
+#include <dr/OverflowException.hxx>
 
 #include <dr/BinaryMemReader.hxx>
 
@@ -80,7 +80,7 @@ ssize_t BinaryMemReader::pendingSize()
 Uint8 BinaryMemReader::readNat8(const String &value_name)
 {
 	if (end_pos-current_pos < 1)
-		xthrownew(EndOfDataExcept("Uint8", value_name));
+		xthrownew(EndOfDataException("Uint8", value_name));
 	current_pos += 1;
 	return (Uint8)(current_pos[-1]<<0);
 }
@@ -88,7 +88,7 @@ Uint8 BinaryMemReader::readNat8(const String &value_name)
 Uint16 BinaryMemReader::readNat16(const String &value_name)
 {
 	if (end_pos-current_pos < 2)
-		xthrownew(EndOfDataExcept("Uint16", value_name));
+		xthrownew(EndOfDataException("Uint16", value_name));
 	current_pos += 2;
 	Uint16 val;
 	memcpy(&val, current_pos-2, 2);
@@ -98,7 +98,7 @@ Uint16 BinaryMemReader::readNat16(const String &value_name)
 Uint32 BinaryMemReader::readNat32(const String &value_name)
 {
 	if (end_pos-current_pos < 4)
-		xthrownew(EndOfDataExcept("Uint32", value_name));
+		xthrownew(EndOfDataException("Uint32", value_name));
 	current_pos += 4;
 	Uint32 val;
 	memcpy(&val, current_pos-4, 4);
@@ -108,7 +108,7 @@ Uint32 BinaryMemReader::readNat32(const String &value_name)
 Uint64 BinaryMemReader::readNat64(const String &value_name)
 {
 	if (end_pos-current_pos < 8)
-		xthrownew(EndOfDataExcept("Uint64", value_name));
+		xthrownew(EndOfDataException("Uint64", value_name));
 	current_pos += 8;
 	Uint64 val;
 	memcpy(&val, current_pos-8, 8);
@@ -118,7 +118,7 @@ Uint64 BinaryMemReader::readNat64(const String &value_name)
 Uint8 BinaryMemReader::readLe8(const String &value_name)
 {
 	if (end_pos-current_pos < 1)
-		xthrownew(EndOfDataExcept("Uint8", value_name));
+		xthrownew(EndOfDataException("Uint8", value_name));
 	current_pos += 1;
 	return (Uint8)(current_pos[-1]<<0);
 }
@@ -126,7 +126,7 @@ Uint8 BinaryMemReader::readLe8(const String &value_name)
 Uint16 BinaryMemReader::readLe16(const String &value_name)
 {
 	if (end_pos-current_pos < 2)
-		xthrownew(EndOfDataExcept("Uint16", value_name));
+		xthrownew(EndOfDataException("Uint16", value_name));
 	current_pos += 2;
 	return (Uint16)(current_pos[-2]<<0)|(Uint16)(current_pos[-1]<<8);
 }
@@ -134,7 +134,7 @@ Uint16 BinaryMemReader::readLe16(const String &value_name)
 Uint32 BinaryMemReader::readLe32(const String &value_name)
 {
 	if (end_pos-current_pos < 4)
-		xthrownew(EndOfDataExcept("Uint32", value_name));
+		xthrownew(EndOfDataException("Uint32", value_name));
 	current_pos += 4;
 	return ((Uint32)current_pos[-4]<<0)|((Uint32)current_pos[-3]<<8)|((Uint32)current_pos[-2]<<16)|((Uint32)current_pos[-1]<<24);
 }
@@ -142,7 +142,7 @@ Uint32 BinaryMemReader::readLe32(const String &value_name)
 Uint64 BinaryMemReader::readLe64(const String &value_name)
 {
 	if (end_pos-current_pos < 8)
-		xthrownew(EndOfDataExcept("Uint64", value_name));
+		xthrownew(EndOfDataException("Uint64", value_name));
 	current_pos += 8;
 	return ((Uint64)current_pos[-8]<<0)|((Uint64)current_pos[-7]<<8)|((Uint64)current_pos[-6]<<16)|((Uint64)current_pos[-5]<<24)|((Uint64)current_pos[-4]<<32)|((Uint64)current_pos[-3]<<40)|((Uint64)current_pos[-2]<<48)|((Uint64)current_pos[-1]<<56);
 }
@@ -150,7 +150,7 @@ Uint64 BinaryMemReader::readLe64(const String &value_name)
 Uint8 BinaryMemReader::readBe8(const String &value_name)
 {
 	if (end_pos-current_pos < 1)
-		xthrownew(EndOfDataExcept("Uint8", value_name));
+		xthrownew(EndOfDataException("Uint8", value_name));
 	current_pos += 1;
 	return (Uint8)(current_pos[-1]<<0);
 }
@@ -158,7 +158,7 @@ Uint8 BinaryMemReader::readBe8(const String &value_name)
 Uint16 BinaryMemReader::readBe16(const String &value_name)
 {
 	if (end_pos-current_pos < 2)
-		xthrownew(EndOfDataExcept("Uint16", value_name));
+		xthrownew(EndOfDataException("Uint16", value_name));
 	current_pos += 2;
 	return (Uint16)(current_pos[-1]<<0)|(Uint16)(current_pos[-2]<<8);
 }
@@ -166,7 +166,7 @@ Uint16 BinaryMemReader::readBe16(const String &value_name)
 Uint32 BinaryMemReader::readBe32(const String &value_name)
 {
 	if (end_pos-current_pos < 4)
-		xthrownew(EndOfDataExcept("Uint32", value_name));
+		xthrownew(EndOfDataException("Uint32", value_name));
 	current_pos += 4;
 	return ((Uint32)current_pos[-1]<<0)|((Uint32)current_pos[-2]<<8)|((Uint32)current_pos[-3]<<16)|((Uint32)current_pos[-4]<<24);
 }
@@ -174,7 +174,7 @@ Uint32 BinaryMemReader::readBe32(const String &value_name)
 Uint64 BinaryMemReader::readBe64(const String &value_name)
 {
 	if (end_pos-current_pos < 8)
-		xthrownew(EndOfDataExcept("Uint64", value_name));
+		xthrownew(EndOfDataException("Uint64", value_name));
 	current_pos += 8;
 	return ((Uint64)current_pos[-1]<<0)|((Uint64)current_pos[-2]<<8)|((Uint64)current_pos[-3]<<16)|((Uint64)current_pos[-4]<<24)|((Uint64)current_pos[-5]<<32)|((Uint64)current_pos[-6]<<40)|((Uint64)current_pos[-7]<<48)|((Uint64)current_pos[-8]<<56);
 }
@@ -184,9 +184,9 @@ Uint32 BinaryMemReader::readVarint32(const String &value_name)
 	Uint32 result = 0;
 	for (;;) {
 		if (end_pos-current_pos < 1)
-			xthrownew(EndOfDataExcept("Varint", value_name));
+			xthrownew(EndOfDataException("Varint", value_name));
 		if (result >= 0x200000)
-			xthrownew(OverflowExcept("reading varint"));
+			xthrownew(OverflowException("reading varint"));
 		if (*current_pos < 0x80) {
 			result = result*128+*current_pos++;
 			break;
@@ -203,9 +203,9 @@ Uint64 BinaryMemReader::readVarint64(const String &value_name)
 	Uint64 result = 0;
 	for (;;) {
 		if (end_pos-current_pos < 1)
-			xthrownew(EndOfDataExcept("Varint", value_name));
+			xthrownew(EndOfDataException("Varint", value_name));
 		if (result >= (Uint64)0x200000<<32)
-			xthrownew(OverflowExcept("reading varint"));
+			xthrownew(OverflowException("reading varint"));
 		if (*current_pos < 0x80) {
 			result = result*128+*current_pos++;
 			break;
@@ -220,7 +220,7 @@ Uint64 BinaryMemReader::readVarint64(const String &value_name)
 Blob BinaryMemReader::readBytes(size_t count, const String &value_name)
 {
 	if (end_pos-current_pos < (ssize_t)count)
-		xthrownew(EndOfDataExcept("Uint64", value_name));
+		xthrownew(EndOfDataException("Uint64", value_name));
 	current_pos += count;
 	return Blob((char *)current_pos-count, count);
 }
@@ -228,7 +228,7 @@ Blob BinaryMemReader::readBytes(size_t count, const String &value_name)
 void BinaryMemReader::readBytes(void *data, size_t count, const String &value_name)
 {
 	if (end_pos-current_pos < (ssize_t)count)
-		xthrownew(EndOfDataExcept("Uint64", value_name));
+		xthrownew(EndOfDataException("Uint64", value_name));
 	current_pos += count;
 	memcpy(data, current_pos-count, count);
 }

@@ -37,8 +37,8 @@
 #include <dr/Const.hxx>
 
 #include <dr/Time.hxx>
-#include <dr/TimeoutExcept.hxx>
-#include <dr/EndOfDataExcept.hxx>
+#include <dr/TimeoutException.hxx>
+#include <dr/EndOfDataException.hxx>
 
 #include <dr/io/StreamBuffer.hxx>
 
@@ -140,13 +140,13 @@ ssize_t StreamBuffer::read(Blob *data, size_t maxsize)
 {
 	if (cache.isNullEmpty()) {
 		if (cache.isNull())
-			xthrownew(EndOfDataExcept("byte", "stream"));
+			xthrownew(EndOfDataException("byte", "stream"));
 		if (time_limit != 0) {
 			SysTime cur_time = Time::getTime();
 			if ((cur_time = time_limit-cur_time) < 0)
 				cur_time = 0;
 			if (handle->waitData(Handle::M_READ, Time::interToNsecondsUp(cur_time)) == 0) {
-				xthrownew(TimeoutExcept());
+				xthrownew(TimeoutException());
 			}
 		}
 		if (handle->read(data, maxsize, 0) == 0) {
@@ -167,13 +167,13 @@ ssize_t StreamBuffer::readExtendAdd(Blob *data, size_t add_size)
 {
 	if (cache.isNullEmpty()) {
 		if (cache.isNull())
-			xthrownew(EndOfDataExcept("byte", "stream"));
+			xthrownew(EndOfDataException("byte", "stream"));
 		if (time_limit != 0) {
 			SysTime cur_time = Time::getTime();
 			if ((cur_time = time_limit-cur_time) < 0)
 				cur_time = 0;
 			if (handle->waitData(Handle::M_READ, Time::interToNsecondsUp(cur_time)) == 0) {
-				xthrownew(TimeoutExcept());
+				xthrownew(TimeoutException());
 			}
 		}
 		if ((add_size = handle->read(data, add_size, data->getSize())) == 0) {
@@ -228,14 +228,14 @@ Blob *StreamBuffer::extendCache(size_t min_size)
 			if ((cur_time = time_limit-cur_time) < 0)
 				cur_time = 0;
 			if (handle->waitData(Handle::M_READ, Time::interToNsecondsUp(cur_time)) == 0) {
-				xthrownew(TimeoutExcept());
+				xthrownew(TimeoutException());
 			}
 		}
 		size_t toread = cur < cache_suggest ? cache_suggest-cur : cur > 2048 ? 4096 : cur*2;
 		char *l = cache.lock(cur+toread);
 		toread = handle->read(l+cur, toread);
 		if (toread == 0) {
-			xthrownew(EndOfDataExcept("byte", "stream"));
+			xthrownew(EndOfDataException("byte", "stream"));
 		}
 		cache.unlock(cur+toread);
 	}
@@ -256,7 +256,7 @@ size_t StreamBuffer::tryExtendCache(size_t min_size)
 			if ((cur_time = time_limit-cur_time) < 0)
 				cur_time = 0;
 			if (handle->waitData(Handle::M_READ, Time::interToNsecondsUp(cur_time)) == 0) {
-				xthrownew(TimeoutExcept());
+				xthrownew(TimeoutException());
 			}
 		}
 		size_t toread = cur < cache_suggest ? cache_suggest-cur : cur > 2048 ? 4096 : cur*2;

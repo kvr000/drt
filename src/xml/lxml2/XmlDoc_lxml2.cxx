@@ -38,7 +38,7 @@
 
 #include <dr/io/File.hxx>
 
-#include <dr/xml/XmlExcept.hxx>
+#include <dr/xml/XmlException.hxx>
 #include <dr/xml/XmlNode_lxml2.hxx>
 #include <dr/xml/XmlElement_lxml2.hxx>
 
@@ -61,10 +61,10 @@ XmlDoc_lxml2 *XmlDoc_lxml2::fromFile(const String &file)
 {
 	ERef<XmlDoc_lxml2> this_(new XmlDoc_lxml2());
 	if (!(this_->doc = xmlParseFile(file.utf8().toStr()))) {
-		xthrownew(XmlExcept("parse"));
+		xthrownew(XmlException("parse"));
 	}
 	if (!(this_->xpath = xmlXPathNewContext(this_->doc))) {
-		xthrownew(XmlExcept("xpath"));
+		xthrownew(XmlException("xpath"));
 	}
 	return this_.getAndNull();
 }
@@ -73,10 +73,10 @@ XmlDoc_lxml2 *XmlDoc_lxml2::fromString(const String &str)
 {
 	ERef<XmlDoc_lxml2> this_(new XmlDoc_lxml2());
 	if (!(this_->doc = xmlParseDoc((const xmlChar *)str.utf8().toStr()))) {
-		xthrownew(XmlExcept("parse"));
+		xthrownew(XmlException("parse"));
 	}
 	if (!(this_->xpath = xmlXPathNewContext(this_->doc))) {
-		xthrownew(XmlExcept("xpath"));
+		xthrownew(XmlException("xpath"));
 	}
 	return this_.getAndNull();
 }
@@ -85,10 +85,10 @@ XmlDoc_lxml2 *XmlDoc_lxml2::fromBlob(const Blob &str)
 {
 	ERef<XmlDoc_lxml2> this_(new XmlDoc_lxml2());
 	if (!(this_->doc = xmlParseDoc((const xmlChar *)str.toStr()))) {
-		xthrownew(XmlExcept("parse"));
+		xthrownew(XmlException("parse"));
 	}
 	if (!(this_->xpath = xmlXPathNewContext(this_->doc))) {
-		xthrownew(XmlExcept("xpath"));
+		xthrownew(XmlException("xpath"));
 	}
 	return this_.getAndNull();
 }
@@ -160,15 +160,15 @@ XmlNode *XmlDoc_lxml2::findPathNode(const String &path)
 {
 	xmlXPathObjectPtr pobj;
 	if (!(pobj = xmlXPathEval((xmlChar *)path.utf8().toStr(), xpath))) {
-		xthrownew(XmlExcept(String("xpath: ")+path));
+		xthrownew(XmlException(String("xpath: ")+path));
 	}
 	if (pobj->type != XPATH_NODESET) {
 		xmlXPathFreeObject(pobj);
-		xthrownew(XmlExcept(String("xpath not nodeset: ")+path));
+		xthrownew(XmlException(String("xpath not nodeset: ")+path));
 	}
 	if (pobj->nodesetval->nodeNr == 0) {
 		xmlXPathFreeObject(pobj);
-		xthrownew(XmlExcept(String("xpath empty: ")+path));
+		xthrownew(XmlException(String("xpath empty: ")+path));
 	}
 	xmlNodePtr n = pobj->nodesetval->nodeTab[0];
 	xmlXPathFreeObject(pobj);
@@ -179,20 +179,20 @@ XmlElement *XmlDoc_lxml2::findPathElement(const String &path)
 {
 	xmlXPathObjectPtr pobj;
 	if (!(pobj = xmlXPathEval((xmlChar *)path.utf8().toStr(), xpath))) {
-		xthrownew(XmlExcept(String("xpath: ")+path));
+		xthrownew(XmlException(String("xpath: ")+path));
 	}
 	if (pobj->type != XPATH_NODESET) {
 		xmlXPathFreeObject(pobj);
-		xthrownew(XmlExcept(String("xpath not nodeset: ")+path));
+		xthrownew(XmlException(String("xpath not nodeset: ")+path));
 	}
 	if (pobj->nodesetval->nodeNr == 0) {
 		xmlXPathFreeObject(pobj);
-		xthrownew(XmlExcept(String("xpath empty: ")+path));
+		xthrownew(XmlException(String("xpath empty: ")+path));
 	}
 	xmlNodePtr n = pobj->nodesetval->nodeTab[0];
 	xmlXPathFreeObject(pobj);
 	if (n->type != XML_ELEMENT_NODE) {
-		xthrownew(XmlExcept(String("xpath not element: ")+path));
+		xthrownew(XmlException(String("xpath not element: ")+path));
 	}
 	return new XmlElement_lxml2(this, (xmlElementPtr)n);
 }
@@ -202,11 +202,11 @@ size_t XmlDoc_lxml2::execPathElements(const String &path, const Eslot1<void, Xml
 	size_t i;
 	xmlXPathObjectPtr pobj;
 	if (!(pobj = xmlXPathEval((xmlChar *)path.utf8().toStr(), xpath))) {
-		xthrownew(XmlExcept(String("xpath: ")+path));
+		xthrownew(XmlException(String("xpath: ")+path));
 	}
 	if (pobj->type != XPATH_NODESET) {
 		xmlXPathFreeObject(pobj);
-		xthrownew(XmlExcept(String("xpath not nodeset: ")+path));
+		xthrownew(XmlException(String("xpath not nodeset: ")+path));
 	}
 	for (i = 0; i < (size_t)pobj->nodesetval->nodeNr; i++) {
 		xtry {

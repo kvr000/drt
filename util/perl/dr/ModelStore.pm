@@ -619,12 +619,6 @@ sub load
 	$this->postLoad();
 }
 
-our %ENUM_LITERAL_MAPPER = (
-	value			=> \&readEnumLiteralDirect,
-	comment			=> \&readEnumLiteralComment,
-	drtag			=> \&readEnumLiteralDrtag,
-);
-
 sub readEnumLiteral
 {
 	my $this		= shift;
@@ -632,19 +626,65 @@ sub readEnumLiteral
 	my $key			= shift;
 	my $val			= shift;
 
-	my $enum = {
-		name			=> $val,
-		value			=> undef,
-		comment			=> [],
-		drtag			=> dr::ModelStore::Drtag->new(),
-	};
-
-	dr::ModelStore::Util::genericLoad($enum, $base->getSubLeveler(), \%ENUM_LITERAL_MAPPER);
+	my $enum = dr::ModelStore::Enum::Literal->new($this, { name => $val });
+	$enum->load($base->getSubLeveler());
 
 	push(@{$this->{literal_list}}, $enum);
 }
 
-sub readEnumLiteralDirect
+
+package dr::ModelStore::Enum::Literal;
+
+use strict;
+use warnings;
+
+sub new
+{
+	my $ref			= shift;
+	my $class		= ref($ref) || $ref;
+
+	my $owner		= shift;
+	my $basic		= shift;
+
+	my $this = bless {
+		owner			=> $owner,
+		name			=> $basic->{name},
+		value			=> undef,
+		comment			=> [],
+		drtag			=> dr::ModelStore::Drtag->new(),
+	}, $class;
+
+	Scalar::Util::weaken($this->{owner});
+
+	return $this;
+}
+
+our %ENUM_LITERAL_MAPPER = (
+	value			=> \&readDirect,
+	comment			=> \&readComment,
+	drtag			=> \&readDrtag,
+);
+
+sub load
+{
+	my $this		= shift;
+	my $reader		= shift;
+
+	$this->{file_context} = $reader->getContext();
+
+	dr::ModelStore::Util::genericLoad($this, $reader, \%ENUM_LITERAL_MAPPER);
+
+	$this->postLoad();
+}
+
+sub postLoad
+{
+	my $this		= shift;
+
+	# no checks here
+}
+
+sub readDirect
 {
 	my $enum		= shift;
 	my $base		= shift;
@@ -654,7 +694,7 @@ sub readEnumLiteralDirect
 	$enum->{value} = $val;
 }
 
-sub readEnumLiteralComment
+sub readComment
 {
 	my $enum		= shift;
 	my $base		= shift;
@@ -664,7 +704,7 @@ sub readEnumLiteralComment
 	push(@{$enum->{comment}}, $val);
 }
 
-sub readEnumLiteralDrtag
+sub readDrtag
 {
 	my $this		= shift;
 	my $base		= shift;
@@ -672,6 +712,13 @@ sub readEnumLiteralDrtag
 	my $val			= shift;
 
 	$this->{drtag}->addTag($val);
+}
+
+sub getDrTagger
+{
+	my $this		= shift;
+
+	return $this->{drtag};
 }
 
 

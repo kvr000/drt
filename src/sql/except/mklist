@@ -2,12 +2,12 @@
 
 SOURCES:
 	no:${SD_EXCEPT}/mklist:g=t
-	:${SD_EXCEPT}/SqlExcept.hxx:g=di,t
-	:${SD_EXCEPT}/SqlExcept.cxx:g=s,t
-	:${SD_EXCEPT}/SqlParseExcept.hxx:g=di,t
-	:${SD_EXCEPT}/SqlParseExcept.cxx:g=s,t
-	:${SD_EXCEPT}/SqlConstraintExcept.hxx:g=di,t
-	:${SD_EXCEPT}/SqlConstraintExcept.cxx:g=s,t
-	:${SD_EXCEPT}/SqlUniqueConstraintExcept.hxx:g=di,t
-	:${SD_EXCEPT}/SqlUniqueConstraintExcept.cxx:g=s,t
+	:${SD_EXCEPT}/SqlException.hxx:g=di,t
+	:${SD_EXCEPT}/SqlException.cxx:g=s,t
+	:${SD_EXCEPT}/SqlParseException.hxx:g=di,t
+	:${SD_EXCEPT}/SqlParseException.cxx:g=s,t
+	:${SD_EXCEPT}/SqlConstraintException.hxx:g=di,t
+	:${SD_EXCEPT}/SqlConstraintException.cxx:g=s,t
+	:${SD_EXCEPT}/SqlUniqueConstraintException.hxx:g=di,t
+	:${SD_EXCEPT}/SqlUniqueConstraintException.cxx:g=s,t
 

@@ -36,7 +36,7 @@
 #include <dr/x_kw.hxx>
 #include <dr/Const.hxx>
 #include <dr/Hash.hxx>
-#include <dr/UnsupportedExcept.hxx>
+#include <dr/UnsupportedException.hxx>
 #include <dr/Subsystem.hxx>
 #include <dr/String.hxx>
 
@@ -60,11 +60,11 @@ SqlConnection *SqlConnection::openConnection(const String &conn_str, THash<Strin
 		if ((newpos = conn_str.find(";", pos)) < 0)
 			newpos = conn_str.getLength();
 		if ((eq = conn_str.find("=", pos)) < 0)
-			xthrownew(UnsupportedExcept(NULL, "", conn_str.mid(pos, newpos-1), ""));
+			xthrownew(UnsupportedException(NULL, "", conn_str.mid(pos, newpos-1), ""));
 		(*pars)[conn_str.mid(pos, eq-pos)] = conn_str.mid(eq+1, newpos-eq-1);
 	}
 	if ((driver = (*pars)["driver"]).isNullEmpty())
-		xthrownew(UnsupportedExcept(NULL, "", "driver", "not specified"));
+		xthrownew(UnsupportedException(NULL, "", "driver", "not specified"));
 
 	Subsystem *sys = Subsystem::getSubsystem(driver, NULL);
 	xtry {

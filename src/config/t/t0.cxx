@@ -40,7 +40,7 @@
 #include <dr/pe_error.hxx>
 
 #include <dr/Ref.hxx>
-#include <dr/Except.hxx>
+#include <dr/Exception.hxx>
 #include <dr/ThreadSimple.hxx>
 
 #include <dr/config/RowAssignConfig.hxx>
@@ -63,7 +63,7 @@ void test()
 		printf("kra: %s\n", rac->getValue("kra").utf8().toStr());
 		printf("ble: %s\n", rac->getValue("ble").utf8().toStr());
 	}
-	xcatch (Except, ex) {
+	xcatch (Exception, ex) {
 		printf("caught exception: %s\n", ex->stringify().utf8().toStr());
 	}
 	xend;

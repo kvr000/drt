@@ -52,7 +52,7 @@ DR_NS_USE;
  * include: 	dr/Ref.hxx
  * include: 	dr/List.hxx
  * include: 	dr/Hash.hxx
- * include: 	dr/Except.hxx
+ * include: 	dr/Exception.hxx
  * include:	dr/app/WorkerPoolThread.hxx
  * ns:		dr::app
  */
