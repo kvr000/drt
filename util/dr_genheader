@@ -144,6 +144,7 @@ our @cl_list;
 our @includes = ();
 our $ns;
 our @ns_use = ();
+our @forwards = ();
 
 sub printIndented($$$)
 {
@@ -343,6 +344,9 @@ MAIN: while (<$cxx>) {
 				elsif ($key eq "use") {
 					push(@ns_use, $val);
 				}
+				elsif ($key eq "forward") {
+					push(@forwards, $val);
+				}
 				elsif ($key eq "type") {
 					$type = $val;
 				}
@@ -492,7 +496,14 @@ if (@ns_use) {
 		$hxx->printf("%s_USE;\n", nsToMacro($use));
 	}
 }
-$hxx->printf("\n\n");
+$hxx->printf("\n");
+if (@forwards) {
+	$hxx->printf("\n");
+	foreach my $forward (@forwards) {
+		$hxx->printf("%s\n", $forward);
+	}
+}
+$hxx->printf("\n");
 
 $def->printf("#include <dr/Const.hxx>\n\n");
 $def->printf("%s\n\n", nsToMacroBegin($ns));

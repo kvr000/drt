@@ -90,7 +90,9 @@ MYSQL_BIND *ResultSet_mysql5::allocResBinding(unsigned idx)
 		res_bindings.resize(idx+1);
 		memset(&res_bindings[orig_size], 0, (idx+1-orig_size)*sizeof(MYSQL_BIND));
 		while (orig_size <= idx) {
-			res_bindings[orig_size++].buffer_type = MYSQL_TYPE_NULL;
+			res_bindings[orig_size].buffer_type = MYSQL_TYPE_NULL;
+			res_bindings[orig_size].is_null = &res_bindings[orig_size].is_null_value;
+			orig_size++;
 		}
 	}
 	return &res_bindings[idx];
@@ -245,6 +247,29 @@ bool ResultSet_mysql5::fetchRow()
 #ifdef MYSQL_DATA_TRUNCATED
 	case MYSQL_DATA_TRUNCATED:
 #endif
+		for (size_t i = res_bindings.count(); i-- > 0; ) {
+			if (*res_bindings[i].is_null) {
+				switch (res_bindings[i].buffer_type) {
+				case MYSQL_TYPE_TINY:
+					*(Sint8 *)res_bindings[i].buffer = 0;
+					break;
+				case MYSQL_TYPE_SHORT:
+					*(Sint16 *)res_bindings[i].buffer = 0;
+					break;
+				case MYSQL_TYPE_LONG:
+					*(Sint32 *)res_bindings[i].buffer = 0;
+					break;
+				case MYSQL_TYPE_LONGLONG:
+					*(Sint64 *)res_bindings[i].buffer = 0;
+					break;
+				case MYSQL_TYPE_DOUBLE:
+					*(double *)res_bindings[i].buffer = 0;
+					break;
+				default:
+					break;
+				}
+			}
+		}
 		for (conversion *c = res_conversions; c; c = c->next) {
 			c->convertor(this, c);
 		}
@@ -263,7 +288,7 @@ Sint64 ResultSet_mysql5::getInt(unsigned column)
 {
 	int err;
 	my_bool null;
-	Sint64 value;
+	Sint64 value = 0;
 	MYSQL_BIND b;
 	memset(&b, 0, sizeof(b));
 	b.buffer_type = MYSQL_TYPE_LONGLONG;
@@ -287,7 +312,7 @@ double ResultSet_mysql5::getDouble(unsigned column)
 {
 	int err;
 	my_bool null;
-	Sint32 value;
+	Sint32 value = 0;
 	MYSQL_BIND b;
 	memset(&b, 0, sizeof(b));
 	b.buffer_type = MYSQL_TYPE_LONG;
@@ -401,7 +426,7 @@ Date ResultSet_mysql5::getDate(unsigned column)
 	switch (mysql_stmt_fetch_column(stmt, &b, column, 0)) {
 	case 0:
 		/* TODO: convert to date */
-		DR_THROWNEW(UnsupportedExcept(this, comp_name, "Date", ""));
+		xthrownew(UnsupportedExcept(this, comp_name, "Date", ""));
 		break;
 
 	default:
@@ -417,6 +442,9 @@ Date ResultSet_mysql5::getDate(const String &column)
 
 Variant *ResultSet_mysql5::getVariant(unsigned column)
 {
+	if (*res_bindings[column].is_null) {
+		return new Variant(Null());
+	}
 	switch (stmt->fields[column].type) {
 	case MYSQL_TYPE_NULL:
 		return new Variant(Null());
