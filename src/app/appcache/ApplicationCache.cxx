@@ -207,6 +207,18 @@ ApplicationCache::ValueHash::~ValueHash()
 }
 
 DR_MET(protected virtual)
+void ApplicationCache::ValueHash::node_addrs(dr::Hash_c::Node_c *entry, const void **key, const void **val) const
+{
+	DR_AssertInvalid();
+}
+
+DR_MET(protected virtual)
+void ApplicationCache::ValueHash::node_set(dr::Hash_c::Node_c *entry, const void *val) const
+{
+	DR_AssertInvalid();
+}
+
+DR_MET(protected virtual)
 bool ApplicationCache::ValueHash::node_eq(dr::Hash_c::Node_c *entry, const void *key) const
 {
 	int key_id = (int)(SintPtr)((void **)key)[0];

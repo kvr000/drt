@@ -191,6 +191,10 @@ public:
 	DR_MINLINE void			moveFrom(TAvl *source)				{ moveFrom_g(source); }
 };
 
+template <typename K, typename V, typename Compar = AvlCompar<K, V> >
+class RAvl: public TAvl<K, Ref<V>, Compar>
+{
+};
 
 DR_NS_END
 

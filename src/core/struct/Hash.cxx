@@ -35,6 +35,8 @@
 
 #include <stdio.h>
 
+#include <dr/x_kw.hxx>
+#include <dr/Except.hxx>
 #include <dr/Hash.hxx>
 
 DR_NS_BEGIN
@@ -69,6 +71,45 @@ Hash_c::Node_c *Hash_c::find_g(long hash_value, const void *key) const
 		}
 	}
 	return r;
+}
+
+void Hash_c::addNewNode_g(Node_c *n)
+{
+	if ((int)item_count >= hashmask-hashmask/4) {
+		unsigned olim = hashmask+1;
+		unsigned i;
+		if (list) {
+			list = (Node_c **)reallocList((hashmask+1)*2*sizeof(Node_c *));
+			hashmask = 2*hashmask+1;
+		}
+		else {
+			list = (Node_c **)reallocList(4*sizeof(Node_c *));
+			hashmask = 3;
+		}
+
+		for (i = olim; i <= (unsigned)hashmask; i++)
+			list[i] = NULL;
+
+		for (i = 0; i < olim; i++) {
+			Node_c **p;
+			for (p = &list[i]; *p; ) {
+				if ((unsigned)((*p)->hash&hashmask) != i) {
+					Node_c *r = *p;
+					*p = r->next;
+					r->next = list[r->hash&hashmask];
+					list[r->hash&hashmask] = r;
+				}
+				else
+					p = &(*p)->next;
+			}
+		}
+	}
+	else {
+		DR_Assert(list != NULL);
+	}
+	n->next = list[n->hash&hashmask];
+	list[n->hash&hashmask] = n;
+	item_count++;
 }
 
 Hash_c::Node_c *Hash_c::create_g(long hash_value, const void *key, bool *created)
@@ -189,6 +230,28 @@ void Hash_c::moveFrom_g(Hash_c *source)
 	source->hashmask = 0;
 	source->list = NULL;
 	source->item_count = 0;
+}
+
+void Hash_c::replaceFrom_g(Hash_c *source)
+{
+	for (Node_c *o_node = source->iterFirst_g(); o_node != NULL; o_node = source->iterNext_g(o_node)) {
+		const void *k, *v;
+		node_addrs(o_node, &k, &v);
+		if (Node_c *n = find_g(o_node->hash, k)) {
+			node_set(n, v);
+		}
+		else {
+			n = node_def(k, v);
+			xtry {
+				addNewNode_g(n);
+			}
+			xcatchany {
+				node_destroy(n);
+				xrethrowany;
+			}
+			xend;
+		}
+	}
 }
 
 

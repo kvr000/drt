@@ -98,7 +98,7 @@ protected:
 	THash<Sint64, Blob>		processed_data;
 	Sint64				proc_counter;
 	Sint64				return_counter;
-	THash<String,RList<Evaluator> >	evaluators;
+	RHash<String,RList<Evaluator> >	evaluators;
 	Evaluator::Arguments::Constants	constants;
 
 	unsigned			num_free_workers;

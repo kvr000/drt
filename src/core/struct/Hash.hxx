@@ -36,10 +36,12 @@
 #ifndef dr__Hash__hxx__
 # define dr__Hash__hxx__
 
+#include <stdarg.h>
 #include <dr/types.hxx>
 #include <dr/cmp.hxx>
 #include <dr/Alloc.hxx>
 #include <dr/Object.hxx>
+#include <dr/Ref.hxx>
 #include <dr/SerializeEncoder.hxx>
 #include <dr/SerializeDecoder.hxx>
 
@@ -67,6 +69,8 @@ protected:
 	void				destroy_g();				// must be called from child's destructor
 
 protected: // interface to template
+	virtual void			node_addrs(Node_c *node, const void **key, const void **val) const = 0;
+	virtual void			node_set(Node_c *node, const void *val) const = 0;
 	virtual bool			node_eq(Node_c *pair, const void *key) const = 0;
 	virtual Node_c *		node_def(const void *key, const void *val) = 0;
 	virtual Node_c *		node_undef(const void *key) = 0;
@@ -76,7 +80,11 @@ protected: // interface to template
 	virtual void			freeList() = 0;
 
 protected:
+	void				addNewNode_g(Node_c *n);
+
+protected:
 	void				moveFrom_g(Hash_c *source);
+	void				replaceFrom_g(Hash_c *source);
 
 protected:
 	Node_c *			find_g(long hash, const void *key) const;
@@ -150,6 +158,8 @@ public:
 	typedef typestore<Allocator, 1>	AllocatorBase;
 
 protected:
+	DR_MINLINE virtual void		node_addrs(Node_c *pair, const void **key, const void **val) const { *key = &((Node *)pair)->k; *val = &((Node *)pair)->v; }
+	DR_MINLINE virtual void		node_set(Node_c *pair, const void *val) const		{ ((Node *)pair)->v = *(V *)val; }
 	DR_MINLINE virtual bool		node_eq(Node_c *pair, const void *key) const		{ return comp().keq(((Node *)pair)->k, *(const K *)key); }
 	DR_MINLINE virtual Node_c *	node_def(const void *key, const void *val)		{ return allc().alloc2(*(const K *)key, *(const V *)val); }
 	DR_MINLINE virtual Node_c *	node_undef(const void *key)				{ return allc().allocK(*(const K *)key); }
@@ -164,8 +174,10 @@ public:
 
 public:
 	DR_MINLINE			THash(const Compar &comp_ = Compar(), const Allocator &allc_ = Allocator())	: ComparBase(comp_), AllocatorBase(allc_) { }
+	DR_NINLINE			THash(const K *key0, ...)				{ va_list vl; va_start(vl, key0); while (key0) { const V *val0 = va_arg(vl, const V *); create(*key0)->v = *val0; key0 = va_arg(vl, const K *); } }
 	DR_MINLINE			THash(const None &)					{ }
 	DR_MINLINE			~THash()						{ destroy_g(); }
+	DR_NINLINE static THash *	initNew(size_t count, ...)				{ ERef<THash> h(new THash); va_list vl; va_start(vl, count); while (count-- > 0) { const K key0 = va_arg(vl, K); const V val0 = va_arg(vl, V); h->create(key0)->v = val0; } return h.getAndNull(); }
 
 public:
 	DR_MINLINE Node *		find(const K &k) const					{ return (Node *)Hash_c::find_g(comp().khash(k), &k); }
@@ -180,6 +192,7 @@ public:
 	DR_MINLINE V &			operator[](const K &k)					{ return create(k)->v; }
 
 	DR_MINLINE void			moveFrom(THash *source)					{ moveFrom_g(source); }
+	DR_MINLINE void			replaceFrom(THash *source)				{ replaceFrom_g(source); }
 };
 
 template <typename K, typename V, typename Compar = HashCompar<K, Ref<V> > >

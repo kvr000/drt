@@ -84,7 +84,7 @@ void QueueManager::addRuleFile(dr::io::StreamBuffer *stream)
 			s++;
 			tname.setUtf8(t, te-t);
 		}
-		evaluators[tname].append(tref(new IntEvaluator(String::createUtf8(s, line.toStr()+line.getSize()-s))));
+		evaluators[tname]->append(tref(new IntEvaluator(String::createUtf8(s, line.toStr()+line.getSize()-s))));
 	}
 }
 
@@ -334,8 +334,8 @@ Blob QueueManager::processOneData(Sint64 line_no, const Blob &line_data)
 	}
 	fprintf(stderr, "processing table %s (%ld)\n", tname.utf8().toStr(), (long)line_data.getSize());
 	RList<Evaluator> *tev;
-	if (RList<Evaluator> *ed = evaluators.accValue(tname)) {
-		tev = ed;
+	if (Ref<RList<Evaluator> > *ed = evaluators.accValue(tname)) {
+		tev = ed->getNoref();
 	}
 	else {
 		return "";

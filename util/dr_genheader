@@ -366,6 +366,15 @@ sub printDirect($$)
 	}
 }
 
+sub addIndent($)
+{
+	my $s			= shift;
+
+	$s =~ s/^/\t/gm;
+
+	return $s;
+}
+
 sub printIndented($$$)
 {
 	my $fd			= shift;
@@ -564,6 +573,7 @@ my $errors = 0;
 
 my $cld;
 
+my @consts;
 my @strings;
 my @wstrings;
 my @bstrings;
@@ -572,6 +582,13 @@ MAIN: while (<$cxx>) {
 	chomp;
 	$lineno++;
 
+	if (m/DR_CON\((\w+),\s*([^)]*)\)/) {
+		my $l = $_;
+		while ($l =~ m/DR_CON\((\w+),\s*([^)]*)\)(.*)$/) {
+			push(@consts, { type => $1, val => $2 });
+			$l = $3;
+		}
+	}
 	if (m/DR_STR\(([^)]*)\)/) {
 		my $l = $_;
 		while ($l =~ m/DR_STR\(([^)]*)\)(.*)$/) {
@@ -698,8 +715,8 @@ MAIN: while (<$cxx>) {
 					push(@{$cld->{friends}}, $val);
 				}
 				elsif ($key eq "co") {
-					if ($val eq "{") {
-						eval { $cld->{cont} .= readContent($cxx, \$lineno, "}co") };
+					if ($val =~ m/^(\w*)\s*{$/) {
+						eval { $cld->{cont} .= ($1 ? "$1:\n" : "").addIndent(readContent($cxx, \$lineno, "}co")) };
 						die "$cxxname:$lineno: incorrect syntax for co: $@" if ($@);
 					}
 					else {
@@ -860,22 +877,27 @@ if ($str) {
 	$str->printf("/* The file is generated from %s, do not modify */\n", $cxxname);
 	$str->printf("#include <dr/Const.hxx>\n\n");
 	my %printed;
+	foreach (@consts) {
+		next if ($printed{$_});
+		$printed{$_} = 1;
+		$str->printf("static const $_->{type} drc$_->{type}_$_->{val}($_->{val});\n", $_, $_);
+	}
 	foreach (@strings) {
 		next if ($printed{$_});
 		$printed{$_} = 1;
-		$str->printf("static const dr::String drstr_%s(dr::Const::string(\"%s\"));\n", $_, $_);
+		$str->printf("static const dr::String drcstr_%s(dr::Const::string(\"%s\"));\n", $_, $_);
 	}
 	my %bprinted;
 	foreach (@bstrings) {
 		next if ($bprinted{$_});
 		$bprinted{$_} = 1;
-		$str->printf("static const dr::BString drbstr_%s(dr::Const::bstring(\"%s\"));\n", $_, $_);
+		$str->printf("static const dr::BString drcbstr_%s(dr::Const::bstring(\"%s\"));\n", $_, $_);
 	}
 	my %wprinted;
 	foreach (@wstrings) {
 		next if ($wprinted{$_});
 		$wprinted{$_} = 1;
-		$str->printf("static const dr::WString drwstr_%s(dr::Const::wstring(\"%s\"));\n", $_, $_);
+		$str->printf("static const dr::WString drcwstr_%s(dr::Const::wstring(\"%s\"));\n", $_, $_);
 	}
 }
 

@@ -79,8 +79,7 @@ void test()
 		wm->addWork(tref(new Variant((Sint64)i)));
 		tref(wm->checkWorkResult());
 	}
-	while (!tref(wm->waitWorkResult()).isNull()) {
-	}
+	while (!tref(wm->waitWorkResult()).isNull()) ;
 }
 TESTNSE(worker);
 #endif
