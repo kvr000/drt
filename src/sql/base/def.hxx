@@ -39,20 +39,22 @@
 #include <dr/def.hxx>
 
 
-#ifdef DR_COMPILING_VFS
-# define DR_VFS_FUN DR_EXPORT_FUN
-# define DR_VFS_MET DR_EXPORT_MET
-# define DR_VFS_MTS DR_EXPORT_MTS
-# define DR_VFS_DAT DR_EXPORT_DAT
-# define DR_VFS_DTC DR_EXPORT_DTC
-# define DR_VFS_CLS DR_EXPORT_CLS
+#ifdef DR_COMPILING_drsql
+# define DR_SQL_PUB	DR_EXPORT_CLS
+# define DR_SQL_FUN	DR_EXPORT_FUN
+# define DR_SQL_MET	DR_EXPORT_MET
+# define DR_SQL_MTS	DR_EXPORT_MTS
+# define DR_SQL_DAT	DR_EXPORT_DAT
+# define DR_SQL_DTC	DR_EXPORT_DTC
+# define DR_SQL_CLS	DR_EXPORT_CLS
 #else
-# define DR_VFS_FUN DR_IMPORT_FUN
-# define DR_VFS_MET DR_IMPORT_MET
-# define DR_VFS_MTS DR_IMPORT_MTS
-# define DR_VFS_DAT DR_IMPORT_DAT
-# define DR_VFS_DTC DR_IMPORT_DTC
-# define DR_VFS_CLS DR_IMPORT_CLS
+# define DR_SQL_PUB	DR_IMPORT_CLS
+# define DR_SQL_FUN	DR_IMPORT_FUN
+# define DR_SQL_MET	DR_IMPORT_MET
+# define DR_SQL_MTS	DR_IMPORT_MTS
+# define DR_SQL_DAT	DR_IMPORT_DAT
+# define DR_SQL_DTC	DR_IMPORT_DTC
+# define DR_SQL_CLS	DR_IMPORT_CLS
 #endif
 
 #define DR_SQL_NS_USE using namespace dr; using namespace dr::sql;

@@ -53,12 +53,12 @@ for (;;) {
 	}
 	if ($pending =~ m/^(allocated|freeing) block 0x([\da-f]+) \((\d+)\)$/) {
 		my ( $op, $block, $length, $thread, $backtrace ) = ( $1, $2, $3, undef, undef );
-		if (defined ($pending = <>) && $pending =~ m/^\x00?--- Thread (\w+) backtrace:$/) {
+		if (defined ($pending = <>) && $pending =~ m/^\x00?--- Thread (\w+|\(nil\)) backtrace:$/) {
 			$thread = $1;
 			$backtrace = $pending;
 			while (defined ($pending = <>)) {
 				$backtrace .= $pending;
-				undef $pending, last if ($pending =~ m/^\x00?--- Thread (\w+) end$/);
+				undef $pending, last if ($pending =~ m/^\x00?--- Thread (\w+|\(nil\)) end$/);
 			}
 		}
 		if ($op eq "allocated") {
@@ -95,6 +95,7 @@ foreach my $md (sort({ $a->{order} <=> $b->{order} } values %mem)) {
 	next if ($md->{backtrace} =~ m/[(<]_ZN2dr5Const/);
 	next if ($md->{backtrace} =~ m/[(<]_ZN2dr6Static6create/);
 	next if ($md->{backtrace} =~ m/[(<]_ZN2dr11Thread_impl18postinitMainThread/);
+	next if ($md->{backtrace} =~ m/[(<]_ZN2dr5Lockp6s_initEv/);
 	next if ($md->{backtrace} =~ m/[(<]_ZN2dr9Subsystem12getSubsystem/);
 	next if ($md->{backtrace} =~ m/[(<]_ZN2dr6Thread19createMessageSerial/);
 	next if ($md->{backtrace} =~ m/[(<]_ZN2dr23createMemExceptInstanceEv/);
