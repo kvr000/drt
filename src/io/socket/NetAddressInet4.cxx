@@ -87,7 +87,7 @@ NetAddressInet4::NetAddressInet4(const String &addr_str):
 		BString sport = addr_str.mid(p+1).utf8();
 		char *portend;
 		port = (Uint16)strtol(sport, &portend, 0);
-		for (; isspace(*portend); portend++);
+		for (; isspace(*portend); portend++) ;
 		if (*portend != '\0') {
 			xthrownew(InvalidFormatException("inet address", addr_str));
 		}
