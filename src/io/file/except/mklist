@@ -6,4 +6,5 @@ SOURCES:
 	:${SD_FILE_except}/FileFailedException.hxx:g=di,t
 	:${SD_FILE_except}/FileNotFoundException.cxx:g=s,t
 	:${SD_FILE_except}/FileNotFoundException.hxx:g=di,t
+	:${SD_FILE_except}/FileExistsException.cxx:g=s,t,gh,di
 

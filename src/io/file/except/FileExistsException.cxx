@@ -33,60 +33,31 @@
  * @license	http://www.gnu.org/licenses/lgpl.txt GNU Lesser General Public License v3
  **/
 
-#include <errno.h>
+/*drt
+ * include:	dr/io/FileFailedException.hxx
+ *
+ * ns:		dr::io
+ */
 
-#include <dr/io/File.hxx>
-#include <dr/io/IoException.hxx>
-#include <dr/io/NonblockException.hxx>
-#include <dr/io/FileNotFoundException.hxx>
 #include <dr/io/FileExistsException.hxx>
-
-#include <dr/io/dev/File_sysiface.hxx>
-
-#include <dr/x_kw.hxx>
-#include <dr/pe_error.hxx>
-
-#ifdef dr__io__File_sysiface_posix__hxx__
-
+#include "_gen/FileExistsException-all.hxx"
 
 DR_IO_NS_BEGIN
 
 
-void File_sysiface_posix::throwSysException(File *handle, const String &operation)
+/*drt
+ * class:	FileExistsException
+ * type:	exception
+ * ancestor:	dr::io::FileFailedException
+ *
+ * at:	String				message;
+ */
+
+DR_MET(public)
+FileExistsException::FileExistsException(const String &filename_, const String &operation_, int posix_error_, int minor_error_):
+	FileFailedException(filename_, operation_, posix_error_, minor_error_)
 {
-	switch (errno) {
-	case EAGAIN:
-#if EAGAIN != EWOULDBLOCK
-	case EWOULDBLOCK:
-#endif
-		xthrownew(NonblockException(handle, operation, DRP_EAGAIN, errno));
-
-	default:
-		xthrownew(IoException(handle, operation, errno, errno));
-	}
-}
-
-void File_sysiface_posix::throwFileStaticSysException(const String &filename, const String &operation)
-{
-	switch (errno) {
-	case EAGAIN:
-#if EAGAIN != EWOULDBLOCK
-	case EWOULDBLOCK:
-#endif
-		xthrownew(NonblockException(NULL, operation, DRP_EAGAIN, errno));
-
-	case EEXIST:
-		xthrownew(FileExistsException(filename, operation, errno, errno));
-
-	case ENOENT:
-		xthrownew(FileNotFoundException(filename, operation, errno, errno));
-
-	default:
-		xthrownew(FileFailedException(filename, operation, errno, errno));
-	}
 }
 
 
 DR_IO_NS_END
-
-#endif

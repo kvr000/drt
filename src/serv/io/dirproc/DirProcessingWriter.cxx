@@ -43,6 +43,7 @@
 
 #include <dr/x_kw.hxx>
 #include <dr/io/FileNotFoundException.hxx>
+#include <dr/io/FileExistsException.hxx>
 #include <dr/io/Directory.hxx>
 
 #include <dr/serv/io/DirProcessingWriter.hxx>
@@ -101,7 +102,18 @@ dr::io::File *DirProcessingWriter::createFile(String *name)
 		minor_counter = 0;
 	}
 	name->format("%ld-%0*d", (long)last_time_sec, minor_length, minor_counter++);
-	return new dr::io::File(dirname_tmp+*name, dr::io::File::M_CREATE|dr::io::File::M_WRITE|dr::io::File::M_EXCL);
+	for (;;) {
+		xtry {
+			return new dr::io::File(dirname_tmp+*name, dr::io::File::M_CREATE|dr::io::File::M_WRITE|dr::io::File::M_EXCL);
+		}
+		xcatch (dr::io::FileExistsException, ex) {
+			int sleep_nsec = 1000000000;
+			for (size_t i = minor_length; i--; )
+				sleep_nsec /= 10;
+			Time::sleepNSec(sleep_nsec);
+		}
+		xend;
+	}
 }
 
 DR_MET(public virtual)

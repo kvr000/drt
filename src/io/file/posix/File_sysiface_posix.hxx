@@ -161,6 +161,11 @@ DR_RINLINE void *File_sysiface_posix::open(const String &file, Handle::Mode mode
 		if ((mode &= ~Handle::M_APPEND) == 0)
 			goto go;
 	}
+	if (mode&Handle::M_EXCL) {
+		oflags |= O_EXCL;
+		if ((mode &= ~Handle::M_EXCL) == 0)
+			goto go;
+	}
 
 go:
 	if ((fd = ::open(file.utf8().toStr(), oflags|O_LARGEFILE, 0666)) < 0)

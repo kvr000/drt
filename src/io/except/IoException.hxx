@@ -38,12 +38,10 @@
 
 #include <dr/Exception.hxx>
 
-#include <dr/io/def_io.hxx>
+#include <dr/io/Handle.hxx>
 
 DR_IO_NS_BEGIN
 
-
-class Handle;
 
 /**
  * Io Exception
