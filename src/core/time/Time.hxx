@@ -43,7 +43,6 @@ DR_NS_BEGIN
 
 typedef Sint64 SysTime;
 
-#define INVALID_SYSTIME (((SysTime)-1)<<(sizeof(SysTime)*8-1))
 
 /**
  * Time functions
@@ -53,14 +52,148 @@ typedef Sint64 SysTime;
 class DR_PUB Time
 {
 public:
+	static const SysTime SEC_BASE	= 1000;
+	static const SysTime INVAL_TIME	= (((SysTime)-1)<<(sizeof(SysTime)*8-1));
+
+public:
 	static SysTime			getTime();
 
 public:
 	static void			setInvalid(SysTime *time);
 
 public:
+	/**
+	 * Compute time from Epoch seconds (i.e. 1970-01-01 00:00:00 UTC)
+	 */
+	static SysTime			fromSeconds(SysTime seconds)		{ return seconds != INVAL_TIME ? seconds*SEC_BASE : INVAL_TIME; }
+
+	/**
+	 * Convert time to Epoch seconds (i.e. 1970-01-01 00:00:00 UTC)
+	 */
+	static SysTime			toSeconds(SysTime time)			{ return time != INVAL_TIME ? time/SEC_BASE : INVAL_TIME; }
+
+	/**
+	 * Compute time from Epoch seconds (i.e. 1970-01-01 00:00:00 UTC)
+	 */
+	static SysTime			fromMseconds(SysTime mseconds)		{ return mseconds != INVAL_TIME ? mseconds*SEC_BASE/1000 : INVAL_TIME; }
+
+	/**
+	 * Convert time to Epoch seconds (i.e. 1970-01-01 00:00:00 UTC)
+	 */
+	static SysTime			toMseconds(SysTime time)		{ return time != INVAL_TIME ? time*1000/SEC_BASE : INVAL_TIME; }
+
+	/**
+	 * Get miliseconds fraction from time
+	 */
+	static unsigned			fractMsecs(SysTime time)		{ return ((time%SEC_BASE)*1000)/SEC_BASE; }
+
+	/**
+	 * Get microseconds fraction from time
+	 */
+	static unsigned			fractUsecs(SysTime time)		{ return ((time%SEC_BASE)*1000000)/SEC_BASE; }
+
+	/**
+	 * Get nanoseconds fraction from time
+	 */
+	static unsigned			fractNsecs(SysTime time)		{ return ((time%SEC_BASE)*1000000000)/SEC_BASE; }
+
+	/**
+	 * Get interval time in seconds
+	 */
+	static SysTime			interToSeconds(SysTime time)		{ return time/SEC_BASE; }
+
+	/**
+	 * Get interval time in seconds, rounding up
+	 */
+	static SysTime			interToSecondsUp(SysTime time)		{ return (time+SEC_BASE-1)/SEC_BASE; }
+
+	/**
+	 * Get interval time in miliseconds
+	 */
+	static SysTime			interToMseconds(SysTime time)		{ return time*1000/SEC_BASE; }
+
+	/**
+	 * Get interval time in miliseconds, rounding up
+	 */
+	static SysTime			interToMsecondsUp(SysTime time)		{ return (time*1000+SEC_BASE-1)/SEC_BASE; }
+
+	/**
+	 * Get interval time in miliseconds
+	 */
+	static SysTime			interToUseconds(SysTime time)		{ return time*1000000/SEC_BASE; }
+
+	/**
+	 * Get interval time in miliseconds, rounding up
+	 */
+	static SysTime			interToUsecondsUp(SysTime time)		{ return (time*1000000+SEC_BASE-1)/SEC_BASE; }
+
+	/**
+	 * Get interval time in miliseconds
+	 */
+	static SysTime			interToNseconds(SysTime time)		{ return time*1000000000/SEC_BASE; }
+
+	/**
+	 * Get interval time in miliseconds, rounding up
+	 */
+	static SysTime			interToNsecondsUp(SysTime time)		{ return (time*1000000000+SEC_BASE-1)/SEC_BASE; }
+
+
+	/**
+	 * Get interval value from seconds
+	 */
+	static SysTime			interFromSeconds(SysTime time)		{ return (time*SEC_BASE); }
+
+	/**
+	 * Get interval value from seconds, rounding up
+	 */
+	static SysTime			interFromSecondsUp(SysTime time)	{ return (time*SEC_BASE); }
+
+	/**
+	 * Get interval value from miliseconds
+	 */
+	static SysTime			interFromMseconds(SysTime time)		{ return (time*SEC_BASE)/1000; }
+
+	/**
+	 * Get interval value from miliseconds, rounding up
+	 */
+	static SysTime			interFromMsecondsUp(SysTime time)	{ return (time*SEC_BASE+999)/1000; }
+
+	/**
+	 * Get interval value from microseconds
+	 */
+	static SysTime			interFromUseconds(SysTime time)		{ return (time*SEC_BASE)/1000000; }
+
+	/**
+	 * Get interval value from microseconds, rounding up
+	 */
+	static SysTime			interFromUsecondsUp(SysTime time)	{ return (time*SEC_BASE+999999)/1000000; }
+
+	/**
+	 * Get interval value from microseconds
+	 */
+	static SysTime			interFromNseconds(SysTime time)		{ return (time*SEC_BASE)/1000000000; }
+
+	/**
+	 * Get interval value from microseconds, rounding up
+	 */
+	static SysTime			interFromNsecondsUp(SysTime time)	{ return (time*SEC_BASE+999999999)/1000000000; }
+
+
+	/**
+	 * Compute time from date values.
+	 *
+	 * All values are zero based.
+	 */
 	static SysTime			convertUtcTime(int year, int mon, int day, int hour, int min, int sec, int timezone_min);
+	static SysTime			convertUtcTimeMsec(int year, int mon, int day, int hour, int min, int sec, int msec, int timezone_min);
+
+	/**
+	 * Convert time to data values.
+	 *
+	 * All values are zero base.
+	 */
 	static void			timeToUtcCalendar(SysTime tvalue, int *year, int *mon, int *day, int *hour, int *min, int *sec);
+	static void			timeToUtcCalendarMsec(SysTime tvalue, int *year, int *mon, int *day, int *hour, int *min, int *sec, int *msec);
 };
 
 

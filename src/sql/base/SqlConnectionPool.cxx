@@ -70,7 +70,7 @@ SqlConnectionPool::~SqlConnectionPool()
 	connection_list.clean();
 }
 
-void SqlConnectionPool::setMaxOldness(long max_oldness_)
+void SqlConnectionPool::setMaxOldness(SysTime max_oldness_)
 {
 	max_oldness = max_oldness_;
 }

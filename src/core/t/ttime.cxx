@@ -49,7 +49,7 @@ DR_TESTENV_NS_USE
 TESTNS(time_invalid);
 void test()
 {
-	Fatal::plog("%llx\n", INVALID_SYSTIME);
+	Fatal::plog("%llx\n", Time::INVAL_TIME);
 }
 TESTNSE(time_invalid);
 #endif

@@ -176,7 +176,7 @@ SysTime ApplicationCache::TimedTree::getLowestTime()
 		return ((Node *)lowest)->expires;
 	}
 	else {
-		return INVALID_SYSTIME;
+		return Time::INVAL_TIME;
 	}
 }
 
@@ -415,8 +415,8 @@ SysTime ApplicationCache::expire(SysTime time)
 	MutexLocker locker(access_lock);
 	for (;;) {
 		SysTime lowest_time = timed_tree.getLowestTime();
-		if (lowest_time == INVALID_SYSTIME)
-			return INVALID_SYSTIME;
+		if (lowest_time == Time::INVAL_TIME)
+			return Time::INVAL_TIME;
 		if (lowest_time > time && value_hash.count() <= max_items) {
 			return lowest_time-time;
 		}

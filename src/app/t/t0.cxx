@@ -84,7 +84,7 @@ void test()
 	checkIds(ac, 2, 5);
 	CHECK(ac->expire(2) == 2);
 	checkIds(ac, 4, 5);
-	CHECK(ac->expire(4) == INVALID_SYSTIME);
+	CHECK(ac->expire(4) == Time::INVAL_TIME);
 	checkIds(ac, 5, 5);
 }
 TESTNSE(appcache);

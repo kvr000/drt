@@ -244,7 +244,7 @@ DR_RINLINE void File_sysiface_wnt::unlockFull(File *handle, int type)
 
 DR_RINLINE void File_sysiface_wnt::updateTime(File *handle, Sint64 time)
 {
-	time = (time+11644473600)*10000000;
+	time = (Time::toSeconds(time)+11644473600)*10000000;
 	FILETIME ftime;
 	ftime.dwLowDateTime = (DWORD)time;
 	ftime.dwHighDateTime = (DWORD)(time>>32);

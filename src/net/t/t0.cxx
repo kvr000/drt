@@ -67,7 +67,7 @@ static void runServer(Ref<SocketServer> sserver)
 	ERef<HttpServer> hserver(new HttpServer(tref(sserver->accept())));
 	xtry {
 		Blob body;
-		hserver->setTimeLimit(Time::getTime()+10);
+		hserver->setTimeLimit(Time::getTime()+Time::interFromSecondsUp(10));
 		hserver->readRequest();
 		body = hserver->readFullContent();
 		hserver->sendResponse(200, "ok");
@@ -92,7 +92,7 @@ void createClientServer(Ref<HttpClient> *hclient, Ref<Thread> *hserver_thr)
 
 	String addr("localhost:"); addr.appendNumber(sserver_port);
 	hclient->setNoref(new HttpClient(addr));
-	(*hclient)->setTimeLimit(Time::getTime()+10);
+	(*hclient)->setTimeLimit(Time::getTime()+Time::interFromSecondsUp(10));
 }
 
 void testBasic()
@@ -189,7 +189,7 @@ void test()
 	sz = decoder->readStructLength();
 	CHECK(!decoder->checkStructNext(&sz));
 	CHECK(decoder->readBinary() == "abcd");
-	CHECK(decoder->readTime() == 915190496);
+	CHECK(decoder->readTime() == Time::fromSeconds(915190496));
 
 	Blob rpc_resp("<?xml version=\"1.0\"?><methodResponse><params><param><value><string>abcd</string></value></param></params></methodResponse>");
 	decoder.setNoref(RpcDecoder::createDecoder(rpc_resp));
@@ -220,7 +220,7 @@ void test()
 	encoder->writeStructLength(0);
 	encoder->writeStructEnd();
 	encoder->writeBinary("abcd");
-	encoder->writeTime(915190496);
+	encoder->writeTime(Time::fromSeconds(915190496));
 
 	printf("%s\n", encoder->getContent().toStr());
 

@@ -64,7 +64,7 @@ public:
 	virtual void			releaseConnection(SqlConnectionHold *connection);
 
 public:
-	virtual void			setMaxOldness(long oldness);
+	virtual void			setMaxOldness(SysTime oldness);
 	virtual void			setMaxConnections(int num_connections);
 
 protected:
@@ -73,7 +73,7 @@ protected:
 protected:
 	String				connect_str;
 	THash<String, String>		connect_pars;
-	long				max_oldness;
+	SysTime				max_oldness;
 	int				max_connections;
 	int				num_connections;
 	Ref<MutexCond>			list_mutex;

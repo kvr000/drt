@@ -90,7 +90,7 @@ WorkerPoolManager::WorkerPoolManager():
 }
 
 DR_MET(public virtual)
-void WorkerPoolManager::setWorkerTimeout(Sint64 timeout_ns)
+void WorkerPoolManager::setWorkerTimeoutNs(Sint64 timeout_ns)
 {
 	worker_timeout_ns = timeout_ns;
 }

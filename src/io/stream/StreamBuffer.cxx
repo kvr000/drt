@@ -145,7 +145,7 @@ ssize_t StreamBuffer::read(Blob *data, size_t maxsize)
 			SysTime cur_time = Time::getTime();
 			if ((cur_time = time_limit-cur_time) < 0)
 				cur_time = 0;
-			if (handle->waitData(Handle::M_READ, (Sint64)cur_time*1000000000) == 0) {
+			if (handle->waitData(Handle::M_READ, Time::interToNsecondsUp(cur_time)) == 0) {
 				xthrownew(TimeoutExcept());
 			}
 		}
@@ -172,7 +172,7 @@ ssize_t StreamBuffer::readExtendAdd(Blob *data, size_t add_size)
 			SysTime cur_time = Time::getTime();
 			if ((cur_time = time_limit-cur_time) < 0)
 				cur_time = 0;
-			if (handle->waitData(Handle::M_READ, (Sint64)cur_time*1000000000) == 0) {
+			if (handle->waitData(Handle::M_READ, Time::interToNsecondsUp(cur_time)) == 0) {
 				xthrownew(TimeoutExcept());
 			}
 		}
@@ -227,7 +227,7 @@ Blob *StreamBuffer::extendCache(size_t min_size)
 			SysTime cur_time = Time::getTime();
 			if ((cur_time = time_limit-cur_time) < 0)
 				cur_time = 0;
-			if (handle->waitData(Handle::M_READ, (Sint64)cur_time*1000000000) == 0) {
+			if (handle->waitData(Handle::M_READ, Time::interToNsecondsUp(cur_time)) == 0) {
 				xthrownew(TimeoutExcept());
 			}
 		}
@@ -255,7 +255,7 @@ size_t StreamBuffer::tryExtendCache(size_t min_size)
 			SysTime cur_time = Time::getTime();
 			if ((cur_time = time_limit-cur_time) < 0)
 				cur_time = 0;
-			if (handle->waitData(Handle::M_READ, (Sint64)cur_time*1000000000) == 0) {
+			if (handle->waitData(Handle::M_READ, Time::interToNsecondsUp(cur_time)) == 0) {
 				xthrownew(TimeoutExcept());
 			}
 		}

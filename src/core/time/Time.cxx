@@ -46,12 +46,12 @@ DR_NS_BEGIN
 
 SysTime Time::getTime()
 {
-	return time(NULL);
+	return time(NULL)*SEC_BASE;
 }
 
 void Time::setInvalid(SysTime *time)
 {
-	*time = INVALID_SYSTIME;
+	*time = INVAL_TIME;
 }
 
 SysTime Time::convertUtcTime(int year, int mon, int day, int hour, int min, int sec, int timezone_min)
@@ -70,12 +70,31 @@ SysTime Time::convertUtcTime(int year, int mon, int day, int hour, int min, int 
 #endif
 	if (tt < 0)
 		return tt;
-	return tt+timezone_min*60;
+	return (tt+timezone_min*60)*SEC_BASE;
+}
+
+SysTime Time::convertUtcTimeMsec(int year, int mon, int day, int hour, int min, int sec, int msec, int timezone_min)
+{
+	struct tm t;
+	t.tm_year = year-1900;
+	t.tm_mon = mon;
+	t.tm_mday = day+1;
+	t.tm_hour = hour;
+	t.tm_min = min;
+	t.tm_sec = sec;
+#ifdef DR_LIBC_VC
+	__time64_t tt = _mkgmtime64(&t);
+#else
+	time_t tt = timegm(&t);
+#endif
+	if (tt < 0)
+		return tt;
+	return fromSeconds(tt+timezone_min*60)+interFromMseconds(msec);
 }
 
 void Time::timeToUtcCalendar(SysTime tvalue, int *year, int *mon, int *day, int *hour, int *min, int *sec)
 {
-	time_t tt = (time_t)tvalue;
+	time_t tt = (time_t)toSeconds(tvalue);
 	struct tm t;
 	if (
 #ifdef DR_LIBC_VC
@@ -92,6 +111,28 @@ void Time::timeToUtcCalendar(SysTime tvalue, int *year, int *mon, int *day, int 
 	*hour = t.tm_hour;
 	*min = t.tm_min;
 	*sec = t.tm_sec;
+}
+
+void Time::timeToUtcCalendarMsec(SysTime tvalue, int *year, int *mon, int *day, int *hour, int *min, int *sec, int *msec)
+{
+	time_t tt = (time_t)toSeconds(tvalue);
+	struct tm t;
+	if (
+#ifdef DR_LIBC_VC
+		_gmtime64_s(&t, &tt) != 0
+#else
+		gmtime_r(&tt, &t) == NULL
+#endif
+		) {
+		xthrownew(Except());
+	}
+	*year = t.tm_year+1900;
+	*mon = t.tm_mon;
+	*day = t.tm_mday-1;
+	*hour = t.tm_hour;
+	*min = t.tm_min;
+	*sec = t.tm_sec;
+	*msec = fractMsecs(tvalue);
 }
 
 

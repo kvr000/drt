@@ -84,7 +84,7 @@ public:
 	static void			lockFull(File *handle, int type);
 	static void			unlockFull(File *handle, int type);
 
-	static void			updateTime(File *handle, Sint64 time);
+	static void			updateTime(File *handle, SysTime time);
 
 	static File::HandleType		getType(const String &file);
 	static void			unlink(const String &file);
@@ -214,14 +214,16 @@ DR_RINLINE void File_sysiface_posix::unlockFull(File *handle, int type)
 		throwSysException(handle, Handle::lock_string);
 }
 
-DR_RINLINE void File_sysiface_posix::updateTime(File *handle, Sint64 time)
+DR_RINLINE void File_sysiface_posix::updateTime(File *handle, SysTime time)
 {
 	struct timeval tv[2];
-	tv[0].tv_sec = time;
-	tv[0].tv_usec = 0;
-	tv[1].tv_sec = time;
-	tv[1].tv_usec = 0;
-	if (::futimes(getOsHandle(handle), time == INVALID_SYSTIME ? NULL : tv) < 0)
+	if (time != Time::INVAL_TIME) {
+		tv[0].tv_sec = Time::toSeconds(time);
+		tv[0].tv_usec = Time::fractUsecs(time);
+		tv[1].tv_sec = Time::toSeconds(time);
+		tv[1].tv_usec = Time::fractUsecs(time);
+	}
+	if (::futimes(getOsHandle(handle), time == Time::INVAL_TIME ? NULL : tv) < 0)
 		throwSysException(handle, Handle::lock_string);
 }
 
