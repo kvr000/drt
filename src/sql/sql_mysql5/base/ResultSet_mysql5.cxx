@@ -93,7 +93,7 @@ MYSQL_BIND *ResultSet_mysql5::allocResBinding(unsigned idx)
 		memset(&res_bindings[orig_size], 0, (idx+1-orig_size)*sizeof(MYSQL_BIND));
 		while (orig_size <= idx) {
 			res_bindings[orig_size].buffer_type = MYSQL_TYPE_NULL;
-			res_bindings[orig_size].is_null = &res_bindings[orig_size].is_null_value;
+			//res_bindings[orig_size].is_null = &res_bindings[orig_size].is_null_value;
 			orig_size++;
 		}
 	}
@@ -254,8 +254,11 @@ void ResultSet_mysql5::bindNullHandler(const String &column, void (*handler)(voi
 bool ResultSet_mysql5::fetchRow()
 {
 	if (!res_binding_done) {
-		int rcount = mysql_stmt_field_count(stmt);
-		allocResBinding(rcount-1);
+		allocResBinding(mysql_stmt_field_count(stmt)-1);
+		for (size_t i = 0; i < res_bindings.count(); i++) {
+			if (res_bindings[i].is_null == NULL)
+				res_bindings[i].is_null = &res_bindings[i].is_null_value;
+		}
 		if (mysql_stmt_bind_result(stmt, &res_bindings[0]) != 0) {
 			SqlConnection_mysql5::throwSqlExcept(mysql_stmt_sqlstate(stmt), mysql_stmt_error(stmt));
 			return false;
