@@ -79,6 +79,7 @@ public:
 	virtual void			bindParam(unsigned param_id, const Blob &value);
 	virtual void			bindParam(unsigned param_id, const Date &value);
 	virtual void			bindParam(unsigned param_id, Variant *value);
+	virtual void			bindParams(Variant **values, size_t values_count);
 
 public:
 	virtual ResultSet *		executeQuery();

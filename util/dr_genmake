@@ -269,6 +269,7 @@ sub getConfig($$$)
 		config		=> {},
 		define		=> {},
 		var		=> {},
+		addopt		=> $addopt,
 	};
 
 	while ((defined (my $line = $fd->getline()))) {
@@ -662,7 +663,9 @@ sub createOutput
 	$mf->print("DR_BUILD_CXX_FLAGS=", map({ " -D$_" } keys %{$config->{define}}), "\n");
 	$mf->print("\n");
 
-	$mf->print("all: targ_all\ndefault: targ_all\nno: nothing\n\ngmake:\n\t$vars->{genmake} $config->{fnames} \$(DIRS)\n\ninclude \$(ETCDIR_)main.mk\n\n");
+	$mf->print("all: targ_all\ndefault: targ_all\nno: nothing\n\n");
+	$mf->print("gmake:\n\t$vars->{genmake} $config->{fnames}".join("", map({ " \"$_\"" } @{$config->{addopt}}))." \$(DIRS)\n\n");
+	$mf->print("include \$(ETCDIR_)main.mk\n\n");
 	$mf->print("lgh:\n\t\$(MAKE) -f Make_gh\n\n");
 
 	$mgh->printf("BUILD=%s\n", "_build");

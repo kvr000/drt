@@ -242,6 +242,15 @@ void SqlStatement_mysql5::bindParam(unsigned column, Variant *value)
 	}
 }
 
+void SqlStatement_mysql5::bindParams(Variant **values, size_t values_count)
+{
+	if (mysql_stmt_param_count(stmt) != values_count)
+		xthrownew(SqlExcept(-1, "incorrect count of bindings"));
+	while (values_count-- > 0) {
+		bindParam(values_count, values[values_count]);
+	}
+}
+
 void SqlStatement_mysql5::executeUpdate()
 {
 	if (!stmt)

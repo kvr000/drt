@@ -109,6 +109,13 @@ void SqlStatementDummy::bindParam(unsigned column, Variant *variant)
 {
 }
 
+void SqlStatementDummy::bindParams(Variant **values, size_t values_count)
+{
+	while (values_count--) {
+		bindParam(values_count, values[values_count]);
+	}
+}
+
 void SqlStatementDummy::executeUpdate()
 {
 }
