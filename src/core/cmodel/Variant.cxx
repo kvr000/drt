@@ -62,6 +62,7 @@
  * }co
  *
  * co:{
+ * protected:
  * 	int				vtype:7;
  * 	int				is_null:1;
  * 	union
@@ -74,6 +75,10 @@
  *		Object *			object_val;
  * 	};
  * }co
+ *
+ * doc:{
+ * 	Holder of generic values
+ * }doc
  */
 
 #include "_gen/Variant-all.hxx"
@@ -145,6 +150,40 @@ DR_MET(public virtual)
 Variant::VType Variant::getType() const
 {
 	return (VType)vtype;
+}
+
+DR_MET(protected)
+Variant::~Variant()
+{
+	switch ((VType)vtype) {
+	case VT_Invalid:
+	case VT_Null:
+		break;
+
+	case VT_Bool:
+	case VT_Int:
+	case VT_Double:
+		vtype = VT_Invalid;
+		break;
+
+	case VT_Binary:
+		vtype = VT_Invalid;
+		((Blob *)&binary_val)->~Blob();
+		break;
+
+	case VT_String:
+		vtype = VT_Invalid;
+		((String *)&string_val)->~String();
+		break;
+
+	case VT_Object:
+		vtype = VT_Invalid;
+		object_val->unref();
+		break;
+
+	default:
+		DR_AssertMsg("Invalid type for Variant Type");
+	}
 }
 
 DR_MET(public virtual)
@@ -564,39 +603,6 @@ Object *Variant::toObject() const
 
 	DR_AssertMsg("Invalid type for Variant Type");
 	return NULL;
-}
-
-DR_MET(protected)
-Variant::~Variant()
-{
-	switch ((VType)vtype) {
-	case VT_Invalid:
-		break;
-
-	case VT_Bool:
-	case VT_Int:
-	case VT_Double:
-		vtype = VT_Invalid;
-		break;
-
-	case VT_Binary:
-		vtype = VT_Invalid;
-		((Blob *)&binary_val)->~Blob();
-		break;
-
-	case VT_String:
-		vtype = VT_Invalid;
-		((String *)&string_val)->~String();
-		break;
-
-	case VT_Object:
-		vtype = VT_Invalid;
-		object_val->unref();
-		break;
-
-	default:
-		DR_AssertMsg("Invalid type for Variant Type");
-	}
 }
 
 
