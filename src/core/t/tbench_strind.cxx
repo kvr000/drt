@@ -51,7 +51,7 @@ void run_find()
 	String strings[] = { "bla", "kra", "sehy", "bflm" };
 	String bla_str("bla");
 	StringIndex si(sizeof(strings)/sizeof(strings[0]), strings);
-	for (int i = 0; i < 1024*1024*1024; i++) {
+	for (int i = 0; i < 32*1024*1024; i++) {
 		si.find(bla_str);
 	}
 }
@@ -61,7 +61,7 @@ void run_findXchg()
 	String strings[] = { "bla", "kra", "sehy", "bflm" };
 	String bla_str("bla");
 	StringIndex si(sizeof(strings)/sizeof(strings[0]), strings);
-	for (int i = 0; i < 1024*1024*1024; i++) {
+	for (int i = 0; i < 32*1024*1024; i++) {
 		si.findXchg(bla_str);
 	}
 }

@@ -210,6 +210,31 @@ sub readContent($$$)
 	die "didn't find close $fin block";
 }
 
+sub readParagraph($$)
+{
+	my $fd			= shift;
+	my $lineno		= shift;
+
+	my $startline = $$lineno;
+
+	my $cont = "";
+
+	while (<$fd>) {
+		$$lineno++;
+		if (m/^\s*\*\s+(\S.*)$/s) {
+			$cont .= $1;
+		}
+		elsif (m/^\s*\*\s*$/) {
+			chomp $cont;
+			return $cont;
+		}
+		else {
+			die "unexpected content starting at $startline";
+		}
+	}
+	die "didn't find empty line of paragraph starting at $startline";
+}
+
 
 our %opts;
 getopts('i', \%opts);
@@ -306,11 +331,15 @@ sub addTagConst($$$)
 	}
 }
 
-sub escapeCString($)
+sub escapeCString($$)
 {
 	my $str			= shift;
+	my $ind			= shift;
 
-	$str =~ s/(["'])/\\$1/g;
+	my $ind_str = "\t"x$ind;
+
+	$str =~ s/([\\"'])/\\$1/g;
+	$str =~ s/\n/\\n"\n$ind_str"/g;
 	return $str;
 }
 
@@ -432,7 +461,7 @@ sub printClass($$)
 		foreach my $sqd (@{$cld->{sqls}}) {
 			push(@{$cld->{methods}}, { specs => [ "protected" ], ret => "void", "decl" => "prep_$sqd->{name}()" });
 			push(@{$cld->{ats}}, { access => "protected", def => "Ref<dr::sql::SqlStatement>\tst_$sqd->{name};", line => $sqd->{line}, lineno => $sqd->{lineno} });
-			$sql->printf("\nvoid %s::prep_%s()\n{\n\tst_%s.setNoref(db_connection->prepareStatement(\"%s\"));\n}\n", $cld->{class}, $sqd->{name}, $sqd->{name}, escapeCString($sqd->{query}));
+			$sql->printf("\nvoid %s::prep_%s()\n{\n\tst_%s.setNoref(db_connection->prepareStatement(\"%s\"));\n}\n", $cld->{class}, $sqd->{name}, $sqd->{name}, escapeCString($sqd->{query}, 2));
 			addTagMethod($cld, { ret => "void", decl => "prep_$sqd->{name}", line => $sqd->{line}, lineno => $sqd->{lineno} }, $cxxname);
 		}
 	}
@@ -632,11 +661,21 @@ MAIN: while (<$cxx>) {
 						or STDERR->print("$cxxname:$lineno: $@\n"), $errors++;
 				}
 				elsif ($key eq "sql") {
-					if ($val !~ m/^(\w+)\s+(.*)$/) {
+					my ( $name, $query );
+					if ($val =~ m/^(\w+)\s*$/) {
+						$name = $1;
+						eval { $query = readParagraph($cxx, \$lineno); };
+						die "$cxxname:$lineno: incorrect syntax for paragraph: $@" if ($@);
+					}
+					elsif ($val =~ m/^(\w+)\s+(\S.*)$/) {
+						$name = $1;
+						$query = $2;
+					}
+					if (!defined $name) {
 						STDERR->print("$cxxname:$lineno: incorrect syntax for sql\n"), $errors++;
 					}
 					else {
-						push(@{$cld->{sqls}}, { line => $_, lineno => $lineno, name => $1, query => $2 });
+						push(@{$cld->{sqls}}, { line => $_, lineno => $lineno, name => $name, query => $query });
 					}
 				}
 				elsif ($key eq "friend") {

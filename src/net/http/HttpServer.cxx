@@ -306,7 +306,7 @@ Blob HttpServer::readContent(size_t maxsize)
 			return Blob();
 		}
 	}
-	if (req_body_size >= 0 && maxsize > req_body_size)
+	if (req_body_size >= 0 && maxsize > (Uint64)req_body_size)
 		maxsize = (size_t)req_body_size;
 	maxsize = read_stream.read(&data, maxsize);
 	req_body_size -= maxsize;
@@ -324,7 +324,7 @@ ssize_t HttpServer::readContent(Blob *content, size_t maxsize)
 			return 0;
 		}
 	}
-	if (req_body_size >= 0 && maxsize > req_body_size)
+	if (req_body_size >= 0 && maxsize > (Uint64)req_body_size)
 		maxsize = (size_t)req_body_size;
 	maxsize = read_stream.read(content, maxsize);
 	req_body_size -= maxsize;

@@ -1126,6 +1126,14 @@ sub createOutput
 				$mf->print("\t./$td->{out}\n");
 			}
 		}
+		$mf->print(dr::build::out::MakeCommon::genRecursiveAction("bench", "lbench", $vars)."\n");
+		$mf->print("lbench:\n");
+		foreach my $td (@{$vars->{TEST}}) {
+			next if ($td->{disable});
+			if (dr::build::findArray("bench", $td->{roles}) >= 0) {
+				$mf->print("\ttime ./$td->{out}\n");
+			}
+		}
 		$mf->print("\n");
 	}
 
