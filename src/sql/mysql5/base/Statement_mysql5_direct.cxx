@@ -63,6 +63,7 @@ Statement_mysql5_direct::~Statement_mysql5_direct()
 void Statement_mysql5_direct::executeUpdate()
 {
 	BString stmt_utf8(stmt_str.utf8());
+	conn->saveBusy();
 	if (mysql_real_query(conn->mysql_handle, stmt_utf8.toStr(), stmt_utf8.getSize()) != 0) {
 		Connection_mysql5::throwSqlExcept(mysql_sqlstate(conn->mysql_handle), mysql_error(conn->mysql_handle));
 	}

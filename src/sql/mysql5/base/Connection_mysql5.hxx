@@ -48,6 +48,8 @@ DR_NS_USE
 DR_SQL_NS_USE
 
 
+class ResultSet_mysql5;
+
 class Connection_mysql5: public Connection
 {
 	DR_OBJECT_DECL_SIMPLE(Connection_mysql5, Connection);
@@ -72,6 +74,11 @@ public:
 	virtual bool			prepareLockStatements(Statement **lock_mem, Statement **unlock_mem, int lock_type0, const String *table0, ...);
 	virtual bool			prepareLockStatements(Statement **lock_mem, Statement **unlock_mem, int *lock_type, const String *lock_tables, size_t count);
 
+public:
+	void				destroyingRs(ResultSet_mysql5 *rs)	{ if (busy_rs == rs) busy_rs = NULL; }
+	void				saveBusy()				{ if (busy_rs) processAllBusy(); }
+	void				processAllBusy();
+
 public: // within mysql5 implementation
 	static void			throwSqlExcept(const char *code, const char *error_desc);
 	static int			parseSqlCode(const char *code);
@@ -80,6 +87,8 @@ public:
 	MYSQL *				mysql_handle;
 	bool				auto_reconnect;
 	bool				use_locks;
+
+	ResultSet_mysql5 *		busy_rs;
 
 public:
 	friend class SqlManager_mysql5;

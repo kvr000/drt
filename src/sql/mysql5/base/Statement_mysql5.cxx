@@ -119,6 +119,7 @@ void Statement_mysql5::setOffsetLimit(long offset_, long limit_)
 
 void Statement_mysql5::prepare()
 {
+	conn->saveBusy();
 	String s(stmt_str);
 	if (offset >= 0 || limit >= 0) {
 		if (offset < 0) {
@@ -263,6 +264,7 @@ bool Statement_mysql5::isBusy()
 
 void Statement_mysql5::executeUpdate()
 {
+	conn->saveBusy();
 	if (!stmt)
 		recreateStmt();
 retry:
@@ -285,6 +287,7 @@ retry:
 
 ResultSet *Statement_mysql5::executeQuery()
 {
+	conn->saveBusy();
 	if (!stmt)
 		recreateStmt();
 retry:

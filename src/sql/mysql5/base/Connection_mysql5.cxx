@@ -44,6 +44,7 @@
 
 #include <dr/sql/mysql5/Statement_mysql5.hxx>
 #include <dr/sql/mysql5/Statement_mysql5_direct.hxx>
+#include <dr/sql/mysql5/ResultSet_mysql5.hxx>
 
 #include <dr/sql/mysql5/Connection_mysql5.hxx>
 
@@ -55,7 +56,8 @@ DR_OBJECT_IMPL_SIMPLE(Connection_mysql5);
 Connection_mysql5::Connection_mysql5(MYSQL *handle_):
 	mysql_handle(handle_),
 	auto_reconnect(false),
-	use_locks(false)
+	use_locks(false),
+	busy_rs(NULL)
 {
 }
 
@@ -87,6 +89,7 @@ void Connection_mysql5::rollback()
 
 Statement *Connection_mysql5::createStatement(const String &sql)
 {
+	saveBusy();
 	if (MYSQL_STMT *stmt = mysql_stmt_init(mysql_handle)) {
 		DR_TRY {
 			return new Statement_mysql5(this, stmt, sql);
@@ -138,6 +141,7 @@ bool Connection_mysql5::prepareLockStatements(Statement **lock_mem, Statement **
 	if (exists) {
 		lock_str.append(";");
 		unlock_str.append(";");
+		saveBusy();
 		DR_REF_XCHG(lock_mem, (Statement *)new Statement_mysql5_direct(this, lock_str));
 		DR_REF_XCHG(unlock_mem, (Statement *)new Statement_mysql5_direct(this, unlock_str));
 	}
@@ -164,10 +168,19 @@ bool Connection_mysql5::prepareLockStatements(Statement **lock_mem, Statement **
 	if (exists) {
 		lock_str.append(";");
 		unlock_str.append(";");
+		saveBusy();
 		DR_REF_XCHG(lock_mem, (Statement *)new Statement_mysql5_direct(this, lock_str));
 		DR_REF_XCHG(unlock_mem, (Statement *)new Statement_mysql5_direct(this, unlock_str));
 	}
 	return exists;
+}
+
+void Connection_mysql5::processAllBusy()
+{
+	if (busy_rs) {
+		busy_rs->store();
+		busy_rs = NULL;
+	}
 }
 
 int Connection_mysql5::parseSqlCode(const char *code_str)
