@@ -1662,7 +1662,7 @@ DR_EXPORT_MET String &String::appendAsciiReverse(const char *asciistr, size_t le
 
 DR_EXPORT_MET String &String::appendNumber(Sint32 number, int base)
 {
-	char bufs[32];
+	char bufs[48];
 	char *buf = bufs+sizeof(bufs);
 
 	char sign = '\0';
@@ -1675,13 +1675,13 @@ DR_EXPORT_MET String &String::appendNumber(Sint32 number, int base)
 		number = (Uint32)number/base;
 	} while (number != 0);
 	if (sign)
-		--*buf = sign;
+		*--buf = sign;
 	return i_appendAscii(buf, bufs+sizeof(bufs)-buf);
 }
 
 DR_EXPORT_MET String &String::appendNumber(Uint32 number, int base)
 {
-	char bufs[32];
+	char bufs[48];
 	char *buf = bufs+sizeof(bufs);
 
 	do {
@@ -1693,7 +1693,7 @@ DR_EXPORT_MET String &String::appendNumber(Uint32 number, int base)
 
 DR_EXPORT_MET String &String::appendNumber(Sint64 number, int base)
 {
-	char bufs[64];
+	char bufs[80];
 	char *buf = bufs+sizeof(bufs);
 
 	char sign = '\0';
@@ -1706,13 +1706,13 @@ DR_EXPORT_MET String &String::appendNumber(Sint64 number, int base)
 		number = (Uint64)number/base;
 	} while (number != 0);
 	if (sign)
-		--*buf = sign;
+		*--buf = sign;
 	return i_appendAscii(buf, bufs+sizeof(bufs)-buf);
 }
 
 DR_EXPORT_MET String &String::appendNumber(Uint64 number, int base)
 {
-	char bufs[64];
+	char bufs[80];
 	char *buf = bufs+sizeof(bufs);
 
 	do {
