@@ -47,14 +47,17 @@ use strict;
 use warnings;
 
 use FileHandle;
+use Data::Dumper;
 
-sub classToHeader($$)
+sub fileToHeader($$)
 {
 	my $ns			= shift;
-	my $class		= shift;
-	my $out = "${ns}::${class}::hxx::";
-	$out =~ s/::/__/g;
-	return $out;
+	my $file		= shift;
+
+	$file =~ s/.*\///;
+	$file =~ s/\./__/g;
+	$ns =~ s/::/__/g;
+	return "${ns}__${file}__";
 }
 
 sub nsToMacro($)
@@ -125,26 +128,143 @@ my $basename = shift(@ARGV);
 my $hxxname = "$basename.hxx";
 my $defname = "$basename-def.hxx";
 
-my $file_trans = dr::GenHeader::FileTransaction->new();
+our $file_trans = dr::GenHeader::FileTransaction->new();
 
-my $cxx = FileHandle->new($cxxname, "<")
+our $cxx = FileHandle->new($cxxname, "<")
 	or die "failed to open $cxxname: $!";
-my $hxx = FileHandle->new($hxxname, ">")
+our $hxx = FileHandle->new($hxxname, ">")
 	or die "failed to open $hxxname: $!";
 $file_trans->addCreated($hxxname);
-my $def = FileHandle->new($defname, ">")
+our $def = FileHandle->new($defname, ">")
 	or die "failed to open $defname: $!";
 $file_trans->addCreated($defname);
 
+our @cl_list;
+
+our @includes = ();
+our $ns;
+our @ns_use = ();
+
+sub printIndented($$$)
+{
+	my $fd			= shift;
+	my $level		= shift;
+	my $text		= shift;
+
+	if ($level > 0) {
+		my $ind = "\t" x $level;
+		$text =~ s/^(.)/$ind$1/gm;
+	}
+	$fd->print($text);
+}
+
+sub printClass($$);
+sub printClass($$)
+{
+	my $cld			= shift;
+	my $level		= shift;
+
+	my $iname= $cld->{class};
+	for (my $i = 0; $i < $level; $i++) {
+		$iname =~ s/^\w*:://;
+	}
+
+	for (my $i = 0; ; $i++) {
+		splice(@cl_list, $i, 1), last if ($cl_list[$i] == $cld);
+	}
+
+	die "$cxxname:$cld->{defline}: class $cld->{class} has no ancestor" if ($cld->{type} ne "struct" && !defined $cld->{ancestor});
+
+	if ($cld->{type} eq "object") {
+		printIndented($hxx, $level, sprintf("%s %s: public %s\n{\n", "class", $iname, $cld->{ancestor}));
+		printIndented($hxx, $level, sprintf("\tDR_OBJECT_DECL_SIMPLE(%s, %s);\n", $iname, $cld->{ancestor}));
+		$def->printf("\n");
+		$def->printf("DR_OBJECT_IMPL_IFACE%d(%s%s);\n", scalar @{$cld->{ifaces}}, $cld->{class}, join("", map({ ", $_" } @{$cld->{ifaces}})));
+		$def->printf("DR_OBJECT_DEF(%s_STR, %s, %s);\n", nsToMacro($ns), $cld->{class}, $cld->{ancestor});
+	}
+	elsif ($cld->{type} eq "noinfo") {
+		printIndented($hxx, $level, sprintf("%s %s: public %s\n{", "class", $iname, $cld->{ancestor}));
+	}
+	elsif ($cld->{type} eq "struct") {
+		if (defined $cld->{ancestor}) {
+			printIndented($hxx, $level, sprintf("%s %s: public %s\n{", "struct", $iname, $cld->{ancestor}));
+		}
+		else {
+			printIndented($hxx, $level, sprintf("%s %s\n{", "struct", $iname));
+		}
+	}
+	else {
+		die "$cxxname:$cld->{defline}: invalid implementation type specified for $cld->{class}";
+	}
+
+	if ($cld->{cont} ne "") {
+		$hxx->print("\n");
+		printIndented($hxx, $level, $cld->{cont});
+	}
+
+	for (my $found = 1; $found;) {
+		$found = 0;
+		foreach (@cl_list) {
+			if ($_->{class} =~ m/^$cld->{class}::\w+$/) {
+				$found = 1;
+				$hxx->print("\n");
+				printClass($_, $level+1);
+				last
+			}
+		}
+	}
+
+	if (@{$cld->{methods}}) {
+		my $last_allmod = "---";
+		foreach my $met (@{$cld->{methods}}) {
+			my $access;
+			my $mods = "";
+			foreach my $spec (@{$met->{specs}}) {
+				$access = $spec, next if ($spec eq "public" || $spec eq "protected" || $spec eq "private");
+				$mods .= "$spec ", next if ($spec eq "virtual" || $spec eq "static");
+			}
+			$access = 'public' unless (defined $access);
+			while ($mods =~ s/\b(\w+)\b\s(.*\b\1\b)/$2/) {}
+			my $allmod = "-$access-$mods-";
+			if ($allmod ne $last_allmod) {
+				$hxx->print("\n");
+				printIndented($hxx, $level, "$access:\n");
+				$last_allmod = $allmod;
+			}
+			if (defined $met->{comment}) {
+				my $c = $met->{comment};
+				$c =~ s/^/\t/mg;
+				printIndented($hxx, $level, sprintf("%s", $c));
+			}
+			printIndented($hxx, $level, sprintf("\t%s;\n", formatMethodDecl("$mods$met->{ret}", "$met->{decl}")));
+		}
+	}
+
+	if (@{$cld->{ats}}) {
+		$hxx->print("\n");
+		if ($cld->{type} eq "struct") {
+			printIndented($hxx, $level, "public:\n");
+		}
+		else {
+			printIndented($hxx, $level, "protected:\n");
+		}
+		foreach my $at (@{$cld->{ats}}) {
+			printIndented($hxx, $level, sprintf("\t%s\n", $at));
+		}
+	}
+
+	printIndented($hxx, $level, sprintf("};\n"));
+}
+
 my $lineno = 0;
-my @includes = ();
-my $ns;
+my $defline;
+my $type = "object";
 my $class;
+my $class_last;
 my $ancestor;
-my @methods;
 my @ifaces;
+my @methods;
 my @ats;
-my @ns_use = ();
 my $cont = "";
 
 my $errors = 0;
@@ -158,6 +278,30 @@ MAIN: while (<$cxx>) {
 	$lineno++;
 
 	if (m,^/\*drt\s*$,) {
+		if (defined $class) {
+			push(@cl_list, {
+					type		=> $type,
+					defline		=> $defline,
+					class		=> $class,
+					ancestor	=> $ancestor,
+					ifaces		=> [ @ifaces ],
+					cont		=> $cont,
+					ats		=> [ @ats ],
+					methods		=> [ @methods ],
+				});
+			$type = "object";
+			undef $class;
+			undef $ancestor;
+			@ifaces = ();
+			$cont = "";
+			@ats = ();
+			@methods = ();
+		}
+		else {
+			if (defined $ancestor || $cont ne "" || @ifaces || @ats || @methods) {
+				STDERR->print("no class defined while some of the attributes are"), $errors++;
+			}
+		}
 		while (<$cxx>) {
 			$lineno++;
 			if (m/^\s*\*\s*$/) {
@@ -173,8 +317,13 @@ MAIN: while (<$cxx>) {
 				elsif ($1 eq "use") {
 					push(@ns_use, $2);
 				}
+				elsif ($1 eq "type") {
+					$type = $2;
+				}
 				elsif ($1 eq "class") {
 					$class = $2;
+					($class_last = $class) =~ s/.*:://;
+					$defline = $lineno;
 				}
 				elsif ($1 eq "ancestor") {
 					$ancestor = $2;
@@ -196,16 +345,15 @@ MAIN: while (<$cxx>) {
 				}
 				else {
 					STDERR->printf("$cxxname:$lineno: unknown statement\n");
+					$errors++;
 				}
 			}
 			elsif (m/^\s*\*\/\s*$/) {
 				STDERR->printf("$cxxname:$lineno: fatal: ns undefined\n"), exit(1) unless (defined $ns);
-				STDERR->printf("$cxxname:$lineno: fatal: class undefined\n"), exit(1) unless (defined $class);
-				STDERR->printf("$cxxname:$lineno: fatal: ancestor undefined\n"), exit(1) unless (defined $ancestor);
 				last;
 			}
 			else {
-				STDERR->printf("$cxxname:$lineno: incorrect syntax\n");
+				STDERR->printf("$cxxname:$lineno: incorrect syntax\n"), $errors++;
 			}
 		}
 	}
@@ -226,7 +374,6 @@ MAIN: while (<$cxx>) {
 		undef $func_ret;
 		undef $func_decl;
 		undef $func_comment;
-		STDERR->printf("$cxxname:$lineno: fatal: namespace undefined\n"), exit(1) unless (defined $ns);
 		STDERR->printf("$cxxname:$lineno: fatal: class undefined\n"), exit(1) unless (defined $class);
 		FUNC_DECL: while (<$cxx>) {
 			$lineno++;
@@ -242,12 +389,12 @@ MAIN: while (<$cxx>) {
 				}
 				die "unable to find end of comment";
 			}
-			if (m/^${class}::(${class}\(.*\)(\s*const)?)\s*:?\s*$/) {
+			if (m/^${class}::(${class_last}\(.*\)(\s*const)?)\s*:?\s*$/) {
 				$func_ret = "DR_CONSTRUCT";
 				$func_decl = $1;
 				last;
 			}
-			elsif (m/^${class}::(~${class}\(\))\s*$/) {
+			elsif (m/^${class}::(~${class_last}\(\))\s*$/) {
 				$func_ret = "";
 				$func_decl = $1;
 				push(@funcspec, "virtual");
@@ -270,11 +417,28 @@ MAIN: while (<$cxx>) {
 	}
 }
 
-STDERR->printf("$cxxname:$lineno: fatal: namespace undefined\n"), exit(1) unless (defined $ns);
-STDERR->printf("$cxxname:$lineno: fatal: class undefined\n"), exit(1) unless (defined $class);
+if (defined $class) {
+	push(@cl_list, {
+			type		=> $type,
+			defline		=> $defline,
+			class		=> $class,
+			ancestor	=> $ancestor,
+			ifaces		=> [ @ifaces ],
+			cont		=> $cont,
+			ats		=> [ @ats ],
+			methods		=> [ @methods ],
+		});
+}
+else {
+	if (defined $ancestor || $cont ne "" || @ifaces || @ats || @methods) {
+		STDERR->print("no class defined while some of the attributes are"), $errors++;
+	}
+}
+
+STDERR->printf("$cxxname:$lineno: fatal: namespace undefined\n"), $errors++ unless (defined $ns);
 exit(1) if ($errors);
 
-$hxx->printf("#ifndef %s\n# define %s\n\n", classToHeader($ns, $class), classToHeader($ns, $class));
+$hxx->printf("#ifndef %s\n# define %s\n\n", fileToHeader($ns, $hxxname), fileToHeader($ns, $hxxname));
 foreach my $inc (@includes) {
 	$hxx->printf("#include <$inc>\n");
 }
@@ -283,43 +447,22 @@ foreach my $use (@ns_use) {
 	$hxx->printf("%s_USE;\n", nsToMacro($use));
 }
 $hxx->printf("\n\n");
-$hxx->printf("class %s: public %s\n{\n\tDR_OBJECT_DECL_SIMPLE(%s, %s);\n\n%s", $class, $ancestor, $class, $ancestor, $cont);
-my $last_allmod = "---";
-foreach my $met (@methods) {
-	my $access;
-	my $mods = "";
-	foreach my $spec (@{$met->{specs}}) {
-		$access = $spec, next if ($spec eq "public" || $spec eq "protected" || $spec eq "private");
-		$mods .= "$spec ", next if ($spec eq "virtual" || $spec eq "static");
-	}
-	$access = 'public' unless (defined $access);
-	while ($mods =~ s/\b(\w+)\b\s(.*\b\1\b)/$2/) {}
-	my $allmod = "-$access-$mods-";
-	if ($allmod ne $last_allmod) {
-		$hxx->printf("\n$access:\n");
-		$last_allmod = $allmod;
-	}
-	if (defined $met->{comment}) {
-		my $c = $met->{comment};
-		$c =~ s/^/\t/mg;
-		$hxx->printf("%s", $c);
-	}
-	$hxx->printf("\t%s;\n", formatMethodDecl("$mods$met->{ret}", "$met->{decl}"));
-}
-if (@ats) {
-	$hxx->print("\nprotected:\n");
-}
-foreach my $at (@ats) {
-	$hxx->printf("\t%s\n", $at);
-}
-$hxx->printf("};\n\n\n%s\n", nsToMacroEnd($ns));
-$hxx->printf("\n#endif\n");
 
 $def->printf("#include <dr/Const.hxx>\n\n");
 $def->printf("%s\n\n", nsToMacroBegin($ns));
-$def->printf("DR_OBJECT_IMPL_IFACE%d(%s%s);\n", scalar @ifaces, $class, join("", map({ ", $_" } @ifaces)));
-$def->printf("DR_OBJECT_DEF(%s_STR, %s, %s);\n", nsToMacro($ns), $class, $ancestor);
-$def->printf("\n%s\n", nsToMacroEnd($ns));
+
+#STDERR->print(Dumper(\@cl_list));
+while (@cl_list) {
+	my $selected;
+	foreach (@cl_list) {
+		$selected = $_, last if ($_->{class} !~ m/::/);
+	}
+	die "$cxxname:$lineno: cannot find any base class in the list: ".Dumper(\@cl_list) unless (defined $selected);
+	printClass($selected, 0);
+}
+$def->printf("\n\n%s\n", nsToMacroEnd($ns));
+$hxx->printf("\n\n%s\n#endif\n", nsToMacroEnd($ns));
+
 
 $hxx->flush();
 $hxx->error()
