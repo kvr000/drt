@@ -48,14 +48,12 @@ class DR_PUB Atomic: public Atomic_generic
 #ifndef DR_NOARCH
 public:
 	DR_RINLINE static bool		cmpxchg(void *volatile *val, void *cmpval, void *newval);
-#if !(defined DR_CXX_VC)
 	DR_RINLINE static void *	xchg(void *volatile *val, void *newval);
 	DR_RINLINE static bool		incr(volatile SintPtr *val);
 	DR_RINLINE static bool		decr(volatile SintPtr *val);
 	DR_RINLINE static void		inc(volatile SintPtr *val);
 	DR_RINLINE static void		dec(volatile SintPtr *val);
 	DR_RINLINE static bool		incdecr(volatile SintPtr *valInc, volatile SintPtr *valDec);
-#endif
 #endif
 };
 

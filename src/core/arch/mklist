@@ -5,8 +5,9 @@
 .def SD_ARCH_x86_64	${SD_ARCH}/x86_64
 .def SD_ARCH_alpha	${SD_ARCH}/alpha
 .def SD_ARCH_arm	${SD_ARCH}/arm
+.def SD_ARCH_mipsel	${SD_ARCH}/mipsel
 
-.def SUBDIRS ${SD_ARCH_gen},${SD_ARCH_x86},${SD_ARCH_x86_64},${SD_ARCH_alpha},${SD_ARCH_arm}
+.def SUBDIRS ${SD_ARCH_gen},${SD_ARCH_x86},${SD_ARCH_x86_64},${SD_ARCH_alpha},${SD_ARCH_arm},${SD_ARCH_mipsel}
 .def ESUBDIRS {${SUBDIRS}}
 
 .include ${ESUBDIRS}/mklist

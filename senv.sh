@@ -55,6 +55,10 @@ function main
 			DR_ARCH=alpha
 			;;
 
+		mips)
+			DR_ARCH=mipsel
+			;;
+
 		x86_64)
 			DR_ARCH=x86_64
 			;;
