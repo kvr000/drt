@@ -41,6 +41,7 @@
 #include <unistd.h>
 #include <limits.h>
 #include <sys/file.h>
+#include <sys/time.h>
 
 #include <dr/io/File.hxx>
 #include <dr/io/dev/File_sysiface.hxx>
