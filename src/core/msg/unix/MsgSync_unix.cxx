@@ -183,7 +183,7 @@ int MsgSync_unix::threadSleep(Sint64 timeout_ns)
 				gettimeofday(&now, NULL);
 				struct timespec ts;
 				ts.tv_sec = now.tv_sec+timeout_ns/1000000000;
-				if ((ts.tv_nsec += timeout_ns%1000000000) >= 1000000000) {
+				if ((ts.tv_nsec = now.tv_usec*1000+timeout_ns%1000000000) >= 1000000000) {
 					ts.tv_nsec -= 1000000000;
 					ts.tv_sec++;
 				}

@@ -80,6 +80,11 @@ void SqlConnectionPool::setMaxConnections(int max_connections_)
 	max_connections = max_connections_;
 }
 
+int SqlConnectionPool::getMaxConnections()
+{
+	return max_connections;
+}
+
 SqlConnectionHold *SqlConnectionPool::getConnection()
 {
 	MutexCondLocker list_mutex_locker(list_mutex);

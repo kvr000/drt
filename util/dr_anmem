@@ -35,10 +35,21 @@
 ## @license	http://www.gnu.org/licenses/lgpl.txt GNU Lesser General Public License v3
 ##
 
-# run the program with DRO_MM=pb and analyse its output with this program
+# run the program with DRO_MM=b and analyse its output with this program
 
 use strict;
 use warnings;
+
+our $ok_leaks = "[(<](".join("|", qw(
+	_ZN2dr5Const
+	_ZN2dr6Static6create
+	_ZN2dr11Thread_impl18postinitMainThread
+	_ZN2dr5Lockp6s_initEv
+	_ZN2dr9Subsystem12getSubsystem
+	_ZN2dr6Thread19createMessageSerial
+	_ZN2dr23createMemExceptInstanceEv
+	_ZN2dr3net9RpcHelper12StructMapperC1EPKNS_6StringElPFvPNS0_10RpcDecoderEPvES5_z
+)).")";
 
 my %mem;
 
@@ -46,17 +57,20 @@ my $order = 0;
 
 my $pending;
 my $seq = 0;
+my $lineno = 0;
 
 for (;;) {
 	if (!defined $pending) {
 		last unless (defined ($pending = <>));
+		++$lineno;
 	}
 	if ($pending =~ m/^(allocated|freeing) block 0x([\da-f]+) \((\d+)\)$/) {
 		my ( $op, $block, $length, $thread, $backtrace ) = ( $1, $2, $3, undef, undef );
-		if (defined ($pending = <>) && $pending =~ m/^\x00?--- Thread (\w+|\(nil\)) backtrace:$/) {
+		if (defined ($pending = <>) && ++$lineno && $pending =~ m/^\x00?--- Thread (\w+|\(nil\)) backtrace:$/) {
 			$thread = $1;
 			$backtrace = $pending;
 			while (defined ($pending = <>)) {
+				++$lineno;
 				$backtrace .= $pending;
 				undef $pending, last if ($pending =~ m/^\x00?--- Thread (\w+|\(nil\)) end$/);
 			}
@@ -65,9 +79,10 @@ for (;;) {
 			$seq++;
 			my $md = $mem{$block};
 			if ($md) {
-				print("memory $block ($length) allocated for second time:\n$md->{backtrace}\n");
+				print("memory $block ($length) allocated for the second time (lineno=$lineno, orig=$md->{lineno}):\n$md->{backtrace}\n");
 			}
 			$mem{$block} = {
+				lineno		=> $lineno,
 				block		=> $block,
 				length		=> $length,
 				thread		=> $thread,
@@ -79,7 +94,7 @@ for (;;) {
 		else {
 			my $md = $mem{$block};
 			if (!$md) {
-				print("memory $block ($length) freed but not allocated:\n$backtrace\n");
+				print("memory $block ($length) freed but not allocated (line $lineno):\n$backtrace\n");
 			}
 			else {
 				delete $mem{$block};
@@ -92,13 +107,6 @@ for (;;) {
 }
 
 foreach my $md (sort({ $a->{order} <=> $b->{order} } values %mem)) {
-	next if ($md->{backtrace} =~ m/[(<]_ZN2dr5Const/);
-	next if ($md->{backtrace} =~ m/[(<]_ZN2dr6Static6create/);
-	next if ($md->{backtrace} =~ m/[(<]_ZN2dr11Thread_impl18postinitMainThread/);
-	next if ($md->{backtrace} =~ m/[(<]_ZN2dr5Lockp6s_initEv/);
-	next if ($md->{backtrace} =~ m/[(<]_ZN2dr9Subsystem12getSubsystem/);
-	next if ($md->{backtrace} =~ m/[(<]_ZN2dr6Thread19createMessageSerial/);
-	next if ($md->{backtrace} =~ m/[(<]_ZN2dr23createMemExceptInstanceEv/);
-	next if ($md->{backtrace} =~ m/\(_ZN2dr3net9RpcHelper12StructMapperC1EPKNS_6StringElPFvPNS0_10RpcDecoderEPvES5_z/);
-	print("memory $md->{block} ($md->{length}) seq=$md->{seq} not freed:\n$md->{backtrace}\n");
+	next if ($md->{backtrace} =~ m/$ok_leaks/);
+	print("memory $md->{block} ($md->{length}) seq=$md->{seq} not freed (line $md->{lineno}):\n$md->{backtrace}\n");
 }

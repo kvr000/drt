@@ -93,7 +93,6 @@ MYSQL_BIND *ResultSet_mysql5::allocResBinding(unsigned idx)
 		memset(&res_bindings[orig_size], 0, (idx+1-orig_size)*sizeof(MYSQL_BIND));
 		while (orig_size <= idx) {
 			res_bindings[orig_size].buffer_type = MYSQL_TYPE_NULL;
-			//res_bindings[orig_size].is_null = &res_bindings[orig_size].is_null_value;
 			orig_size++;
 		}
 	}

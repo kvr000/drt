@@ -66,6 +66,7 @@ public:
 public:
 	virtual void			setMaxOldness(SysTime oldness);
 	virtual void			setMaxConnections(int num_connections);
+	virtual int			getMaxConnections();
 
 protected:
 	virtual void			destroyingConnection(SqlConnectionHold *connection);
