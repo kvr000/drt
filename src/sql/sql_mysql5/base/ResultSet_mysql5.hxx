@@ -45,7 +45,7 @@
 #include <dr/sql/mysql5/SqlStatement_mysql5.hxx>
 #include <dr/sql/ResultSet.hxx>
 
-DRSQL_MYSQL5_NS_BEGIN
+DR_SQL_MYSQL5_NS_BEGIN
 
 DR_NS_USE
 DR_SQL_NS_USE
@@ -140,6 +140,6 @@ protected:
 };
 
 
-DRSQL_MYSQL5_NS_END
+DR_SQL_MYSQL5_NS_END
 
 #endif

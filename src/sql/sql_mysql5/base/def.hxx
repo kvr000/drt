@@ -55,21 +55,21 @@
 # define DR_VFS_CLS DR_IMPORT_CLS
 #endif
 
-#define DRSQL_MYSQL5_NS_USE using namespace dr; using namespace dr::sql; using namespace dr::sql::mysql5;
-#define DRSQL_MYSQL5_NS dr::sql::mysql5
-#define DRSQL_MYSQL5_NSP(rest) dr::sql::rest::mysql5
-#define DRSQL_MYSQL5_NS_STR "dr::sql::mysql5::"
-#define DRSQL_MYSQL5_NS_STRP(rest) "dr::sql::mysql5::"rest
-#define DRSQL_MYSQL5_NS_BEGIN namespace dr \
+#define DR_SQL_MYSQL5_NS_USE using namespace dr; using namespace dr::sql; using namespace dr::sql::mysql5;
+#define DR_SQL_MYSQL5_NS dr::sql::mysql5
+#define DR_SQL_MYSQL5_NSP(rest) dr::sql::rest::mysql5
+#define DR_SQL_MYSQL5_NS_STR "dr::sql::mysql5::"
+#define DR_SQL_MYSQL5_NS_STRP(rest) "dr::sql::mysql5::"rest
+#define DR_SQL_MYSQL5_NS_BEGIN namespace dr \
 { \
 	namespace sql \
 	{ \
 		namespace mysql5 \
 		{
-#define DRSQL_MYSQL5_NS_END }; }; };
+#define DR_SQL_MYSQL5_NS_END }; }; };
 
 
-DRSQL_MYSQL5_NS_BEGIN
-DRSQL_MYSQL5_NS_END
+DR_SQL_MYSQL5_NS_BEGIN
+DR_SQL_MYSQL5_NS_END
 
 #endif

@@ -42,7 +42,7 @@
 
 #include <dr/sql/SqlConnection.hxx>
 
-DRSQL_MYSQL5_NS_BEGIN
+DR_SQL_MYSQL5_NS_BEGIN
 
 DR_NS_USE
 DR_SQL_NS_USE
@@ -89,6 +89,6 @@ public:
 SqlConnection *openConnection(const char *host, const char *user, const char *pass);
 
 
-DRSQL_MYSQL5_NS_END
+DR_SQL_MYSQL5_NS_END
 
 #endif

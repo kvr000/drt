@@ -43,7 +43,7 @@
 
 #include <dr/sql/dev/SqlManager.hxx>
 
-DRSQL_MYSQL5_NS_BEGIN
+DR_SQL_MYSQL5_NS_BEGIN
 
 DR_NS_USE
 
@@ -71,6 +71,6 @@ public:
 };
 
 
-DRSQL_MYSQL5_NS_END
+DR_SQL_MYSQL5_NS_END
 
 #endif

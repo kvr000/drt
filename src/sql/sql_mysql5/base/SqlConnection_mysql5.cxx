@@ -47,9 +47,9 @@
 
 #include <dr/sql/mysql5/SqlConnection_mysql5.hxx>
 
-DRSQL_MYSQL5_NS_BEGIN
+DR_SQL_MYSQL5_NS_BEGIN
 
-DR_OBJECT_DEF(DRSQL_MYSQL5_NS_STR, SqlConnection_mysql5, SqlConnection);
+DR_OBJECT_DEF(DR_SQL_MYSQL5_NS_STR, SqlConnection_mysql5, SqlConnection);
 DR_OBJECT_IMPL_SIMPLE(SqlConnection_mysql5);
 
 SqlConnection_mysql5::SqlConnection_mysql5(MYSQL *handle_):
@@ -200,4 +200,4 @@ void SqlConnection_mysql5::throwSqlExcept(const char *code_str, const char *erro
 }
 
 
-DRSQL_MYSQL5_NS_END
+DR_SQL_MYSQL5_NS_END

@@ -50,9 +50,9 @@
 
 #include <mysql/mysql.h>
 
-DRSQL_MYSQL5_NS_BEGIN
+DR_SQL_MYSQL5_NS_BEGIN
 
-DR_OBJECT_DEF(DRSQL_MYSQL5_NS_STR, ResultSet_mysql5, ResultSet);
+DR_OBJECT_DEF(DR_SQL_MYSQL5_NS_STR, ResultSet_mysql5, ResultSet);
 DR_OBJECT_IMPL_SIMPLE(ResultSet_mysql5);
 
 ResultSet_mysql5::ResultSet_mysql5(SqlStatement_mysql5 *statement_):
@@ -560,4 +560,4 @@ Variant *ResultSet_mysql5::getVariant(const String &column)
 }
 
 
-DRSQL_MYSQL5_NS_END
+DR_SQL_MYSQL5_NS_END

@@ -53,9 +53,9 @@
 #include <mysql/mysql.h>
 #include <mysql/errmsg.h>
 
-DRSQL_MYSQL5_NS_BEGIN
+DR_SQL_MYSQL5_NS_BEGIN
 
-DR_OBJECT_DEF(DRSQL_MYSQL5_NS_STR, SqlStatement_mysql5, SqlStatement);
+DR_OBJECT_DEF(DR_SQL_MYSQL5_NS_STR, SqlStatement_mysql5, SqlStatement);
 DR_OBJECT_IMPL_SIMPLE(SqlStatement_mysql5);
 
 SqlStatement_mysql5::SqlStatement_mysql5(SqlConnection_mysql5 *conn_, MYSQL_STMT *stmt_, String stmt_str_):
@@ -339,4 +339,4 @@ Uint64 SqlStatement_mysql5::getInsertId()
 }
 
 
-DRSQL_MYSQL5_NS_END
+DR_SQL_MYSQL5_NS_END

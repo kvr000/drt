@@ -33,44 +33,59 @@
  * @license	http://www.gnu.org/licenses/lgpl.txt GNU Lesser General Public License v3
  **/
 
-#include <dr/x_kw.hxx>
-#include <dr/Const.hxx>
+/*drt
+ * include:	dr/Time.hxx
+ *
+ * ns:		dr
+ */
 
-#include <dr/sql/SqlExcept.hxx>
-#include <dr/sql/SqlParseExcept.hxx>
+/*drt
+ * class:	Profiler
+ * type:	struct
+ *
+ * co:{
+ * 	#define DR_PROFILE(name, ind) Profiler name(DR_FUNCTION, name)
+ * 	#define DR_PROFILE_FUNC() Profiler func_profiler(DR_FUNCTION, "full")
+ * }co
+ *
+ * at:	const char *			function_name;
+ * at:	const char *			part_name;
+ * at:	Time::SysTime			start_time;
+ */
 
-#include <dr/sql/mysql5/SqlConnection_mysql5.hxx>
+#include <dr/Ref.hxx>
 
-#include <dr/sql/mysql5/SqlStatement_mysql5_direct.hxx>
+#include <dr/Profiler.hxx>
+#include "_gen/Profiler-all.hxx"
 
-#include <mysql/mysql.h>
+DR_NS_BEGIN
 
-DR_SQL_MYSQL5_NS_BEGIN
 
-DR_OBJECT_DEF(DR_SQL_MYSQL5_NS_STR, SqlStatement_mysql5_direct, SqlStatementDummy);
-DR_OBJECT_IMPL_SIMPLE(SqlStatement_mysql5_direct);
+DR_MET(public)
+Profiler::Profiler(const char *function, const char *part):
+	function_name(function),
+	part_name(part),
+	start_time(Time::getTime())
+{
+	Fatal::plog("start function %s.%s at time %lld\n", function_name, part_name, (long long)Time::getTime());
+}
 
-SqlStatement_mysql5_direct::SqlStatement_mysql5_direct(SqlConnection_mysql5 *conn_, const String &stmt_str_):
-	conn(conn_, true),
-	stmt_str(stmt_str_)
+DR_MET(public)
+Profiler::~Profiler()
+{
+	Time::SysTime t = Time::getTime();
+	Fatal::plog("leave function %s.%s at time %lld (%lld)\n", function_name, part_name, (long long)t, (long long)(t-start_time));
+}
+
+DR_MET(public)
+void Profiler::restart()
 {
 }
 
-SqlStatement_mysql5_direct::~SqlStatement_mysql5_direct()
+DR_MET(protected)
+void Profiler::print()
 {
 }
 
-void SqlStatement_mysql5_direct::executeUpdate()
-{
-	BString stmt_utf8(stmt_str.utf8());
-	if (mysql_real_query(conn->mysql_handle, stmt_utf8.toStr(), stmt_utf8.getSize()) != 0) {
-		SqlConnection_mysql5::throwSqlExcept(mysql_sqlstate(conn->mysql_handle), mysql_error(conn->mysql_handle));
-	}
-	if (MYSQL_RES *res = mysql_store_result(conn->mysql_handle)) {
-		mysql_free_result(res);
-	}
-	mysql_affected_rows(conn->mysql_handle);
-}
 
-
-DR_SQL_MYSQL5_NS_END
+DR_NS_END

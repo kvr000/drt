@@ -5,4 +5,5 @@ SOURCES:
 	:${SD_UTIL}/Conversion.hxx:g=di,t
 	:${SD_UTIL}/Conversion.cxx:g=s,t
 	:${SD_UTIL}/DummyObject.cxx:g=s,t,gh,di
+	:${SD_UTIL}/Profiler.cxx:g=s,t,gh,di
 
