@@ -34,7 +34,6 @@
  **/
 
 #include <stdio.h>
-#include <unistd.h>
 
 #include <dr/Alloc.hxx>
 #include <dr/Shared.hxx>
@@ -52,10 +51,17 @@ DR_TESTENV_NS_USE
 void signalThread(MutexCond *mc)
 {
 	ERef<TestObject> obj(new TestObject(0));
-	sleep(1);
 	mc->lock();
 	mc->signal();
 	mc->unlock();
+}
+
+void destroyThreadTestObject(void *obj_)
+{
+	TestObject *obj = (TestObject *)obj_;
+
+	Fatal::plog("destroying %ld\n", obj->getId());
+	obj->unref();
 }
 
 int main(void)
@@ -67,8 +73,8 @@ int main(void)
 	m->unlock();
 
 	ERef<MutexCond> mc = MutexCond::create();
-	mc->lock();
 
+	mc->lock();
 	Thread *t = ThreadSimple::go(Eslot(&signalThread).a1Set(mc));
 	mc->wait();
 	printf("woke up\n");

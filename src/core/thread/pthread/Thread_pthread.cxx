@@ -56,11 +56,6 @@ DR_NS_BEGIN
 class DR_PUB Thread_pthread: public Thread_impl
 {
 public:
-	void *				operator new(size_t size)		{ return malloc(size); }
-	void *				operator new(size_t size, void *p)	{ return p; }
-	void				operator delete(void *p)		{ return free(p); }
-
-public:
 	virtual void			wait();
 
 protected:
@@ -213,6 +208,7 @@ void Thread_pthread::createCurrent()
 {
 	Thread_pthread *cur_impl = (Thread_pthread *)malloc(sizeof(Thread_pthread));
 	memset(cur_impl, 0, sizeof(Thread_pthread));
+	cur_impl->threadPreInit();
 	pthread_setspecific(Thread_pthread::key_ptr, cur_impl);
 	ThreadDummy *cur = NULL;
 	xtry {

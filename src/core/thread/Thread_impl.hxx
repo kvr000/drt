@@ -47,10 +47,15 @@ DR_NS_BEGIN
 class DR_PUB Thread_impl: public Shared
 {
 public:
+	void *				operator new(size_t size)		{ return ::malloc(size); }
+	void *				operator new(size_t size, void *p)	{ return p; }
+	void				operator delete(void *p)		{ return ::free(p); }
+
+public:
 	virtual void			wait() = 0;
 
 protected:
-	DR_RINLINE			Thread_impl(Thread *main_)		: main(main_), throw_count(-1) { memset(thr_alsmall_ptr1, 0, sizeof(thr_alsmall_ptr1)); memset(thr_alsmall_ptr2, 0, sizeof(thr_alsmall_ptr2)); memset(thr_alsmall_ptr4, 0, sizeof(thr_alsmall_ptr4)); memset(thr_alsmall_small, 0, sizeof(thr_alsmall_small)); memset(thr_alsmall_bigger, 0, sizeof(thr_alsmall_bigger)); }
+	DR_RINLINE			Thread_impl(Thread *main_)		{ threadPreInit(); main = main_; }
 	DR_RINLINE			Thread_impl(const None &)		: throw_count(-1) {}
 	virtual				~Thread_impl();
 	DR_RINLINE void			runMain()				{ main->exit_value = main->run(); }
@@ -60,7 +65,10 @@ protected:
 
 	virtual void			mainDestroy()				{ unref(); }
 
+	DR_RINLINE void			threadPreInit()				{ main = NULL; throw_count = -1; memset(thr_alsmall_ptr1, 0, sizeof(thr_alsmall_ptr1)); memset(thr_alsmall_ptr2, 0, sizeof(thr_alsmall_ptr2)); memset(thr_alsmall_ptr4, 0, sizeof(thr_alsmall_ptr4)); memset(thr_alsmall_small, 0, sizeof(thr_alsmall_small)); memset(thr_alsmall_bigger, 0, sizeof(thr_alsmall_bigger)); }
 	DR_RINLINE void			threadPreDestroy()			{ MM::closingThread(); }
+
+	bool				unrefed()				{ delete this; return false; }
 
 protected:
 	Thread *			main;
