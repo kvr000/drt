@@ -71,11 +71,7 @@ ResultSet_mysql5::~ResultSet_mysql5()
 	mysql_stmt_reset(stmt);
 	statement->is_busy = false;
 
-	for (conversion *i = res_conversions; i; ) {
-		conversion *n = i->next;
-		Alloc::free(i);
-		i = n;
-	}
+	bindResultReset();
 }
 
 void ResultSet_mysql5::initColNames()
@@ -96,6 +92,7 @@ MYSQL_BIND *ResultSet_mysql5::allocResBinding(unsigned idx)
 			orig_size++;
 		}
 	}
+	res_binding_done = false;
 	return &res_bindings[idx];
 }
 
@@ -132,6 +129,20 @@ void ResultSet_mysql5::resConv_nullHandler(ResultSet_mysql5 *this_, conversion *
 {
 	if (*this_->res_bindings[conv->column].is_null) {
 		((void (*)(void *))conv->user_var)(this_->res_bindings[conv->column].buffer);
+	}
+}
+
+void ResultSet_mysql5::bindResultReset()
+{
+	res_binding_done = false;
+	for (size_t i = res_bindings.count(); i-- > 0; ) {
+		res_bindings[i].buffer_type = MYSQL_TYPE_NULL;
+		res_bindings[i].is_null = NULL;
+	}
+	for (conversion *i = res_conversions; i; ) {
+		conversion *n = i->next;
+		Alloc::free(i);
+		i = n;
 	}
 }
 
@@ -197,6 +208,8 @@ void ResultSet_mysql5::bindResult(const String &column, double *value)
 
 void ResultSet_mysql5::bindResult(unsigned column, String *value)
 {
+	MYSQL_BIND *rb = allocResBinding(column);
+	rb->buffer_type = MYSQL_TYPE_NULL;
 	addResConversion(&resConv_String, column, 0, value);
 }
 
@@ -207,6 +220,8 @@ void ResultSet_mysql5::bindResult(const String &column, String *value)
 
 void ResultSet_mysql5::bindResult(unsigned column, Blob *value)
 {
+	MYSQL_BIND *rb = allocResBinding(column);
+	rb->buffer_type = MYSQL_TYPE_NULL;
 	addResConversion(&resConv_Blob, column, 0, value);
 }
 
@@ -229,6 +244,8 @@ void ResultSet_mysql5::bindResult(const String &column, Date *value)
 
 void ResultSet_mysql5::bindResult(unsigned column, Variant **value)
 {
+	MYSQL_BIND *rb = allocResBinding(column);
+	rb->buffer_type = MYSQL_TYPE_NULL;
 	addResConversion(&resConv_Variant, column, 0, value);
 }
 

@@ -60,8 +60,7 @@ public:
 	virtual				~ResultSet_mysql5();
 
 public:
-	virtual bool			isNull(unsigned column);
-	virtual bool			isNull(const String &column);
+	virtual void			bindResultReset();
 	virtual void			bindResult(unsigned column, Sint8 *value);
 	virtual void			bindResult(const String &column, Sint8 *value);
 	virtual void			bindResult(unsigned column, Sint16 *value);
@@ -88,6 +87,8 @@ public:
 	virtual void			store();
 
 public:
+	virtual bool			isNull(unsigned column);
+	virtual bool			isNull(const String &column);
 	virtual Sint64			getInt(unsigned column);
 	virtual Sint64			getInt(const String &column);
 	virtual double			getDouble(unsigned column);

@@ -54,6 +54,7 @@ class ResultSet: public Object
 	DR_OBJECT_DECL_SIMPLE(ResultSet, Object);
 
 public:
+	virtual void			bindResultReset() = 0;
 	virtual void			bindResult(unsigned column, Sint8 *value) = 0;
 	virtual void			bindResult(const String &column, Sint8 *value) = 0;
 	virtual void			bindResult(unsigned column, Sint16 *value) = 0;

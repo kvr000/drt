@@ -227,7 +227,7 @@ public:
 	 */
 	DR_RINLINE bool			checkSingleRef()
 	{
-		return obj != NULL && obj->checkReferenced();
+		return obj != NULL && !obj->checkReferenced();
 	}
 
 	/**
