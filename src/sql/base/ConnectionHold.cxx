@@ -38,8 +38,6 @@
 
 #include <dr/Array.hxx>
 
-#include <dr/sql/ConnectionPool.hxx>
-
 #include <dr/sql/ConnectionHold.hxx>
 
 DR_SQL_NS_BEGIN

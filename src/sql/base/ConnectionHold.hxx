@@ -58,8 +58,8 @@ protected:
 	virtual				~ConnectionHold();
 
 public:
-	DR_RINLINE Connection *	getConnection()				{ return connection.getDoref(); }
-	DR_RINLINE Connection *	accConnection()				{ return connection.getNoref(); }
+	DR_RINLINE Connection *		getConnection()				{ return connection.getDoref(); }
+	DR_RINLINE Connection *		accConnection()				{ return connection.getNoref(); }
 	DR_RINLINE void			setConnection(Connection *c)		{ connection.setDoref(c); }
 
 public:
