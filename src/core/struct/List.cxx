@@ -40,6 +40,11 @@ DR_NS_BEGIN
 
 DR_EXPORT_MET void List_c::destroy_g()
 {
+	clean_g();
+}
+
+DR_EXPORT_MET void List_c::clean_g()
+{
 	ListNode_c *p, *m;
 	for (p = link.next; p; p = m) {
 		m = p->next;

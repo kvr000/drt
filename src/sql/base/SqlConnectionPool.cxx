@@ -56,14 +56,18 @@ SqlConnectionPool::SqlConnectionPool(const String &connect_str_, int init_conns)
 {
 	if (init_conns == 0)
 		init_conns = 1;
-	while (init_conns--)
-		releaseConnection(tref(new SqlConnectionHold(tref(SqlConnection::openConnection(connect_str, &connect_pars, manager.mem())))));
+	while (init_conns--) {
+		ERef<SqlConnectionHold> conn = new SqlConnectionHold(tref(SqlConnection::openConnection(connect_str, &connect_pars, manager.mem())));
+		num_connections++;
+		releaseConnection(conn);
+	}
 	if (String *v = connect_pars.accValue("max"))
 		max_connections = atoi(v->utf8());
 }
 
 SqlConnectionPool::~SqlConnectionPool()
 {
+	connection_list.clean();
 }
 
 void SqlConnectionPool::setMaxOldness(long max_oldness_)

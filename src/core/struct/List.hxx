@@ -71,6 +71,7 @@ protected: // alloc and compare interface
 	virtual bool			node_eq(ListNode_c *n, const void *v) = 0;
 
 protected:
+	void				clean_g();
 	ListNode_c *			append_g(ListNode_c *prev, const void *v);
 	ListNode_c *			appendNew_g(ListNode_c *prev);
 	ListNode_c *			insertNew_g(ListNode_c *prev);
@@ -119,6 +120,7 @@ public:
 	DR_MINLINE Node *		iterNext(Node *iter)			{ return (Node *)iter->next; }
 	DR_MINLINE Node *		iterPrev(Node *iter)			{ return (Node *)iter->prev; }
 
+	DR_RINLINE void			clean()					{ clean_g(); }
 	DR_RINLINE Node *		append(const V &v)			{ return (Node *)append_g(link.prev, &v); }
 	DR_RINLINE Node *		insert(const V &v)			{ return (Node *)insert_g(link.next, &v); }
 	DR_RINLINE void			remove(Node *n)				{ remove_g(n); }

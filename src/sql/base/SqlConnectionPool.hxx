@@ -76,9 +76,9 @@ protected:
 	long				max_oldness;
 	int				max_connections;
 	int				num_connections;
-	RList<SqlConnectionHold>	connection_list;
 	Ref<MutexCond>			list_mutex;
 	Ref<SqlManager>			manager;
+	RList<SqlConnectionHold>	connection_list;
 
 public:
 	friend class SqlConnectionHold;
