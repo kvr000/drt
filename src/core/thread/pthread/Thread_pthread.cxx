@@ -285,6 +285,7 @@ DR_EXPORT_MET void Thread::start()
 
 DR_EXPORT_MET void Thread::startUnref()
 {
+	DR_Assert(impl == NULL);
 	xtry {
 		impl = new Thread_pthread(this);
 	}
@@ -298,6 +299,7 @@ DR_EXPORT_MET void Thread::startUnref()
 
 DR_EXPORT_MET void Thread::startThrowUnref()
 {
+	DR_Assert(impl == NULL);
 	ref();
 	xtry {
 		impl = new Thread_pthread(this);

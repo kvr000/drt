@@ -458,7 +458,16 @@ sub sortSources
 			$std_refs{$_->{src}} = 0;
 		}
 	}
-	@prios = sort({ $a->{prio} <=> $b->{prio} } @prios);
+	@prios = sort({ $a->{prio} <=> $b->{prio} || $a->{source_seq} <=> $b->{source_seq} } @prios);
+	@std = sort({ $a->{source_seq} <=> $b->{source_seq} } @std);
+	foreach my $sd (@std) {
+		next unless ($sd->{rdep});
+		foreach my $dn (@{$sd->{rdep}}) {
+			die "reverse dependency undefined for $sd->{src}: $dn" unless (defined $std_refs{$dn});
+			$std_refs{$dn}->{dep} = [] unless ($std_refs{$dn}->{dep});
+			push(@{$std_refs{$dn}}, $sd->{src});
+		}
+	}
 	foreach my $sd (@std) {
 		next unless ($sd->{dep});
 		foreach my $dn (@{$sd->{dep}}) {
@@ -1799,6 +1808,8 @@ sub generateDir
 
 	my %vars;
 
+	my $source_seq	= 0;
+
 	STDERR->print("processing directory $dir ($dir_)\n");
 
 	eval { $m = getMkList($dir, "$mkname") }
@@ -1912,6 +1923,7 @@ sub generateDir
 				$sd->{prio} = flagsOne($sd->{opts}, "prio");
 				$sd->{flags} = flagsArray($sd->{opts}, "f");
 				$sd->{dep} = flagsArray($sd->{opts}, "dep");
+				$sd->{source_seq} = $source_seq++;
 				($sd->{base_src} = $sd->{src}) =~ s#.*/##;
 
 				my $err = 0;
