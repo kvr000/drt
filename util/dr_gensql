@@ -105,6 +105,7 @@ our %SQL_UML_TYPES_PRIM = (
 	Integer			=> "int",
 	date			=> "date",
 	datetime		=> "datetime",
+	timestamp		=> "timestamp",
 );
 
 our %SQL_UML_TYPES_VAR = (
