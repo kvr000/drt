@@ -91,6 +91,32 @@ sub formatMethodDecl($$)
 	return $full;
 }
 
+sub readContent($$$)
+{
+	my $fd			= shift;
+	my $lineno		= shift;
+	my $fin			= shift;
+
+	my $cont = "";
+
+	while (<$fd>) {
+		$$lineno++;
+		if (m/^\s*\*\*\//s) {
+			die "didn't find close $fin block";
+		}
+		elsif (m/^\s*\*\s?$fin\s*$/s) {
+			return $cont;
+		}
+		elsif (m/^\s*\* ?(.*)$/s) {
+			$cont .= $1;
+		}
+		else {
+			die "unexpected content";
+		}
+	}
+	die "didn't find close $fin block";
+}
+
 
 die "Usage: $0 cxx_file gen_file_base" unless (@ARGV == 2);
 my $cxxname = shift(@ARGV);
@@ -119,6 +145,7 @@ my @methods;
 my @ifaces;
 my @ats;
 my @ns_use = ();
+my $cont = "";
 
 my $errors = 0;
 
@@ -157,6 +184,15 @@ MAIN: while (<$cxx>) {
 				}
 				elsif ($1 eq "at") {
 					push(@ats, $2);
+				}
+				elsif ($1 eq "co") {
+					if ($2 eq "{") {
+						eval { $cont .= readContent($cxx, \$lineno, "}co") };
+						die "$cxxname:$lineno: incorrect syntax for co" if ($@);
+					}
+					else {
+						die "$cxxname:$lineno: incorrect syntax for co";
+					}
 				}
 				else {
 					STDERR->printf("$cxxname:$lineno: unknown statement\n");
@@ -247,7 +283,7 @@ foreach my $use (@ns_use) {
 	$hxx->printf("%s_USE;\n", nsToMacro($use));
 }
 $hxx->printf("\n\n");
-$hxx->printf("class %s: public %s\n{\n\tDR_OBJECT_DECL_SIMPLE(%s, %s);\n", $class, $ancestor, $class, $ancestor);
+$hxx->printf("class %s: public %s\n{\n\tDR_OBJECT_DECL_SIMPLE(%s, %s);\n\n%s", $class, $ancestor, $class, $ancestor, $cont);
 my $last_allmod = "---";
 foreach my $met (@methods) {
 	my $access;
