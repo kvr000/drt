@@ -145,7 +145,7 @@ void test()
 	mw.writeBe32(0x001020304UL, Null());
 	mw.writeBe16(0x0102UL, Null());
 	mw.writeBe8(0x01UL, Null());
-	mw.writeVarint64(0x0807060504030201ULL, Null());
+	mw.writeVarint(0x0807060504030201ULL, Null());
 	mw.writeBytes(Blob("kra"), Null());
 	excepted = false;
 	xtry {

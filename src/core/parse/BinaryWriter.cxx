@@ -148,7 +148,7 @@ void BinaryWriter::writeBe64(Uint64 value, const String &value_name)
 }
 
 DR_MET(public virtual)
-void BinaryWriter::writeVarint32(Uint32 value, const String &value_name)
+void BinaryWriter::writeVarint(Uint32 value, const String &value_name)
 {
 	Uint8 b[5];
 	ssize_t p = sizeof(b);
@@ -160,7 +160,7 @@ void BinaryWriter::writeVarint32(Uint32 value, const String &value_name)
 }
 
 DR_MET(public virtual)
-void BinaryWriter::writeVarint64(Uint64 value, const String &value_name)
+void BinaryWriter::writeVarint(Uint64 value, const String &value_name)
 {
 	Uint8 b[9];
 	ssize_t p = sizeof(b);
@@ -186,7 +186,7 @@ void BinaryWriter::writeBytes(const Blob &data, const String &value_name)
 DR_MET(public virtual)
 void BinaryWriter::writeVarBlob(const Blob &data, const String &value_name)
 {
-	writeVarint64(data.getSize(), value_name);
+	writeVarint(data.getSize(), value_name);
 	writeBytes(data, value_name);
 }
 
