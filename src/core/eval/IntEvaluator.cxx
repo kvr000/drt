@@ -99,6 +99,10 @@ Sint64 IntEvaluator::IntBinaryExpression::evaluate(Arguments *args)
 		return operands[0]->evaluate(args) <= operands[1]->evaluate(args);
 	case IntEvaluator::OP_BinGreaterEq:
 		return operands[0]->evaluate(args) >= operands[1]->evaluate(args);
+	case IntEvaluator::OP_BinBitAnd:
+		return operands[0]->evaluate(args) & operands[1]->evaluate(args);
+	case IntEvaluator::OP_BinBitOr:
+		return operands[0]->evaluate(args) | operands[1]->evaluate(args);
 	case IntEvaluator::OP_BinAnd:
 		return operands[0]->evaluate(args) && operands[1]->evaluate(args);
 	case IntEvaluator::OP_BinOr:
@@ -128,9 +132,11 @@ unsigned char IntEvaluator::priorities[OP_OperatorCount] = {
 	60,	//OP_BinGreater,
 	60,	//OP_BinLowerEq,
 	60,	//OP_BinGreaterEq,
-	70,	//OP_BinAnd,
-	70,	//OP_BinOr,
-	70,	//OP_BinXor,
+	70,	//OP_BinBitAnd,
+	70,	//OP_BinBitOr,
+	80,	//OP_BinAnd,
+	80,	//OP_BinOr,
+	80,	//OP_BinXor,
 	5,	//OP_Parenthesis,
 		//OP_OperatorCount,
 };
@@ -328,24 +334,6 @@ Evaluator::TokenType IntEvaluator::parseNextToken(const char **expr, ParserState
 		}
 		break;
 
-	case '|':
-		++*expr;
-		if (**expr == '|') {
-			++*expr;
-			if (state == PS_BinOperator) {
-				DR_REF_XCHG(ret_expression, (Expression *)new IntBinaryExpression(OP_BinOr));
-				*num_args = 2;
-				*prio = priorities[OP_BinOr];
-				return TT_Operator;
-			}
-			else {
-				xthrownew(InvalidFormatException("operator ||", "missing operator"));
-			}
-		}
-		else {
-			xthrownew(InvalidFormatException("token", String(*expr, 1)));
-		}
-
 	case '&':
 		++*expr;
 		if (**expr == '&') {
@@ -361,7 +349,41 @@ Evaluator::TokenType IntEvaluator::parseNextToken(const char **expr, ParserState
 			}
 		}
 		else {
-			xthrownew(InvalidFormatException("token", String(*expr, 1)));
+			if (state == PS_BinOperator) {
+				DR_REF_XCHG(ret_expression, (Expression *)new IntBinaryExpression(OP_BinBitAnd));
+				*num_args = 2;
+				*prio = priorities[OP_BinBitAnd];
+				return TT_Operator;
+			}
+			else {
+				xthrownew(InvalidFormatException("operator &", "missing operator"));
+			}
+		}
+
+	case '|':
+		++*expr;
+		if (**expr == '|') {
+			++*expr;
+			if (state == PS_BinOperator) {
+				DR_REF_XCHG(ret_expression, (Expression *)new IntBinaryExpression(OP_BinOr));
+				*num_args = 2;
+				*prio = priorities[OP_BinOr];
+				return TT_Operator;
+			}
+			else {
+				xthrownew(InvalidFormatException("operator ||", "missing operator"));
+			}
+		}
+		else {
+			if (state == PS_BinOperator) {
+				DR_REF_XCHG(ret_expression, (Expression *)new IntBinaryExpression(OP_BinBitOr));
+				*num_args = 2;
+				*prio = priorities[OP_BinBitOr];
+				return TT_Operator;
+			}
+			else {
+				xthrownew(InvalidFormatException("operator |", "missing operator"));
+			}
 		}
 
 	case '^':

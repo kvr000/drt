@@ -65,6 +65,8 @@ public:
 		OP_BinGreater,
 		OP_BinLowerEq,
 		OP_BinGreaterEq,
+		OP_BinBitAnd,
+		OP_BinBitOr,
 		OP_BinAnd,
 		OP_BinOr,
 		OP_BinXor,
