@@ -195,6 +195,18 @@ foreach my $model (@models) {
 		1;
 	}
 		or STDERR->print("failed to process $model->{full}: $@"), $errors++;
+	foreach my $action (@{$model->{view_list}}) {
+		eval {
+			$form->print(tabalign("view", 16).$action->{name}."\n");
+			foreach (qw(suggest supplier renderer addcompos compos_mand iniclass)) {
+				if (defined (my $v = $action->checkDrTagValue($_))) {
+					$form->print(tabalign("\t$_", 24).$v."\n")
+				}
+			}
+			1;
+		}
+			or STDERR->print("failed to process $model->{full}.$action->{name}: $@"), $errors++;
+	}
 	foreach my $attr (@{$model->{attr_list}}) {
 		eval {
 			$form->print(tabalign($attr->{stype}, 16).$attr->{name}."\n");
@@ -289,18 +301,6 @@ foreach my $model (@models) {
 			if (defined (my $form_actioner = $action->checkDrTagValue("form_actioner"))) {
 				my $a = $form_actioner eq "_" ? "$model->{full}_$action->{name}" : index($form_actioner, "_") == 0 ? "$model->{full}$form_actioner" : $form_actioner;
 				$form->print(tabalign("\tform_actioner", 24).$a."\n");
-			}
-			1;
-		}
-			or STDERR->print("failed to process $model->{full}.$action->{name}: $@"), $errors++;
-	}
-	foreach my $action (@{$model->{view_list}}) {
-		eval {
-			$form->print(tabalign("view", 16).$action->{name}."\n");
-			foreach (qw(suggest supplier renderer addcompos compos_mand iniclass)) {
-				if (defined (my $v = $action->checkDrTagValue($_))) {
-					$form->print(tabalign("\t$_", 24).$v."\n")
-				}
 			}
 			1;
 		}
