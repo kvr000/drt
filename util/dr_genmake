@@ -223,10 +223,38 @@ use warnings;
 
 use IO::String;
 
-sub getConfig($$)
+sub addConfig($$$)
+{
+	my $def		= shift;
+	my $cmd		= shift;
+	my $cont	= shift;
+
+	if ($cmd eq "make") {
+		$def->{make}->{$2} = 1;
+	}
+	elsif ($cmd eq "config") {
+		$def->{config}->{$2} = 1;
+	}
+	elsif ($cmd eq "define") {
+		$def->{define}->{$2} = 1;
+	}
+	elsif ($cmd eq "undef") {
+		delete $def->{define}->{$2};
+	}
+	elsif ($cmd eq "var") {
+		$cont =~ m/(\w+)\s*(.*?)\s*$/;
+		$def->{var}->{$1} = $2;
+	}
+	else {
+		die "unknown cmd: $cmd";
+	}
+}
+
+sub getConfig($$$)
 {
 	my $dir		= shift;
 	my $fnames	= shift;
+	my $addopt	= shift;
 
 	my $config_cont	= IO::String->new(map({ ".include $_\n" } split(",", $fnames)));
 
@@ -237,6 +265,7 @@ sub getConfig($$)
 
 	my $def = {
 		fnames		=> $fnames,
+		make		=> {},
 		config		=> {},
 		define		=> {},
 		var		=> {},
@@ -247,28 +276,24 @@ sub getConfig($$)
 		if ($line =~ m/^\s*$/) {
 		}
 		elsif ($line =~ m/^(\w+)\s+(.*?)\s*$/) {
-			my ($cmd, $cont) = ($1, $2);
-			if ($cmd eq "config") {
-				$def->{config}->{$2} = 1;
-			}
-			elsif ($cmd eq "define") {
-				$def->{define}->{$2} = 1;
-			}
-			elsif ($cmd eq "undef") {
-				delete $def->{define}->{$2};
-			}
-			elsif ($cmd eq "var") {
-				$cont =~ m/(\w+)\s*(.*?)\s*$/;
-				$def->{var}->{$1} = $2;
-			}
-			else {
-				die $fd->getContext()." unknown cmd: $cmd";
-			}
+			eval { addConfig($def, $1, $2); 1; }
+				or die $fd->getContext()." $@";
 		}
 		else {
-			die $fd->getContext()." unexpected text";
+			die $fd->getContext()." unexpected text: $line";
 		}
 	}
+
+	foreach my $line (@$addopt) {
+		if ($line =~ m/^(\w+):(.*?)\s*$/) {
+			eval { addConfig($def, $1, $2); 1; }
+				or die "command_line:0:"." $@";
+		}
+		else {
+			die "command_line:0:"." unexpected text: $line";
+		}
+	}
+
 	return $def;
 }
 
@@ -560,6 +585,8 @@ sub createOutput
 	my $targ_local	= " targ_init";
 	my $targ_post	= " targ_local";
 
+	my $gh_targall	= "";
+
 	my @sources;
 
 	my %depends	= ();
@@ -568,9 +595,13 @@ sub createOutput
 	($mdir = $dir) =~ s#/[^/]+#/..#g;
 
 	my $mf;
+	my $mgh;
 
 	$mf = FileHandle->new("$dir/Makefile", ">")
 		or die "failed to open $dir/Makefile: $!\n";
+
+	$mgh = FileHandle->new("$dir/Make_gh", ">")
+		or die "failed to open $dir/Makefile_gh: $!\n";
 
 	$mf->printf("BUILD=%s\n", "_build");
 	$mf->printf("BUILD_=%s\n", "\$(BUILD)/");
@@ -604,6 +635,13 @@ sub createOutput
 	$mf->print("\n");
 
 	$mf->print("all: targ_all\ndefault: targ_all\n\ngmake:\n\t$vars->{genmake} $config->{fnames} \$(DIRS)\n\ninclude \$(ETCDIR_)main.mk\n\n");
+	$mf->print("lgh:\n\t\$(MAKE) -f Make_gh\n\n");
+
+	$mgh->printf("BUILD=%s\n", "_build");
+	$mgh->printf("BUILD_=%s\n", "\$(BUILD)/");
+	$mgh->printf("GEN=\$(BUILD_)_gen\n");
+	$mgh->printf("GEN_=\$(GEN)/\n");
+	$mgh->print("gh_gh: gh_targall\n\n");
 
 	if (defined (my $need = $vars->{NEED})) {
 		foreach (@$need) {
@@ -675,9 +713,10 @@ sub createOutput
 			push(@{$dp->{files}}, $sd);
 			if (dr::build::findArray("gh", $sd->{groups}) >= 0) {
 				my $base = basename($sd->{src}); $base =~ s/\.\w+$//; $base =~ s/.*\///;
-				$mf->printf("%s %s: %s\n", "\$(GEN_)$base.hxx", "\$(GEN_)$base-def.hxx", $sd->{src});
-				$mf->printf("\tdr_genheader %s %s\n", $sd->{src}, "\$(GEN_)$base");
+				$mgh->printf("%s %s: %s\n", "\$(GEN_)$base.hxx", "\$(GEN_)$base-def.hxx", $sd->{src});
+				$mgh->printf("\tdr_genheader %s %s\n", $sd->{src}, "\$(GEN_)$base");
 				$mf->printf("%s: %s %s\n", $sd->{out}, "\$(GEN_)$base.hxx", "\$(GEN_)$base-def.hxx");
+				$gh_targall .= " \$(GEN_)$base.hxx";
 			}
 		}
 		elsif ($sd->{prog} eq "lshlib") {
@@ -880,12 +919,24 @@ sub createOutput
 		$mf->print("\$(OBJDIR)/all_deps.mi:\n\tmkdir -p \$(GEN)\n\tmkdir -p \$(OBJDIR)\n\ttouch \$(OBJDIR)/dummy.dep\n\techo \"include \$(OBJDIR)/*.dep\" > \$@\n");
 		$mf->print("include \$(OBJDIR)/all_deps.mi\n\n");
 	}
+
+	# automatic header generation
+	$mf->print(genRecursiveAction("gh", "lgh", $vars)."\n");
+	if (!$config->{make}->{noautogh}) {
+		$mf->print("include Make_gh\n\n");
+	}
+
 	$mf->print("targ_pre:$targ_pre\n");
 	$mf->print("targ_init:$targ_init\n");
 	$mf->print("targ_local:$targ_local\n");
 	$mf->print("targ_post:$targ_post\n");
 	$mf->print("targ_all: targ_pre targ_init targ_local targ_post\n\n");
-	$mf->close();
+	$mf->close()
+		or die "failed to close file $dir/Makefile";
+
+	$mgh->print("gh_targall:$gh_targall\n");
+	$mgh->close()
+		or die "failed to close file $dir/Make_gh";
 }
 
 
@@ -1788,14 +1839,16 @@ sub generateDir
 
 my $sdir;
 my $config;
-if (@ARGV != 2) {
+if (@ARGV < 2) {
 	die "usage: $0 config directory";
 }
 else {
-	$sdir = $ARGV[1]; $sdir = "./$sdir" if ($sdir !~ m#^\.(|/.*)$#);
+	$sdir = pop(@ARGV); $sdir = "./$sdir" if ($sdir !~ m#^\.(|/.*)$#);
 	($_ = $sdir) =~ s#/[^/]+#/..#g;
 	chdir($_);
-	$config = getConfig([ "." ], $ARGV[0]);
+	my $confname = shift(@ARGV);
+	$config = getConfig([ "." ], $confname, \@ARGV);
+	$config->{make} = {} unless ($config->{make});
 	$config->{config}->{_} = 1;
 	$config->{genmake} = "dr_genmake";
 }
