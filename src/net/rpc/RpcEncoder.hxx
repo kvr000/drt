@@ -62,6 +62,9 @@ protected:
 	virtual				~RpcEncoder();
 
 public:
+	virtual String			getMimeType() = 0;
+
+public:
 	virtual Blob			getContent();
 
 public:

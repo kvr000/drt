@@ -53,6 +53,8 @@ DR_OBJECT_DEF(DR_NET_NS_STR, XmlRpcEncoder, RpcEncoder);
 DR_OBJECT_IMPL_SIMPLE(XmlRpcEncoder);
 
 
+const String XmlRpcEncoder::mime_type_string(Const::string("text/xml"));
+
 XmlRpcEncoder::XmlRpcEncoder():
 	value_level(0)
 {
@@ -60,6 +62,11 @@ XmlRpcEncoder::XmlRpcEncoder():
 
 XmlRpcEncoder::~XmlRpcEncoder()
 {
+}
+
+String XmlRpcEncoder::getMimeType()
+{
+	return mime_type_string;
 }
 
 void XmlRpcEncoder::writeHeader()

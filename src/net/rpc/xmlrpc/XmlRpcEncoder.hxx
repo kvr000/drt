@@ -61,6 +61,9 @@ public:
 	virtual				~XmlRpcEncoder();
 
 public:
+	String				getMimeType();
+
+public:
 	virtual void			writeHeader();
 	virtual void			writeMethodName(const String &name);
 	virtual void			writeMethodEnd();
@@ -87,6 +90,9 @@ protected:
 protected:
 	size_t				value_level;				/**< zero for basic params */
 	bool				struct_clean;
+
+protected:
+	static const String		mime_type_string;
 };
 
 
