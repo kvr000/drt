@@ -1,0 +1,13 @@
+.cdef SD_ARCH_arm .
+
+SOURCES:
+	no:${SD_ARCH_arm}/mklist:g=t
+	:${SD_ARCH_arm}/Atomic.arch-arm.cxx:g=s,t;C=a.arm
+	:${SD_ARCH_arm}/Atomic.arch.hxx:g=diarch_arm,t
+	:${SD_ARCH_arm}/def.arch.hxx:g=diarch_arm,t
+	:${SD_ARCH_arm}/sex.arch.hxx:g=diarch_arm,t
+	:${SD_ARCH_arm}/types.arch.hxx:g=diarch_arm,t
+
+DIST_INC:
+	diarch_arm:arch-arm/dr/arch
+

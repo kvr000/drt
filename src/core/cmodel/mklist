@@ -1,0 +1,11 @@
+.cdef SD_CMODEL	.
+
+SOURCES:
+	no:${SD_CMODEL}/mklist:g=t
+	:${SD_CMODEL}/Static.hxx:g=di,t
+	:${SD_CMODEL}/Static.cxx:g=s,t
+	:${SD_CMODEL}/Iface.hxx:g=di,t
+	:${SD_CMODEL}/Iface.cxx:g=s,t;prio=48
+	:${SD_CMODEL}/Object.hxx:g=di,t
+	:${SD_CMODEL}/Object.cxx:g=s,t;prio=49
+

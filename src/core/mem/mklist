@@ -1,0 +1,15 @@
+.cdef SD_MEM	.
+
+SOURCES:
+	no:${SD_MEM}/mklist:g=t
+	:${SD_MEM}/MM.hxx:g=di,t
+	:${SD_MEM}/MM.cxx:g=s,t
+	:${SD_MEM}/MM_impl.hxx:g=didev,t
+	:${SD_MEM}/MM_default.hxx:g=didev,t
+	:${SD_MEM}/MM_default.cxx:g=s,t
+	:${SD_MEM}/MM_native.hxx:g=didev,t
+	:${SD_MEM}/MM_native.cxx:g=s,t
+	:${SD_MEM}/Alloc_nat.cxx:g=s,t
+	:${SD_MEM}/Alloc.hxx:g=di,t
+	:${SD_MEM}/Alloc.cxx:g=s,t
+

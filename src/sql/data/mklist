@@ -1,0 +1,7 @@
+.cdef SD_DATA	.
+
+SOURCES:
+	no:${SD_DATA}/mklist:g=t
+	:${SD_DATA}/Date.hxx:g=di,t
+	:${SD_DATA}/Date.cxx:g=s,t
+

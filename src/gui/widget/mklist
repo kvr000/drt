@@ -1,0 +1,9 @@
+.cdef SD_WIDGET .
+
+SOURCES:
+	no:${SD_WIDGET}/mklist:g=t
+	:${SD_WIDGET}/Widget.hxx:g=di,t
+	:${SD_WIDGET}/Widget.cxx:g=s,t
+	:${SD_WIDGET}/Widget_impl.hxx:g=didev,t
+	:${SD_WIDGET}/Widget_impl.cxx:g=s,t
+

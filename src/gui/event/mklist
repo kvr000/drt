@@ -1,0 +1,7 @@
+.cdef SD_EVENT	.
+
+SOURCES:
+	no:${SD_EVENT}/mklist:g=t
+	:${SD_EVENT}/Event.hxx:g=di,t
+	:${SD_EVENT}/Event.cxx:g=s,t
+

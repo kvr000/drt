@@ -1,0 +1,35 @@
+NEED:
+	cxx
+
+DEPS:
+
+FLAGS:
+	cxx=$(CXXINC) $(EXECXXFLAGS) -I. -I..
+	exec=$(EXELDXXFLAGS)
+
+OUTPUT:
+	exec:tlink_drxml:f=exec;s=tlink_drxml,common
+	exec:t0:f=exec;s=t0,common;r=test
+
+SOURCES:
+	:tlink_drxml.cxx:f=cxx;g=tlink_drxml,t
+	:t0.cxx:f=cxx;g=t0,t
+	no:mklist:g=t
+	lshlib:dr:g=common
+	lshlib:drio:g=common
+	lshlib:drxml:g=common
+	lshlib:drtestenv:g=common
+
+META:
+
+FCHECK:
+	*.cxx::s=t
+	*.hxx::s=t
+	mklist::s=t
+
+DIST_INC:
+
+LOC_INC:
+
+LOC_LIB:
+

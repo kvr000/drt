@@ -1,0 +1,7 @@
+.cdef SD_MSG_symbian	symbian
+
+SOURCES:
+	no:${SD_MSG_symbian}/mklist:g=t
+	:${SD_MSG_symbian}/MsgSync_symbian.cxx:g=s,t;C=s.symbian;prio=84
+	:${SD_MSG_symbian}/MsgSync_symbian.hxx:g=t;C=s.symbian
+

@@ -1,0 +1,6 @@
+.cdef SD_TEMPLARG	.
+
+SOURCES:
+	no:${SD_TEMPLARG}/mklist:g=t
+	:${SD_TEMPLARG}/cmp.hxx:g=di,t
+

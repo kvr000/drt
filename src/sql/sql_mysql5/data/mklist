@@ -1,0 +1,5 @@
+.cdef SD_DATA	.
+
+SOURCES:
+	no:${SD_DATA}/mklist:g=t
+

@@ -1,0 +1,6 @@
+.cdef SD_EVENT	.
+
+SOURCES:
+	no:${SD_EVENT}/mklist:g=t
+	:${SD_EVENT}/eventloop_x11.cxx:g=s,t
+

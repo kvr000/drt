@@ -1,0 +1,6 @@
+.cdef SD_INIT_symbian .
+
+SOURCES:
+	no:${SD_INIT_symbian}/mklist:g=t
+	:${SD_INIT_symbian}/thread_symbian_preinit.cxx:g=s,t;C=s.symbian_th;prio=8
+

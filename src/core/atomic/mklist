@@ -1,0 +1,9 @@
+.cdef SD_ATOMIC	.
+
+SOURCES:
+	no:${SD_ATOMIC}/mklist:g=t
+	:${SD_ATOMIC}/Atomic.cxx:g=s,t
+	:${SD_ATOMIC}/Atomic.hxx:g=di,t
+	:${SD_ATOMIC}/Lockp.cxx:g=s,t
+	:${SD_ATOMIC}/Lockp.hxx:g=di,t
+

@@ -1,0 +1,11 @@
+.cdef SD_ARCH_gen .
+
+SOURCES:
+	no:${SD_ARCH_gen}/mklist:g=t
+	:${SD_ARCH_gen}/def.arch_gen32le.hxx:g=diarch_gen,t
+	:${SD_ARCH_gen}/sex.arch_gen32le.hxx:g=diarch_gen,t
+	:${SD_ARCH_gen}/types.arch_gen32le.hxx:g=diarch_gen,t
+
+DIST_INC:
+	diarch_gen:arch-gen/dr/arch_gen
+

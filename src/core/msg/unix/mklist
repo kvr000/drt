@@ -1,0 +1,7 @@
+.cdef SD_MSG_unix	unix
+
+SOURCES:
+	no:${SD_MSG_unix}/mklist:g=t
+	:${SD_MSG_unix}/MsgSync_unix.cxx:g=s,t;C=os.unix;prio=84
+	:${SD_MSG_unix}/MsgSync_unix.hxx:g=t,di;C=os.unix
+

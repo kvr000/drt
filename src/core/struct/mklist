@@ -1,0 +1,13 @@
+.cdef SD_STRUCT	.
+
+SOURCES:
+	no:${SD_STRUCT}/mklist:g=t
+	:${SD_STRUCT}/Array.hxx:g=di,t
+	:${SD_STRUCT}/Array.cxx:g=s,t
+	:${SD_STRUCT}/Hash.hxx:g=di,t
+	:${SD_STRUCT}/Hash.cxx:g=s,t
+	:${SD_STRUCT}/List.hxx:g=di,t
+	:${SD_STRUCT}/List.cxx:g=s,t
+	:${SD_STRUCT}/Avl.hxx:g=di,t
+	:${SD_STRUCT}/Avl.cxx:g=s,t
+

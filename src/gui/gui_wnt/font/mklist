@@ -1,0 +1,7 @@
+.cdef SD_FONT	.
+
+SOURCES:
+	no:${SD_FONT}/mklist:g=t
+	:${SD_FONT}/Font_wnt.hxx:g=didev,t
+	:${SD_FONT}/Font_wnt.cxx:g=s,t
+

@@ -1,0 +1,6 @@
+.cdef SD_SYS_posix	.
+
+SOURCES:
+	no:${SD_SYS_posix}/mklist:g=t
+	:${SD_SYS_posix}/virtual_mem.posix_vm.cxx:g=s,t;C=s.posix_vm
+

@@ -1,0 +1,10 @@
+.cdef SD_META_gen	.
+
+SOURCES:
+	no:${SD_META_gen}/mklist:g=t
+
+FCHECK:
+	${ESUBDIRS}/*.cxx::s=t
+	${ESUBDIRS}/*.cxx::s=s
+	${ESUBDIRS}/*.hxx::s=t
+

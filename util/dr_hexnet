@@ -1,0 +1,86 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+
+use IO::Socket::INET;
+
+die "usage: $0 host port" unless (@ARGV == 2);
+
+my $conn = IO::Socket::INET->new(Proto => "tcp", PeerHost => $ARGV[0], PeerPort => $ARGV[1])
+	or die "failed to connect: $!";
+
+my $hexa_rcache = "";
+
+my $hexa_opened = 1;
+my $conn_opened = 1;
+
+while ($hexa_opened || $conn_opened) {
+	my ($rs) = "";
+	vec($rs, fileno(STDIN), 1) = 1 if ($hexa_opened);
+	vec($rs, fileno($conn), 1) = 1 if ($conn_opened);
+	select($rs, undef, undef, undef);
+	if (vec($rs, fileno(STDIN), 1)) {
+		if (!STDIN->sysread($hexa_rcache, 4096, length($hexa_rcache))) {
+			$hexa_opened = 0;
+		}
+		$hexa_rcache =~ s/\s*//gs;
+		my $wb = pack("H*", substr($hexa_rcache, 0, length($hexa_rcache)-(length($hexa_rcache)&1)));
+		$hexa_rcache = substr($hexa_rcache, length($hexa_rcache)-(length($hexa_rcache)&1));
+		while ($wb ne "") {
+			my $w = $conn->syswrite($wb);
+			$wb = substr($wb, $w);
+		}
+	}
+	if (vec($rs, fileno($conn), 1)) {
+		my $buf;
+		if (!$conn->sysread($buf, 4096)) {
+			STDERR->print("connection closed: $!\n");
+			$hexa_opened = 0;
+			$conn_opened = 0;
+		}
+		STDOUT->printf("%s\n", unpack("H*", $buf)); STDOUT->flush();
+	}
+}
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+
+use IO::Socket::INET;
+
+die "usage: $0 host port";
+
+my $conn = IO::Socket::INET->new(Proto => "tcp", PeerHost => $ARGV[0], PeerPort => $ARGV[1]);
+
+my $hexa_rcache = "";
+
+my $hexa_opened = 1;
+my $conn_opened = 1;
+
+while ($hexa_opened || $conn_opened) {
+	my ($rs) = "";
+	my $rfds = '';
+	vec($rs, fileno(STDIN), 1) = 1 if ($hexa_opened);
+	vec($rs, fileno($conn), 1) = 1 if ($conn_opened);
+	select($rfds, undef, undef, undef);
+	if (vec($rs, fileno(STDIN), 1)) {
+		if (!STDIN->sysread($hexa_rcache, 4096, length($hexa_rcache))) {
+			$hexa_opened = 0;
+		}
+		$hexa_rcache =~ s/\s*//gs;
+		my $wb = pack("H*", substr($hexa_rcache, 0, length($hexa_rcache)-(length($hexa_rcache)&1)));
+		$hexa_rcache = substr($hexa_rcache, length($hexa_rcache)-(length($hexa_rcache)&1));
+		while ($wb ne "") {
+			my $w = $conn->syswrite($wb);
+			$wb = substr($wb, $w);
+		}
+	}
+	if (vec($rs, fileno($conn), 1)) {
+		my $buf;
+		if ($conn->sysread($buf, 4096) == 0) {
+			$conn_opened = 0;
+		}
+		STDOUT->printf("%s\n", unpack("H*", $buf)); STDOUT->flush();
+	}
+}diff -urN c-drt/src/net/t/t0.cxx drt/src/net/t/t0.cxx

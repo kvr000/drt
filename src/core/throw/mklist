@@ -1,0 +1,7 @@
+.cdef SD_THROW	.
+
+SOURCES:
+	no:${SD_THROW}/mklist:g=t
+	:${SD_THROW}/Throw.hxx:g=di,t
+	:${SD_THROW}/Throw.cxx:g=s,t
+

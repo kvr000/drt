@@ -1,0 +1,10 @@
+.cdef SD_META_symbian	.
+
+SOURCES:
+	no:${SD_META_symbian}/mklist:g=t
+
+FCHECK:
+	${ESUBDIRS}/*.cxx::s=t
+	${ESUBDIRS}/*.cxx::s=s
+	${ESUBDIRS}/*.hxx::s=t
+

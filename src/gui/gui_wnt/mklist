@@ -1,0 +1,46 @@
+.def SD_BASE	base
+.def SD_EVENT	event
+.def SD_FONT	font
+.def SD_PAINT	paint
+.def SD_VISUAL	visual
+.def SD_WIDGET	widget
+.def SD_META	meta
+
+.def SUBDIRS	${SD_BASE},${SD_EVENT},${SD_FONT},${SD_PAINT},${SD_VISUAL},${SD_WIDGET},${SD_META}
+.def ESUBDIRS	{${SUBDIRS}}
+
+.include ${ESUBDIRS}/mklist
+
+POSTSUBS:
+	t
+
+NEED:
+	cxx
+
+DEPS:
+
+FLAGS:
+	cxx=$(CXXINC) $(SOCXXFLAGS)
+	shlib=$(SOLDXXFLAGS)
+
+OUTPUT:
+	shlib:drgui_wnt:f=shlib;s=s;C=s.wnt
+
+SOURCES:
+	no:mklist:g=t
+	lshlib:dr:g=s
+	lshlib:drio:g=s
+	lshlib:drgui:g=s
+	lshlib:user32:g=s;C=s.wnt_pc;local=0
+	lshlib:gdi32:g=s;C=s.wnt_pc;local=0
+	lshlib:comctl32:g=s;C=s.wnt_pc;local=0
+
+FCHECK:
+	${ESUBDIRS}/*.cxx::s=t
+	${ESUBDIRS}/*.cxx::s=s
+	${ESUBDIRS}/*.hxx::s=t
+	${ESUBDIRS}/*.hxx::s=didev
+
+DIST_INC:
+	didev:dr/gui/wnt
+

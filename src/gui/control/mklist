@@ -1,0 +1,25 @@
+.cdef SD_CONTROL	.
+
+.def SD_BUTTON		${SD_CONTROL}/button
+.def SD_CHECKBOX	${SD_CONTROL}/checkbox
+.def SD_LABEL		${SD_CONTROL}/label
+.def SD_MENUBAR		${SD_CONTROL}/menubar
+.def SD_TEXTEDIT	${SD_CONTROL}/textedit
+
+.def SUBDIRS		${SD_BUTTON},${SD_CHECKBOX},${SD_MENUBAR},${SD_LABEL},${SD_TEXTEDIT}
+.def ESUBDIRS		{${SUBDIRS}}
+
+.include ${ESUBDIRS}/mklist
+
+SOURCES:
+	no:${SD_CONTROL}/mklist:g=t
+	:${SD_CONTROL}/Control.hxx:g=t,di
+	:${SD_CONTROL}/Control.cxx:g=t,s
+
+FCHECK:
+	${ESUBDIRS}/*.cxx::s=t
+	${ESUBDIRS}/*.cxx::s=s
+	${ESUBDIRS}/*.hxx::s=t
+	${ESUBDIRS}/*.hxx::s=di,didev
+	${ESUBDIRS}/mklist::s=t
+

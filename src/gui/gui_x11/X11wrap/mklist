@@ -1,0 +1,7 @@
+.cdef SD_X11WRAP .
+
+SOURCES:
+	no:${SD_X11WRAP}/mklist:g=t
+	:${SD_X11WRAP}/Xresource.h:g=diwrap,t
+	:${SD_X11WRAP}/redef_x11.hxx:g=diwrap,t
+

@@ -1,0 +1,9 @@
+config	a.x86
+config	s.posix
+config	s.posix_th
+config	os.unix
+
+define	DR_OS_UNIX
+undef	DR_HAS_POSIX
+undef	DR_NO_BACKTRACE
+define	DR_HAS_THREAD_LOCAL

@@ -1,0 +1,15 @@
+.cdef SD_STYLE	.
+
+SOURCES:
+	no:${SD_STYLE}/mklist:g=t
+	:${SD_STYLE}/StyleFactory.hxx:g=di,t
+	:${SD_STYLE}/StyleFactory.cxx:g=s,t
+	:${SD_STYLE}/StyleFactory_Simple.hxx:g=di,t
+	:${SD_STYLE}/StyleFactory_Simple.cxx:g=s,t
+	:${SD_STYLE}/Style.hxx:g=di,t;C=gui_old
+	:${SD_STYLE}/Style.style.hxx:g=di,t;C=gui_old
+	:${SD_STYLE}/Style.cxx:g=s,t;C=gui_old
+	:${SD_STYLE}/Style_Simple.hxx:g=di,t;C=gui_old
+	:${SD_STYLE}/Style_Simple.style.hxx:g=di,t;C=gui_old
+	:${SD_STYLE}/Style_Simple.cxx:g=s,t;C=gui_old
+

@@ -1,0 +1,15 @@
+.cdef SD_EXCEPT_RUNTIME .
+
+SOURCES:
+	no:${SD_EXCEPT_RUNTIME}/mklist:g=t
+	:${SD_EXCEPT_RUNTIME}/RuntimeExcept.hxx:g=di,t
+	:${SD_EXCEPT_RUNTIME}/RuntimeExcept.cxx:g=s,t
+	:${SD_EXCEPT_RUNTIME}/CastExcept.hxx:g=di,t
+	:${SD_EXCEPT_RUNTIME}/CastExcept.cxx:g=s,t
+	:${SD_EXCEPT_RUNTIME}/IllegalStateExcept.hxx:g=di,t
+	:${SD_EXCEPT_RUNTIME}/IllegalStateExcept.cxx:g=s,t
+	:${SD_EXCEPT_RUNTIME}/UnsupportedExcept.hxx:g=di,t
+	:${SD_EXCEPT_RUNTIME}/UnsupportedExcept.cxx:g=s,t
+	:${SD_EXCEPT_RUNTIME}/OverflowExcept.hxx:g=di,t
+	:${SD_EXCEPT_RUNTIME}/OverflowExcept.cxx:g=s,t
+

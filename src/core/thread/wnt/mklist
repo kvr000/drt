@@ -1,0 +1,9 @@
+.cdef SD_THREAD_wnt	.
+
+SOURCES:
+	no:${SD_THREAD_wnt}/mklist:g=t
+	:${SD_THREAD_wnt}/Mutex_wnt.cxx:g=s,t;C=s.wnt_th;prio=68
+	:${SD_THREAD_wnt}/MutexCond_wnt.cxx:g=s,t;C=s.wnt_th
+	#:${SD_THREAD_wnt}/RWLock_wnt.cxx:g=s,t;C=s.wnt_th
+	:${SD_THREAD_wnt}/Thread_wnt.cxx:g=s,t;C=s.wnt_th;prio=72
+

@@ -1,0 +1,7 @@
+.cdef SD_TIME	.
+
+SOURCES:
+	no:${SD_TIME}/mklist:g=t
+	:${SD_TIME}/Time.hxx:g=di,t
+	:${SD_TIME}/Time.cxx:g=s,t
+

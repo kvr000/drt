@@ -1,0 +1,19 @@
+.cdef SD_INIT	.
+
+.def SD_INIT_symbian	${SD_INIT}/symbian
+
+.def SUBDIRS ${SD_INIT_symbian}
+.def ESUBDIRS {${SUBDIRS}}
+
+.include ${ESUBDIRS}/mklist
+
+SOURCES:
+	no:${SD_INIT}/mklist:g=t
+	:${SD_INIT}/thread_init.cxx:g=s,t;prio=16
+	:${SD_INIT}/thread_post.cxx:g=s,t;prio=96
+
+FCHECK:
+	${ESUBDIRS}/*.hxx::s=t
+	${ESUBDIRS}/*.cxx::s=t
+	${ESUBDIRS}/*.cxx::s=s
+

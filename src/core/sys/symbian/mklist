@@ -1,0 +1,11 @@
+.cdef SD_SYS_symbian .
+
+SOURCES:
+	no:${SD_SYS_symbian}/mklist:g=t
+	no:${SD_SYS_symbian}/new:g=t,dicompat_symbian
+	no:${SD_SYS_symbian}/wchar.h:g=t,dicompat_symbian
+	:${SD_SYS_symbian}/wchar.cxx:g=t,s;C=s.symbian
+	:${SD_SYS_symbian}/snprintf.cxx:g=t,s;C=s.symbian
+
+DIST_INC:
+	dicompat_symbian:os-symbian

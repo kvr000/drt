@@ -1,0 +1,11 @@
+var	generator	dr::build::out::Symbian
+
+config	a.arm
+config	s.symbian
+config	s.symbian_th
+
+undef	DR_HAS_THREAD_LOCAL
+define	DR_NO_BACKTRACE
+undef	DR_HAS_POSIX
+#define	DR_RO_VTABLE
+define	DR_OS_SYMBIAN

@@ -1,0 +1,11 @@
+.cdef SD_BASE	.
+
+SOURCES:
+	no:${SD_BASE}/mklist:g=t
+	:${SD_BASE}/Vfs.cxx:g=s,t
+	:${SD_BASE}/VfsSys.cxx:g=s,t
+	:${SD_BASE}/Vfs.hxx:g=di,t
+	:${SD_BASE}/Handle.hxx:g=di,t
+	:${SD_BASE}/Handle.cxx:g=s,t
+	:${SD_BASE}/def_io.hxx:g=di,t
+

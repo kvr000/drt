@@ -1,0 +1,38 @@
+.def SD_BASE		base
+.def SD_DATA		data
+.def SD_META		meta
+
+.def SUBDIRS		${SD_BASE},${SD_DATA},${SD_META}
+.def ESUBDIRS		{${SUBDIRS}}
+
+.include ${ESUBDIRS}/mklist
+
+POSTSUBS:
+	t
+
+NEED:
+	cxx
+	mysql5
+
+DEPS:
+
+FLAGS:
+	cxx=$(CXXINC) $(SOCXXFLAGS) $(mysql5_SOCXXFLAGS) -DCOMPILING_DR_SQL_MYSQL5
+	shlib=$(SOLDXXFLAGS) $(mysql5_SOLDXXFLAGS)
+
+OUTPUT:
+	shlib:drsql_mysql5:f=shlib;s=s;C=!c.no_sqlmysql5
+
+SOURCES:
+	no:mklist:g=t
+	lshlib:dr:g=s
+	lshlib:drsql:g=s
+
+FCHECK:
+	${ESUBDIRS}/*.cxx::s=t
+	${ESUBDIRS}/*.cxx::s=s
+	${ESUBDIRS}/*.hxx::s=t
+
+DIST_INC:
+	didev:dr/sql/mysql5
+

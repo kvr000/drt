@@ -1,0 +1,21 @@
+.cdef SD_BASE	.
+
+SOURCES:
+	no:${SD_BASE}/mklist:g=t
+	:${SD_BASE}/base.hxx:g=di,t
+	:${SD_BASE}/def_core.hxx:g=di,t
+	:${SD_BASE}/def.hxx:g=di,t
+	:${SD_BASE}/enumops.hxx:g=di,t
+	:${SD_BASE}/types.hxx:g=di,t
+	:${SD_BASE}/sex.hxx:g=di,t
+	:${SD_BASE}/Const.hxx:g=di,t
+	:${SD_BASE}/Const.cxx:g=s,t
+	:${SD_BASE}/Mem.hxx:g=di,t
+	:${SD_BASE}/Mem.cxx:g=s,t
+	:${SD_BASE}/Assert.hxx:g=di,t
+	:${SD_BASE}/Assert.cxx:g=s,t
+	:${SD_BASE}/Shared.hxx:g=di,t
+	:${SD_BASE}/Shared.cxx:g=s,t
+	:${SD_BASE}/x_kw.hxx:g=di,t
+	:${SD_BASE}/pe_error.hxx:g=di,t
+

@@ -1,0 +1,72 @@
+#!/usr/bin/perl
+
+##
+## drt library
+##
+## drt multiplatform development toolkit
+##
+## ----------------------------------------------------------------------------------
+##
+## Copyright (C) 2004-2008 Zbyněk Vyškovský
+##
+## ----------------------------------------------------------------------------------
+##
+## LICENSE:
+##
+## This file is part of drt
+##
+## drt is free software; you can redistribute it and/or modify it under the
+## terms of the GNU Lesser General Public License as published by the Free
+## Software Foundation; either version 3 of the License, or (at your option)
+## any later version.
+##
+## drt is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+## FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for
+## more details.
+##
+## You should have received a copy of the GNU Lesser General Public License
+## along with drt; if not, write to the Free Software Foundation, Inc., 51
+## Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+##
+## @author	2004-2008 Zbyněk Vyškovský
+## @link	mailto:kvr@matfyz.cz
+## @link	http://kvr.matfyz.cz/drt/
+## @license	http://www.gnu.org/licenses/lgpl.txt GNU Lesser General Public License v3
+##
+
+use strict;
+use warnings;
+
+use FileHandle;
+use File::Spec;
+
+sub replaceLinks($)
+{
+	our $map;
+
+	my $file	= shift;
+	my $l;
+
+	unless ($map) {
+		$map = {};
+		if (my $fd = FileHandle->new("$ENV{DR_ROOT}/src/dist_full.list", "<")) {
+			while (<$fd>) {
+				$map->{$1} = $2 if (m/^(.*): (.*)$/);
+			}
+		}
+		else {
+			STDERR->print("cannot open map $ENV{DR_ROOT}/src/dist_full.list\n");
+		}
+	}
+	if (join("/", File::Spec->splitdir($file)) =~ m,^(.*/|)../include/(.*),) {
+		my $repl = $map->{$2};
+		$file = "$1$repl" if (defined $repl);
+	}
+	return $file;
+}
+
+while (<>) {
+	s,([^\s:()]*../include[^\s:()]*),replaceLinks($1),ge;
+	print;
+}

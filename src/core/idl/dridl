@@ -1,0 +1,14 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+
+use File::Slurp;
+
+die "Usage: $0 idl-file file-type-list" unless (@ARGV == 2);
+
+my $cont = read_file($ARGV[1]);
+
+
+
+exit(0);

@@ -1,0 +1,11 @@
+.cdef SD_APP	.
+
+SOURCES:
+	no:${SD_APP}/mklist:g=t
+	:${SD_APP}/App.cxx:g=s,t
+	:${SD_APP}/App.hxx:g=di,t
+	:${SD_APP}/Subsystem.cxx:g=s,t
+	:${SD_APP}/Subsystem.hxx:g=di,t
+	:${SD_APP}/BadSubsysExcept.cxx:g=s,t
+	:${SD_APP}/BadSubsysExcept.hxx:g=di,t
+

@@ -1,0 +1,19 @@
+.cdef SD_SYS	.
+
+.def SD_SYS_posix	${SD_SYS}/posix
+.def SD_SYS_symbian	${SD_SYS}/symbian
+.def SD_SYS_wnt		${SD_SYS}/wnt
+
+.def SUBDIRS ${SD_SYS_posix},${SD_SYS_symbian},${SD_SYS_wnt}
+.def ESUBDIRS {${SUBDIRS}}
+
+.include ${ESUBDIRS}/mklist
+
+SOURCES:
+	no:${SD_SYS}/mklist:g=t
+
+FCHECK:
+	${ESUBDIRS}/*.cxx::s=t
+	${ESUBDIRS}/*.cxx::s=s
+	${ESUBDIRS}/*.hxx::s=t
+

@@ -1,0 +1,7 @@
+.cdef SD_BASE		.
+
+SOURCES:
+	no:${SD_BASE}/mklist:g=t
+	:${SD_BASE}/def_sqldump_filt.hxx:g=di,t
+	:${SD_BASE}/main.cxx:g=s,t
+

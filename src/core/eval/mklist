@@ -1,0 +1,9 @@
+.cdef SD_EVAL		.
+
+SOURCES:
+	no:${SD_EVAL}/mklist:g=t
+	:${SD_EVAL}/Evaluator.hxx:g=di,t
+	:${SD_EVAL}/Evaluator.cxx:g=s,t
+	:${SD_EVAL}/IntEvaluator.hxx:g=di,t
+	:${SD_EVAL}/IntEvaluator.cxx:g=s,t
+

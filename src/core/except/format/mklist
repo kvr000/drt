@@ -1,0 +1,9 @@
+.cdef SD_EXCEPT_FORMAT .
+
+SOURCES:
+	no:${SD_EXCEPT_FORMAT}/mklist:g=t
+	:${SD_EXCEPT_FORMAT}/InvalidFormatExcept.hxx:g=di,t
+	:${SD_EXCEPT_FORMAT}/InvalidFormatExcept.cxx:g=s,t
+	:${SD_EXCEPT_FORMAT}/EndOfDataExcept.hxx:g=di,t
+	:${SD_EXCEPT_FORMAT}/EndOfDataExcept.cxx:g=s,t
+

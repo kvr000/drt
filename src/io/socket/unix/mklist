@@ -1,0 +1,10 @@
+.cdef SD_SOCKET_unix	.
+
+SOURCES:
+	no:${SD_SOCKET_unix}/mklist:g=t
+	:${SD_SOCKET_unix}/Socket_sysiface.os-unix.cxx:g=s,t;C=os.unix
+	:${SD_SOCKET_unix}/Socket_sysiface.os.hxx:g=dios_unix,t
+
+DIST_INC:
+	dios_unix:os-unix/dr/io/os
+

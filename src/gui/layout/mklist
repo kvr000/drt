@@ -1,0 +1,7 @@
+.cdef SD_LAYOUT	.
+
+SOURCES:
+	no:${SD_LAYOUT}/mklist:g=t
+	:${SD_LAYOUT}/Layout.hxx:g=di,t
+	:${SD_LAYOUT}/Layout.cxx:g=s,t
+

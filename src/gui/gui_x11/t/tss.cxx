@@ -1,0 +1,80 @@
+/**
+ * drt library
+ *
+ * drt multiplatform development toolkit
+ *
+ * ----------------------------------------------------------------------------------
+ *
+ * Copyright (C) 2004-2008 Zbyněk Vyškovský
+ *
+ * ----------------------------------------------------------------------------------
+ *
+ * LICENSE:
+ *
+ * This file is part of drt
+ *
+ * drt is free software; you can redistribute it and/or modify it under the
+ * terms of the GNU Lesser General Public License as published by the Free
+ * Software Foundation; either version 3 of the License, or (at your option)
+ * any later version.
+ *
+ * drt is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with drt; if not, write to the Free Software Foundation, Inc., 51
+ * Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+ *
+ * @copyright	2004-2008 Zbyněk Vyškovský
+ * @link	mailto:kvr@matfyz.cz
+ * @link	http://kvr.matfyz.cz/drt/
+ * @license	http://www.gnu.org/licenses/lgpl.txt GNU Lesser General Public License v3
+ **/
+
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h>
+
+#include <dr/x_kw.hxx>
+
+#include <dr/Subsystem.hxx>
+#include <dr/Except.hxx>
+
+#include <dr/testenv/testenv.hxx>
+
+DR_NS_USE
+
+
+#define TEST_DLOAD
+
+
+#ifdef TEST_DLOAD
+TESTNS(dload);
+void test()
+{
+	String error;
+	Subsystem *sub = NULL;
+	Ref<Except> ex;
+
+	printf("loading subsys\n");
+	xtry {
+		sub = Subsystem::getSubsystem(String("drGui_x11"), NULL);
+	}
+	xcatch (Except, exc) {
+		ex = exc;
+	}
+	xend;
+	printf("load subsys: %p, err = %s\n", sub, ex ? ex->stringify().utf8().toStr() : "none");
+}
+TESTNSE(dload);
+#endif
+
+int main()
+{
+#ifdef TEST_DLOAD
+	TESTRUN(dload);
+#endif
+	return 0;
+}

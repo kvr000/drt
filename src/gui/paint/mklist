@@ -1,0 +1,7 @@
+.cdef SD_PAINT	.
+
+SOURCES:
+	no:${SD_PAINT}/mklist:g=t
+	:${SD_PAINT}/Paint.hxx:g=di,t
+	:${SD_PAINT}/Paint.cxx:g=s,t
+

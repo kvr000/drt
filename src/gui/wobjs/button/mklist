@@ -1,0 +1,10 @@
+.cdef SD_BUTTON		.
+
+SOURCES:
+	no:${SD_BUTTON}/mklist:g=t
+	:${SD_BUTTON}/Button.hxx:g=old_di,t
+	:${SD_BUTTON}/Button.cxx:g=old_s,t
+	:${SD_BUTTON}/ButtonStyle.hxx:g=old_di,t
+	:${SD_BUTTON}/ButtonStyle.style.hxx:g=old_di,t
+	:${SD_BUTTON}/ButtonStyle.cxx:g=old_s,t
+

@@ -1,0 +1,14 @@
+PRESUBS:
+	core
+	io: core
+	config: core io
+	net: core io
+	xml: core io
+	gui: core io
+	sql: core io
+
+SOURCES:
+	no:mklist:g=t
+
+FCHECK:
+

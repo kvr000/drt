@@ -1,0 +1,6 @@
+.cdef SD_SYS_wnt .
+
+SOURCES:
+	no:${SD_SYS_wnt}/mklist:g=t
+	:${SD_SYS_wnt}/virtual_mem.wnt.cxx:g=s,t;C=s.wnt
+

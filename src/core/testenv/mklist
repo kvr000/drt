@@ -1,0 +1,30 @@
+NEED:
+	cxx
+
+FLAGS:
+	cxx=$(CXXINC) $(SOCXXFLAGS)
+	shlib=$(SOLDXXFLAGS)
+
+OUTPUT:
+	shlib:drtestenv:f=shlib;s=s
+
+META:
+	vsid:{D56D9DEC-16FE-4f77-B360-24F8DCF6A30B}:g=s
+
+SOURCES:
+	:def_testenv.hxx:g=dite,t
+	:testenv.hxx:g=dite,t
+	:testenv.cxx:f=cxx;g=s,t
+	:TestObject.cxx:f=cxx;g=s,t,gh,dite
+	no:mklist:g=t
+	lshlib:dr:g=s
+
+FCHECK:
+	*.hxx::s=dite
+	*.hxx::s=t
+	*.cxx::s=s
+	*.cxx::s=t
+
+DIST_INC:
+	dite:dr/testenv
+

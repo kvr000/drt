@@ -1,0 +1,7 @@
+.cdef SD_ROWASSIGN	.
+
+SOURCES:
+	no:${SD_ROWASSIGN}/mklist:g=t
+	:${SD_ROWASSIGN}/RowAssignConfig.cxx:g=s,t
+	:${SD_ROWASSIGN}/RowAssignConfig.hxx:g=di,t
+

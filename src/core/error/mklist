@@ -1,0 +1,9 @@
+.cdef SD_ERROR	.
+
+SOURCES:
+	no:${SD_ERROR}/mklist:g=t
+	:${SD_ERROR}/Error.hxx:g=di,t
+	:${SD_ERROR}/Error.cxx:g=s,t
+	:${SD_ERROR}/SysError.hxx:g=di,t
+	:${SD_ERROR}/SysError.cxx:g=s,t
+

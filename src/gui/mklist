@@ -1,0 +1,52 @@
+.def SD_BASE	base
+.def SD_EVENT	event
+.def SD_FONT	font
+.def SD_KEY	key
+.def SD_LAYOUT	layout
+.def SD_MENU	menu
+.def SD_PAINT	paint
+.def SD_STYLE	style
+.def SD_STRUCT	struct
+.def SD_VISUAL	visual
+.def SD_WIDGET	widget
+.def SD_CONTROL	control
+.def SD_WOBJS	wobjs
+.def SD_META	meta
+
+.def SUBDIRS	${SD_BASE},${SD_EVENT},${SD_FONT},${SD_KEY},${SD_LAYOUT},${SD_MENU},${SD_PAINT},${SD_STYLE},${SD_STRUCT},${SD_VISUAL},${SD_WIDGET},${SD_WOBJS},${SD_CONTROL},${SD_META}
+.def ESUBDIRS	{${SUBDIRS}}
+
+.include ${ESUBDIRS}/mklist
+
+POSTSUBS:
+	gui_x11
+	gui_wnt
+	t
+
+NEED:
+	cxx
+
+DEPS:
+
+FLAGS:
+	cxx=$(CXXINC) $(SOCXXFLAGS) -DDR_COMPILING_GUI
+	shlib=$(SOLDXXFLAGS)
+
+OUTPUT:
+	shlib:drgui:f=shlib;s=s
+
+SOURCES:
+	no:mklist:g=t
+	lshlib:dr:g=s
+
+FCHECK:
+	${ESUBDIRS}/*.cxx::s=t
+	${ESUBDIRS}/*.cxx::s=s
+	${ESUBDIRS}/*.hxx::s=t
+	${ESUBDIRS}/*.hxx::s=di,didev
+	${ESUBDIRS}/mklist::s=t
+
+DIST_INC:
+	di:dr/gui
+	didev:dr/gui/dev
+

@@ -1,0 +1,9 @@
+.cdef SD_MSG_wnt	wnt
+
+SOURCES:
+	no:${SD_MSG_wnt}/mklist:g=t
+	:${SD_MSG_wnt}/MsgSync_wnt.cxx:g=s,t;C=s.wnt;prio=84
+	:${SD_MSG_wnt}/MsgSync_wnt.hxx:g=t,di;C=s.wnt
+	:${SD_MSG_wnt}/MsgSync_WntMsg.cxx:g=s,t;C=s.wnt;prio=80
+	:${SD_MSG_wnt}/MsgSync_WntMsg.hxx:g=t,di;C=s.wnt
+

@@ -1,0 +1,13 @@
+.cdef SD_SOCKET_wnt	.
+
+SOURCES:
+	no:${SD_SOCKET_wnt}/mklist:g=t
+	:${SD_SOCKET_wnt}/Socket_sysiface_wnt.cxx:g=s,t;C=s.wnt;dep=${SD_SOCKET}/Socket.cxx
+	:${SD_SOCKET_wnt}/Socket_sysiface_wnt.hxx:g=didev,t
+	:${SD_SOCKET_wnt}/Socket_sysiface.os.hxx:g=dios_wnt,t
+	lshlib:ws2_32:g=s;local=0;C=s.wnt_pc
+	lshlib:ws2:g=s;local=0;C=s.wce
+
+DIST_INC:
+	dios_wnt:os-wnt/dr/io/os
+

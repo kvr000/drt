@@ -1,0 +1,36 @@
+NEED:
+	cxx
+
+DEPS:
+
+FLAGS:
+	cxx=$(CXXINC) $(EXECXXFLAGS) -I. -I..
+	exec=$(EXELDXXFLAGS)
+
+OUTPUT:
+	exec:tlink_drsql:f=exec;s=tlink_drsql,common
+	exec:t0:f=exec;s=t0,common;r=test
+
+SOURCES:
+	:tlink_drsql.cxx:f=cxx;g=tlink_drsql,t
+	:t0.cxx:f=cxx;g=t0,t
+	no:mklist:g=t
+	lshlib:dr:g=common
+	lshlib:drsql:g=common
+	lshlib:drtestenv:g=common
+
+META:
+	vsid:{02C78BA6-8E70-4f87-B187-233DF20F61F4}:g=tlink_drsql
+	vsid:{5654A83C-17F1-491f-8699-AE81DA4FD440}:g=t0
+
+FCHECK:
+	*.cxx::s=t
+	*.hxx::s=t
+	mklist::s=t
+
+DIST_INC:
+
+LOC_INC:
+
+LOC_LIB:
+

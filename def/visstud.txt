@@ -1,0 +1,15 @@
+var	generator	dr::build::out::VisStudGenerator
+
+var	platform	w32-x86
+
+config	a.x86
+config	s.wnt
+config	s.wnt_th
+config	s.wnt_pc
+
+undef	DR_HAS_THREAD_LOCAL
+define	DR_NO_BACKTRACE
+undef	DR_HAS_POSIX
+define	DR_RO_VTABLE
+define	DR_OS_WNT
+define	DR_NO_ALIGNED_FUNC

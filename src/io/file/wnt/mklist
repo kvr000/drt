@@ -1,0 +1,11 @@
+.cdef SD_FILE_wnt	.
+
+SOURCES:
+	no:${SD_FILE_wnt}/mklist:g=t
+	:${SD_FILE_wnt}/File_sysiface_wnt.cxx:g=s,t;C=s.wnt
+	:${SD_FILE_wnt}/File_sysiface_wnt.hxx:g=didev,t
+	:${SD_FILE_wnt}/File_sysiface.os.hxx:g=dios_wnt,t
+
+DIST_INC:
+	dios_wnt:os-wnt/dr/io/os
+

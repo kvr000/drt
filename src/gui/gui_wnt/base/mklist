@@ -1,0 +1,8 @@
+.cdef SD_BASE .
+
+SOURCES:
+	no:${SD_BASE}/mklist:g=t
+	:${SD_BASE}/Gui_wnt.cxx:g=s,t
+	no:${SD_BASE}/Gui_wnt.hxx:g=didev,t
+	no:${SD_BASE}/def_gui_wnt.hxx:g=didev,t
+

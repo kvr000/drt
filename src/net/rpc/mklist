@@ -1,0 +1,28 @@
+.cdef SD_RPC		.
+
+.def SD_XMLRPC		${SD_RPC}/xmlrpc
+
+.def SUBDIRS		${SD_XMLRPC}
+.def ESUBDIRS		{${SUBDIRS}}
+
+.include ${ESUBDIRS}/mklist
+
+
+SOURCES:
+	no:${SD_RPC}/mklist:g=t
+	:${SD_RPC}/RpcEncoder.cxx:g=s,t
+	:${SD_RPC}/RpcEncoder.hxx:g=di,t
+	:${SD_RPC}/RpcDecoder.cxx:g=s,t
+	:${SD_RPC}/RpcDecoder.hxx:g=di,t
+	:${SD_RPC}/RpcHelper.cxx:g=s,t
+	:${SD_RPC}/RpcHelper.hxx:g=di,t
+	:${SD_RPC}/RpcExcept.cxx:g=s,t
+	:${SD_RPC}/RpcExcept.hxx:g=di,t
+
+FCHECK:
+	${ESUBDIRS}/*.cxx::s=t
+	${ESUBDIRS}/*.cxx::s=s
+	${ESUBDIRS}/*.hxx::s=t
+	${ESUBDIRS}/*.hxx::s=di,didev
+	${ESUBDIRS}/mklist::s=t
+

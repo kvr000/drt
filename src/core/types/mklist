@@ -1,0 +1,23 @@
+.cdef SD_TYPES .
+
+SOURCES:
+	no:${SD_TYPES}/mklist:g=t
+	:${SD_TYPES}/CharConv.cxx:g=s,t
+	:${SD_TYPES}/CharConv.hxx:g=di,t
+	:${SD_TYPES}/CharConvExcept.hxx:g=di,t
+	:${SD_TYPES}/CharConvExcept.cxx:g=s,t
+	:${SD_TYPES}/BString.cxx:g=s,t
+	:${SD_TYPES}/BString.hxx:g=di,t
+	:${SD_TYPES}/Blob.cxx:g=s,t
+	:${SD_TYPES}/Blob.hxx:g=di,t
+	:${SD_TYPES}/String_c.cxx:g=s,t
+	:${SD_TYPES}/String.cxx:g=s,t
+	:${SD_TYPES}/WString.cxx:g=s,t
+	:${SD_TYPES}/char_traits.hxx:g=di,t
+	:${SD_TYPES}/String_c.hxx:g=di,t
+	:${SD_TYPES}/String_c.t.hxx:g=di,t
+	:${SD_TYPES}/String.hxx:g=di,t
+	:${SD_TYPES}/String.t.hxx:g=di,t
+	:${SD_TYPES}/WString.hxx:g=di,t
+	:${SD_TYPES}/WString.t.hxx:g=di,t
+

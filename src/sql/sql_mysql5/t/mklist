@@ -1,0 +1,37 @@
+NEED:
+	cxx
+
+DEPS:
+
+FLAGS:
+	cxx=$(CXXINC) $(EXECXXFLAGS) -I. -I..
+	exec=$(EXELDXXFLAGS)
+
+OUTPUT:
+	exec:tlink_drsql_mysql5:f=exec;s=tlink_drsql_mysql5,common;C=!c.no_sqlmysql5
+	exec:t0:f=exec;s=t0,common;C=!c.no_sqlmysql5;r=test
+
+SOURCES:
+	:tlink_drsql_mysql5.cxx:f=cxx;g=tlink_drsql_mysql5,t
+	:t0.cxx:f=cxx;g=t0,t
+	no:mklist:g=t
+	lshlib:dr:g=common
+	lshlib:drsql:g=common
+	lshlib:drsql_mysql5:g=common
+	lshlib:drtestenv:g=common
+
+META:
+	vsid:{25F5222A-3577-4bd4-8759-D6AE2BFC9A56}:g=tlink_drsql_mysql5
+	vsid:{57C49956-04D7-47b3-9659-B31FCEE78289}:g=t0
+
+FCHECK:
+	*.cxx::s=t
+	*.hxx::s=t
+	mklist::s=t
+
+DIST_INC:
+
+LOC_INC:
+
+LOC_LIB:
+

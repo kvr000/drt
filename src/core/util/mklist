@@ -1,0 +1,7 @@
+.cdef SD_UTIL	.
+
+SOURCES:
+	no:${SD_UTIL}/mklist:g=t
+	:${SD_UTIL}/Conversion.hxx:g=di,t
+	:${SD_UTIL}/Conversion.cxx:g=s,t
+

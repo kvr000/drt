@@ -1,0 +1,9 @@
+.cdef SD_LABEL		.
+
+SOURCES:
+	no:${SD_LABEL}/mklist:g=t
+	:${SD_LABEL}/Label.hxx:g=di,t
+	:${SD_LABEL}/Label.cxx:g=s,t
+	:${SD_LABEL}/Label_Simple.hxx:g=di,t
+	:${SD_LABEL}/Label_Simple.cxx:g=s,t
+

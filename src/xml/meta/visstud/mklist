@@ -1,0 +1,12 @@
+.cdef SD_META_visstud	.
+
+META:
+
+SOURCES:
+	no:${SD_META_visstud}/mklist:g=t
+
+FCHECK:
+	${ESUBDIRS}/*.cxx::s=t
+	${ESUBDIRS}/*.cxx::s=s
+	${ESUBDIRS}/*.hxx::s=t
+

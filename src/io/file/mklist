@@ -1,0 +1,26 @@
+.cdef SD_FILE		.
+
+.def SD_FILE_except	${SD_FILE}/except
+.def SD_FILE_posix	${SD_FILE}/posix
+.def SD_FILE_unix	${SD_FILE}/unix
+.def SD_FILE_wnt	${SD_FILE}/wnt
+
+.def FILE_SUBDIRS	${SD_FILE_except},${SD_FILE_posix},${SD_FILE_unix},${SD_FILE_wnt}
+.def FILE_ESUBDIRS	{${FILE_SUBDIRS}}
+
+.include ${FILE_ESUBDIRS}/mklist
+
+SOURCES:
+	no:${SD_FILE}/mklist:g=t
+	:${SD_FILE}/File.cxx:g=s,t
+	:${SD_FILE}/File.hxx:g=di,t
+	:${SD_FILE}/Directory.cxx:g=s,t
+	:${SD_FILE}/Directory.hxx:g=di,t
+	:${SD_FILE}/File_sysiface.hxx:g=didev,t
+
+FCHECK:
+	${FILE_ESUBDIRS}/*.cxx::s=t
+	${FILE_ESUBDIRS}/*.cxx::s=s
+	${FILE_ESUBDIRS}/*.hxx::s=t
+	${FILE_ESUBDIRS}/mklist::s=t
+

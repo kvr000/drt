@@ -1,0 +1,1804 @@
+#!/usr/bin/perl
+
+##
+## drt library
+##
+## drt multiplatform development toolkit
+##
+## ----------------------------------------------------------------------------------
+##
+## Copyright (C) 2004-2008 Zbyněk Vyškovský
+##
+## ----------------------------------------------------------------------------------
+##
+## LICENSE:
+##
+## This file is part of drt
+##
+## drt is free software; you can redistribute it and/or modify it under the
+## terms of the GNU Lesser General Public License as published by the Free
+## Software Foundation; either version 3 of the License, or (at your option)
+## any later version.
+##
+## drt is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+## FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for
+## more details.
+##
+## You should have received a copy of the GNU Lesser General Public License
+## along with drt; if not, write to the Free Software Foundation, Inc., 51
+## Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+##
+## @author	2004-2008 Zbyněk Vyškovský
+## @link	mailto:kvr@matfyz.cz
+## @link	http://kvr.matfyz.cz/drt/
+## @license	http://www.gnu.org/licenses/lgpl.txt GNU Lesser General Public License v3
+##
+
+use strict;
+use warnings;
+
+use Data::Dumper;
+
+use IO::Handle;
+use Scalar::Util;
+use FileHandle;
+use Getopt::Long;
+
+
+package dr::build;
+
+use strict;
+use warnings;
+
+sub defaultEmpty($)
+{
+	my $v = shift;
+	$v = "" unless (defined $v);
+	return $v;
+}
+
+sub defaultVal($$)
+{
+	my $v = shift;
+	$v = shift unless (defined $v);
+	return $v;
+}
+
+sub findArray($@) # searched-value array
+{
+	my $v = shift;
+	my $a = shift;
+	for (my $i = 0; $i < @$a; $i++) {
+		return $i if $a->[$i] eq $v;
+	}
+	return -1;
+}
+
+package dr::build::DotReader;
+
+use strict;
+use warnings;
+
+use IO::Handle;
+
+sub new
+{
+	my $class	= shift; $class = ref($class) if ref($class);
+	my @dir		= @{shift(@_)};
+	my $fname	= shift;
+	my $p_internal	= shift;
+
+	my $this = bless {
+		dir		=> \@dir,
+		full_name	=> $fname,
+		pending_files	=> [],
+		line_no		=> 0,
+	}, $class;
+
+	if (ref($fname) && $fname->can("getline")) {
+		$this->{fd} = $fname;
+	}
+	else {
+		$this->{fd} = FileHandle->new($fname, "<")
+			or die "failed to open $fname: $!";
+	}
+
+	my $internal = {};
+	if ($p_internal) {
+		$internal->{macros} = { %{$p_internal->{macros}} };
+	}
+	else {
+		$internal->{macros} = {};
+	}
+	$this->{internal} = $internal;
+
+	return $this;
+}
+
+sub getContext
+{
+	my $this	= shift;
+
+	if ($this->{sub_file}) {
+		return "In file included from $this->{full_name}:$this->{line_no}:\n".$this->{sub_file}->getContext();
+	}
+	return "$this->{full_name}:$this->{line_no}:";
+}
+
+sub getline
+{
+	my $this	= shift;
+
+retry:
+	if ($this->{sub_file}) {
+		if (defined (my $line = $this->{sub_file}->getline())) {
+			return $line;
+		}
+		else {
+			undef $this->{sub_file};
+			goto retry;
+		}
+	}
+	elsif (defined (my $fname = shift(@{$this->{pending_files}}))) {
+		eval {
+			$this->{sub_file} = dr::build::DotReader->new($this->{dir}, $fname, $this->{internal});
+		}
+			or die "$this->{full_name}:$this->{line_no}: failed to find included file $fname: $@";
+		goto retry;
+	}
+	elsif (defined (my $line = $this->{fd}->getline())) {
+		$this->{line_no}++;
+		# substitute macros first
+		{
+			my $limit = 1024;
+
+			while ($line =~ m/^([^#]*)\${(\w+)}(.*)$/) {
+				die "$this->{full_name}:$this->{line_no}: probably recursively expanding macro: $line" if (--$limit == 0);
+				die "$this->{full_name}:$this->{line_no}: undefined macro used $2" if (!defined $this->{internal}->{macros}->{$2});
+				$line = $1.$this->{internal}->{macros}->{$2}.$3;
+			}
+		}
+		if ($line =~ m/^\.(\w+)(\s+(.*))?$/) {
+			my $cmd = $1;
+			my $cont = $3;
+			if ($cmd eq "debug") {
+				die "$this->{full_name}:$this->{line_no}: debug: $cont";
+			}
+			elsif ($cmd eq "def") {
+				die "$this->{full_name}:$this->{line_no}: invalid macro definition: $3" if ($cont !~ m/^(\w+)\s+(.*)$/);
+				$this->{internal}->{macros}->{$1} = $2;
+			}
+			elsif ($cmd eq "cdef") {
+				die "$this->{full_name}:$this->{line_no}: invalid macro definition: $3" if ($cont !~ m/^(\w+)\s+(.*)$/);
+				$this->{internal}->{macros}->{$1} = $2 unless (defined $this->{internal}->{macros}->{$1});
+			}
+			elsif ($cmd eq "undef") {
+				die "$this->{full_name}:$this->{line_no}: invalid macro definition: $3" if ($cont !~ m/^(\w+)\s*$/);
+				delete $this->{internal}->{macros}->{$1};
+			}
+			elsif ($cmd eq "filter") {
+				die "$this->{full_name}:$this->{line_no}: invalid filter definition: $3" if ($cont !~ m/^(\w+)\s+(.*)$/);
+				chomp($this->{internal}->{macros}->{$1} = `echo $this->{internal}->{macros}->{$1} | $2`);
+			}
+			elsif ($cmd eq "subst") {
+				die "$this->{full_name}:$this->{line_no}: invalid subst definition: $3" if ($cont !~ m/^(\w+)\s+(.*)$/);
+				chomp($this->{internal}->{macros}->{$1} = `echo $this->{internal}->{macros}->{$1} | sed $2`);
+			}
+			elsif ($cmd eq "lpath") {
+				if ($this->{full_name} =~ m,^(.*)/(.*)$,) {
+					unshift(@{$this->{dir}}, $1);
+				}
+			}
+			elsif ($cmd eq "include") {
+				die "$this->{full_name}:$this->{line_no}: invalid macro definition: $3" if ($cont !~ m/^(\S+)\s*$/);
+				my @flist;
+				foreach (@{$this->{dir}}) {
+					@flist = glob("$_/$1") and -e $flist[0] and last;
+				}
+				$this->{pending_files} = \@flist;
+			}
+			else {
+				die "$this->{full_name}:$this->{line_no}: unknown command $1";
+			}
+			goto retry;
+		}
+		elsif ($line =~ m/^\s*#.*/) {
+			goto retry;
+		}
+		else {
+			return $line;
+		}
+	}
+	else {
+		return;
+	}
+}
+
+
+package dr::build;
+
+use strict;
+use warnings;
+
+use IO::String;
+
+sub getConfig($$)
+{
+	my $dir		= shift;
+	my $fnames	= shift;
+
+	my $config_cont	= IO::String->new(map({ ".include $_\n" } split(",", $fnames)));
+
+	my $fd = eval {
+		dr::build::DotReader->new($dir, $config_cont);
+	}
+		or die "failed to open $fnames: $@";
+
+	my $def = {
+		fnames		=> $fnames,
+		config		=> {},
+		define		=> {},
+		var		=> {},
+	};
+
+	while ((defined (my $line = $fd->getline()))) {
+		chomp $line;
+		if ($line =~ m/^\s*$/) {
+		}
+		elsif ($line =~ m/^(\w+)\s+(.*?)\s*$/) {
+			my ($cmd, $cont) = ($1, $2);
+			if ($cmd eq "config") {
+				$def->{config}->{$2} = 1;
+			}
+			elsif ($cmd eq "define") {
+				$def->{define}->{$2} = 1;
+			}
+			elsif ($cmd eq "undef") {
+				delete $def->{define}->{$2};
+			}
+			elsif ($cmd eq "var") {
+				$cont =~ m/(\w+)\s*(.*?)\s*$/;
+				$def->{var}->{$1} = $2;
+			}
+			else {
+				die $fd->getContext()." unknown cmd: $cmd";
+			}
+		}
+		else {
+			die $fd->getContext()." unexpected text";
+		}
+	}
+	return $def;
+}
+
+sub getMkList # basedir file macros
+{
+	my $dir = shift;
+	my $fn = shift;
+
+	my $def = {};
+	my $section;
+
+	my $fd = eval {
+		dr::build::DotReader->new([ $dir ], $fn);
+	}
+		or die "failed to open $fn: $@";
+
+	while ((defined (my $line = $fd->getline()))) {
+		chomp $line;
+		if ($line =~ m/^\t(\S.*)$/) {
+			die $fd->getContext()." substring without section" if (!defined $section);
+			push(@$section, $1);
+		}
+		elsif ($line =~ m/^$/) {
+			undef $section;
+		}
+		elsif ($line =~ m/^([A-Z_]+):$/) {
+			die $fd->getContext()." section within section" if (defined $section);
+			$def->{$1} = [] if (!defined $def->{$1});
+			$section = $def->{$1};
+		}
+		else {
+			die $fd->getContext()." unexpected text";
+		}
+	}
+	die $fd->getContext()." section not finished" if (defined $section);
+
+	return $def;
+}
+
+sub parseOpts($) # opts-string
+{
+	my $s = shift;
+	my $o = {};
+	foreach (split(/;/, $s)) {
+		if (!m/^(\w+)=(.*)$/) {
+			die "unable to parse flag $_ ($o)\n";
+		}
+		$o->{$1} = $2;
+	}
+	return $o;
+}
+
+sub flagsOne($$) # options optdef
+{
+	my $f;
+	my $o = shift;
+	my $on = shift;
+	return if (!defined ($f = $o->{$on}));
+	delete $o->{$on};
+	return $f;
+}
+
+sub flagsArray($$) # options optdef
+{
+	my $f;
+	my $o = shift;
+	my $on = shift;
+	return if (!defined ($f = $o->{$on}));
+	delete $o->{$on};
+	return [ split(/,/, $f) ];
+}
+
+sub expandList($$@$) # prefix suffix list default
+{
+	my $o = "";
+	my $pref = shift;
+	my $suff = shift;
+	my $l = shift;
+	my $def = shift;
+
+	if (!defined $l) {
+		return " $pref$def$suff";
+	}
+	foreach (@$l) {
+		if ($_ eq "_") {
+			$o .= " $pref$def$suff";
+		}
+		else {
+			$o .= " $pref$_$suff";
+		}
+	}
+	return $o;
+}
+
+sub findGroups(@@) # sources-list group-list
+{
+	my @o = ();
+	my $s = shift;
+	my $g = shift;
+
+N:
+	foreach my $d (@$s) {
+		foreach my $l (@{$d->{groups}}) {
+			foreach (@$g) {
+				push(@o, $d), next N if ($_ eq $l);
+			}
+		}
+	}
+	return @o;
+}
+
+sub findRoles(@@) # sources-list group-list
+{
+	my @o = ();
+	my $s = shift;
+	my $g = shift;
+
+N:
+	foreach my $d (@$s) {
+		foreach my $l (@{$d->{roles}}) {
+			foreach (@$g) {
+				push(@o, $d), next N if ($_ eq $l);
+			}
+		}
+	}
+	return @o;
+}
+
+sub checkConfig($$) # config config-list
+{
+	my $config	= shift;
+	my $allowed	= shift;
+
+	my $ok = 1;
+
+	return 1 unless ($allowed);
+	foreach (@$allowed) {
+		if (m/!(.*)/) {
+			return 0 if ($config->{config}->{$1});
+		}
+		else {
+			return 1 if ($config->{config}->{$_});
+			$ok = 0;
+		}
+	}
+	return $ok;
+}
+
+sub sortSources
+{
+	my @prios;
+	my @std;
+	my @stdres;
+	my %std_refs;
+	foreach (@_) {
+		if (defined $_->{prio}) {
+			push(@prios, $_);
+		}
+		else {
+			push(@std, $_);
+			$std_refs{$_->{src}} = 0;
+		}
+	}
+	@prios = sort({ $a->{prio} <=> $b->{prio} } @prios);
+	foreach my $sd (@std) {
+		next unless ($sd->{dep});
+		foreach my $dn (@{$sd->{dep}}) {
+			die "dependency undefined for $sd->{src}: $dn" unless (defined $std_refs{$dn});
+			$std_refs{$dn}++;
+		}
+	}
+	while (@std) {
+		my $found;
+		for (my $i = 0; $i < @std; $i++) {
+			if ($std_refs{$std[$i]->{src}} == 0) {
+				$found = $std[$i];
+				splice(@std, $i, 1);
+				last;
+			}
+		}
+		die "dependency circle for $std[0]->{src}" unless (defined $found);
+		if ($found->{dep}) {
+			foreach my $dn (@{$found->{dep}}) {
+				$std_refs{$dn}--;
+			}
+		}
+		unshift(@stdres, $found);
+	}
+	return (@prios, @stdres);
+}
+
+package dr::build::out::Generator;
+
+use strict;
+use warnings;
+
+
+sub new
+{
+	my $class	= shift; $class = ref($class) if ref($class);
+	my $config	= shift;
+
+	my $this = bless {
+		config		=> $config,
+	}, $class;
+
+	return $this;
+}
+
+sub filterSources
+{
+	my $this	= shift;
+	my $list	= shift;
+
+	return $list;
+}
+
+sub createOutput
+{
+	die "method createOutput not defined for ".ref(shift);
+}
+
+
+package dr::build::out::MakeGenerator;
+
+use strict;
+use warnings;
+
+use Data::Dumper;
+use File::Path;
+use File::Basename;
+
+use base "dr::build::out::Generator";
+
+sub filterSources
+{
+	my $this	= shift;
+	my $list	= shift;
+
+	my @sd_o = ();
+	my @sd_l = ();
+
+	foreach my $sd (@$list) {
+		if ($sd->{prog} eq "lshlib") {
+			push(@sd_l, $sd);
+		}
+		else {
+			push(@sd_o, $sd);
+		}
+	}
+	return [ reverse(@sd_o), @sd_l ];
+}
+
+sub genRecursiveAction($$@) # recursive-action pre-list this-action post-list
+{
+	my $ract	= shift;
+	my $action	= shift;
+	my $vars	= shift;
+
+	my $pre		= $vars->{PRESUBS};
+	my $post	= $vars->{POSTSUBS};
+	my $o;
+
+	$o = "$ract:\n";
+	if (defined ($pre)) {
+		foreach (@$pre) {
+			$o .= "\t\$(MAKE) -C $_->{name} $ract\n";
+		}
+	}
+	$o .= "\t\$(MAKE) $action\n";
+	if (defined ($post)) {
+		foreach (@$post) {
+			$o .= "\t\$(MAKE) -C $_->{name} $ract\n";
+		}
+	}
+	return $o;
+}
+
+sub createOutput
+{
+	my $this	= shift;
+	my $dir		= shift;
+	my $vars	= shift;
+
+	my $config	= $this->{config};
+
+	my $targ_pre	= "";
+	my $targ_init	= " targ_pre";
+	my $targ_local	= " targ_init";
+	my $targ_post	= " targ_local";
+
+	my @sources;
+
+	my %depends	= ();
+
+	my $mdir;
+	($mdir = $dir) =~ s#/[^/]+#/..#g;
+
+	my $mf;
+
+	$mf = FileHandle->new("$dir/Makefile", ">")
+		or die "failed to open $dir/Makefile: $!\n";
+
+	$mf->printf("BUILD=%s\n", "_build");
+	$mf->printf("BUILD_=%s\n", "\$(BUILD)/");
+	$mf->printf("GEN=\$(BUILD_)_gen\n");
+	$mf->printf("GEN_=\$(GEN)/\n");
+	$mf->printf("OBJDIR=%s\n", "\$(BUILD_)\$(DR_TARG)");
+	$mf->printf("OBJDIR_=%s\n", "\$(OBJDIR)/");
+	$mf->printf("DIRS=%s\n", ($dir =~ m,^(\./)?(.*)$,)[1]);
+	$mf->printf("DIRS_=%s\n", ("$dir/" =~ m,^(\./)?(.*)$,)[1]);
+	$mf->printf("DIRS_R=%s\n", ("$dir/" =~ m,^(\./)?(.+)$,)[1]);
+	$mf->printf("DIRM=src/\$(DIRS)\n");
+	$mf->printf("DIRM_=src/\$(DIRS_)\n");
+	$mf->printf("DIRM_R=src/\$(DIRS_)\n");
+	$mf->printf("TOPDIR=%s\n", ("$mdir/.." =~ m,^(\./)?(.*)$,)[1]);
+	$mf->printf("TOPDIR_=%s\n", ("$mdir/../" =~ m,^(\./)?(.*)$,)[1]);
+	$mf->printf("TOPDIR_R=%s\n", ("$mdir/../" =~ m,^(\./)?(.+)$,)[1]);
+	$mf->printf("SRCDIR=%s\n", ("$mdir" =~ m,^(\./)?(.*)$,)[1]);
+	$mf->printf("SRCDIR_=%s\n", ("$mdir/" =~ m,^(\./)?(.*)$,)[1]);
+	$mf->printf("SRCDIR_R=%s\n", ("$mdir/" =~ m,^(\./)?(.+)$,)[1]);
+	$mf->printf("ETCDIR=\$(TOPDIR_)etc\n");
+	$mf->printf("ETCDIR_=\$(ETCDIR)/\n");
+	$mf->printf("BINDIR=\$(TOPDIR_)bin\n");
+	$mf->printf("BINDIR_=\$(TOPDIR_)bin/\n");
+	$mf->printf("LIBDIR=\$(TOPDIR_)lib\n");
+	$mf->printf("LIBDIR_=\$(TOPDIR_)lib/\n");
+	$mf->printf("INCDIR=\$(TOPDIR_)include\n");
+	$mf->printf("INCDIR_=\$(TOPDIR_)include/\n");
+	$mf->print("\n");
+
+	$mf->print("DR_BUILD_CXX_FLAGS=", map({ " -D$_" } keys %{$config->{define}}), "\n");
+	$mf->print("\n");
+
+	$mf->print("all: targ_all\ndefault: targ_all\n\ngmake:\n\t$vars->{genmake} $config->{fnames} \$(DIRS)\n\ninclude \$(ETCDIR_)main.mk\n\n");
+
+	if (defined (my $need = $vars->{NEED})) {
+		foreach (@$need) {
+			$mf->print("include \$(ETCDIR_)$_.mk\n");
+		}
+	}
+	$mf->print("\n");
+
+	# tags generating
+	{
+		$mf->print("ldeltags:\n\trm -f tags\ntags: ldeltags\n\trun_p gen_tags .\n");
+		$mf->print(genRecursiveAction("deltags", "ldeltags", $vars)."\n");
+	}
+
+	if (defined (my $deps = $vars->{DEPS})) {
+		foreach (@$deps) {
+			$mf->print("dep_$_:\n\t\$(MAKE) -C $_\n\n");
+			$targ_local .= " dep_$_";
+		}
+		$mf->print("\n");
+	}
+
+	if (defined (my $presubs = $vars->{PRESUBS})) {
+		foreach (@$presubs) {
+			$mf->printf("sub_%s: %s\n\t\$(MAKE) -C %s\n\n", $_->{name}, join(" ", map({ "sub_$_" } @{$_->{deps}})), $_->{name});
+			$targ_pre .= " sub_$_->{name}";
+		}
+		$mf->print("\n");
+	}
+
+	if (defined (my $flags = $vars->{FLAGS})) {
+		foreach (keys %$flags) {
+			$mf->print("FLAGS_$_=$flags->{$_}\n");
+		}
+		$mf->print("\n");
+	}
+
+	if ($vars->{OUTPUT}) {
+		foreach my $od (@{$vars->{OUTPUT}}) {
+			foreach my $sd (@{$od->{in_source}}) {
+				if ($sd->{prog} eq "cxx") {
+					$sd->{out_flag} = "-DCOMPILING_$od->{out}=1";
+				}
+				$sd->{out_used} = 1;
+			}
+		}
+	}
+
+	foreach my $sd (@{$vars->{SOURCES}->{list}}) {
+		next if ($sd->{disable});
+		next if (!$sd->{out_used});
+		if ($sd->{prog} eq "no") {
+			next;
+		}
+		if ($sd->{prog} eq "cxx") {
+			my $dp;
+			my $fl = " \$(DR_BUILD_CXX_FLAGS) ".dr::build::expandList("\$(FLAGS_", ")", $sd->{flags}, "cxx")." ".dr::build::defaultEmpty($sd->{out_flag});
+			$sd->{out} = "\$(OBJDIR)/$sd->{pref}\$(OBJ_EXT)";
+			$sd->{ocmd} = "\$(OBJDIR)/$sd->{pref}\$(OBJ_EXT)";
+			$mf->print("$sd->{out}: $sd->{src}\n\t\$(CXX_O) \$< -o \$\@ -MD -MF \$\@.dep$fl\n");
+			$mf->print("\$(OBJDIR)/$sd->{pref}\$(AS_EXT): $sd->{src}\n\t\$(CXX_S) \$< -o \$\@ -MD -MF \$\@.dep$fl\n");
+
+			if (!defined ($dp = $depends{"cxx$fl"})) {
+				$depends{"cxx$fl"} = $dp = {};
+				$dp->{cmd} = "\$(CXX) -MM$fl -I. -I\$(INCDIR) \$(DR_BUILD_CXX_FLAGS)";
+				$dp->{odir} = 1;
+				$dp->{files} = [ ];
+			}
+			push(@{$dp->{files}}, $sd);
+			if (dr::build::findArray("gh", $sd->{groups}) >= 0) {
+				my $base = basename($sd->{src}); $base =~ s/\.\w+$//; $base =~ s/.*\///;
+				$mf->printf("%s %s: %s\n", "\$(GEN_)$base.hxx", "\$(GEN_)$base-def.hxx", $sd->{src});
+				$mf->printf("\tdr_genheader %s %s\n", $sd->{src}, "\$(GEN_)$base");
+				$mf->printf("%s: %s %s\n", $sd->{out}, "\$(GEN_)$base.hxx", "\$(GEN_)$base-def.hxx");
+			}
+		}
+		elsif ($sd->{prog} eq "lshlib") {
+			$sd->{out} = "\$(LIBDIR_)\$(SHLIB_PREF)$sd->{src}\$(SHLIB_EXT)";
+			$sd->{ocmd} = "-l$sd->{src}";
+			$sd->{local} = 0;
+			$sd->{prio} = -1;
+		}
+		elsif ($sd->{prog} eq "gen") {
+			my $cmd = $sd->{src};
+			my $args;
+			if (!defined ($sd->{out} = dr::build::flagsOne($sd->{opts}, "o"))) {
+				die "$vars->{mkname}: source $sd->{src}: requiring option o=\n";
+			}
+			if (defined ($args = dr::build::flagsOne($sd->{opts}, "a"))) {
+				$cmd .= " $args";
+			}
+			$mf->print("$sd->{out}: $sd->{src}\n\t./$cmd\n");
+		}
+		else {
+			die "unknown build-prog $sd->{prog}\n";
+		}
+		$sd->{local} = 1 if (!defined $sd->{local});
+		push(@sources, $sd);
+	}
+
+	# distribute includes
+	{
+		my $dist_inc = "";
+		foreach my $did (values %{$vars->{DIST_INC}->{locations}}) {
+			$mf->print("\$(INCDIR_)$did->{location}:\n\tmkdir -p \$(INCDIR_)$did->{location}\n");
+			my $full_location = "../include/$did->{location}";
+			mkpath($full_location, 0, 0777);
+		}
+
+		foreach my $group (values %{$vars->{DIST_INC}->{groups}}) {
+			my @list = dr::build::findGroups($vars->{SOURCES}->{list}, [$group->{name}]);
+			$mf->print("DIST_INC_$group->{name}: \$(INCDIR_)$group->{location}");
+			my $deps = "";
+			my $perf = "";
+			foreach (@list) {
+				my $fname = $_->{src};
+				if (dr::build::findArray("gh", $_->{groups}) >= 0) {
+					$fname =~ s/\.cxx$/.hxx/; $fname =~ s/.*\///;
+					$fname = "\$(GEN)/$fname";
+				}
+				my $base_src = $fname;
+				$base_src =~ s#.*/##;
+				$deps .= " \$(INCDIR_)$group->{location}/$base_src";
+				$perf .= "\$(INCDIR_)$group->{location}/$base_src: $fname\n\trm -f \$(INCDIR_)$group->{location}/$base_src; ln -sf ../$group->{rev_location}\$(DIRM_)$fname \$(INCDIR_)$group->{location}/$base_src\n";
+			}
+			$mf->printf("%s\n%s\n", $deps, $perf);
+			$dist_inc .= " DIST_INC_$group->{name}";
+		}
+
+		$mf->printf("ldistinc:$dist_inc\n\n");
+		$mf->print(genRecursiveAction("distinc", "ldistinc", $vars)."\n");
+		$targ_init .= " ldistinc";
+	}
+	$mf->print("\$(GEN):\n\tmkdir -p \$(GEN)\n");
+	$mf->print("\$(OBJDIR):\n\tmkdir -p \$(OBJDIR)\n");
+	$targ_init .= " \$(GEN) \$(OBJDIR)";
+	if ($vars->{OUTPUT}) {
+		foreach my $od (@{$vars->{OUTPUT}}) {
+			my $ftarg;
+			next if ($od->{disable});
+			if ($od->{prog} eq "shlib") {
+				my $targ = "\$(SHLIB_PREF)$od->{out}\$(SHLIB_EXT)";
+				$ftarg = "\$(LIBDIR_)$targ";
+				$mf->print("$ftarg:");
+				foreach (@{$od->{in_source}}) {
+					next unless (defined $_->{ocmd});
+					next unless ($_->{local});
+					$mf->print(" $_->{out}");
+				}
+				$mf->print("\n\tcd \$(TOPDIR) && \$(LDXX_SO) -o lib/$targ -Llib");
+				foreach (@{$od->{in_source}}) {
+					next unless (defined $_->{ocmd});
+					my $prefix = $_->{local}?"\$(DIRM_)":"";
+					$mf->print(" $prefix$_->{ocmd}");
+				}
+				$mf->print(dr::build::expandList("\$(FLAGS_", ")", $od->{flags}, "shlib")."\n");
+			}
+			elsif ($od->{prog} eq "exec") {
+				my $targ = "$od->{out}";
+				$ftarg = $targ;
+				$mf->print("$targ:");
+				foreach (@{$od->{in_source}}) {
+					next unless (defined $_->{ocmd});
+					next unless ($_->{local});
+					$mf->print(" $_->{out}");
+				}
+				$mf->print("\n\t\$(LDXX_EXEC) -o \$\@");
+				$mf->print(" -Wl,-rpath,\$(LIBDIR) -L\$(LIBDIR)");
+				foreach (@{$od->{in_source}}) {
+					next unless (defined $_->{ocmd});
+					$mf->print(" $_->{ocmd}");
+				}
+				$mf->print(dr::build::expandList("\$(FLAGS_", ")", $od->{flags}, "exec")."\n");
+			}
+			elsif ($od->{prog} eq "script") {
+				my $targ = $od->{out};
+				$ftarg = "\$(BINDIR_)$targ";
+				$mf->print("$ftarg:$targ_init");
+				foreach (@{$od->{in_source}}) {
+					next if ($_->{disable});
+					$mf->print(" $_->{src}");
+				}
+				$mf->print("\n");
+				foreach (@{$od->{in_source}}) {
+					next if ($_->{disable});
+					$mf->print("\trm -f $ftarg; ln -s ../\$(DIRM_)$_->{src} $ftarg\n");
+				}
+			}
+			else {
+				die "unknown build-prog $od->{prog}\n";
+			}
+			$targ_local .= " $ftarg";
+		}
+	}
+
+	# generating tests
+	{
+		$mf->print(genRecursiveAction("test", "ltest", $vars)."\n");
+		$mf->print("ltest:\n");
+		foreach my $td (@{$vars->{TEST}}) {
+			next if ($td->{disable});
+			if (dr::build::findArray("failtest", $td->{roles}) >= 0) {
+				$mf->print("\t! ./$td->{out}\n");
+			}
+			elsif (dr::build::findArray("bench", $td->{roles}) >= 0) {
+				# none
+			}
+			else {
+				$mf->print("\t./$td->{out}\n");
+			}
+		}
+		$mf->print("\n");
+	}
+
+	# generating slist
+	{
+		$mf->print(genRecursiveAction("slist", "lslist", $vars)."\n");
+		$mf->print("lslist:\n");
+		foreach (dr::build::findGroups($vars->{SOURCES}->{list}, [ "t" ])) {
+			$mf->print("\techo \$(DIRS_)$_->{src}\n");
+		}
+		$mf->print("\n");
+	}
+
+	# generating outclean
+	{
+		my @l;
+		@l = ();
+		$mf->print(genRecursiveAction("outclean", "loutclean", $vars)."\n");
+		$mf->print("loutclean:\n");
+		foreach (@{$vars->{OUTPUT}}) {
+			push(@l, $_->{out}) if (defined $_->{out} && dr::build::findArray("C", $_->{groups}) < 0 && !defined $_->{extern});
+		}
+		$mf->print("\trm -f ".join(" ", @l)."\n") if ($#l >= 0);
+		$mf->print("\n");
+		@l = ();
+		$mf->print(genRecursiveAction("clean", "lclean", $vars)."\n");
+		$mf->print("lclean: loutclean limmclean\n");
+		$mf->print("limmclean:\n");
+		foreach (@{$vars->{SOURCES}->{list}}) {
+			push(@l, $_->{out}, "$_->{out}.dep") if (defined $_->{out} && dr::build::findArray("C", $_->{groups}) < 0 && !defined $_->{extern} && $_->{local});
+		}
+		$mf->print("\trm -f ".join(" ", @l)."\n") if ($#l >= 0);
+		$mf->print("\n");
+		$mf->print(genRecursiveAction("wclean", "lwclean", $vars)."\n");
+		$mf->print("lwclean: lclean\n\trm -rf \$(BUILD)\n");
+		$mf->print("\n");
+	}
+
+	if (defined (my $postsubs = $vars->{POSTSUBS})) {
+		foreach (@$postsubs) {
+			$mf->printf("sub_%s: targ_local %s\n\t\$(MAKE) -C %s\n\n", $_->{name}, join(" ", map({ "sub_$_" } @{$_->{deps}})), $_->{name});
+			$targ_post .= " sub_$_->{name}";
+		}
+		$mf->print("\n");
+	}
+
+	if (0) {
+		$mf->print(genRecursiveAction("depends", "ldepends", $vars)."\n");
+		$mf->print("ldepends: ldistinc\n\techo >.depends\n");
+		foreach my $d (values %depends) {
+			$mf->print("\t$d->{cmd}");
+			foreach (@{$d->{files}}) {
+				$mf->print(" $_->{src}");
+			}
+			if ($d->{odir}) {
+				$mf->print(" | sed 's,^\\([^ ]*\\)\\.\\([^ :]*\\): ,\$\$(OBJDIR)/\\1\\.\\2 \$\$(OBJDIR)/\\1\\.s: ,'");
+			}
+			$mf->print(" >>.depends\n");
+		}
+		$mf->print("\n.depends:\n\ttouch .depends\n\t[ -n \"\$\$DR_NODEP\" ] || \$(MAKE) ldepends\ninclude .depends\n\n");
+	}
+	else {
+		$mf->print("\$(OBJDIR)/all_deps.mi:\n\tmkdir -p \$(GEN)\n\tmkdir -p \$(OBJDIR)\n\ttouch \$(OBJDIR)/dummy.dep\n\techo \"include \$(OBJDIR)/*.dep\" > \$@\n");
+		$mf->print("include \$(OBJDIR)/all_deps.mi\n\n");
+	}
+	$mf->print("targ_pre:$targ_pre\n");
+	$mf->print("targ_init:$targ_init\n");
+	$mf->print("targ_local:$targ_local\n");
+	$mf->print("targ_post:$targ_post\n");
+	$mf->print("targ_all: targ_pre targ_init targ_local targ_post\n\n");
+	$mf->close();
+}
+
+
+package dr::build::out::Symbian;
+
+use strict;
+use warnings;
+
+use Data::Dumper;
+use File::Path;
+
+use base "dr::build::out::Generator";
+
+
+sub genRecursiveAction($$@) # recursive-action pre-list this-action post-list
+{
+	my $ract	= shift;
+	my $action	= shift;
+	my $vars	= shift;
+
+	my $pre		= $vars->{PRESUBS};
+	my $post	= $vars->{POSTSUBS};
+	my $o;
+
+	$o = "$ract:\n";
+	if (defined ($pre)) {
+		foreach (@$pre) {
+			$o .= "\t\$(MAKE) -C $_->{name} $ract\n";
+		}
+	}
+	$o .= "\t\$(MAKE) $action\n";
+	if (defined ($post)) {
+		foreach (@$post) {
+			$o .= "\t\$(MAKE) -C $_->{name} $ract\n";
+		}
+	}
+	return $o;
+}
+
+sub createOutput
+{
+	my $this	= shift;
+	my $dir		= shift;
+	my $vars	= shift;
+
+	my $config	= $this->{config};
+
+	my $build_env	= "GCCE";
+
+	my $targlist	= "";
+	my $abld_used	= 0;
+
+	my $rdir;
+	($rdir = "$dir/..") =~ s#/[^/]+#/..#g;
+	my $mdir;
+	($mdir = $dir) =~ s#/[^/]+#/..#g; $mdir =~ s#\\#\\#g;
+
+	my $dir_bs = $dir; $dir_bs =~ s#/#\\#g;
+	my $rdir_bs = $rdir; $rdir_bs =~ s#/#\\#g;
+	my $mdir_bs = $mdir; $mdir_bs =~ s#/#\\#g;
+
+	my $bf = FileHandle->new("$dir/bld.inf", ">") or die "failed to open $dir/bld.inf"; binmode($bf);
+	my $mf = FileHandle->new("$dir/Makefile", ">") or die "failed to open $dir/Makefile"; binmode($mf);
+
+	$mf->printf("NOTHING=\n");
+	$mf->printf("DIRS=%s\n", ($dir =~ m,^(\./)?(.*)$,)[1]);
+	$mf->printf("DIRS_=%s\n", ("$dir/" =~ m,^(\./)?(.*)$,)[1]);
+	$mf->printf("DIRS_R=%s\n", ("$dir/" =~ m,^(\./)?(.+)$,)[1]);
+	$mf->printf("DIRM=src\\\$(DIRS)\n");
+	$mf->printf("DIRM_=src\\\$(DIRS_)\n");
+	$mf->printf("DIRM_R=src\\\$(DIRS_)\n");
+	$mf->printf("TOPDIR=%s\n", ("$mdir_bs\\.." =~ m,^(\.\\)?(.*)$,)[1]);
+	$mf->printf("TOPDIR_=%s\n", ("$mdir_bs\\..\\\$(NOTHING)" =~ m,^(\.\\)?(.*)$,)[1]);
+	$mf->printf("TOPDIR_R=%s\n", ("$mdir_bs\\..\\\$(NOTHING)" =~ m,^(\.\\)?(.+)$,)[1]);
+	$mf->printf("SRCDIR=%s\n", ("$mdir_bs" =~ m,^(\.\\)?(.*)$,)[1]);
+	$mf->printf("SRCDIR_=%s\n", ("$mdir_bs\\\$(NOTHING)" =~ m,^(\.\\)?(.*)$,)[1]);
+	$mf->printf("SRCDIR_R=%s\n", ("$mdir_bs\\\$(NOTHING)" =~ m,^(\.\\)?(.+)$,)[1]);
+	$mf->printf("ETCDIR=\$(TOPDIR_)etc\n");
+	$mf->printf("ETCDIR_=\$(ETCDIR)\\\$(NOTHING)\n");
+	$mf->printf("BINDIR=\$(TOPDIR_)bin\n");
+	$mf->printf("BINDIR_=\$(TOPDIR_)bin\\\$(NOTHING)\n");
+	$mf->printf("LIBDIR=\$(TOPDIR_)lib\n");
+	$mf->printf("LIBDIR_=\$(TOPDIR_)lib\\\$(NOTHING)\n");
+	$mf->printf("INCDIR=\$(TOPDIR_)include\n");
+	$mf->printf("INCDIR_=\$(TOPDIR_)include\\\$(NOTHING)\n");
+	$mf->print("\n");
+
+	$mf->print(<<EOT);
+all: targlist
+
+default: targlist
+
+gmake:
+	perl -S dr_genmake $config->{fnames} \$(DIRS)
+	
+EOT
+
+	$bf->print(<<EOT);
+PRJ_PLATFORMS
+$build_env
+
+PRJ_MMPFILES
+EOT
+
+	# tags generating
+	{
+		$mf->print("ldeltags:\n\trm -f tags\ntags: ldeltags\n\trun_p gen_tags .\n");
+		$mf->print(genRecursiveAction("deltags", "ldeltags", $vars)."\n");
+	}
+
+	if (defined (my $presubs = $vars->{PRESUBS})) {
+		foreach (@$presubs) {
+			$mf->print("sub_$_->{name}:\n\t\$(MAKE) -C $_->{name}\n\n");
+			$targlist .= " sub_$_->{name}";
+		}
+		$mf->print("\n");
+	}
+
+	# distribute includes
+	{
+		my $dist_inc = "";
+		foreach my $location (keys %{$vars->{DIST_INC}->{locations}}) {
+			my $shell_loc = $location; $shell_loc =~ s#/#\\#g;
+			$mf->print("\$(INCDIR_)$location:\n\tmkdir \$(INCDIR_)$shell_loc\n");
+		}
+
+		foreach my $group (values %{$vars->{DIST_INC}->{groups}}) {
+			my @list = dr::build::findGroups($vars->{SOURCES}->{list}, [$group->{name}]);
+			$mf->print("DIST_INC_$group->{name}:");
+			foreach (@list) {
+				my $base_src = $_->{src};
+				$base_src =~ s#.*/##;
+				$mf->print(" \$(INCDIR_)$group->{location}/$base_src");
+			}
+			$mf->print("\n");
+			foreach (@list) {
+				my $base_src = $_->{src};
+				$base_src =~ s#.*/##;
+				my $src_file = "$_->{src}"; $src_file =~ s#/#\\#g;
+				my $dst_dir = "$group->{location}/"; $dst_dir =~ s#/#\\#g;
+				$mf->print("\$(INCDIR_)$group->{location}/$base_src: $_->{src} $_->{location}\n\tcopy $src_file \$(INCDIR_)$dst_dir$base_src\n");
+			}
+			$mf->print("\n");
+			$dist_inc .= " DIST_INC_$group->{name}";
+		}
+
+		$mf->printf("ldistinc:$dist_inc\n\n");
+		$mf->print(genRecursiveAction("distinc", "ldistinc", $vars)."\n");
+		$targlist .= " ldistinc";
+	}
+
+	foreach my $od (@{dr::build::defaultVal($vars->{OUTPUT}, [])}) {
+		my $config_type;
+		my $config_defs;
+		my $config_id;
+		my $out_suffix;
+		my $defines_str = join("", map({ "-D$_=$config->{define}->{$_} " } keys %{$config->{define}}));
+		$defines_str .= "-DCOMPILING_$od->{out}=1";
+
+		my $pf = FileHandle->new("$dir/$od->{out}.mmp", ">")
+			or die "failed to open $dir/$od->{out}.mmp: $!\n";
+
+		foreach my $md (@{$od->{in_meta}}) {
+			#die "too definition of vsid for project $od->{out}" if (defined $vsid);
+			#$vsid = $md->{meta};
+		}
+
+		if ($od->{prog} eq "exec") {
+			$config_id = "0x1000007a";
+			$config_type = "exe";
+			$out_suffix = ".exe";
+		}
+		elsif ($od->{prog} eq "shlib") {
+			$config_id = "0x1000008d";
+			$config_type = "dll";
+			$out_suffix = ".dll";
+		}
+		elsif ($od->{prog} eq "script") {
+			$config_id = 0;
+			$config_type = "-";
+			$config_defs = "";
+			$out_suffix = "";
+			next;
+		}
+		else {
+			die "unknown output type $od->{prog} for $od->{out}";
+		}
+
+		my $input_libs = "";
+
+		foreach my $sd (@{$od->{in_source}}) {
+			next unless ($sd->{prog} eq "lshlib");
+			$input_libs .= " $sd->{src}.lib";
+		}
+
+		$bf->print(<<EOT);
+$od->{out}
+EOT
+
+		$pf->print(<<EOT);
+TARGET		$od->{out}$out_suffix
+TARGETTYPE	$config_type
+
+UID		$config_id
+
+CAPABILITY	ReadUserData
+
+OPTION $build_env	$defines_str -x c++ -include c:\$(EPOCROOT)\\epoc32\\include\\gcce\\gcce.h -Wa,-march=armv6
+
+SYSTEMINCLUDE	\\epoc32\\include
+SYSTEMINCLUDE	\\epoc32\\include\\libc
+SYSTEMINCLUDE	$rdir\\include
+SYSTEMINCLUDE	$rdir\\include\\arch-arm
+SYSTEMINCLUDE	$rdir\\include\\os-symbian
+
+LIBRARY		euser.lib estlib.lib $input_libs
+EOT
+		# source files
+		foreach my $sd (@{$od->{in_source}}) {
+			next unless ($sd->{prog} eq "cxx");
+			my $fn = $sd->{src};
+			$pf->printf("SOURCE\t\t%s\n", $fn);
+		}
+		$abld_used++;
+	}
+
+	# generating slist
+	{
+		$mf->print(genRecursiveAction("slist", "lslist", $vars)."\n");
+		$mf->print("lslist:\n");
+		foreach (dr::build::findGroups($vars->{SOURCES}->{list}, [ "t" ])) {
+			$mf->print("\techo \$(DIRS_)$_->{src}\n");
+		}
+		$mf->print("\n");
+	}
+
+	if ($abld_used) {
+		$mf->print(<<EOT);
+abld.bat: bld.inf
+	bldmake bldfiles
+
+build_symb: abld.bat
+	abld build $build_env UREL
+EOT
+		$targlist .= " build_symb";
+	}
+
+	if (defined (my $postsubs = $vars->{POSTSUBS})) {
+		foreach (@$postsubs) {
+			$mf->print("sub_$_->{name}:\n\t\$(MAKE) -C $_->{name}\n\n");
+			$targlist .= " sub_$_->{name}";
+		}
+		$mf->print("\n");
+	}
+
+	$mf->print("targlist:$targlist\n");
+	$mf->close()
+		or die "failed to write Makefile";
+}
+
+
+package dr::build::out::VisStudGenerator;
+
+use strict;
+use warnings;
+
+use Data::Dumper;
+use File::Path;
+
+use base "dr::build::out::Generator";
+
+our %ADD_TOOLS = (
+	manifest	=> "<Tool\n\tName=\"VCManifestTool\"\n/>",
+	fxcop		=> "<Tool\n\tName=\"VCFxCopTool\"\n/>",
+	appverifier	=> "<Tool\n\tName=\"VCAppVerifierTool\"\n/>",
+	webdeployment	=> "<Tool\n\tName=\"VCWebDeploymentTool\"\n/>",
+	codesign	=> "<Tool\n\tName=\"VCCodeSignTool\"\n/>",
+	deployment	=> "<DeploymentTool\n\tForceDirty=\"-1\"\n\tRemoteDirectory=\"\"\n\tRegisterOutput=\"0\"\n\tAdditionalFiles=\"\"\n/>",
+	debugger	=> "<DebuggerTool\n/>",
+);
+
+our %DEBUG_TYPES = (
+	Debug		=> {
+		name		=> "Debug",
+		optimization	=> 0,
+		rtlib		=> 2, # 3
+		debuginfo	=> 4,
+	},
+	Release		=> {
+		name		=> "Release",
+		optimization	=> 2,
+		rtlib		=> 2,
+		debuginfo	=> 3,
+	},
+);
+
+sub createOutput
+{
+	my $this	= shift;
+	my $dir		= shift;
+	my $vars	= shift;
+
+	my $config	= $this->{config};
+
+	my $rdir;
+	($rdir = "$dir/..") =~ s#/[^/]+#/..#g;
+
+	foreach my $od (@{dr::build::defaultVal($vars->{OUTPUT}, [])}) {
+		my $vsid;
+		my $config_type;
+		my $config_defs;
+		my $out_suffix;
+		my $out_dir;
+		my $defines_str = join("", map({ ";$_=$config->{define}->{$_}" } keys %{$config->{define}}));
+		$defines_str .= ";COMPILING_$od->{out}=1";
+
+		my $platform_def;
+
+		die "variable platform does not exist" unless (defined $config->{var}->{platform});
+
+		if ($config->{var}->{platform} eq "wm5-arm") {
+			$platform_def = {
+				arch_name	=> "arm",
+				platform	=> "Windows Mobile 5.0 Smartphone SDK (ARMV4I)",
+				defs		=> "\$(PLATFORMDEFINES);\$(ARCHFAM);\$(_ARCHFAM_);_WIN32_WCE=\$(CEVER);UNDER_CE;\$(PLATFORMDEFINES);WINCE;",
+				res_culture	=> 1033,
+				link_options	=> "/subsystem:windowsce,5.01",
+				add_tool	=> [ "codesign", "deployment", "debugger" ],
+			};
+		}
+		elsif ($config->{var}->{platform} eq "w32-x86") {
+			$platform_def = {
+				arch_name	=> "x86",
+				platform	=> "Win32",
+				defs		=> "WIN32;_CONSOLE;_CRT_SECURE_NO_DEPRECATE",
+				res_culture	=> "",
+				link_options	=> "",
+				add_tool	=> [ "manifest", "fxcop", "appverifier", "webdeployment" ],
+			};
+		}
+		else {
+			die "unknown platform specified: $config->{var}->{platform}";
+		}
+
+		my $pf = FileHandle->new("$dir/$od->{out}.vcproj", ">")
+			or die "failed to open $dir/$od->{out}.vcproj: $!\n";
+
+		foreach my $md (@{$od->{in_meta}}) {
+			next unless ($md->{prog} eq "vsid");
+			die "too definition of vsid for project $od->{out}" if (defined $vsid);
+			$vsid = $md->{meta};
+		}
+
+		if ($od->{prog} eq "exec") {
+			$config_type = "1";
+			$config_defs = "";
+			$out_suffix = ".exe";
+			$out_dir = "";
+		}
+		elsif ($od->{prog} eq "shlib") {
+			$config_type = "2";
+			$config_defs = ";_USRDLL";
+			$out_suffix = ".dll";
+			$out_dir = "$rdir/lib/";
+		}
+		elsif ($od->{prog} eq "script") {
+			$config_type = "-";
+			$config_defs = "";
+			$out_suffix = "";
+			$out_dir = "";
+		}
+		else {
+			die "unknown output type $od->{prog} for $od->{out}";
+		}
+
+		die "project id (vsid:) not specified for $od->{out}" unless (defined $vsid);
+
+		$pf->print(<<EOT);
+<?xml version="1.0" encoding="utf-8"?>
+<VisualStudioProject
+	ProjectType="Visual C++"
+	Version="8.00"
+	Name="$od->{out}"
+	ProjectGUID="$vsid"
+	RootNamespace="$od->{out}"
+	Keyword="Win32Proj"
+	>
+EOT
+		$pf->print("\t<Platforms>\n");
+		foreach my $vc_platf ($platform_def->{platform}) {
+			$pf->printf("\t\t<Platform\n\t\t\tName=\"%s\"\n\t\t/>\n", $vc_platf);
+		}
+		$pf->print("\t</Platforms>\n");
+
+		$pf->print("\t<ToolFiles>\n\t</ToolFiles>\n");
+
+		$pf->print("\t<Configurations>\n");
+
+		my $input_libs = "";
+
+		foreach my $sd (@{$od->{in_source}}) {
+			next unless ($sd->{prog} eq "lshlib");
+			$input_libs .= " $sd->{src}.lib";
+		}
+
+		foreach my $dbg_type ("Debug", "Release") {
+			my $dbg_def = $DEBUG_TYPES{$dbg_type};
+			foreach my $vc_platf ($platform_def->{platform}) {
+				$pf->printf("\t\t<Configuration\n".
+					"\t\t\tName=\"%s|%s\"\n".
+					"\t\t\tOutputDirectory=\"\$(PlatformName)\\\$(ConfigurationName)\"\n".
+					"\t\t\tIntermediateDirectory=\"\$(PlatformName)\\\$(ConfigurationName)\"\n".
+					"\t\t\tConfigurationType=\"%d\"\n".
+					"\t\t\tCharacterSet=\"1\"\n".
+					"\t\t\t>\n",
+					$dbg_type, $vc_platf, $config_type);
+				$pf->print(<<EOT);
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				ExecutionBucket="7"
+				Optimization="$dbg_def->{optimization}"
+				AdditionalIncludeDirectories="$rdir/include;$rdir/include/arch-$platform_def->{arch_name};$rdir/include/os-wnt"
+				PreprocessorDefinitions="_DEBUG;$platform_def->{defs};DEBUG;_WINDOWS$config_defs;_UNICODE;UNICODE$defines_str"
+				RuntimeLibrary="0"
+				UsePrecompiledHeader="0"
+				WarningLevel="3"
+				Detect64BitPortabilityProblems="false"
+				DebugInformationFormat="3"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="_DEBUG;$platform_def->{defs};\$(PLATFORMDEFINES)"
+				Culture="$platform_def->{res_culture}"
+				AdditionalIncludeDirectories="\$(IntDir)"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalOptions=" $platform_def->{link_options}"
+				AdditionalDependencies="$input_libs"
+				OutputFile="$out_dir$od->{out}$out_suffix"
+				LinkIncremental="2"
+				AdditionalLibraryDirectories="$rdir/lib"
+				DelayLoadDLLs="\$(NOINHERIT)"
+				GenerateDebugInformation="true"
+				ProgramDatabaseFile="\$(OutDir)/$od->{out}.pdb"
+				SubSystem="0"
+				ImportLibrary="$rdir/lib/$od->{out}.lib"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+			<DebugSettings
+				Environment="PATH=\$(TargetPath)/$rdir/lib" />
+EOT
+				foreach my $add_tool (@{$platform_def->{add_tool}}) {
+					my $def = $ADD_TOOLS{$add_tool};
+					$def =~ s/^/\t\t\t/gm;
+					$pf->print("$def\n");
+				}
+				$pf->print("\t\t</Configuration>\n");
+			}
+		}
+		$pf->print("\t</Configurations>\n");
+
+		$pf->print("\t<References>\n\t</References>\n");
+
+		$pf->print("\t<Files>\n");
+
+		# source files
+		$pf->print("\t\t<Filter Name=\"Source Files\" Filter=\"cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx\">\n");
+		foreach my $sd (@{$od->{in_source}}) {
+			next unless ($sd->{prog} eq "cxx");
+			my $fn = $sd->{src};
+			$fn =~ s#/#\\#g;
+			$pf->printf("\t\t\t<File RelativePath=\"%s\">\n\t\t\t</File>\n", $fn);
+		}
+		$pf->print("\t\t</Filter>\n");
+
+		# header files
+		$pf->print("\t\t<Filter Name=\"Header Files\" Filter=\"h;hpp;hxx;hm;inl;inc;xsd\">\n");
+		foreach my $location (keys %{$vars->{DIST_INC}->{locations}}) {
+			my $full_location = "../include/$location";
+			mkpath($full_location, 0, 0777);
+		}
+		foreach my $group (values %{$vars->{DIST_INC}->{groups}}) {
+			my $location = "$rdir/include/$group->{location}";
+			$location =~ s#/#\\#g;
+			my @list = dr::build::findGroups($vars->{SOURCES}->{list}, [$group->{name}]);
+			foreach (@list) {
+				my $base_src = $_->{src};
+				$base_src =~ s#.*/##;
+				$pf->printf("\t\t\t<File RelativePath=\"%s\">\n", $_->{src});
+				foreach my $dbg_type ("Debug", "Release") {
+					foreach my $vc_platf ($platform_def->{platform}) {
+						$pf->printf("\t\t\t\t<FileConfiguration Name=\"%s|%s\">\n".
+							"\t\t\t\t\t<Tool Name=\"VCCustomBuildTool\" CommandLine=\"copy \$(InputPath) %s\\\$(InputFileName)\" Outputs=\"%s\\\$(InputFileName)\" />\n".
+							"\t\t\t\t</FileConfiguration>\n",
+							$dbg_type, $vc_platf,
+							$location, $location);
+					}
+				}
+				$pf->print("\t\t\t</File>\n");
+			}
+		}
+		$pf->print("\t\t</Filter>\n");
+		$pf->print("\t</Files>\n");
+		$pf->print(<<EOT);
+</VisualStudioProject>
+EOT
+	}
+}
+
+
+package dr::build;
+
+use strict;
+use warnings;
+
+use Data::Dumper;
+
+sub new
+{
+	my $class	= shift; $class = ref($class) if ref($class);
+	my $config	= shift;
+	my $generator	= shift;
+
+	my $this = bless {
+		config		=> $config,
+		generator	=> $generator,
+	}, $class;
+
+	$this->{dist_full} = FileHandle->new("dist_full.list", ">")
+		or die "failed to open dist_full.list: $!";
+
+	return $this;
+}
+
+sub parseSubLine
+{
+	my $this	= shift;
+	my $line	= shift;
+
+	my $def = {};
+
+	if ($line =~ m/^(\w+):\s*(.*?)\s*$/) {
+		$def->{name} = $1;
+		$def->{deps} = [ split(/\s+/, $2) ];
+	}
+	elsif ($line =~ m/^(\w+)$/) {
+		$def->{name} = $line;
+		$def->{deps} = [];
+	}
+	else {
+		die "failed to parse sub definition: $line";
+	}
+
+	return $def;
+}
+
+sub generateDir
+{
+	my $this	= shift;
+	my $dir		= shift;
+	my $level	= shift;
+
+	my $config	= $this->{config};
+	my $generator	= $this->{generator};
+
+	my $dir_	= "$dir/"; $dir_ =~ s#^\./##g;
+	my $mkname	= "$dir/mklist";
+	my $m;
+	my @sources	= ();
+	my @metas	= ();
+
+	my %vars;
+
+	STDERR->print("processing directory $dir ($dir_)\n");
+
+	eval { $m = getMkList($dir, "$mkname") }
+		or die "$mkname: failed to parse mklist:\n$@\n";
+
+	$vars{level} = $level;
+	$vars{genmake} = "dr_genmake"; #($config->{genmake} =~ m,^/,) ? $config->{genmake} : (("../" x $level) . $config->{genmake});
+
+	if (defined (my $s = $m->{NEED})) {
+		$vars{NEED} = $s;
+	}
+	if (defined (my $s = $m->{DEPS})) {
+		$vars{DEPS} = $s;
+	}
+
+	if (defined (my $s = $m->{PRESUBS})) {
+		$vars{PRESUBS} = [];
+		foreach my $sub_line (@$s) {
+			my $sub_def = $this->parseSubLine($sub_line);
+			$this->generateDir("$dir/$sub_def->{name}", $level+1);
+			push(@{$vars{PRESUBS}}, $sub_def);
+		}
+	}
+	else {
+		$vars{PRESUBS} = [];
+	}
+
+	if (defined (my $s = $m->{POSTSUBS})) {
+		$vars{POSTSUBS} = [];
+		foreach my $sub_line (@$s) {
+			my $sub_def = $this->parseSubLine($sub_line);
+			push(@{$vars{POSTSUBS}}, $sub_def);
+		}
+	}
+	else {
+		$vars{POSTSUBS} = [];
+	}
+
+	if (defined (my $s = $m->{FLAGS})) {
+		$vars{FLAGS} = {};
+		foreach (@$s) {
+			if (m/^(\w+)=(.*)$/) {
+				$vars{FLAGS}->{$1} = $2;
+			}
+			else {
+				die "$mkname: invalid flags format ($_)\n";
+			}
+		}
+	}
+	else {
+		$vars{FLAGS} = {};
+	}
+
+	if (defined (my $ms = $m->{META})) {
+		my %by_prog;
+		foreach (@$ms) {
+			if (m,^(\w*):([^:]*):(.*)$,) {
+				my $md = {};
+
+				$md->{prog} = $1;
+				$md->{meta} = $2;
+				$md->{opts} = parseOpts($3);
+				$md->{groups} = [ "_" ] if (!defined ($md->{groups} = flagsArray($md->{opts}, "g")));
+				$md->{configs} = [ "_" ] if (!defined ($md->{configs} = flagsArray($md->{opts}, "C")));
+
+				my $err = 0;
+				my $conf;
+
+				if ($md->{prog} eq "") {
+					die "meta id cannot be empty ($_)";
+				}
+
+				$by_prog{$md->{prog}} = [] unless ($by_prog{$md->{prog}});
+				push(@{$by_prog{$md->{prog}}}, $md);
+
+				$md->{disable} = !dr::build::checkConfig($config, $md->{configs});
+
+				push(@metas, $md);
+			}
+			else {
+				die "invalid source format ($_)";
+			}
+		}
+		$vars{META} = {
+			list		=> \@metas,
+			by_prog		=> \%by_prog,
+		};
+	}
+	else {
+		$vars{META} = {
+			list		=> [],
+			by_prog		=> {},
+		};
+	}
+
+	if (defined (my $s = $m->{SOURCES})) {
+		my %by_prog;
+		foreach (@$s) {
+			if (m,^(\w*):([^:]*/)?([^:/]*?)(\.(\w+))?:(.*)$,) {
+				my $sd = {};
+
+				$sd->{prog} = $1;
+				$sd->{pref} = $3;
+				$sd->{suff} = $5;
+				$sd->{fpref} = defaultEmpty($2).$3;
+				$sd->{src} = $sd->{fpref}.defaultEmpty($4);
+				$sd->{opts} = parseOpts($6);
+				$sd->{groups} = [ "_" ] if (!defined ($sd->{groups} = flagsArray($sd->{opts}, "g")));
+				$sd->{configs} = [ "_" ] if (!defined ($sd->{configs} = flagsArray($sd->{opts}, "C")));
+				$sd->{local} = flagsOne($sd->{opts}, "local");
+				$sd->{prio} = flagsOne($sd->{opts}, "prio");
+				$sd->{flags} = flagsArray($sd->{opts}, "f");
+				$sd->{dep} = flagsArray($sd->{opts}, "dep");
+				($sd->{base_src} = $sd->{src}) =~ s#.*/##;
+
+				my $err = 0;
+				my $conf;
+
+				if ($sd->{prog} eq "") {
+					$sd->{prog} = $sd->{suff};
+					$sd->{prog} = "no" if ($sd->{prog} eq "h" || $sd->{prog} eq "hxx");
+				}
+
+				$by_prog{$sd->{prog}} = [] unless ($by_prog{$sd->{prog}});
+				push(@{$by_prog{$sd->{prog}}}, $sd);
+
+				$sd->{disable} = !dr::build::checkConfig($config, $sd->{configs});
+
+				push(@sources, $sd);
+			}
+			else {
+				die "invalid source format ($_)";
+			}
+		}
+		$vars{SOURCES} = {
+			list		=> \@sources,
+			by_prog		=> \%by_prog,
+		};
+	}
+	else {
+		$vars{SOURCES} = {
+			list		=> [],
+			by_prog		=> {},
+		};
+	}
+
+	if (defined (my $s = $m->{DIST_INC})) {
+		my %by_loc;
+		my %locations;
+		my %groups;
+		$vars{DIST_INC} = {
+			locations	=> \%locations,
+			groups		=> \%groups,
+		};
+		foreach my $di (@$s) {
+			if ($di =~ m/^(\w+):([^:]+)$/) {
+				my $group = $1;
+				my $target_loc = $2;
+				my $rev_location = $2;
+				$rev_location =~ s#^/*##; $rev_location =~ s#/*$#/#; $rev_location =~ s#[^/]+#..#g;
+
+				my $gd = {
+					name		=> $group,
+					location	=> $target_loc,
+					rev_location	=> $rev_location,
+				};
+
+				$groups{$group} = $gd;
+
+				next if ($locations{$target_loc});
+				$locations{$target_loc} = $gd;
+				foreach my $sd (dr::build::findGroups($vars{SOURCES}->{list}, [ $group ])) {
+					$this->{dist_full}->print("$target_loc/$sd->{base_src}: $dir_$sd->{src}\n");
+				}
+			}
+			else {
+				die "$di: invalid DIST_INC format\n";
+			}
+		}
+	}
+	else {
+		$vars{DIST_INC} = {
+			locations	=> {},
+			groups		=> {},
+		};
+	}
+
+	if (defined (my $s = $m->{OUTPUT})) {
+		my @outputs;
+		foreach my $output_text (@$s) {
+			my $targ;
+			my $ftarg;
+			$output_text =~ m/^(\w+):([^:]*):([^:]*)$/ or die "invalid output format: $output_text\n";
+			my $od = {};
+			my $prog = $1;
+			my $out = $2;
+			my $opt = parseOpts($3);
+			my $sgrp;
+			my $flags;
+			my $err = 0;
+			$od->{prog} = $prog;
+			$od->{groups} = [ "_" ] if (!defined ($od->{groups} = flagsArray($opt, "g")));
+			$od->{configs} = [ "_" ] if (!defined ($od->{configs} = flagsArray($opt, "C")));
+			$sgrp = [ "_" ] if (!defined ($sgrp = flagsArray($opt, "s")));
+			$od->{flags} = flagsArray($opt, "f");
+			$od->{roles} = [ "_" ] if (!defined ($od->{roles} = flagsArray($opt, "r")));
+			$od->{in_source} = [ grep({ !$_->{disable} } findGroups(\@sources, $sgrp)) ] ;
+			$od->{in_meta} = [ grep({ !$_->{disable} } findGroups(\@metas, $sgrp)) ];
+			$od->{out} = $out;
+			if ($prog eq "shlib") {
+				$od->{in_source} = $generator->filterSources([ sortSources(@{$od->{in_source}}) ]);
+			}
+			elsif ($prog eq "exec") {
+				$od->{in_source} = $generator->filterSources([ sortSources(@{$od->{in_source}}) ]);
+			}
+			elsif ($prog eq "script") {
+			}
+			else {
+				die "unknown build-prog $prog\n";
+			}
+			foreach (keys %$opt) {
+				STDERR->print("$mkname: output $out: unknown option $_ specified\n");
+				$err++;
+			}
+			$od->{disable} = !dr::build::checkConfig($config, $od->{configs});
+			push(@outputs, $od);
+			die if ($err);
+		}
+		$vars{OUTPUT} = \@outputs;
+	}
+
+	{
+		$vars{TEST} = [ findRoles($vars{OUTPUT}, [ "test" ]) ];
+	}
+
+	if (defined (my $s = $m->{FCHECK})) {
+		foreach my $r (@$s) {
+			#STDERR->print("processing line $r\n");
+			if ($r =~ m,^([^:]+):([^:]*):([^:]*)$,) {
+				my @gl = split(/;/, $1);
+				my @el = split(/;/, $2);
+				my $opt = parseOpts($3);
+				my @fl = ();
+				my $err = 0;
+
+				foreach my $g (@gl) {
+					foreach (glob("$dir/$g")) {
+						push(@fl, substr($_, length($dir)+1)) if (-e $_);
+					}
+				}
+				for (my $i = 0; $i < @fl; $i++) {
+					foreach (@el) {
+						if ($_ eq $fl[$i]) {
+							splice(@fl, $i, 1);
+							$i--;
+							last;
+						}
+					}
+				}
+				if (defined (my $g = flagsArray($opt, "s"))) {
+					my @sl = findGroups(\@sources, $g);
+					FCHECK: foreach my $file (@fl) {
+						my $f = 0;
+						foreach (@sl) {
+							if ($_->{src} eq $file) {
+								$f = 1;
+								next FCHECK;
+							}
+						}
+						if (!$f) {
+							STDERR->print("$mkname: fcheck $r: warning, file $file not found in src-list (groups ".join(",", @$g).")\n");
+						}
+					}
+				}
+
+				foreach (keys %$opt) {
+					STDERR->print("$mkname: fcheck $r: unknown option $_ specified\n");
+					$err++;
+				}
+				die if ($err);
+			}
+			else {
+				STDERR->print("$mkname: fcheck $r: unknown format\n");
+			}
+		}
+	}
+
+	$generator->createOutput($dir, \%vars);
+
+	foreach my $sub_def (@{$vars{POSTSUBS}}) {
+		$this->generateDir("$dir/$sub_def->{name}", $level+1);
+	}
+}
+
+my $sdir;
+my $config;
+if (@ARGV != 2) {
+	die "usage: $0 config directory";
+}
+else {
+	$sdir = $ARGV[1]; $sdir = "./$sdir" if ($sdir !~ m#^\.(|/.*)$#);
+	($_ = $sdir) =~ s#/[^/]+#/..#g;
+	chdir($_);
+	$config = getConfig([ "." ], $ARGV[0]);
+	$config->{config}->{_} = 1;
+	$config->{genmake} = "dr_genmake";
+}
+my $generator = $config->{var}->{generator} || "dr::build::out::MakeGenerator";
+my $processor = dr::build->new($config, $generator->new($config));
+$processor->generateDir($sdir, 0);

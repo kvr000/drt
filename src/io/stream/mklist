@@ -1,0 +1,18 @@
+.cdef SD_STREAM		.
+
+#.def FILE_SUBDIRS	${SD_FILE_except},${SD_FILE_posix},${SD_FILE_unix},${SD_FILE_wnt}
+#.def FILE_ESUBDIRS	{${FILE_SUBDIRS}}
+
+#.include ${FILE_ESUBDIRS}/mklist
+
+SOURCES:
+	no:${SD_STREAM}/mklist:g=t
+	:${SD_STREAM}/StreamBuffer.cxx:g=s,t
+	:${SD_STREAM}/StreamBuffer.hxx:g=di,t
+
+#FCHECK:
+#	${FILE_ESUBDIRS}/*.cxx::s=t
+#	${FILE_ESUBDIRS}/*.cxx::s=s
+#	${FILE_ESUBDIRS}/*.hxx::s=t
+#	${FILE_ESUBDIRS}/mklist::s=t
+

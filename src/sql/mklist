@@ -1,0 +1,44 @@
+.def SD_BASE		base
+.def SD_EXCEPT		except
+.def SD_DATA		data
+.def SD_META		meta
+
+.def SUBDIRS		${SD_BASE},${SD_EXCEPT},${SD_DATA},${SD_META}
+.def ESUBDIRS		{${SUBDIRS}}
+
+.include ${ESUBDIRS}/mklist
+
+
+POSTSUBS:
+	t
+	sql_mysql5
+	sqldump_filt
+
+NEED:
+	cxx
+
+DEPS:
+
+FLAGS:
+	cxx=$(CXXINC) $(SOCXXFLAGS) -DCOMPILING_DR_SQL
+	shlib=$(SOLDXXFLAGS)
+
+OUTPUT:
+	shlib:drsql:f=shlib;s=s
+
+SOURCES:
+	no:mklist:g=t
+	no:Doxyfile:g=t
+	lshlib:dr:g=s
+
+FCHECK:
+	${ESUBDIRS}/*.cxx::s=t
+	${ESUBDIRS}/*.cxx::s=s
+	${ESUBDIRS}/*.hxx::s=t
+	${ESUBDIRS}/*.hxx::s=di,didev
+	${ESUBDIRS}/mklist::s=t
+
+DIST_INC:
+	di:dr/sql
+	didev:dr/sql/dev
+

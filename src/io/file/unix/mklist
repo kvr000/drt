@@ -1,0 +1,9 @@
+.cdef SD_FILE_unix	.
+
+SOURCES:
+	no:${SD_FILE_unix}/mklist:g=t
+	:${SD_FILE_unix}/File_sysiface.os.hxx:g=dios_unix,t
+
+DIST_INC:
+	dios_unix:os-unix/dr/io/os
+

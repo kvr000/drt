@@ -1,0 +1,6 @@
+gps_device: \0 == gps_id
+gps_record: \0 == gps_id
+gps_imei: \0 == gps_id
+gps_trip: \0 == gps_id
+gps_km: \0 == gps_id
+gps_record_backup: \0 == gps_id

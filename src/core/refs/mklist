@@ -1,0 +1,13 @@
+.cdef SD_REFS	.
+
+SOURCES:
+	no:${SD_REFS}/mklist:g=t
+	:${SD_REFS}/Ref.hxx:g=di,t
+	:${SD_REFS}/Ref.cxx:g=s,t
+	:${SD_REFS}/ScalarPtr.hxx:g=di,t
+	:${SD_REFS}/ScalarPtr.cxx:g=s,t
+	:${SD_REFS}/WeakRef.hxx:g=di,t
+	:${SD_REFS}/WeakRef.cxx:g=s,t
+	:${SD_REFS}/GroupRef.hxx:g=di,t
+	:${SD_REFS}/GroupRef.cxx:g=s,t
+

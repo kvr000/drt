@@ -1,0 +1,28 @@
+NEED:
+	cxx
+
+DEPS:
+
+FLAGS:
+	cxx=$(CXXINC) $(EXECXXFLAGS) -I. -I..
+	exec=$(EXELDXXFLAGS)
+
+OUTPUT:
+	exec:tgui:f=exec;s=tgui
+
+SOURCES:
+	:tgui.cxx:f=cxx;g=tgui,t
+	no:mklist:g=t
+	lshlib:dr:g=tgui
+	lshlib:drtestenv:g=tgui
+	lshlib:drgui:g=tgui
+
+META:
+	vsid:{C796AAE4-5D82-4e63-BEE0-7210FD040F43}:g=tgui
+
+DIST_INC:
+
+LOC_INC:
+
+LOC_LIB:
+

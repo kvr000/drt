@@ -1,0 +1,9 @@
+--- Compiling
+
+Run . ./senv.sh in root directory
+
+In case you need to overwrite compiler or any other settings, use directory
+etc/p/, insert appropriate file (named as the file in etc/) and modify the
+settings.
+
+Run make build to build drt

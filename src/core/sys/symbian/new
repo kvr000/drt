@@ -1,0 +1,17 @@
+#ifndef dros__symbian__new__
+# define dros__symbian__new__
+
+#include <e32cmn.h>
+
+
+#define alloca __builtin_alloca
+
+/*
+inline void *			operator new(size_t, void * __p) throw()	{ return __p; }
+inline void *			operator new[](size_t, void * __p) throw()	{ return __p; }
+inline void			operator delete(void *, void *) throw()		{ }
+inline void			operator delete[](void *, void *) throw()	{ }
+*/
+
+
+#endif

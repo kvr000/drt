@@ -1,0 +1,31 @@
+NEED:
+	cxx
+
+DEPS:
+
+FLAGS:
+	cxx=$(CXXINC) -I. $(EXECXXFLAGS)
+	exec=$(EXELDXXFLAGS)
+
+OUTPUT:
+	exec:trylink:f=exec;s=trylink,common,x11;C=!c.no_x11
+	exec:tss:f=exec;s=tss,common;C=!c.no_x11
+
+SOURCES:
+	:trylink.cxx:f=cxx;g=trylink,t
+	:tss.cxx:f=cxx;g=tss,t
+	no:mklist:g=t
+	lshlib:dr:g=common
+	lshlib:drgui:g=common
+	lshlib:drgui_x11:g=x11
+
+META:
+	vsid:{DF356A80-225A-4f9d-AF36-AB4BAAAD1EA7}:g=trylink
+	vsid:{79C0B74D-BE19-437c-805C-21B6F9F7C90A}:g=tss
+
+DIST_INC:
+
+LOC_INC:
+
+LOC_LIB:
+

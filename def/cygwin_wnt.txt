@@ -1,0 +1,17 @@
+config	a.x86
+config	s.wnt
+config	s.cygwin
+config	s.wnt
+config	s.wnt_pc
+config	s.wnt_th
+config	s.wnt_io
+config	c.no_x11
+config	c.no_sqlmysql5
+
+undef	DR_HAS_THREAD_LOCAL
+define	DR_NO_BACKTRACE
+define	DR_HAS_POSIX
+define	DR_RO_VTABLE
+define	DR_OS_WNT
+define	DR_LIBC_CYGWIN
+define	DR_NO_ALIGNED_FUNC

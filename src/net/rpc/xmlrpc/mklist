@@ -1,0 +1,10 @@
+.cdef SD_XMLRPC		.
+
+
+SOURCES:
+	no:${SD_XMLRPC}/mklist:g=t
+	:${SD_XMLRPC}/XmlRpcEncoder.cxx:g=s,t
+	:${SD_XMLRPC}/XmlRpcEncoder.hxx:g=di,t
+	:${SD_XMLRPC}/XmlRpcDecoder.cxx:g=s,t
+	:${SD_XMLRPC}/XmlRpcDecoder.hxx:g=di,t
+

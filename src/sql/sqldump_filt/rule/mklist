@@ -1,0 +1,9 @@
+.cdef SD_RULE		.
+
+SOURCES:
+	no:${SD_RULE}/mklist:g=t
+	no:${SD_RULE}/device.rule:g=t
+
+FCHECK:
+	${SD_RULE}/*.rule::s=t
+

@@ -1,0 +1,65 @@
+.def SD_INIT		init
+.def SD_SYS		sys
+.def SD_IDL		idl
+.def SD_ARCH		arch
+.def SD_ATOMIC		atomic
+.def SD_TYPES		types
+.def SD_THROW		throw
+.def SD_ERROR		error
+.def SD_EXCEPT		except
+.def SD_APP		app
+.def SD_LANGUTIL	langutil
+.def SD_BASE		base
+.def SD_CMODEL		cmodel
+.def SD_EMIT		emit
+.def SD_MEM		mem
+.def SD_MSG		msg
+.def SD_PARSE		parse
+.def SD_REFS		refs
+.def SD_SERIALIZE	serialize
+.def SD_STRUCT		struct
+.def SD_UTIL		util
+.def SD_TEMPLARG	templarg
+.def SD_THREAD		thread
+.def SD_TIME		time
+.def SD_EVAL		eval
+.def SD_META		meta
+
+.def SUBDIRS		${SD_INIT},${SD_SYS},${SD_IDL},${SD_ARCH},${SD_ATOMIC},${SD_TYPES},${SD_APP},${SD_LANGUTIL},${SD_BASE},${SD_CMODEL},${SD_EMIT},${SD_THROW},${SD_ERROR},${SD_EXCEPT},${SD_MSG},${SD_MEM},${SD_REFS},${SD_PARSE},${SD_SERIALIZE},${SD_STRUCT},${SD_UTIL},${SD_TEMPLARG},${SD_TIME},${SD_THREAD},${SD_EVAL},${SD_META}
+.def ESUBDIRS		{${SUBDIRS}}
+
+.include ${ESUBDIRS}/mklist
+
+
+POSTSUBS:
+	testenv
+	t: testenv
+
+NEED:
+	cxx
+	sys
+
+DEPS:
+
+FLAGS:
+	cxx=$(CXXINC) $(SOCXXFLAGS) $(dl_SOCXXFLAGS)
+	shlib=$(SOLDXXFLAGS) $(dl_SOLDXXFLAGS)
+
+OUTPUT:
+	shlib:dr:f=shlib;s=s
+	script:dridl:s=dridl
+
+SOURCES:
+	no:mklist:g=t
+	no:Doxyfile:g=t
+
+FCHECK:
+	${ESUBDIRS}/*.cxx::s=t
+	${ESUBDIRS}/*.cxx::s=s
+	${ESUBDIRS}/*.hxx::s=t
+	${ESUBDIRS}/mklist::s=t
+
+DIST_INC:
+	di:dr
+	didev:dr/dev
+

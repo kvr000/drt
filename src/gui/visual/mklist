@@ -1,0 +1,7 @@
+.cdef SD_VISUAL	.
+
+SOURCES:
+	no:${SD_VISUAL}/mklist:g=t
+	:${SD_VISUAL}/Visual.hxx:g=di,t
+	:${SD_VISUAL}/Visual.cxx:g=s,t
+

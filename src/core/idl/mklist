@@ -1,0 +1,6 @@
+.cdef SD_IDL	.
+
+SOURCES:
+	no:${SD_IDL}/mklist:g=t
+	no:${SD_IDL}/dridl:g=dridl,t
+

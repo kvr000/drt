@@ -1,0 +1,7 @@
+.cdef SD_EXCEPT		.
+
+SOURCES:
+	no:${SD_EXCEPT}/mklist:g=t
+	:${SD_EXCEPT}/NoValueExcept.cxx:g=s,t
+	:${SD_EXCEPT}/NoValueExcept.hxx:g=di,t
+

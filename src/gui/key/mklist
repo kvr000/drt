@@ -1,0 +1,6 @@
+.cdef SD_KEY	.
+
+SOURCES:
+	no:${SD_KEY}/mklist:g=t
+	no:${SD_KEY}/Key.hxx:g=di,t
+

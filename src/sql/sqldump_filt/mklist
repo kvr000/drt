@@ -1,0 +1,41 @@
+.def SD_BASE		base
+.def SD_PROC		proc
+.def SD_RULE		rule
+
+.def SUBDIRS		${SD_BASE},${SD_RULE},${SD_PROC}
+.def ESUBDIRS		{${SUBDIRS}}
+
+.include ${ESUBDIRS}/mklist
+
+NEED:
+	cxx
+
+DEPS:
+
+FLAGS:
+	cxx=$(CXXINC) $(EXECXXFLAGS) -I. -I..
+	exec=$(EXELDXXFLAGS)
+
+OUTPUT:
+	exec:sqldump_filt:f=exec;s=s;r=test
+
+SOURCES:
+	no:mklist:g=t
+	no:Doxyfile:g=t
+	lshlib:dr:g=common
+	lshlib:drio:g=s
+
+META:
+
+FCHECK:
+	*.cxx::s=t
+	*.hxx::s=t
+	mklist::s=t
+
+DIST_INC:
+	di:dr/sql/sqldump_filt
+
+LOC_INC:
+
+LOC_LIB:
+

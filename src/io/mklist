@@ -1,0 +1,44 @@
+.def SD_BASE		base
+.def SD_EXCEPT		except
+.def SD_FILE		file
+.def SD_SOCKET		socket
+.def SD_STREAM		stream
+.def SD_META		meta
+
+.def SUBDIRS		${SD_BASE},${SD_EXCEPT},${SD_FILE},${SD_SOCKET},${SD_STREAM},${SD_META}
+.def ESUBDIRS		{${SUBDIRS}}
+
+.include ${ESUBDIRS}/mklist
+
+
+POSTSUBS:
+	t
+
+NEED:
+	cxx
+
+DEPS:
+
+FLAGS:
+	cxx=$(CXXINC) $(SOCXXFLAGS)
+	shlib=$(SOLDXXFLAGS)
+
+OUTPUT:
+	shlib:drio:f=shlib;s=s
+
+SOURCES:
+	no:mklist:g=t
+	no:Doxyfile:g=t
+	lshlib:dr:g=s
+
+FCHECK:
+	${ESUBDIRS}/*.cxx::s=t
+	${ESUBDIRS}/*.cxx::s=s
+	${ESUBDIRS}/*.hxx::s=t
+	${ESUBDIRS}/*.hxx::s=di,didev
+	${ESUBDIRS}/mklist::s=t
+
+DIST_INC:
+	di:dr/io
+	didev:dr/io/dev
+

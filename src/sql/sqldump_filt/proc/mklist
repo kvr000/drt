@@ -1,0 +1,7 @@
+.cdef SD_PROC		.
+
+SOURCES:
+	no:${SD_PROC}/mklist:g=t
+	:${SD_PROC}/QueueManager.hxx:g=di,t
+	:${SD_PROC}/QueueManager.cxx:g=s,t
+

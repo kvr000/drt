@@ -1,0 +1,9 @@
+.cdef SD_CHECKBOX	.
+
+SOURCES:
+	no:${SD_CHECKBOX}/mklist:g=t
+	:${SD_CHECKBOX}/CheckBox.hxx:g=di,t
+	:${SD_CHECKBOX}/CheckBox.cxx:g=s,t
+	:${SD_CHECKBOX}/CheckBox_Simple.hxx:g=di,t
+	:${SD_CHECKBOX}/CheckBox_Simple.cxx:g=s,t
+

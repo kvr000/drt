@@ -1,0 +1,13 @@
+.cdef SD_ARCH_alpha .
+
+SOURCES:
+	no:${SD_ARCH_alpha}/mklist:g=t
+	:${SD_ARCH_alpha}/Atomic.arch-alpha.cxx:g=s,t;C=a.alpha
+	:${SD_ARCH_alpha}/Atomic.arch.hxx:g=diarch_alpha,t;C=a.alpha
+	:${SD_ARCH_alpha}/def.arch.hxx:g=diarch_alpha,t;C=a.alpha
+	:${SD_ARCH_alpha}/sex.arch.hxx:g=diarch_alpha,t;C=a.alpha
+	:${SD_ARCH_alpha}/types.arch.hxx:g=diarch_alpha,t;C=a.alpha
+
+DIST_INC:
+	diarch_alpha:arch-alpha/dr/arch
+

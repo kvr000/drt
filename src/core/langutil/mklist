@@ -1,0 +1,6 @@
+.cdef SD_LANGUTIL .
+
+SOURCES:
+	no:${SD_LANGUTIL}/mklist:g=t
+	:${SD_LANGUTIL}/MethodConv.hxx:g=di,t
+

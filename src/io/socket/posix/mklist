@@ -1,0 +1,7 @@
+.cdef SD_SOCKET_posix	.
+
+SOURCES:
+	no:${SD_SOCKET_posix}/mklist:g=t
+	:${SD_SOCKET_posix}/Socket_sysiface_posix.cxx:g=s,t;C=os.unix;dep=${SD_SOCKET}/Socket.cxx
+	:${SD_SOCKET_posix}/Socket_sysiface_posix.hxx:g=didev,t
+

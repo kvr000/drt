@@ -1,0 +1,7 @@
+.cdef SD_FILE_posix	.
+
+SOURCES:
+	no:${SD_FILE_posix}/mklist:g=t
+	:${SD_FILE_posix}/File_sysiface_posix.cxx:g=s,t;C=os.unix
+	:${SD_FILE_posix}/File_sysiface_posix.hxx:g=didev,t
+

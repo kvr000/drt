@@ -1,0 +1,9 @@
+.cdef SD_FILE_except	.
+
+SOURCES:
+	no:${SD_FILE_except}/mklist:g=t
+	:${SD_FILE_except}/FileFailedExcept.cxx:g=s,t
+	:${SD_FILE_except}/FileFailedExcept.hxx:g=di,t
+	:${SD_FILE_except}/FileNotFoundExcept.cxx:g=s,t
+	:${SD_FILE_except}/FileNotFoundExcept.hxx:g=di,t
+

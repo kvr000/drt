@@ -1,0 +1,14 @@
+.cdef SD_META_visstud	.
+
+META:
+	vsid:{7572A3F1-2669-4bed-A7B7-389D41F845A3}:g=s
+	vsid:{FA234E2C-31E0-4c21-97A7-92E8D0FF2142}:g=dridl
+
+SOURCES:
+	no:${SD_META_visstud}/mklist:g=t
+
+FCHECK:
+	${ESUBDIRS}/*.cxx::s=t
+	${ESUBDIRS}/*.cxx::s=s
+	${ESUBDIRS}/*.hxx::s=t
+

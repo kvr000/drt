@@ -1,0 +1,12 @@
+.cdef SD_THREAD_symbian .
+
+SOURCES:
+	no:${SD_THREAD_symbian}/mklist:g=t
+	:${SD_THREAD_symbian}/Mutex_symbian.cxx:g=s,t;C=s.symbian_th;prio=68
+	:${SD_THREAD_symbian}/MutexCond_symbian.cxx:g=s,t;C=s.symbian_th
+	#:${SD_THREAD_symbian}/RWLock_symbian.cxx:g=s,t;C=s.symbian_th
+	:${SD_THREAD_symbian}/Thread_symbian.hxx:g=dios_symbian,t
+	:${SD_THREAD_symbian}/Thread_symbian.cxx:g=s,t;C=s.symbian_th;prio=72
+
+DIST_INC:
+	dios_symbian:os-symbian/dr/dev

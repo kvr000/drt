@@ -1,0 +1,2 @@
+T_CXXFLAGS=-g -O2
+T_LDFLAGS=-g

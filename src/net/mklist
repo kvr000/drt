@@ -1,0 +1,44 @@
+.def SD_BASE		base
+.def SD_EXCEPT		except
+.def SD_HTTP		http
+.def SD_RPC		rpc
+.def SD_META		meta
+
+.def SUBDIRS		${SD_BASE},${SD_EXCEPT},${SD_HTTP},${SD_RPC},${SD_META}
+.def ESUBDIRS		{${SUBDIRS}}
+
+.include ${ESUBDIRS}/mklist
+
+
+POSTSUBS:
+	t
+
+NEED:
+	cxx
+
+DEPS:
+
+FLAGS:
+	cxx=$(CXXINC) $(SOCXXFLAGS)
+	shlib=$(SOLDXXFLAGS)
+
+OUTPUT:
+	shlib:drnet:f=shlib;s=s
+
+SOURCES:
+	no:mklist:g=t
+	no:Doxyfile:g=t
+	lshlib:dr:g=s
+	lshlib:drio:g=s
+
+FCHECK:
+	${ESUBDIRS}/*.cxx::s=t
+	${ESUBDIRS}/*.cxx::s=s
+	${ESUBDIRS}/*.hxx::s=t
+	${ESUBDIRS}/*.hxx::s=di,didev
+	${ESUBDIRS}/mklist::s=t
+
+DIST_INC:
+	di:dr/net
+	didev:dr/net/dev
+

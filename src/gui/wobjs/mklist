@@ -1,0 +1,19 @@
+.cdef SD_WOBJS		.
+
+.def SD_BUTTON		${SD_WOBJS}/button
+
+.def SUBDIRS		${SD_BUTTON}
+.def ESUBDIRS		{${SUBDIRS}}
+
+.include ${ESUBDIRS}/mklist
+
+SOURCES:
+	no:${SD_WOBJS}/mklist:g=t
+
+FCHECK:
+	${ESUBDIRS}/*.cxx::s=t
+	${ESUBDIRS}/*.cxx::s=s,old_s
+	${ESUBDIRS}/*.hxx::s=t
+	#${ESUBDIRS}/*.hxx::s=di,didev
+	${ESUBDIRS}/mklist::s=t
+

@@ -1,0 +1,23 @@
+.cdef SD_MSG	.
+
+.def SD_MSG_unix	${SD_MSG}/unix
+.def SD_MSG_symbian	${SD_MSG}/symbian
+.def SD_MSG_wnt		${SD_MSG}/wnt
+
+.def SUBDIRS ${SD_MSG_unix},${SD_MSG_symbian},${SD_MSG_wnt}
+.def ESUBDIRS {${SUBDIRS}}
+
+.include ${ESUBDIRS}/mklist
+
+SOURCES:
+	no:${SD_MSG}/mklist:g=t
+	:${SD_MSG}/MsgSync.cxx:g=s,t;prio=80
+	:${SD_MSG}/MsgSync.hxx:g=di,t
+	:${SD_MSG}/MsgSync_Socket.cxx:g=s,t;prio=80
+	:${SD_MSG}/MsgSync_Socket.hxx:g=di,t
+
+FCHECK:
+	${ESUBDIRS}/*.cxx::s=t
+	${ESUBDIRS}/*.cxx::s=s
+	${ESUBDIRS}/*.hxx::s=t
+

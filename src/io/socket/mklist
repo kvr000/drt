@@ -1,0 +1,35 @@
+.cdef SD_SOCKET		.
+
+.def SD_SOCKET_posix	${SD_SOCKET}/posix
+.def SD_SOCKET_unix	${SD_SOCKET}/unix
+.def SD_SOCKET_wnt	${SD_SOCKET}/wnt
+
+.def SOCKET_SUBDIRS	${SD_SOCKET_posix},${SD_SOCKET_unix},${SD_SOCKET_wnt}
+.def SOCKET_ESUBDIRS	{${SOCKET_SUBDIRS}}
+
+.include ${SOCKET_ESUBDIRS}/mklist
+
+SOURCES:
+	no:${SD_SOCKET}/mklist:g=t
+	:${SD_SOCKET}/Socket.cxx:g=s,t
+	:${SD_SOCKET}/Socket.hxx:g=di,t
+	:${SD_SOCKET}/SocketStream.hxx:g=di,t
+	:${SD_SOCKET}/SocketStream.cxx:g=s,t
+	:${SD_SOCKET}/SocketServer.hxx:g=di,t
+	:${SD_SOCKET}/SocketServer.cxx:g=s,t
+	:${SD_SOCKET}/SocketDatagram.hxx:g=di,t
+	:${SD_SOCKET}/SocketDatagram.cxx:g=s,t
+	:${SD_SOCKET}/Socket_sysiface.hxx:g=didev,t
+	:${SD_SOCKET}/NetAddress.hxx:g=di,t
+	:${SD_SOCKET}/NetAddress.cxx:g=s,t
+	:${SD_SOCKET}/NetAddressInet4.hxx:g=di,t
+	:${SD_SOCKET}/NetAddressInet4.cxx:g=s,t
+	:${SD_SOCKET}/NetAddressLocal.hxx:g=di,t
+	:${SD_SOCKET}/NetAddressLocal.cxx:g=s,t
+
+FCHECK:
+	${SOCKET_ESUBDIRS}/*.cxx::s=t
+	${SOCKET_ESUBDIRS}/*.cxx::s=s
+	${SOCKET_ESUBDIRS}/*.hxx::s=t
+	${SOCKET_ESUBDIRS}/mklist::s=t
+

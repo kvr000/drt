@@ -1,0 +1,37 @@
+NEED:
+	cxx
+
+DEPS:
+
+FLAGS:
+	cxx=$(CXXINC) $(EXECXXFLAGS) -I. -I..
+	exec=$(EXELDXXFLAGS)
+
+OUTPUT:
+	exec:tlink_drconfig:f=exec;s=tlink_drconfig,common
+	exec:t0:f=exec;s=t0,common;r=test
+
+SOURCES:
+	:tlink_drconfig.cxx:f=cxx;g=tlink_drconfig,t
+	:t0.cxx:f=cxx;g=t0,t
+	no:mklist:g=t
+	no:testconf.cfg:g=t
+	lshlib:dr:g=common
+	lshlib:drconfig:g=common
+	lshlib:drtestenv:g=common
+
+META:
+	vsid:{1D406DDD-1581-4e9a-AE2B-6A0179FD9B64}:g=tlink_drconfig
+	vsid:{F9D27B4E-CDAF-4892-B262-879AAD8F2BAA}:g=t0
+
+FCHECK:
+	*.cxx::s=t
+	*.hxx::s=t
+	mklist::s=t
+
+DIST_INC:
+
+LOC_INC:
+
+LOC_LIB:
+

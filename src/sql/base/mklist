@@ -1,0 +1,22 @@
+.cdef SD_BASE	.
+
+SOURCES:
+	no:${SD_BASE}/mklist:g=t
+	:${SD_BASE}/def.hxx:g=di,t
+	:${SD_BASE}/SqlConnection.hxx:g=di,t
+	:${SD_BASE}/SqlConnection.cxx:g=s,t
+	:${SD_BASE}/SqlConnectionHold.hxx:g=di,t
+	:${SD_BASE}/SqlConnectionHold.cxx:g=s,t
+	:${SD_BASE}/SqlConnectionPool.hxx:g=di,t
+	:${SD_BASE}/SqlConnectionPool.cxx:g=s,t
+	:${SD_BASE}/SqlAutoRun.hxx:g=di,t
+	:${SD_BASE}/SqlAutoRun.cxx:g=s,t
+	:${SD_BASE}/SqlStatement.hxx:g=di,t
+	:${SD_BASE}/SqlStatement.cxx:g=s,t
+	:${SD_BASE}/ResultSet.hxx:g=di,t
+	:${SD_BASE}/ResultSet.cxx:g=s,t
+	:${SD_BASE}/SqlStatementDummy.hxx:g=di,t
+	:${SD_BASE}/SqlStatementDummy.cxx:g=s,t
+	:${SD_BASE}/SqlManager.hxx:g=didev,t
+	:${SD_BASE}/SqlManager.cxx:g=s,t
+

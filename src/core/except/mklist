@@ -1,0 +1,27 @@
+.cdef SD_EXCEPT	.
+
+.def SD_EXCEPT_RUNTIME	${SD_EXCEPT}/runtime
+.def SD_EXCEPT_FORMAT	${SD_EXCEPT}/format
+
+.def EXCEPT_SUBDIRS ${SD_EXCEPT_RUNTIME},${SD_EXCEPT_FORMAT}
+.def EXCEPT_ESUBDIRS {${EXCEPT_SUBDIRS}}
+
+.include ${EXCEPT_ESUBDIRS}/mklist
+
+SOURCES:
+	no:${SD_EXCEPT}/mklist:g=t
+	:${SD_EXCEPT}/Except.hxx:g=di,t
+	:${SD_EXCEPT}/Except.cxx:g=s,t
+	:${SD_EXCEPT}/MemExcept.hxx:g=di,t
+	:${SD_EXCEPT}/MemExcept.cxx:g=s,t
+	:${SD_EXCEPT}/TimeoutExcept.hxx:g=di,t
+	:${SD_EXCEPT}/TimeoutExcept.cxx:g=s,t
+	:${SD_EXCEPT}/DataNotFoundExcept.hxx:g=di,t
+	:${SD_EXCEPT}/DataNotFoundExcept.cxx:g=s,t
+
+FCHECK:
+	${EXCEPT_ESUBDIRS}/*.cxx::s=t
+	${EXCEPT_ESUBDIRS}/*.cxx::s=s
+	${EXCEPT_ESUBDIRS}/*.hxx::s=t
+	${EXCEPT_ESUBDIRS}/mklist::s=t
+

@@ -1,0 +1,36 @@
+NEED:
+	cxx
+
+DEPS:
+
+FLAGS:
+	cxx=$(CXXINC) $(EXECXXFLAGS) -I. -I..
+	exec=$(EXELDXXFLAGS)
+
+OUTPUT:
+	exec:tlink_drio:f=exec;s=tlink_drio,common
+	exec:t0:f=exec;s=t0,common;r=test
+
+SOURCES:
+	:tlink_drio.cxx:f=cxx;g=tlink_drio,t
+	:t0.cxx:f=cxx;g=t0,t
+	no:mklist:g=t
+	lshlib:dr:g=common
+	lshlib:drio:g=common
+	lshlib:drtestenv:g=common
+
+META:
+	vsid:{00ACC08A-E525-49b1-9A77-A58E28BB8055}:g=tlink_drio
+	vsid:{869341B2-B23A-48df-B60F-D21E1FF5F25B}:g=t0
+
+FCHECK:
+	*.cxx::s=t
+	*.hxx::s=t
+	mklist::s=t
+
+DIST_INC:
+
+LOC_INC:
+
+LOC_LIB:
+

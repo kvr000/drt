@@ -1,0 +1,11 @@
+.cdef SD_EXCEPT		.
+
+SOURCES:
+	no:${SD_EXCEPT}/mklist:g=t
+	:${SD_EXCEPT}/IoExcept.cxx:g=s,t
+	:${SD_EXCEPT}/IoExcept.hxx:g=di,t
+	:${SD_EXCEPT}/NonblockExcept.cxx:g=s,t
+	:${SD_EXCEPT}/NonblockExcept.hxx:g=di,t
+	:${SD_EXCEPT}/BadHostName.cxx:g=s,t
+	:${SD_EXCEPT}/BadHostName.hxx:g=di,t
+

@@ -1,0 +1,7 @@
+.cdef SD_MENU		.
+
+SOURCES:
+	no:${SD_MENU}/mklist:g=t
+	:${SD_MENU}/MenuData.hxx:g=t,di
+	:${SD_MENU}/MenuData.cxx:g=t,s
+

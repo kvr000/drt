@@ -1,0 +1,8 @@
+.cdef SD_BASE .
+
+SOURCES:
+	no:${SD_BASE}/mklist:g=t
+	:${SD_BASE}/Gui_x11.cxx:g=s,t
+	no:${SD_BASE}/Gui_x11.hxx:g=didev,t
+	no:${SD_BASE}/def_gui_x11.hxx:g=didev,t
+

@@ -1,0 +1,13 @@
+.cdef SD_ARCH_x86 .
+
+SOURCES:
+	no:${SD_ARCH_x86}/mklist:g=t
+	:${SD_ARCH_x86}/Atomic.arch-x86.cxx:g=s,t;C=a.x86
+	:${SD_ARCH_x86}/Atomic.arch.hxx:g=diarch_x86,t
+	:${SD_ARCH_x86}/def.arch.hxx:g=diarch_x86,t
+	:${SD_ARCH_x86}/sex.arch.hxx:g=diarch_x86,t
+	:${SD_ARCH_x86}/types.arch.hxx:g=diarch_x86,t
+
+DIST_INC:
+	diarch_x86:arch-x86/dr/arch
+

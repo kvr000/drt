@@ -1,0 +1,9 @@
+.cdef SD_TEXTEDIT	.
+
+SOURCES:
+	no:${SD_TEXTEDIT}/mklist:g=t
+	:${SD_TEXTEDIT}/TextEdit.hxx:g=di,t
+	:${SD_TEXTEDIT}/TextEdit.cxx:g=s,t
+	:${SD_TEXTEDIT}/TextEdit_Simple.hxx:g=di,t
+	:${SD_TEXTEDIT}/TextEdit_Simple.cxx:g=s,t
+

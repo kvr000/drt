@@ -1,0 +1,13 @@
+config	a.x86
+config	s.wnt
+config	s.cygwin
+config	s.posix
+config	s.posix_th
+config	c.no_x11
+
+undef	DR_HAS_THREAD_LOCAL
+define	DR_NO_BACKTRACE
+define	DR_HAS_POSIX
+define	DR_RO_VTABLE
+define	DR_OS_WINDOWS
+define	DR_LIBC_CYGWIN

@@ -1,0 +1,9 @@
+.cdef SD_MENUBAR		.
+
+SOURCES:
+	no:${SD_MENUBAR}/mklist:g=t
+	:${SD_MENUBAR}/MenuBar.hxx:g=di,t
+	:${SD_MENUBAR}/MenuBar.cxx:g=s,t
+	:${SD_MENUBAR}/MenuBar_Simple.hxx:g=di,t
+	:${SD_MENUBAR}/MenuBar_Simple.cxx:g=s,t
+

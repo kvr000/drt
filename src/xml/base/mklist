@@ -1,0 +1,14 @@
+.cdef SD_BASE	.
+
+SOURCES:
+	no:${SD_BASE}/mklist:g=t
+	:${SD_BASE}/def_xml.hxx:g=di,t
+	:${SD_BASE}/XmlSubsystem.hxx:g=di,t
+	:${SD_BASE}/XmlSubsystem.cxx:g=s,t
+	:${SD_BASE}/XmlDoc.hxx:g=di,t
+	:${SD_BASE}/XmlDoc.cxx:g=s,t
+	:${SD_BASE}/XmlNode.hxx:g=di,t
+	:${SD_BASE}/XmlNode.cxx:g=s,t
+	:${SD_BASE}/XmlElement.hxx:g=di,t
+	:${SD_BASE}/XmlElement.cxx:g=s,t
+

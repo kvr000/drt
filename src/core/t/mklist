@@ -1,0 +1,77 @@
+NEED:
+	cxx
+
+DEPS:
+
+FLAGS:
+	cxx=$(CXXINC) -I. $(EXECXXFLAGS)
+	exec=$(EXELDXXFLAGS)
+
+OUTPUT:
+	exec:tlink_dr:f=exec;s=tlink_dr,common;r=test
+	exec:tbench_dyn:f=exec;s=tbench_dyn,common;r=test,bench
+	exec:tbench_atomic:f=exec;s=tbench_atomic,common;r=test,bench
+	exec:tbench_strind:f=exec;s=tbench_strind,common;r=test,bench
+	exec:tformat:f=exec;s=tformat,common;r=test
+	exec:tinfo:f=exec;s=tinfo,common;r=test
+	exec:t0:f=exec;s=t0,common;r=test
+	exec:tmc:f=exec;s=tmc,common;r=test
+	exec:ttypes:f=exec;s=ttypes,common;r=test
+	exec:tstr:f=exec;s=tstr,common;r=test
+	exec:tmsg:f=exec;s=tmsg,common;r=test
+	exec:tthread:f=exec;s=tthread,common;r=test
+	exec:ta:f=exec;s=ta,common;r=test
+	exec:tabad:f=exec;s=tabad,common
+	exec:trstruct:f=exec;s=trstruct,common;r=test
+	exec:tbinmem:f=exec;s=tbinmem,common;r=test
+	exec:teval:f=exec;s=teval,common;r=test
+
+SOURCES:
+	:tlink_dr.cxx:f=cxx;g=tlink_dr,t
+	:tbench_dyn.cxx:f=cxx;g=tbench_dyn,t
+	:tbench_atomic.cxx:f=cxx;g=tbench_atomic,t
+	:tbench_strind.cxx:f=cxx;g=tbench_strind,t
+	:tformat.cxx:f=cxx;g=tformat,t
+	:tinfo.cxx:f=cxx;g=tinfo,t
+	:t0.cxx:f=cxx;g=t0,t
+	:tmc.cxx:f=cxx;g=tmc,t
+	:tstr.cxx:f=cxx;g=tstr,t
+	:ttypes.cxx:f=cxx;g=ttypes,t
+	:tmsg.cxx:f=cxx;g=tmsg,t
+	:tthread.cxx:f=cxx;g=tthread,t
+	:ta.cxx:f=cxx;g=ta,t
+	:tabad.cxx:f=cxx;g=tabad,t
+	:trstruct.cxx:f=cxx;g=trstruct,t
+	:tbinmem.cxx:f=cxx;g=tbinmem,t
+	:teval.cxx:f=cxx;g=teval,t
+	no:mklist:g=t
+	lshlib:dr:g=common
+	lshlib:drtestenv:g=common
+
+META:
+	vsid:{1FA23D09-A168-4092-8A14-B061E604A8F1}:g=tlink_dr
+	vsid:{18D76038-D144-4886-806C-331F91F05FD5}:g=tbench_dyn
+	vsid:{781179E9-ADD7-4faf-8B68-76727298EF70}:g=tbench_atomic
+	vsid:{89AAA2CA-D93B-45ab-BD1E-897CF9932936}:g=tbench_strind
+	vsid:{A122A318-A69A-4efb-9E40-5B8A0AF550B2}:g=tformat
+	vsid:{E132A8F9-1FB8-4e1c-9855-CAE467D1A4D4}:g=tinfo
+	vsid:{A417C72A-3DF9-4a30-9652-70E42E3790D6}:g=t0
+	vsid:{42EFF06F-0D47-44ae-9F2F-A83E70A3A62C}:g=tstr
+	vsid:{8FCE24AA-9086-4a74-B2AC-7BBA4838B77C}:g=ttypes
+	vsid:{DC172240-DFDB-4cc1-AEBD-4673B3D46FDF}:g=tmsg
+	vsid:{1AF7FF94-E8E4-4419-80E6-87EAA9ED9EFD}:g=tthread
+	vsid:{34F9BAB3-B08B-4315-A88D-9F2CF3E0A8FA}:g=ta
+	vsid:{7ABF3BC0-74C3-4c53-B0C4-6935BBDF608F}:g=tabad
+	vsid:{187557D4-1337-4db5-A272-07B01DDD60F9}:g=tbinmem
+
+FCHECK:
+	*.cxx::s=t
+	*.hxx::s=t
+	mklist::s=t
+
+DIST_INC:
+
+LOC_INC:
+
+LOC_LIB:
+

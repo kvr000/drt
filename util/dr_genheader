@@ -1,0 +1,295 @@
+#!/usr/bin/perl
+
+package dr::GenHeader::FileTransaction;
+
+use strict;
+use warnings;
+
+sub new
+{
+	my $class = shift; $class = ref($class) || $class;
+
+	return bless { opers => [] }, $class;
+}
+
+sub commit
+{
+	my $this		= shift;
+	$this->{opers} = [];
+}
+
+sub addCreated
+{
+	my $this		= shift;
+	my $fname		= shift;
+
+	push(@{$this->{opers}}, { op => "rm", name => $fname });
+}
+
+sub DESTROY
+{
+	my $this		= shift;
+
+	foreach my $op (@{$this->{opers}}) {
+		if ($op->{op} eq "rm") {
+			unlink($op->{name});
+		}
+		else {
+			die "unsupported operation: $op->{op}";
+		}
+	}
+}
+
+
+package main;
+
+use strict;
+use warnings;
+
+use FileHandle;
+
+sub classToHeader($$)
+{
+	my $ns			= shift;
+	my $class		= shift;
+	my $out = "${ns}::${class}::hxx::";
+	$out =~ s/::/__/g;
+	return $out;
+}
+
+sub nsToMacro($)
+{
+	my $ns			= shift;
+	$ns =~ s/::/_/g;
+	$ns = uc($ns);
+	return "${ns}_NS";
+}
+
+sub nsToMacroBegin($)
+{
+	return nsToMacro(shift)."_BEGIN";
+}
+
+sub nsToMacroEnd($)
+{
+	return nsToMacro(shift)."_END";
+}
+
+sub formatMethodDecl($$)
+{
+	my $ret			= shift;
+	my $decl		= shift;
+
+	my $full = $ret;
+	if (length($ret) < 32) {
+		$full .= "\t"x((39-length($ret))/8);
+	}
+	else {
+		$full .= " ";
+	}
+	$full .= $decl;
+	return $full;
+}
+
+
+die "Usage: $0 cxx_file gen_file_base" unless (@ARGV == 2);
+my $cxxname = shift(@ARGV);
+die "passed file does not end with suffix .cxx" unless ($cxxname =~ m/(.*)\.cxx$/);
+my $basename = shift(@ARGV);
+my $hxxname = "$basename.hxx";
+my $defname = "$basename-def.hxx";
+
+my $file_trans = dr::GenHeader::FileTransaction->new();
+
+my $cxx = FileHandle->new($cxxname, "<")
+	or die "failed to open $cxxname: $!";
+my $hxx = FileHandle->new($hxxname, ">")
+	or die "failed to open $hxxname: $!";
+$file_trans->addCreated($hxxname);
+my $def = FileHandle->new($defname, ">")
+	or die "failed to open $defname: $!";
+$file_trans->addCreated($defname);
+
+my $lineno = 0;
+my @includes = ();
+my $ns;
+my $class;
+my $ancestor;
+my @methods;
+my @ifaces;
+my @ats;
+my @ns_use = ();
+
+my $errors = 0;
+
+my @funcspec;
+my $func_comment;
+my $func_ret;
+my $func_decl;
+
+MAIN: while (<$cxx>) {
+	$lineno++;
+
+	if (m,^/\*drt\s*$,) {
+		while (<$cxx>) {
+			$lineno++;
+			if (m/^\s*\*\s*$/) {
+				next;
+			}
+			elsif (m/^\s*\*\s*(\w+):\s*(.*?)\s*$/) {
+				if ($1 eq "include") {
+					push(@includes, $2);
+				}
+				elsif ($1 eq "ns") {
+					$ns = $2;
+				}
+				elsif ($1 eq "use") {
+					push(@ns_use, $2);
+				}
+				elsif ($1 eq "class") {
+					$class = $2;
+				}
+				elsif ($1 eq "ancestor") {
+					$ancestor = $2;
+				}
+				elsif ($1 eq "ifaces") {
+					push(@ifaces, split(/s+/, $2));
+				}
+				elsif ($1 eq "at") {
+					push(@ats, $2);
+				}
+				else {
+					STDERR->printf("$cxxname:$lineno: unknown statement\n");
+				}
+			}
+			elsif (m/^\s*\*\/\s*$/) {
+				STDERR->printf("$cxxname:$lineno: fatal: ns undefined\n"), exit(1) unless (defined $ns);
+				STDERR->printf("$cxxname:$lineno: fatal: class undefined\n"), exit(1) unless (defined $class);
+				STDERR->printf("$cxxname:$lineno: fatal: ancestor undefined\n"), exit(1) unless (defined $ancestor);
+				last;
+			}
+			else {
+				STDERR->printf("$cxxname:$lineno: incorrect syntax\n");
+			}
+		}
+	}
+	elsif (m/^\s*$/) {
+		@funcspec = ();
+	}
+	elsif (m/^{\s*$/) {
+		if (defined $func_decl) {
+			push(@methods, { specs => [ @funcspec ], ret => $func_ret, decl => $func_decl, comment => $func_comment });
+			undef $func_decl;
+		}
+	}
+	elsif (m/^\s/) {
+		# skip
+	}
+	elsif (m/^DR_MET\((.*)\)\s*$/) {
+		@funcspec = split(/\s+/, $1);
+		undef $func_ret;
+		undef $func_decl;
+		undef $func_comment;
+		STDERR->printf("$cxxname:$lineno: fatal: namespace undefined\n"), exit(1) unless (defined $ns);
+		STDERR->printf("$cxxname:$lineno: fatal: class undefined\n"), exit(1) unless (defined $class);
+		FUNC_DECL: while (<$cxx>) {
+			$lineno++;
+			#STDERR->printf("class=%s\n", $class);
+			#STDERR->printf("regex=%s\n", "^(.*)\\s*($class)::(\\w+)(\\(.*\\)):?\\s*\$");
+			#STDERR->print("matching $_");
+			if (m/^\/\*\*\s+$/) {
+				$func_comment = $_;
+				while (<$cxx>) {
+					$lineno++;
+					$func_comment .= $_;
+					next FUNC_DECL if (m/^\s*\*\/\s*$/);
+				}
+				die "unable to find end of comment";
+			}
+			if (m/^${class}::(${class}\(.*\)(\s*const)?)\s*:?\s*$/) {
+				$func_ret = "DR_CONSTRUCT";
+				$func_decl = $1;
+				last;
+			}
+			elsif (m/^${class}::(~${class}\(\))\s*$/) {
+				$func_ret = "";
+				$func_decl = $1;
+				push(@funcspec, "virtual");
+				last;
+			}
+			elsif (m/^(.*?)\s*($class)::(\w+)(\(.*\)(\s+const)?)\s*$/) {
+				$func_ret = $1;
+				$func_decl = "$3$4";
+				last;
+			}
+			else {
+				STDERR->printf("$cxxname:$lineno: expected method declaration\n");
+				$errors++;
+				next MAIN;
+			}
+		}
+	}
+	else {
+		# nothing
+	}
+}
+
+STDERR->printf("$cxxname:$lineno: fatal: namespace undefined\n"), exit(1) unless (defined $ns);
+STDERR->printf("$cxxname:$lineno: fatal: class undefined\n"), exit(1) unless (defined $class);
+exit(1) if ($errors);
+
+$hxx->printf("#ifndef %s\n# define %s\n\n", classToHeader($ns, $class), classToHeader($ns, $class));
+foreach my $inc (@includes) {
+	$hxx->printf("#include <$inc>\n");
+}
+$hxx->printf("\n%s\n\n", nsToMacroBegin($ns));
+foreach my $use (@ns_use) {
+	$hxx->printf("%s_USE;\n", nsToMacro($use));
+}
+$hxx->printf("\n\n");
+$hxx->printf("class %s: public %s\n{\n\tDR_OBJECT_DECL_SIMPLE(%s, %s);\n", $class, $ancestor, $class, $ancestor);
+my $last_allmod = "---";
+foreach my $met (@methods) {
+	my $access;
+	my $mods = "";
+	foreach my $spec (@{$met->{specs}}) {
+		$access = $spec, next if ($spec eq "public" || $spec eq "protected" || $spec eq "private");
+		$mods .= "$spec ", next if ($spec eq "virtual" || $spec eq "static");
+	}
+	$access = 'public' unless (defined $access);
+	while ($mods =~ s/\b(\w+)\b\s(.*\b\1\b)/$2/) {}
+	my $allmod = "-$access-$mods-";
+	if ($allmod ne $last_allmod) {
+		$hxx->printf("\n$access:\n");
+		$last_allmod = $allmod;
+	}
+	if (defined $met->{comment}) {
+		my $c = $met->{comment};
+		$c =~ s/^/\t/mg;
+		$hxx->printf("%s", $c);
+	}
+	$hxx->printf("\t%s;\n", formatMethodDecl("$mods$met->{ret}", "$met->{decl}"));
+}
+if (@ats) {
+	$hxx->print("\nprotected:\n");
+}
+foreach my $at (@ats) {
+	$hxx->printf("\t%s\n", $at);
+}
+$hxx->printf("};\n\n\n%s\n", nsToMacroEnd($ns));
+$hxx->printf("\n#endif\n");
+
+$def->printf("#include <dr/Const.hxx>\n\n");
+$def->printf("%s\n\n", nsToMacroBegin($ns));
+$def->printf("DR_OBJECT_IMPL_IFACE%d(%s%s);\n", scalar @ifaces, $class, join("", map({ ", $_" } @ifaces)));
+$def->printf("DR_OBJECT_DEF(%s_STR, %s, %s);\n", nsToMacro($ns), $class, $ancestor);
+$def->printf("\n%s\n", nsToMacroEnd($ns));
+
+$hxx->flush();
+$hxx->error()
+	and die "failed to write hxx file: ".$hxx->error();
+$def->flush();
+$def->error()
+	and die "failed to write hxx file: ".$def->error();
+
+$file_trans->commit();

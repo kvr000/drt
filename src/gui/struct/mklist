@@ -1,0 +1,6 @@
+.cdef SD_STRUCT	.
+
+SOURCES:
+	no:${SD_STRUCT}/mklist:g=t
+	no:${SD_STRUCT}/struct.hxx:g=di,t
+

@@ -1,0 +1,13 @@
+.cdef SD_EXCEPT	.
+
+SOURCES:
+	no:${SD_EXCEPT}/mklist:g=t
+	:${SD_EXCEPT}/SqlExcept.hxx:g=di,t
+	:${SD_EXCEPT}/SqlExcept.cxx:g=s,t
+	:${SD_EXCEPT}/SqlParseExcept.hxx:g=di,t
+	:${SD_EXCEPT}/SqlParseExcept.cxx:g=s,t
+	:${SD_EXCEPT}/SqlConstraintExcept.hxx:g=di,t
+	:${SD_EXCEPT}/SqlConstraintExcept.cxx:g=s,t
+	:${SD_EXCEPT}/SqlUniqueConstraintExcept.hxx:g=di,t
+	:${SD_EXCEPT}/SqlUniqueConstraintExcept.cxx:g=s,t
+

@@ -1,0 +1,34 @@
+.cdef SD_THREAD .
+
+.def SD_THREAD_posix	${SD_THREAD}/pthread
+.def SD_THREAD_symbian	${SD_THREAD}/symbian
+.def SD_THREAD_wnt	${SD_THREAD}/wnt
+
+.def SUBDIRS ${SD_THREAD_posix},${SD_THREAD_symbian},${SD_THREAD_wnt}
+.def ESUBDIRS {${SUBDIRS}}
+
+.include ${ESUBDIRS}/mklist
+
+SOURCES:
+	no:${SD_THREAD}/mklist:g=t
+	:${SD_THREAD}/Mutex.hxx:g=di,t
+	:${SD_THREAD}/Mutex.cxx:g=s,t
+	:${SD_THREAD}/MutexCond.hxx:g=di,t
+	:${SD_THREAD}/RWLock.hxx:g=di,t
+	:${SD_THREAD}/Thread.msg.hxx:g=di,t
+	:${SD_THREAD}/Thread.hxx:g=di,t
+	:${SD_THREAD}/Thread.cxx:g=s,t;prio=52
+	:${SD_THREAD}/ThreadSimple.hxx:g=di,t
+	:${SD_THREAD}/ThreadSimple.cxx:g=s,t
+	:${SD_THREAD}/ThreadDummy.hxx:g=didev,t
+	:${SD_THREAD}/ThreadDummy.cxx:g=s,t;prio=54
+	:${SD_THREAD}/Thread_impl.hxx:g=didev,t
+	:${SD_THREAD}/Thread_impl.cxx:g=s,t;prio=60
+	:${SD_THREAD}/Thread.intr.hxx:g=di,t
+	:${SD_THREAD}/Thread.intr.cxx:g=s,t
+
+FCHECK:
+	${ESUBDIRS}/*.hxx::s=t
+	${ESUBDIRS}/*.cxx::s=t
+	${ESUBDIRS}/*.cxx::s=s
+

@@ -1,0 +1,9 @@
+.cdef SD_SERIALIZE	.
+
+SOURCES:
+	no:${SD_SERIALIZE}/mklist:g=t
+	:${SD_SERIALIZE}/SerializeEncoder.hxx:g=di,t
+	:${SD_SERIALIZE}/SerializeEncoder.cxx:g=s,t
+	:${SD_SERIALIZE}/SerializeDecoder.hxx:g=di,t
+	:${SD_SERIALIZE}/SerializeDecoder.cxx:g=s,t
+

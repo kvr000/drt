@@ -1,0 +1,11 @@
+.cdef SD_PARSE	.
+
+SOURCES:
+	no:${SD_PARSE}/mklist:g=t
+	:${SD_PARSE}/BinaryMemReader.hxx:g=di,t
+	:${SD_PARSE}/BinaryMemReader.cxx:g=s,t
+	:${SD_PARSE}/BinaryMemWriter.hxx:g=di,t
+	:${SD_PARSE}/BinaryMemWriter.cxx:g=s,t
+	:${SD_PARSE}/MemBase64.hxx:g=di,t
+	:${SD_PARSE}/MemBase64.cxx:g=s,t
+
