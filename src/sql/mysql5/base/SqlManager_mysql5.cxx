@@ -136,7 +136,7 @@ Sql_SS_mysql5::~Sql_SS_mysql5()
 {
 }
 
-extern "C" DR_EXPORT_MTS Subsystem *createSS_drSql_mysql5(const String &name)
+extern "C" DR_EXPORT_MTS Subsystem *createSS_dr_sql_mysql5(const String &name)
 {
 	return new Sql_SS_mysql5;
 }

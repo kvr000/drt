@@ -51,7 +51,7 @@ String s_str(Const::string("s"));
 
 int main(void)
 {
-	ERef<Connection> conn(Connection::openConnection("driver=drSql_mysql5;host=localhost;port=3306;db=dr_test;user=dr_test;pass=dr_test"));
+	ERef<Connection> conn(Connection::openConnection("driver=dr_sql_mysql5;host=localhost;port=3306;db=dr_test;user=dr_test;pass=dr_test"));
 	ERef<Statement> sql(conn->createStatement("select i, s from sample0 where i between ? and ? order by i"));
 	for (int i = 0; ; i++) {
 		//sql->setOffsetLimit(i*10, 10);

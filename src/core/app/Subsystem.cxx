@@ -93,10 +93,12 @@ Subsystem *Subsystem::getSubsystem(const String &name, Subsystem *(*create_func)
 			subsys->ref();
 			goto out;
 		}
+		String filename(name);
+		filename.replace("_", String());
 		if (create_func == NULL) {
 #if (defined DR_OS_UNIX)
 			char libfile[64];
-			if ((unsigned)snprintf(libfile, sizeof(libfile), "lib%s.so", name.utf8().toStr()) >= sizeof(libfile))
+			if ((unsigned)snprintf(libfile, sizeof(libfile), "lib%s.so", filename.utf8().toStr()) >= sizeof(libfile))
 				xthrownew(BadSubsysException(name, "too long name"));
 			for (int ic = 0; libfile[ic] != '\0'; ic++)
 				libfile[ic] = (char)tolower(libfile[ic]);
@@ -115,7 +117,7 @@ Subsystem *Subsystem::getSubsystem(const String &name, Subsystem *(*create_func)
 			};
 			if (
 #ifdef DR_LIBC_CYGWIN
-				snprintf(libfunc, sizeof(libfunc), "%s.dll", name.utf8().toStr()) >= (ssize_t)(sizeof(libfunc)/sizeof(libfunc[0]))
+				snprintf(libfunc, sizeof(libfunc), "%s.dll", filename.utf8().toStr()) >= (ssize_t)(sizeof(libfunc)/sizeof(libfunc[0]))
 #else
 				StringCbPrintfW(libfile, sizeof(libfile), L"%s.dll", name.wide().toStr()) != 0
 #endif
