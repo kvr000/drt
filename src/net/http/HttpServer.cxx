@@ -245,7 +245,7 @@ void HttpServer::processHeaderConnection(const String &header, const String &val
 	String lowvalue(String::createLower(value));
 	if (lowvalue == "close")
 		connection_state = 2;
-	else if (lowvalue == "Keep-Alive")
+	else if (lowvalue == "keep-alive")
 		connection_state = 1;
 	else
 		connection_state = 2;
