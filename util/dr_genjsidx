@@ -1,0 +1,118 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+
+use File::Basename;
+use lib dirname($0)."/perl";
+use File::Find;
+use Data::Dumper;
+use dr::Util;
+use dr::FileParser;
+use dr::TagWriter;
+use dr::FileTransaction;
+
+our @fnames;
+
+sub createContext($$)
+{
+	my $reader		= shift;
+	my $line		= shift;
+
+	my $context = $reader->getContext();
+	dr::Util::doDie("expected context in format file:line") unless ($context =~ m/^(.*):(\d+)$/);
+
+	return { context => $context, file => $1, lineno => $2, line => $line };
+}
+
+sub find_checkName
+{
+	push(@fnames, $File::Find::name) if (m/.*\.js$/);
+}
+
+die "Usage: $0 index-file directories" unless (@ARGV >= 1);
+
+our $file_trans = dr::FileTransaction->new();
+my $idx_name = shift @ARGV;
+my $tag_name = "$idx_name.tags";
+our $idx_fd = $file_trans->createTruncated($idx_name);
+our $tag_writer = dr::TagWriter->new($file_trans->createTruncated($tag_name));
+
+find(\&find_checkName, @ARGV);
+
+my @files;
+my %unready;
+my $files_size = 0;
+
+foreach (@fnames) {
+	my $finfo = { file => $_, classes => [], deps => [] };
+	my $fp = dr::FileParser->new($_);
+	while (defined (my $l = $fp->readLine())) {
+		if ($l =~ m/^(.*=\s*|)dr\.registerClass\("([^"]+)",\s*(null|"([^"]+)"),\s*.*$/) {
+			chomp $l;
+			my $cld = { context => createContext($fp, $l), class => $2, ancestor => defined $4 ? $4 : undef, ifaces => [] };
+			push(@{$finfo->{classes}}, $cld->{class});
+			push(@{$finfo->{deps}}, $cld->{ancestor}) if (defined $cld->{ancestor});
+			$tag_writer->addClass($cld);
+			while (defined ($l = $fp->readLine())) {
+				last if ($l =~ m/^}/);
+				if ($l =~ m/^\s+_\$require:\s*\[\s*"(.*?)"\s*\],\s*$/) {
+					foreach (split(/",\s*"/, $1)) {
+						push(@{$finfo->{deps}}, $1);
+					}
+				}
+				elsif ($l =~ m/^\t(_st\$)?(\w+):\s*function\s*\((.*)\)\s*$/) {
+					chomp $l;
+					my $md = { context => createContext($fp, $l), decl => $2 };
+					$tag_writer->addMethod($cld, $md);
+				}
+			}
+		}
+	}
+	$files_size += -s $_;
+	push(@files, $finfo);
+	foreach (@{$finfo->{classes}}) {
+		$unready{$_} = 1;
+	}
+}
+
+STDERR->printf("Total size: %d\n", $files_size);
+#STDERR->print(Dumper(\@files));
+#STDERR->print(Dumper(\%unready));
+
+while (@files) {
+	my $found = 0;
+	my %forward;
+	for (my $i = 0; $i < @files; $i++) {
+		my $finfo = $files[$i];
+		my $ok = 1;
+		foreach (@{$finfo->{deps}}) {
+			if ($unready{$_}) {
+				$ok = 0;
+				$forward{$_} = 1;
+				last,
+			}
+		}
+		if ($ok) {
+			$found++;
+			splice(@files, $i, 1);
+			foreach (@{$finfo->{classes}}) {
+				delete $unready{$_};
+				$i = 0 if ($forward{$_});
+			}
+			$idx_fd->print("$finfo->{file}\n");
+			last if (--$i < 0);
+		}
+	}
+	if (!$found) {
+		STDERR->print("unable to resolve remaining dependencies:\n");
+		STDERR->print(Dumper(\@files));
+		for (my $i = 0; $i < @files; $i++) {
+			$idx_fd->print("$files[$i]->{file}\n");
+		}
+		last;
+	}
+}
+
+$tag_writer->flush();
+$file_trans->commit();

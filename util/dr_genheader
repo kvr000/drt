@@ -47,6 +47,7 @@ use lib dirname($0)."/perl";
 use dr::FileTransaction;
 use dr::FileParser;
 use dr::ModelStore;
+use dr::TagWriter;
 use dr::Util qw(tabalign);
 
 sub fileToName($$)
@@ -163,8 +164,7 @@ my $hxxname = "$basename.hxx";
 
 our $file_trans = dr::FileTransaction->new();
 
-our @tag_defs;
-our $tags;
+our $tag_writer;
 our $hxx;
 our $def;
 our $str;
@@ -218,69 +218,6 @@ sub dieCldContext($$)
 	dr::Util::doDie("fatal error generating $cld->{class}");
 }
 
-sub expandClassNames($)
-{
-	my $cld			= shift;
-
-	my @classes;
-	for (my $c = $cld->{class}; defined $c; $c = ($c =~ m/^(\w+)::(.*)$/) ? $2 : undef) {
-		push(@classes, $c);
-	}
-	return ( @classes );
-}
-
-sub escapeTagFind($)
-{
-	my $s			= shift;
-	dr::Util::doDie("s undefined") unless (defined $s);
-	$s =~ s/([\/])/\\$1/g;
-	return $s;
-}
-
-sub addTagClass($)
-{
-	my $cld			= shift;
-
-	foreach my $cname (expandClassNames($cld)) {
-		push(@tag_defs, sprintf("%s\t%s\t/^%s\$/;\"\tc\tinherits:%s", $cname, $cld->{context}->{file}, escapeTagFind($cld->{context}->{line}), join(",", (defined $cld->{ancestor} ? $cld->{ancestor} : (), @{$cld->{ifaces}}))));
-	}
-}
-
-sub addTagMethod($$)
-{
-	my $cld			= shift;
-	my $md			= shift;
-
-	foreach my $cname (expandClassNames($cld)) {
-		push(@tag_defs, sprintf("%s\t%s\t/^%s\$/;\"\tf\tclass:%s\tsignature:%s", $md->{decl}, $md->{context}->{file}, escapeTagFind($md->{context}->{line}), $cld->{class}, "()"));
-	}
-}
-
-sub addTagAttribute($$)
-{
-	my $cld			= shift;
-	my $ad			= shift;
-
-	if ($ad->{def} =~ m/^([^\t]*)\t*(\w+);\s*$/) {
-		my $name = $2;
-		push(@tag_defs, sprintf("%s\t%s\t/^%s\$/;\"\tm\tclass:%s\taccess:%s", $name, $ad->{context}->{file}, escapeTagFind($ad->{context}->{line}), $cld->{class}, $ad->{access}));
-		foreach my $cname (expandClassNames($cld)) {
-			push(@tag_defs, sprintf("%s.%s\t%s\t/^%s\$/;\"\tm\tclass:%s\taccess:%s", $cname, $name, $ad->{context}->{file}, escapeTagFind($ad->{context}->{line}), $cld->{class}, $ad->{access}));
-		}
-	}
-}
-
-sub addTagConst($$)
-{
-	my $cld			= shift;
-	my $cnd			= shift;
-
-	push(@tag_defs, sprintf("%s\t%s\t/^%s\$/;\"\tm\tclass:%s\taccess:%s", $cnd->{name}, $cnd->{context}->{file}, escapeTagFind($cnd->{context}->{line}), $cld->{class}, $cnd->{access}));
-	foreach my $cname (expandClassNames($cld)) {
-		push(@tag_defs, sprintf("%s.%s\t%s\t/^%s\$/;\"\tm\tclass:%s\taccess:%s", $cname, $cnd->{name}, $cnd->{context}->{file}, escapeTagFind($cnd->{context}->{line}), $cld->{class}, $cnd->{access}));
-	}
-}
-
 sub escapeCString($$)
 {
 	my $str			= shift;
@@ -307,11 +244,13 @@ sub mapUmlType($)
 {
 	my $type		= shift;
 
+	return $type if ($type =~ m/::/);
+	return "String" if ($type =~ m/^string(\(\d*\)|)$/);
 	return "Sint64" if ($type eq "long" || $type eq "Long");
 	return "Sint32" if ($type eq "int" || $type eq "Integer");
 	return "Time::SysTime" if ($type eq "systime");
 
-	die "unknown UML type $type";
+	dr::Util::doDie("unknown UML type $type");
 }
 
 sub addIndent($)
@@ -468,7 +407,7 @@ sub printClass($$)
 		$doc = "/**\n$doc */\n";
 		printIndented($hxx, $level, $doc);
 	}
-	addTagClass($cld);
+	$tag_writer->addClass($cld) if ($tag_writer);
 	my $has_inner = 1;
 	if ($cld->{model} && @{$cld->{model}->{comment}}) {
 		printIndented($hxx, $level, formatMultiComment($cld->{model}->{comment}));
@@ -535,7 +474,7 @@ sub printClass($$)
 			push(@{$cld->{methods}}, { specs => { "protected" => 1 }, ret => "void", "decl" => "prep_$sqd->{name}()" });
 			push(@{$cld->{ats}}, { access => "protected", def => "Ref<dr::sql::Statement>\tst_$sqd->{name};", context => $sqd->{context} });
 			$sql->printf("\nvoid %s::prep_%s()\n{\n\tst_%s.setNoref(db_connection->prepareStatement(\"%s\"));\n}\n", $cld->{class}, $sqd->{name}, $sqd->{name}, escapeCString($sqd->{query}, 2));
-			addTagMethod($cld, { ret => "void", decl => "prep_$sqd->{name}", context => $sqd->{context} });
+			$tag_writer->addMethod($cld, { ret => "void", decl => "prep_$sqd->{name}", context => $sqd->{context} }) if ($tag_writer);
 		}
 	}
 
@@ -588,7 +527,7 @@ sub printClass($$)
 				printIndented($hxx, $level, sprintf("%s:\n", $last_access));
 			}
 			printIndented($hxx, $level, sprintf("\t%s\n", $ad->{def}));
-			addTagAttribute($cld, $ad);
+			$tag_writer->addAttribute($cld, $ad) if ($tag_writer);
 		}
 	}
 
@@ -603,7 +542,7 @@ sub printClass($$)
 			}
 			printIndented($hxx, $level, sprintf("\t%s;\n", formatMemberDecl("static const $cnd->{type}", $cnd->{name})));
 			$val->printf("const %s %s::%s%s;\n", $cnd->{type}, $cld->{class}, $cnd->{name}, ($cnd->{type} =~ m/^(B|W|)String$/) ? "(Const::".lc($cnd->{type}).$cnd->{init}.")" : $cnd->{init});
-			addTagConst($cld, $cnd);
+			$tag_writer->addConst($cld, $cnd) if ($tag_writer);
 		}
 	}
 
@@ -1024,7 +963,7 @@ if (!$gen{noall}) {
 	$all = $file_trans->createTruncated("$basename-all.hxx");
 }
 if (!$gen{notags}) {
-	$tags = $file_trans->createTruncated("$basename.tags");
+	$tag_writer = dr::TagWriter->new($file_trans->createTruncated("$basename.tags"));
 }
 
 if ($all) {
@@ -1131,10 +1070,8 @@ if ($def) {
 if ($hxx) {
 	$hxx->printf("\n\n%s\n\n#endif\n", nsToMacroEnd($ns));
 }
-if ($tags) {
-	foreach my $tagline (sort({ $a cmp $b } @tag_defs)) {
-		$tags->printf("%s\n", $tagline);
-	}
+if ($tag_writer) {
+	$tag_writer->flush();
 }
 
 if ($file_trans->commit()) {

@@ -61,7 +61,7 @@ else
 	my @files = ( { prefix => "", fd => $main_fd } );
 	@ARGV = ( "." ) unless (@ARGV);
 	find({ no_chdir => 1, wanted => sub {
-		if (m/(\.\/)?(.*\/|)_build\/_gen\/(.*\.tags)$/) {
+		if (m/(\.\/)?(.*\/|)(_build\/_gen\/(.*\.tags)|index(\.txt)?\.tags)$/) {
 			if (my $fd = FileHandle->new($_, "<")) {
 				push(@files, { prefix => $2, fd => $fd });
 			}
