@@ -80,5 +80,7 @@ DR_RINLINE bool Atomic::cmpxchg(void *volatile *val, void *cmpval, void *newval)
 	return loaded == cmpval;
 }
 
+#endif
+
 
 DR_NS_END
