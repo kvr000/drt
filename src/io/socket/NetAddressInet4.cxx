@@ -33,7 +33,10 @@
  * @license	http://www.gnu.org/licenses/lgpl.txt GNU Lesser General Public License v3
  **/
 
-#include <dr/Const.hxx>
+/*drt
+ * include: 	dr/io/NetAddressInet.hxx
+ * ns:		dr::io
+ */
 
 #include <dr/x_kw.hxx>
 
@@ -41,36 +44,76 @@
 #include <dr/io/dev/Socket_sysiface.hxx>
 
 #include <dr/io/NetAddressInet4.hxx>
+#include "_gen/NetAddressInet4-all.hxx"
 
 DR_IO_NS_BEGIN
 
 
-DR_OBJECT_DEF(DR_IO_NS_STR, NetAddressInet4, NetAddress);
-DR_OBJECT_IMPL_SIMPLE(NetAddressInet4);
+/*drt
+ * class:	NetAddressInet4
+ * ancestor:	dr::io::NetAddressInet
+ *
+ * at:	Uint32				host;
+ *
+ * doc:{
+ * 	Holder of generic values
+ * }doc
+ */
 
+DR_MET(public)
 NetAddressInet4::NetAddressInet4(const String &host_str, int port_):
-	host(Socket_sysiface::lookupInet4Host(host_str)),
-	port(port_)
+	Super(port_),
+	host(Socket_sysiface::lookupInet4Host(host_str))
 {
 }
 
-NetAddressInet4::NetAddressInet4(const String &addr_str)
+DR_MET(public)
+NetAddressInet4::NetAddressInet4(Uint32 host_, int port_):
+	Super(port_),
+	host(host_)
+{
+}
+
+DR_MET(public)
+NetAddressInet4::NetAddressInet4(const String &addr_str):
+	Super(0)
 {
 	ssize_t p;
 	if ((p = addr_str.rfind(":")) < 0) {
-		xthrownew(InvalidFormatException("host name", addr_str));
+		xthrownew(InvalidFormatException("inet address", addr_str));
 	}
 	else {
 		host = Socket_sysiface::lookupInet4Host(addr_str.left(p));
-		port = (Uint16)atol(addr_str.mid(p+1).utf8().toStr());
+		BString sport = addr_str.mid(p+1).utf8();
+		char *portend;
+		port = (Uint16)strtol(sport, &portend, 0);
+		for (; isspace(*portend); portend++);
+		if (*portend != '\0') {
+			xthrownew(InvalidFormatException("inet address", addr_str));
+		}
 	}
 }
 
+DR_MET(public virtual)
 String NetAddressInet4::formatAddress()
 {
 	String faddr("inet4://");
 	faddr.appendNumber((Uint8)(host>>24)).append(".").appendNumber((Uint8)(host>>16)).append(".").appendNumber((Uint8)(host>>8)).append(".").appendNumber((Uint8)(host)).append(":").appendNumber(port);
 	return faddr;
+}
+
+DR_MET(public virtual)
+Uint32 NetAddressInet4::getHost()
+{
+	return host;
+}
+
+DR_MET(public virtual)
+String NetAddressInet4::getHostString()
+{
+	String afmt;
+	afmt.appendNumber((Uint8)(host>>24)).append(".").appendNumber((Uint8)(host>>16)).append(".").appendNumber((Uint8)(host>>8)).append(".").appendNumber((Uint8)(host));
+	return afmt;
 }
 
 

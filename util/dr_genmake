@@ -999,13 +999,14 @@ sub createOutput
 		if ($sd->{prog} eq "no") {
 			next;
 		}
-		if ($sd->{prog} eq "cxx") {
+		if ($sd->{prog} eq "cxx" || $sd->{prog} eq "c") {
 			my $dp;
-			my $fl = " \$(DR_BUILD_CXX_FLAGS) ".dr::build::expandList("\$(FLAGS_", ")", $sd->{flags}, "cxx")." ".dr::build::defaultEmpty($sd->{out_flag});
+			my $comp = $sd->{prog} eq "c" ? "CC" : "CXX";
+			my $fl = " \$(DR_BUILD_CXX_FLAGS) ".dr::build::expandList("\$(FLAGS_", ")", $sd->{flags}, $sd->{prog})." ".dr::build::defaultEmpty($sd->{out_flag});
 			$sd->{out} = "\$(OBJDIR)/$sd->{pref}\$(OBJ_EXT)";
 			$sd->{ocmd} = "\$(OBJDIR)/$sd->{pref}\$(OBJ_EXT)";
-			$mf->print("$sd->{out}: $sd->{src}\n\t\$(CXX_O) \$< -o \$\@ -MD -MF \$\@.dep$fl\n");
-			$mf->print("\$(OBJDIR)/$sd->{pref}\$(AS_EXT): $sd->{src}\n\t\$(CXX_S) \$< -o \$\@ -MD -MF \$\@.dep$fl\n");
+			$mf->print("$sd->{out}: $sd->{src}\n\t\$(${comp}_O) \$< -o \$\@ -MD -MF \$\@.dep$fl\n");
+			$mf->print("\$(OBJDIR)/$sd->{pref}\$(AS_EXT): $sd->{src}\n\t\$(${comp}_S) \$< -o \$\@ -MD -MF \$\@.dep$fl\n");
 
 			if (!defined ($dp = $depends{"cxx$fl"})) {
 				$depends{"cxx$fl"} = $dp = {};
@@ -1322,7 +1323,7 @@ EOT
 		if ($sd->{prog} eq "no") {
 			next;
 		}
-		if ($sd->{prog} eq "cxx") {
+		if ($sd->{prog} eq "cxx" || $sd->{prog} eq "c") {
 			if (dr::build::findArray("gh", $sd->{groups}) >= 0) {
 				$gh_targall .= $this->printGh($mf, $mgh, $sd);
 			}

@@ -22,8 +22,8 @@ SOURCES:
 	:${SD_SOCKET}/Socket_sysiface.hxx:g=didev,t
 	:${SD_SOCKET}/NetAddress.hxx:g=di,t
 	:${SD_SOCKET}/NetAddress.cxx:g=s,t
-	:${SD_SOCKET}/NetAddressInet4.hxx:g=di,t
-	:${SD_SOCKET}/NetAddressInet4.cxx:g=s,t
+	:${SD_SOCKET}/NetAddressInet.cxx:g=s,t,gh,di
+	:${SD_SOCKET}/NetAddressInet4.cxx:g=s,t,gh,di
 	:${SD_SOCKET}/NetAddressLocal.hxx:g=di,t
 	:${SD_SOCKET}/NetAddressLocal.cxx:g=s,t
 

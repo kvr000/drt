@@ -74,6 +74,12 @@ Blob BinaryBlobWriter::getContent()
 	return content;
 }
 
+DR_MET(public virtual)
+void BinaryBlobWriter::nullify()
+{
+	content.setNull();
+}
+
 DR_MET(protected virtual)
 void BinaryBlobWriter::writeDirect(const void *data, size_t size, const String &value_name)
 {

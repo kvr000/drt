@@ -1,7 +1,11 @@
+CC=gcc
 CXX=g++
 
 CXX_O=$(CXX) -c
 CXX_S=$(CXX) -S
+
+CC_O=$(CC) -c
+CC_S=$(CC) -S
 
 LDXX=$(CXX)
 LDXX_SO=$(CXX) -shared

@@ -33,56 +33,42 @@
  * @license	http://www.gnu.org/licenses/lgpl.txt GNU Lesser General Public License v3
  **/
 
-#ifndef dr__io__NetAddressInet4__hxx__
-# define dr__io__NetAddressInet4__hxx__
+/*drt
+ * include: 	dr/io/NetAddress.hxx
+ * ns:		dr::io
+ */
 
-#include <dr/io/NetAddress.hxx>
+#include <dr/io/NetAddressInet.hxx>
+#include "_gen/NetAddressInet-all.hxx"
 
 DR_IO_NS_BEGIN
 
 
-/**
- * Internet a.b.c.d network address
+/*drt
+ * class:	NetAddressInet
+ * ancestor:	dr::io::NetAddress
+ *
+ * at:	Uint16				port;
+ *
+ * doc:{
+ * 	Holder of generic values
+ * }doc
  */
-class DR_IO_PUB NetAddressInet4: public NetAddress
-{
-	DR_OBJECT_DECL_SIMPLE(NetAddressInet4, NetAddress);
 
-public:
-	DR_CONSTRUCT			NetAddressInet4(Uint32 host_, int port_);
-	DR_CONSTRUCT			NetAddressInet4(const String &host, int port_);
-	DR_CONSTRUCT			NetAddressInet4(const String &full_addr);
-
-public:
-	String				formatAddress();
-
-public:
-	Uint16				getPort();
-	Uint32				getHost();
-
-protected:
-	Uint32				host;
-	Uint16				port;
-};
-
-
-DR_RINLINE NetAddressInet4::NetAddressInet4(Uint32 host_, int port_):
-	host(host_),
+DR_MET(public)
+NetAddressInet::NetAddressInet(Uint16 port_):
 	port(port_)
 {
 }
 
-DR_RINLINE Uint32 NetAddressInet4::getHost()
-{
-	return host;
-}
-
-DR_RINLINE Uint16 NetAddressInet4::getPort()
+DR_MET(public virtual)
+Uint16 NetAddressInet::getPort()
 {
 	return port;
 }
 
+DR_MET(public abstract)
+//String NetAddressInet::getHostString()
+
 
 DR_IO_NS_END
-
-#endif
