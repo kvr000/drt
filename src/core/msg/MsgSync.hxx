@@ -58,7 +58,18 @@ public:
 	/* constructor */		MsgSync(Thread *thread_);
 
 public:
-	virtual void			threadSleep() = 0;
+	/**
+	 * waits until another message arrives
+	 *
+	 * @param timeout_ns
+	 * 	maximum time to wait for message (in nanoseconds)
+	 *
+	 * @return 0
+	 * 	if the function timed out
+	 * @return 1
+	 * 	if there is new message
+	 */
+	virtual int			threadSleep(Sint64 timeout_ns) = 0;
 	virtual void			threadWake() = 0;
 	virtual bool			threadXchg(MsgSync *new_sync);
 

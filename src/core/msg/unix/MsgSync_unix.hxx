@@ -72,7 +72,7 @@ public:
 
 public:	/* main interface */
 	void				threadWake();
-	void				threadSleep();
+	int				threadSleep(Sint64 timeout_ns);
 	bool				threadXchg(MsgSync *new_sync);
 
 public:	/* MsgSync_Socket interface */

@@ -47,6 +47,9 @@
 
 DR_NS_BEGIN
 
+DR_OBJECT_DEF(DR_NS_STR, Message, Object);
+DR_OBJECT_IMPL_SIMPLE(Message);
+
 
 DR_EXPORT_MET bool Message::doEval()
 {
@@ -264,7 +267,41 @@ DR_EXPORT_MTS bool Thread::processMessages(int wait_answer)
 			thr->cur_msg = msg;
 		}
 		else { /* wait for the next message */
-			thr->manager->threadSleep();
+			thr->manager->threadSleep(-1);
+		}
+	}
+}
+
+DR_EXPORT_MTS Message *Thread::waitAnyMessageTimeout(Sint64 timeout_ns)
+{
+	Thread *thr = current();
+	Message *msg;
+
+	for (;;) {
+		if ((msg = thr->cur_msg) != NULL) {
+			thr->cur_msg = msg->next;
+			if ((msg->type&Message::ANSWERED) != 0) {
+				thr->serial_pend[msg->serial/LONG_BIT] |= (1<<(msg->serial%LONG_BIT));
+				msg->unref();
+			}
+			else {
+				return msg;
+			}
+		}
+		else if ((msg = (Message *)Atomic::xchg((void **)(void *)&thr->add_msg, NULL)) != NULL) {
+			Message *o;
+			for (o = NULL; ; ) {
+				Message *n = msg->next;
+				msg->next = o;
+				if (!n)
+					break;
+				msg = n;
+			}
+			thr->cur_msg = msg;
+		}
+		else { /* wait for the next message */
+			if (thr->manager->threadSleep(timeout_ns) == 0)
+				return NULL;
 		}
 	}
 }
@@ -305,14 +342,14 @@ DR_EXPORT_MTS void Thread::processOneMessage()
 			thr->cur_msg = msg;
 		}
 		else { /* wait for the next message */
-			thr->manager->threadSleep();
+			thr->manager->threadSleep(-1);
 		}
 	}
 }
 
 void Thread::addMessage(Message *msg)
 {
-	return addMessage_lr(msg->ref());
+	return addMessage_lr((Message *)msg->ref());
 }
 
 void Thread::addMessage_lr(Message *msg)

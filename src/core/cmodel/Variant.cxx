@@ -38,9 +38,11 @@
  * include: 	dr/Blob.hxx
  * include: 	dr/String.hxx
  * ns:		dr
+ */
+
+/*drt
  * class:	Variant
  * ancestor:	dr::Object
- * ifaces:	
  *
  * co:{
  * public:

@@ -476,18 +476,33 @@ public:
 };
 #endif
 
+/**
+ * Temporary reference
+ *
+ * create an auto destroy reference for the passed object
+ */
 template <typename Type>
 ERef<Type> tref(Type *o)
 {
 	return o;
 }
 
+/**
+ * Temporary reference
+ *
+ * create an auto destroy reference for the passed object
+ */
 template <typename Type>
 ERef<Type> tref(const Ref<Type> &o)
 {
 	return o.getDoref();
 }
 
+/**
+ * Implicit reference
+ *
+ * create an auto destroy reference for the passed object, referencing it first
+ */
 template <typename Type>
 Type *iref(Type *o)
 {
@@ -495,10 +510,41 @@ Type *iref(Type *o)
 	return o;
 }
 
+/**
+ * Implicit reference
+ *
+ * create an auto destroy reference for the passed object, referencing it first
+ */
 template <typename Type>
 Type *iref(const Ref<Type> &o)
 {
 	return o.getDoref();
+}
+
+/**
+ * Move reference
+ *
+ * create an auto destroy reference for the passed object reference, the
+ * original reference is reset
+ */
+template <typename Type>
+ERef<Type> mref(Type **o)
+{
+	Type *no = *o;
+	*o = NULL;
+	return no;
+}
+
+/**
+ * Move reference
+ *
+ * create an auto destroy reference for the passed object reference, the
+ * original reference is reset
+ */
+template <typename Type>
+ERef<Type> mref(const Ref<Type> *o)
+{
+	return o->getAndNull();
 }
 
 

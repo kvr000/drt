@@ -41,6 +41,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/select.h>
+#include <sys/time.h>
 
 #include <dr/Const.hxx>
 #include <dr/SysError.hxx>
@@ -124,8 +125,9 @@ bool MsgSync_unix::threadXchg(MsgSync *new_sync)
 }
 
 /* thread sync interface */
-void MsgSync_unix::threadSleep()
+int MsgSync_unix::threadSleep(Sint64 timeout_ns)
 {
+	int got_message = 1;
 	TList<socket_notif_data>::Node *node;
 	int highest = -1;
 	int rhighest;
@@ -173,7 +175,22 @@ void MsgSync_unix::threadSleep()
 		method = 0;
 		if (thread->msg_setWaiting()) {
 			DR_LOG1(("%s: %p: selecting method %d\n", DR_FUNCTION, this, method));
-			pthread_cond_wait(&sync_cond, &sync_mutex);
+			if (timeout_ns < 0) {
+				pthread_cond_wait(&sync_cond, &sync_mutex);
+			}
+			else {
+				struct timeval now;
+				gettimeofday(&now, NULL);
+				struct timespec ts;
+				ts.tv_sec = now.tv_sec+timeout_ns/1000000000;
+				if ((ts.tv_nsec += timeout_ns%1000000000) >= 1000000000) {
+					ts.tv_nsec -= 1000000000;
+					ts.tv_sec++;
+				}
+				if (pthread_cond_timedwait(&sync_cond, &sync_mutex, &ts) == ETIMEDOUT) {
+					got_message = 0;
+				}
+			}
 			DR_LOG1(("%s: being woke\n", DR_FUNCTION));
 		}
 		pthread_mutex_unlock(&sync_mutex);
@@ -194,17 +211,25 @@ void MsgSync_unix::threadSleep()
 		method = 1;
 		if (!thread->msg_setWaiting()) {
 			pthread_mutex_unlock(&sync_mutex);
-			return;
+			return got_message;
 		}
 		pthread_mutex_unlock(&sync_mutex);
-		while ((rhighest = select(highest+1, &rs, &ws, &es, NULL)) < 0) {
-			switch (errno) {
-			case EINTR:
-				break;
-			default:
+		struct timeval tv;
+		if (timeout_ns >= 0) {
+			tv.tv_sec = (timeout_ns+999)/1000000000;
+			tv.tv_usec = ((timeout_ns+999)/1000)%1000000;
+		}
+		while ((rhighest = select(highest+1, &rs, &ws, &es, timeout_ns >= 0 ? &tv : NULL)) < 0) {
+			if (errno == EINTR) {
+				if (timeout_ns >= 0)
+					break;
+			}
+			else {
 				DR_Fatal(BString("select returned ")+BString(strerror(errno)));
 			}
 		}
+		if (rhighest == 0)
+			got_message = 0;
 		thread->msg_unsetWaiting();
 		rhighest = highest+1;
 		if (FD_ISSET(pipe_fd[0], &rs)) {
@@ -230,6 +255,7 @@ void MsgSync_unix::threadSleep()
 			}
 		}
 	}
+	return got_message;
 }
 
 void MsgSync_unix::threadWake()

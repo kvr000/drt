@@ -10,10 +10,12 @@ FLAGS:
 OUTPUT:
 	exec:tlink_drapp:f=exec;s=tlink_drapp,common
 	exec:t0:f=exec;s=t0,common;r=test
+	exec:tworker:f=exec;s=tworker,common;r=test
 
 SOURCES:
 	:tlink_drapp.cxx:f=cxx;g=tlink_drapp,t
 	:t0.cxx:f=cxx;g=t0,t
+	:tworker.cxx:f=cxx;g=gh,tworker,t
 	no:mklist:g=t
 	lshlib:dr:g=common
 	lshlib:drapp:g=common

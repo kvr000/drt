@@ -92,24 +92,45 @@ bool MsgSync_wnt::threadXchg(MsgSync *new_sync)
 }
 
 /* thread sync interface */
-void MsgSync_wnt::threadSleep()
+int MsgSync_wnt::threadSleep(Sint64 timeout_ns)
 {
+	int got_message = 1;
 	EnterCriticalSection(&sync_mutex);
 	method = 0;
 	if (thread->msg_setWaiting()) {
+		if (timeout_ns >= (Sint64)0x7fffffff*1000000)
+			timeout_ns = 0x7fffffff*1000000;
 		DR_LOG1(("%s: %p: selecting method %d\n", DR_FUNCTION, this, method));
 		LeaveCriticalSection(&sync_mutex);
 		if (msg_listener.isNull()) {
-			WaitForSingleObject(sync_event, INFINITE);
+			switch (WaitForSingleObject(sync_event, timeout_ns >= 0 ? (timeout_ns+999999)/1000000 : INFINITE)) {
+			case WAIT_FAILED:
+				xthrownew(SysError(GetLastError()));
+				break;
+
+			case WAIT_TIMEOUT:
+				got_message = 0;
+				break;
+
+			case WAIT_OBJECT_0:
+				break;
+
+			}
 		}
 		else {
-			int ret = MsgWaitForMultipleObjects(1, &sync_event, FALSE, INFINITE, QS_ALLEVENTS);
+			int ret = MsgWaitForMultipleObjects(1, &sync_event, FALSE, timeout_ns >= 0 ? (timeout_ns+999999)/1000000 : INFINITE, QS_ALLEVENTS);
 			switch (ret) {
 			case WAIT_FAILED:
 				xthrownew(SysError(GetLastError()));
 				break;
+
+			case WAIT_TIMEOUT:
+				got_message = 0;
+				break;
+
 			case WAIT_OBJECT_0:
 				break;
+
 			case WAIT_OBJECT_0+1:
 				ERef<Message> msg(new Message);
 				msg->setSlot(msg_listener);

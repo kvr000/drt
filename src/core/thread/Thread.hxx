@@ -52,8 +52,10 @@ class MsgSync;
 /**
  * message carrier
  */
-class DR_PUB Message: public Shared
+class DR_PUB Message: public Object
 {
+	DR_OBJECT_DECL_SIMPLE(Message, Object);
+
 protected:
 	Message *			next;
 
@@ -93,9 +95,6 @@ public:
 	};
 
 public:
-	DR_RINLINE Message *		ref()					{ return (Message *)Shared::ref(); }
-
-public:
 	DR_MINLINE			Message()				{ type = UNSET; }
 	virtual				~Message();
 	virtual bool			doEval();
@@ -132,7 +131,7 @@ public:
 	DR_RINLINE void			setAnswer(int serial_)			{ type = (Type)(type|ANSWERED); serial = serial_; }
 	DR_RINLINE void			resetAnswer(int serial_)		{ type = Type(NOCALL|ANSWERED); serial = serial_; }
 
-	Message *			createTerminate();
+	static Message *		createTerminate();
 
 protected:
 	friend class Thread;
@@ -190,6 +189,9 @@ public:
 	static void			sendMessage(Thread *target, Message *msg);
 	static void			immMessage(Thread *target, Message *msg);
 	static int			createMessageSerial();
+
+	static Message *		waitAnyMessage();
+	static Message *		waitAnyMessageTimeout(Sint64 timeout_ns);
 
 	static bool			processMessages(int wait_answer = -1);
 	static void			processOneMessage();

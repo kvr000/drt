@@ -34,6 +34,7 @@
  **/
 
 #include <dr/Const.hxx>
+#include <dr/x_kw.hxx>
 #include <dr/SysError.hxx>
 #include <dr/MsgSync.hxx>
 #include <dr/Thread.msg.hxx>
@@ -77,17 +78,35 @@ bool MsgSync_symbian::threadXchg(MsgSync *new_sync)
 }
 
 /* thread sync interface */
-void MsgSync_symbian::threadSleep()
+int MsgSync_symbian::threadSleep(Sint64 timeout_ns)
 {
+	int got_message = 1;
 	sync_mutex.Wait();
 	method = 0;
 	if (thread->msg_setWaiting()) {
 		DR_LOG1(("%s: %p: selecting method %d\n", DR_FUNCTION, this, method));
 		sync_status = KRequestPending;
 		sync_mutex.Signal();
-		User::WaitForRequest(sync_status);
+		if (timeout_ns >= 0) {
+			TRequestStatus timer_status;
+			int err;
+			RTimer timer;
+			if ((err = timer.CreateLocal()) != 0) {
+				xthrownew(SysError(err));
+			}
+			timer.After(timer_status, (timeout_ns+999)/1000);
+			User::WaitForRequest(sync_status, timer_status);
+			if (timer_status == 0) {
+				got_message = 0;
+			}
+			timer.Cancel();
+		}
+		else {
+			User::WaitForRequest(sync_status);
+		}
 		DR_LOG1(("%s: being woken\n", DR_FUNCTION));
 	}
+	return got_message;
 }
 
 void MsgSync_symbian::threadWake()

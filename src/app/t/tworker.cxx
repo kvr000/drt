@@ -33,47 +33,63 @@
  * @license	http://www.gnu.org/licenses/lgpl.txt GNU Lesser General Public License v3
  **/
 
-#ifndef dr__MsgSync_symbian__hxx__
-# define dr__MsgSync_symbian__hxx__
+#include <stdio.h>
+#include <string.h>
 
-#include <e32base.h>
+#include <dr/x_kw.hxx>
+#include <dr/pe_error.hxx>
 
-#include <dr/MsgSync.hxx>
+#include <dr/Ref.hxx>
+#include <dr/Except.hxx>
+#include <dr/Variant.hxx>
 
-DR_NS_BEGIN
+#include <dr/app/WorkerPoolManager.hxx>
 
+#include <dr/testenv/testenv.hxx>
+#include <dr/testenv/TestObject.hxx>
 
-
-/**
- * Message Synchronisation unix implementation
- *
- * Symbian implementation of Message Synchronisation, contains additional support
- * for sockets
+/*drt
+ * ns:	dr::app::t
  */
-class DR_PUB MsgSync_symbian: public MsgSync
+
+DR_APP_NS_USE;
+DR_TESTENV_NS_USE
+
+
+#define TEST_WORKER
+
+#ifdef TEST_WORKER
+TESTNS(worker);
+
+class TestWorker: public WorkerPoolManager
 {
-	DR_OBJECT_DECL(MsgSync_symbian, MsgSync);
-	DR_REDIR_BEHAV();
-
-protected:
-	virtual				~MsgSync_symbian();
-
-public:
-	/* */				MsgSync_symbian(Thread *thr);
-
-public:	/* main interface */
-	void				threadWake();
-	int				threadSleep(Sint64 timeout_ns);
-	bool				threadXchg(MsgSync *new_sync);
-
-protected:
-	int				method;
-
-	RMutex				sync_mutex;
-	TRequestStatus			sync_status;
+	virtual void			runWork(Object *obj)
+	{
+		//Fatal::plog("Thread %p processing %ld\n", Thread::current(), ((Variant *)obj)->toInt());
+	}
 };
 
+void test()
+{
+	ERef<WorkerPoolManager> wm(new TestWorker);
 
-DR_NS_END
+	wm->setMaxWorkers(16);
 
+	for (int i = 0; i < 1024; i++) {
+		wm->addWork(tref(new Variant((Sint64)i)));
+		tref(wm->checkWorkResult());
+	}
+	while (!tref(wm->waitWorkResult()).isNull()) {
+	}
+}
+TESTNSE(worker);
 #endif
+
+DR_TESTENV_MAIN()
+{
+	test_init();
+#ifdef TEST_WORKER
+	TESTRUN(worker);
+#endif
+	return 0;
+}

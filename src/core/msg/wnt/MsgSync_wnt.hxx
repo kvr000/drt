@@ -67,7 +67,7 @@ public: /* MsgSync_WntMsg interface */
 
 public:	/* main interface */
 	void				threadWake();
-	void				threadSleep();
+	void				threadSleep(Sint64 timeout_ns);
 	bool				threadXchg(MsgSync *new_sync);
 
 protected:

@@ -1,0 +1,7 @@
+.cdef SD_WORKERPOOL		.
+
+SOURCES:
+	no:${SD_WORKERPOOL}/mklist:g=t
+	:${SD_WORKERPOOL}/WorkerPoolManager.cxx:g=s,t,gh,di
+	:${SD_WORKERPOOL}/WorkerPoolThread.cxx:g=s,t,gh,di
+

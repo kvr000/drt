@@ -1,9 +1,10 @@
 .def SD_BASE		base
 .def SD_EXCEPT		except
 .def SD_APPCACHE	appcache
+.def SD_WORKERPOOL	workerpool
 .def SD_META		meta
 
-.def SUBDIRS		${SD_BASE},${SD_EXCEPT},${SD_APPCACHE},${SD_META}
+.def SUBDIRS		${SD_BASE},${SD_EXCEPT},${SD_APPCACHE},${SD_WORKERPOOL},${SD_META}
 .def ESUBDIRS		{${SUBDIRS}}
 
 .include ${ESUBDIRS}/mklist
