@@ -37,5 +37,5 @@ FCHECK:
 	${ESUBDIRS}/mklist::s=t
 
 DIST_INC:
-	di:dr/Merv/io
+	di:dr/serv/io
 
