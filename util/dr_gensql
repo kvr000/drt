@@ -101,6 +101,7 @@ our %SQL_UML_TYPES_PRIM = (
 	Long			=> "bigint",
 	long			=> "bigint",
 	int			=> "int",
+	float			=> "float",
 	Integer			=> "int",
 	date			=> "date",
 	datetime		=> "datetime",

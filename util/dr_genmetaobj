@@ -99,6 +99,7 @@ our %FORM_UML_TYPES_PRIM = (
 	Long			=> "bigint",
 	long			=> "bigint",
 	int			=> "int",
+	float			=> "float",
 	Integer			=> "int",
 );
 
@@ -186,6 +187,11 @@ foreach my $model (@models) {
 		foreach (qw(req_get req_set req_new req_del)) {
 			$form->print(tabalign("$_", 16).$model->getDrTagValue($_)."\n");
 		}
+		foreach (qw(order)) {
+			if (defined (my $v = $model->checkDrTagValue($_))) {
+				$form->print(tabalign("$_", 16).$model->getDrTagValue($_)."\n");
+			}
+		}
 		1;
 	}
 		or STDERR->print("failed to process $model->{full}: $@"), $errors++;
@@ -213,7 +219,7 @@ foreach my $model (@models) {
 			$form->print(tabalign("\trole", 24).$roles."\n");
 			if ($attr->{stype} eq "attr") {
 				my ( $type, $tagger ) = $attr->getFinalTypeWithTagger();
-				foreach (qw(db_conversion)) {
+				foreach (qw(db_conversion align)) {
 					if (defined (my $val = $tagger->checkTagValue($_))) {
 						$form->print(tabalign("\t$_", 24).$val."\n");
 					}
@@ -276,7 +282,7 @@ foreach my $model (@models) {
 	foreach my $action (@{$model->{view_list}}) {
 		eval {
 			$form->print(tabalign("view", 16).$action->{name}."\n");
-			foreach (qw(supplier renderer addcompos compos_mand)) {
+			foreach (qw(supplier renderer addcompos compos_mand iniclass)) {
 				if (defined (my $v = $action->checkDrTagValue($_))) {
 					$form->print(tabalign("\t$_", 24).$v."\n")
 				}
