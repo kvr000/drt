@@ -177,12 +177,12 @@ DR_EXPORT_MET Thread::~Thread()
 		DR_FORGET(thrown_value);
 	if (manager)
 		manager->unref();
-	if (impl) {
-		impl->destroy();
-		//impl->unref();
-	}
 	if (serial_pend)
 		Alloc::free(serial_pend);
+	if (impl) {
+		//impl->destroy();
+		impl->mainDestroy();
+	}
 }
 
 DR_EXPORT_MET void Thread::requestTerminate()

@@ -44,7 +44,7 @@ DR_NS_BEGIN
 /**
  * thread platform dependent implementation
  */
-class DR_PUB Thread_impl
+class DR_PUB Thread_impl: public Shared
 {
 public:
 	virtual void			wait() = 0;
@@ -58,7 +58,9 @@ protected:
 	DR_RINLINE void			resetImpl()				{ main->impl = NULL; }
 	DR_RINLINE void			setThrown(Throwable *val /*loose*/)	{ main->thrown_value = val; }
 
-	virtual void			destroy() = 0;
+	virtual void			mainDestroy()				{ unref(); }
+
+	DR_RINLINE void			threadPreDestroy()			{ MM::closingThread(); }
 
 protected:
 	Thread *			main;
@@ -78,7 +80,8 @@ public:
 	/**
 	 * gets the current thread implementation object
 	 *
-	 * @note			the method doesn't increment the object count
+	 * @note
+	 * 	the method doesn't increment the object count
 	 */
 	static Thread_impl *		currentImpl();
 

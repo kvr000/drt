@@ -51,7 +51,7 @@ DR_NS_BEGIN
 class DR_PUB Shared: public Base
 {
 protected:
-	Refcnt			refcnt;
+	Refcnt				refcnt;
 
 public:
 	/* constructor */		Shared()				: refcnt(0) {}

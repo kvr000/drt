@@ -38,6 +38,7 @@
 
 #include <dr/x_kw.hxx>
 #include <dr/Mem.hxx>
+#include <dr/MutexCond.hxx>
 #include <dr/DataNotFoundExcept.hxx>
 
 #include <dr/testenv/testenv.hxx>
@@ -52,9 +53,14 @@ DR_TESTENV_NS_USE
 
 #ifdef TEST_TMCACHE
 TESTNS(tmcache);
+
+static MutexCond *wcond = MutexCond::create();
+unsigned running = 0;
+RList<Thread> exited;
+
 static void allocateBuffers()
 {
-	void *allocs[1032];
+	void *allocs[1024-32];
 #if 1
 	for (size_t i = 1; i < sizeof(allocs)/sizeof(allocs[0]); i++) {
 		allocs[i] = MM::alloc(i);
@@ -63,14 +69,40 @@ static void allocateBuffers()
 		MM::free(allocs[i]);
 	}
 #endif
+	MM::flushThreadCache();
+	wcond->lock();
+	running--;
+	//exited.append(IRef<Thread>(Thread::current()));
+	wcond->signal();
+	wcond->unlock();
 }
 
 void test()
 {
-	for (int i = 0; i < 1024*1024; i++) {
-		ThreadSimple::go(Eslot0<void>(&allocateBuffers))->waitUnref();
+	for (int i = 0; i < 16*1024*1024; i++) {
+		wcond->lock();
+		while (running > 8) {
+			wcond->wait();
+		}
+		while (exited.count())
+			exited.removeFirst();
+		ThreadSimple::go(Eslot0<void>(&allocateBuffers))->unref();
+		running++;
+		wcond->unlock();
+		if ((i+1)%10000 == 0)
+			Fatal::plog("ran thread %d\n", i);
+	}
+	while (running > 0 || exited.count()) {
+		wcond->lock();
+		if (running > 0) {
+			wcond->wait();
+		}
+		while (exited.count())
+			exited.removeFirst()->wait();
+		wcond->unlock();
 	}
 }
+
 TESTNSE(tmcache);
 #endif
 

@@ -75,6 +75,8 @@ void MM_default::setup(const char *opts, int set_level)
 	instance.remember_mutex = Mutex::create();
 
 	MM_impl::debug_options = set_level;
+
+	Lockp::s_init();
 }
 
 MM_default::MM_default()

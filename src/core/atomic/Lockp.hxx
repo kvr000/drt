@@ -86,6 +86,9 @@ public:
 	template <typename T>
 	DR_RINLINE static T		i_cmem(void *volatile *ptr, SintPtr t_offs);
 
+public:
+	static void			s_init();
+
 private:
 	/* std locks support functions */
 	static void			p_wake(void *volatile *ptr);

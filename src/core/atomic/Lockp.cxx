@@ -70,6 +70,17 @@ static inline MutexCond *getCond(void *volatile *ptr)
 	return low_conds[hash];
 }
 
+void Lockp::s_init()
+{
+	for (size_t hash = 0; hash <= LOW_COND_MAX; hash++) {
+		if (low_conds[hash] != NULL)
+			continue;
+		MutexCond *cond = MutexCond::create();
+		if (!Atomic::cmpxchg((void **)(void *)&low_conds[hash], NULL, cond))
+			cond->unref();
+	}
+}
+
 /* pointer has three states:
  * 0: unlocked
  * 1: locked, another thread waiting

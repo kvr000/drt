@@ -77,9 +77,6 @@ protected:
 	DR_NINLINE static void		createCurrent();
 
 protected:
-	virtual void			destroy();
-
-protected:
 	static void *			main_func(void *);
 	static void			finish_func(void *);
 
@@ -133,14 +130,11 @@ void Thread_pthread::finish_func(void *impl_)
 	if (!impl->main)
 		return;
 	pthread_setspecific(key_ptr, impl);
-	MM::closingThread();
+	impl->ref();
 	impl->main->unref();
+	impl->threadPreDestroy();
 	pthread_setspecific(key_ptr, NULL);
-}
-
-void Thread_pthread::destroy()
-{
-	delete this;
+	impl->unref();
 }
 
 Thread_pthread::Thread_pthread(Thread *main_):
