@@ -122,28 +122,52 @@ sub translateSqlType($)
 	my $attr		= shift;
 
 	eval {
-		my $type = $attr->getFinalType();
+		my ( $type, $tagger ) = $attr->getFinalTypeWithTagger();
 
-		if ($type->{stype} eq "primitive") {
-			my $ptype = $type->{type};
-			if ($ptype =~ m/^(\w+)\((\d+)\)$/) {
-				if (my $sqlt = $SQL_UML_TYPES_VAR{$1}) {
-					return "$sqlt($2)";
-				}
-				die "cannot map $ptype";
+		if (defined (my $db_type = $tagger->checkTag("db_type"))) {
+			if ($type->{stype} eq "enum") {
+				return "enum(".join(", ", map({
+							$_->{drtag}->getTag("db_value")->{value}
+						} @{$type->{literal_list}})).")";
 			}
 			else {
-				if (my $sqlt = $SQL_UML_TYPES_PRIM{$ptype}) {
-					return $sqlt;
+				my $ptype = $type->{type};
+				if ($ptype =~ m/^(\w+)\((\d+)\)$/) {
+					if (my $sqlt = $SQL_UML_TYPES_VAR{$1}) {
+						return "$sqlt($2)";
+					}
+					die "cannot map $ptype";
 				}
-				die "cannot map $ptype";
+				else {
+					if (my $sqlt = $SQL_UML_TYPES_PRIM{$ptype}) {
+						return $sqlt;
+					}
+					die "cannot map $ptype";
+				}
 			}
 		}
-		elsif ($type->{stype} eq "enum") {
-			return "int";
-		}
 		else {
-			die "unknown stype $type->{stype} for class $type->{full}";
+			if ($type->{stype} eq "primitive") {
+				my $ptype = $type->{type};
+				if ($ptype =~ m/^(\w+)\((\d+)\)$/) {
+					if (my $sqlt = $SQL_UML_TYPES_VAR{$1}) {
+						return "$sqlt($2)";
+					}
+					die "cannot map $ptype";
+				}
+				else {
+					if (my $sqlt = $SQL_UML_TYPES_PRIM{$ptype}) {
+						return $sqlt;
+					}
+					die "cannot map $ptype";
+				}
+			}
+			elsif ($type->{stype} eq "enum") {
+				return "int";
+			}
+			else {
+				die "unknown stype $type->{stype} for class $type->{full}";
+			}
 		}
 	}
 		or dieAttrContext($attr, $@);
@@ -167,8 +191,11 @@ sub translateSqlTypeDecl($$)
 	if ($main->checkDrTag("serial")) {
 		$sql_type .= " auto_increment";
 	}
-	if (defined $main->{default}) {
-		$sql_type .= " default $main->{default}";
+	if (defined (my $db_default = $main->checkDrTag("db_default"))) {
+		$sql_type .= " default $db_default";
+	}
+	elsif (defined (my $default = $main->{default})) {
+		$sql_type .= " default $default";
 	}
 	return $sql_type;
 }

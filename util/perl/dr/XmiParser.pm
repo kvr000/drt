@@ -288,7 +288,7 @@ sub read_warnUnknown
 
 	my $reader		= $this->{reader};
 
-	$this->read_doDie("unexpected element");
+	$this->read_doDie("unexpected element".$reader->name()."");
 }
 
 sub readRelevant
@@ -1022,7 +1022,33 @@ sub read_processEnumExtension
 {
 	my $this		= shift;
 
-	$this->read_skipNode();
+	my $reader		= $this->{reader};
+	my $exit_depth		= $reader->depth();
+
+	for (;;) {
+		my ($type, $name, $depth) = $this->readNode()
+			or $this->read_doDie("unexpected end of XML");
+		last if ($depth == $exit_depth);
+		if ($name eq "stereotype") {
+			$this->read_processEnumExtensionStereotype();
+		}
+		elsif ($name eq "taggedValue") {
+			$this->read_processGenericTagged($this->{read_context}->{comment});
+			next;
+		}
+		else {
+			$this->read_unknownNode();
+		}
+	}
+}
+
+sub read_processEnumExtensionStereotype
+{
+	my $this		= shift;
+
+	$this->read_doDie("expected stereotype enum for enum") unless ($this->read_getMandatoryAttr("name") eq "enum");
+
+	$this->read_needNodeEnd();
 }
 
 sub read_processEnumLiteral
@@ -1047,6 +1073,9 @@ sub read_processEnumLiteral
 			$this->read_processGenericComment($literal->{comment});
 			next;
 		}
+		elsif ($name eq "xmi:Extension") {
+			$this->read_processEnumLiteralExtension($literal);
+		}
 		elsif ($name eq "defaultValue") {
 			$this->read_processEnumLiteralDefault(\$literal->{default});
 			next;
@@ -1067,6 +1096,28 @@ sub read_processEnumLiteralDefault
 	$$default = $this->read_getMandatoryAttr("value");
 
 	$this->read_needNodeEnd();
+}
+
+sub read_processEnumLiteralExtension
+{
+	my $this		= shift;
+	my $literal		= shift;
+
+	my $reader		= $this->{reader};
+	my $exit_depth		= $reader->depth();
+
+	for (;;) {
+		my ($type, $name, $depth) = $this->readNode()
+			or $this->read_doDie("unexpected end of XML");
+		last if ($depth == $exit_depth);
+		if ($name eq "taggedValue") {
+			$this->read_processGenericTagged($literal->{comment});
+			next;
+		}
+		else {
+			$this->read_unknownNode();
+		}
+	}
 }
 
 sub read_processArtifact

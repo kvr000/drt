@@ -134,6 +134,68 @@ sub getSpec
 	return {};
 }
 
+sub cloneTagger
+{
+	my $this		= shift;
+
+	my $dup = $this->new();
+
+	$dup->{drtag_list} = [ @{$this->{drtag_list}} ];
+	$dup->{drtag_hash} = { %{$this->{drtag_hash}} };
+	foreach (keys %{$this->{drtag_spec}}) {
+		$dup->{drtag_spec}->{$_} = { %{$this->{drtag_spec}->{$_}} };
+	}
+	$dup->{drtag_cnt} = $this->{drtag_cnt};
+
+	return $dup;
+}
+
+sub mergeReplacing
+{
+	my $this		= shift;
+	my $merge		= shift;
+
+	foreach (@{$merge->{drtag_list}}) {
+		if ($this->{drtag_hash}->{$_->{name}}) {;
+			for (my $i = 0; ; $i++) {
+				splice(@{$this->{drtag_list}}, $i, 1), last if ($this->{drtag_list}->[$i]->{name} eq $_->{name});
+			}
+		}
+		unshift(@{$this->{drtag_list}}, $_);
+		$this->{drtag_hash}->{$_->{name}} = $_;
+	}
+	foreach (keys %{$merge->{drtag_spec}}) {
+		my $spec = $merge->{drtag_spec};
+		my $tspec;
+		$this->{drtag_spec} = $tspec = {} unless (defined ($tspec = $this->{drtag_spec}->{$spec}));
+		foreach (keys %{$spec}) {
+			next if (defined $tspec->{$_});
+			$tspec->{$_} = $spec->{$_};
+		}
+	}
+}
+
+sub mergeAdding
+{
+	my $this		= shift;
+	my $merge		= shift;
+
+	foreach (@{$merge->{drtag_list}}) {
+		next if ($this->{drtag_hash}->{$_->{name}});
+		push(@{$this->{drtag_list}}, $_);
+		$this->{drtag_hash}->{$_->{name}} = $_;
+	}
+	foreach (keys %{$merge->{drtag_spec}}) {
+		my $spec = $merge->{drtag_spec};
+		my $tspec;
+		$this->{drtag_spec} = $tspec = {} unless (defined ($tspec = $this->{drtag_spec}->{$spec}));
+		foreach (keys %{$spec}) {
+			next if (defined $tspec->{$_});
+			$tspec->{$_} = $spec->{$_};
+		}
+	}
+}
+
 
 package dr::ModelStore::ClassBase;
 
@@ -173,7 +235,7 @@ sub dieContext
 	my $msg			= shift;
 	my $cause		= shift;
 
-	dr::Util::doDie(defined $cause && $cause =~ m/^\S+:\d+:/ ? "$this->{file_context}: $msg\n$cause" : "$this->{file_context}: $msg");
+	dr::Util::doDie(((defined $cause)) ? "$this->{file_context}: $msg\n$cause" : "$this->{file_context}: $msg");
 }
 
 our %BASE_MAPPER = (
@@ -197,6 +259,47 @@ sub getFinalType
 	my $this		= shift;
 
 	return $this;
+}
+
+sub getFinalTypeWithTagger
+{
+	my $this		= shift;
+
+	return ( $this, $this->{drtag}->cloneTagger() );
+}
+
+sub getDrTagger
+{
+	my $this		= shift;
+
+	return $this->{drtag};
+}
+
+sub getDrTag
+{
+	my $this		= shift;
+	my $tag			= shift;
+
+	eval {
+		return $this->{drtag}->getTag($tag);
+	}
+		or $this->dieContext($@);
+}
+
+sub checkDrTag
+{
+	my $this		= shift;
+	my $tag			= shift;
+
+	return $this->{drtag}->checkTag($tag);
+}
+
+sub getDrSpecs
+{
+	my $this		= shift;
+	my $spec		= shift;
+
+	return $this->{drtag}->getSpecs($spec);
 }
 
 sub postLoad
@@ -268,13 +371,6 @@ sub new
 	my $this = $class->SUPER::new($owner, { package => "", name => $name, stype => "primitive" });
 
 	$this->{type} = $type;
-
-	return $this;
-}
-
-sub getFinalType
-{
-	my $this		= shift;
 
 	return $this;
 }
@@ -437,6 +533,25 @@ sub getFinalType
 	}
 }
 
+sub getFinalTypeWithTagger
+{
+	my $this		= shift;
+
+	if (my $type = dr::ModelStore::Primitive::checkPrimitive($this->{owner}, $this->{base})) {
+		return ( $type, $this->{drtag}->cloneTagger() );
+	}
+	else {
+		my ( $type, $tagger );
+		eval {
+			( $type, $tagger ) = $this->getSubModel($this->{base})->getFinalTypeWithTagger();
+			$tagger->mergeReplacing($this->{drtag});
+			1;
+		}
+			or $this->dieContext("failed to open final type", $@);
+		return ( $type, $tagger );
+	}
+}
+
 our %TYPEDEF_MAPPER = (
 	%dr::ModelStore::ClassBase::BASE_MAPPER,
 	base			=> \&readTypedefDirect,
@@ -507,6 +622,7 @@ sub load
 our %ENUM_LITERAL_MAPPER = (
 	value			=> \&readEnumLiteralDirect,
 	comment			=> \&readEnumLiteralComment,
+	drtag			=> \&readEnumLiteralDrtag,
 );
 
 sub readEnumLiteral
@@ -520,6 +636,7 @@ sub readEnumLiteral
 		name			=> $val,
 		value			=> undef,
 		comment			=> [],
+		drtag			=> dr::ModelStore::Drtag->new(),
 	};
 
 	dr::ModelStore::Util::genericLoad($enum, $base->getSubLeveler(), \%ENUM_LITERAL_MAPPER);
@@ -545,6 +662,16 @@ sub readEnumLiteralComment
 	my $val			= shift;
 
 	push(@{$enum->{comment}}, $val);
+}
+
+sub readEnumLiteralDrtag
+{
+	my $this		= shift;
+	my $base		= shift;
+	my $key			= shift;
+	my $val			= shift;
+
+	$this->{drtag}->addTag($val);
 }
 
 
@@ -581,7 +708,7 @@ sub dieContext
 	my $msg			= shift;
 	my $cause		= shift;
 
-	dr::Util::doDie(defined $cause && $cause =~ m/^\S+:\d+:/ ? "$this->{file_context}: $msg\n$cause" : "$this->{file_context}: $msg");
+	dr::Util::doDie(((defined $cause)) ? "$this->{file_context}: $msg\n$cause" : "$this->{file_context}: $msg");
 }
 
 sub getRole
@@ -709,6 +836,25 @@ sub getFinalType
 	else {
 		eval { return $this->{owner}->getSubModel($this->{type})->getFinalType(); }
 			or $this->dieContext("failed to open final type", $@);
+	}
+}
+
+sub getFinalTypeWithTagger
+{
+	my $this		= shift;
+
+	if (my $type = dr::ModelStore::Primitive::checkPrimitive($this->{owner}, $this->{type})) {
+		return ( $type, $this->{drtag} );
+	}
+	else {
+		my ( $type, $tagger );
+		eval {
+			( $type, $tagger ) = $this->{owner}->getSubModel($this->{type})->getFinalTypeWithTagger();
+			$tagger->mergeReplacing($this->{drtag});
+			1;
+		}
+			or $this->dieContext("failed to open final type $this->{type}", $@);
+		return ( $type, $tagger );
 	}
 }
 
