@@ -57,19 +57,19 @@
 # define DR_XML_CLS	DR_IMPORT_CLS
 #endif
 
-#define DRXML_NS_USE using namespace dr; using namespace dr::xml;
-#define DRXML_NS dr::xml
-#define DRXML_NSP(rest) dr::xml::rest
-#define DRXML_NS_STR "dr::xml::"
-#define DRXML_NS_STRP(rest) "dr::xml::"rest
-#define DRXML_NS_BEGIN namespace dr \
+#define DR_XML_NS_USE using namespace dr; using namespace dr::xml;
+#define DR_XML_NS dr::xml
+#define DR_XML_NSP(rest) dr::xml::rest
+#define DR_XML_NS_STR "dr::xml::"
+#define DR_XML_NS_STRP(rest) "dr::xml::"rest
+#define DR_XML_NS_BEGIN namespace dr \
 { \
 	namespace xml \
 	{
-#define DRXML_NS_END }; };
+#define DR_XML_NS_END }; };
 
 
-DRXML_NS_BEGIN
-DRXML_NS_END
+DR_XML_NS_BEGIN
+DR_XML_NS_END
 
 #endif

@@ -33,30 +33,52 @@
  * @license	http://www.gnu.org/licenses/lgpl.txt GNU Lesser General Public License v3
  **/
 
+/*drt
+ * include:	libxml/parser.h
+ * include:	libxml/xmlreader.h
+ * include:	libxml/xpath.h
+ * include:	libxml/tree.h
+ * 
+ * include:	dr/Ref.hxx
+ * include:	dr/xml/XmlElement.hxx
+ * include:	dr/xml/XmlDoc_lxml2.hxx
+ *
+ * ns:		dr::xml
+ */
+
 #include <dr/x_kw.hxx>
-#include <dr/Const.hxx>
 
 #include <dr/xml/XmlException.hxx>
 
 #include <dr/xml/XmlElement_lxml2.hxx>
+#include "_gen/XmlElement_lxml2-all.hxx"
 
-DRXML_NS_BEGIN
-
-
-DR_OBJECT_DEF(DRXML_NS_STR, XmlElement_lxml2, XmlElement);
-DR_OBJECT_IMPL_SIMPLE(XmlElement_lxml2);
+DR_XML_NS_BEGIN
 
 
+/*drt
+ * class:	XmlElement_lxml2
+ * type:	object
+ * ancestor:	XmlElement
+ *
+ * at:	Ref<XmlDoc_lxml2>		owner;
+ * at:	xmlElementPtr			element;
+ */
+
+
+DR_MET(public)
 XmlElement_lxml2::XmlElement_lxml2(XmlDoc_lxml2 *owner_, xmlElementPtr element_):
 	owner(owner_, true),
 	element(element_)
 {
 }
 
+DR_MET(protected)
 XmlElement_lxml2::~XmlElement_lxml2()
 {
 }
 
+DR_MET(public virtual)
 String XmlElement_lxml2::getTexts()
 {
 	if (element->children && element->children->type == XML_TEXT_NODE)
@@ -64,6 +86,7 @@ String XmlElement_lxml2::getTexts()
 	return String();
 }
 
+DR_MET(public virtual)
 String XmlElement_lxml2::getAttribute(const String &name)
 {
 	BString name8(name.utf8());
@@ -75,5 +98,16 @@ String XmlElement_lxml2::getAttribute(const String &name)
 	return String();
 }
 
+DR_MET(public virtual)
+String XmlElement_lxml2::checkAttribute(const String &name)
+{
+	BString name8(name.utf8());
+	for (xmlAttribute *a = element->attributes; a; a = (xmlAttribute *)a->next) {
+		if (xmlStrEqual(a->name, (const xmlChar *)name8.toStr()) && a->children && a->children->type == XML_TEXT_NODE)
+			return (const char *)a->children->content;
+	}
+	return Null();
+}
 
-DRXML_NS_END
+
+DR_XML_NS_END

@@ -50,7 +50,7 @@
 
 #include <dr/testenv/testenv.hxx>
 
-DRXML_NS_USE;
+DR_XML_NS_USE;
 DR_TESTENV_NS_USE
 
 

@@ -42,7 +42,7 @@
 
 #include <dr/Object.hxx>
 
-DRXML_NS_BEGIN
+DR_XML_NS_BEGIN
 
 class XmlNode;
 class XmlElement;
@@ -68,6 +68,6 @@ public:
 };
 
 
-DRXML_NS_END
+DR_XML_NS_END
 
 #endif

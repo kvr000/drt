@@ -40,7 +40,7 @@
 
 #include <dr/Object.hxx>
 
-DRXML_NS_BEGIN
+DR_XML_NS_BEGIN
 
 
 /**
@@ -59,9 +59,10 @@ protected:
 public:
 	virtual String			getTexts() = 0;
 	virtual String			getAttribute(const String &attr) = 0;
+	virtual String			checkAttribute(const String &attr) = 0;
 };
 
 
-DRXML_NS_END
+DR_XML_NS_END
 
 #endif

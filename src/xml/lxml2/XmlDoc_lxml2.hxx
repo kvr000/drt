@@ -48,7 +48,7 @@
 
 #include <dr/xml/XmlDoc.hxx>
 
-DRXML_NS_BEGIN
+DR_XML_NS_BEGIN
 
 
 /**
@@ -81,6 +81,6 @@ protected:
 };
 
 
-DRXML_NS_END
+DR_XML_NS_END
 
 #endif

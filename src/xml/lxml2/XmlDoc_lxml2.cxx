@@ -44,10 +44,10 @@
 
 #include <dr/xml/XmlDoc_lxml2.hxx>
 
-DRXML_NS_BEGIN
+DR_XML_NS_BEGIN
 
 
-DR_OBJECT_DEF(DRXML_NS_STR, XmlDoc_lxml2, XmlDoc);
+DR_OBJECT_DEF(DR_XML_NS_STR, XmlDoc_lxml2, XmlDoc);
 DR_OBJECT_IMPL_SIMPLE(XmlDoc_lxml2);
 
 
@@ -227,4 +227,4 @@ size_t XmlDoc_lxml2::execPathElements(const String &path, const Eslot1<void, Xml
 }
 
 
-DRXML_NS_END
+DR_XML_NS_END

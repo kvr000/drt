@@ -37,7 +37,7 @@
 
 #include <dr/xml/def_xml.hxx>
 
-DRXML_NS_USE
+DR_XML_NS_USE
 DR_TESTENV_NS_USE
 
 

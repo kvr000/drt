@@ -241,7 +241,6 @@ foreach my $model (@models) {
 					$sqlin->printObj("\t$pa->{name}");
 					$sqlin->printAligned(translateSqlTypeDecl($attr, $pa->{attr}), 40);
 					$sqlin->printAlignedAdd("-- $pa->{attr}->{owner}->{full}.$pa->{attr}->{name}", 72);
-					push(@primary, $pa->{name}) if ($attr->{stype} eq "compos");
 				}
 				if ($attr->{stype} eq "assoc" && $attr->getRole()->{primary}) {
 					push(@primary, $attr->{name});
@@ -274,7 +273,7 @@ foreach my $model (@models) {
 		$sqlin->print(")");
 	}
 	undef $sqlin;
-	$sql->printf(");\n\n");
+	$sql->printf(") default charset=utf8;\n\n");
 }
 
 die "Unrecoverable errors occurred" if ($errors);

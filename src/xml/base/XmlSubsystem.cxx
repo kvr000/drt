@@ -39,10 +39,10 @@
 
 #include <dr/xml/XmlSubsystem.hxx>
 
-DRXML_NS_BEGIN
+DR_XML_NS_BEGIN
 
 
-DR_OBJECT_DEF(DRXML_NS_STR, XmlSubsystem, Subsystem);
+DR_OBJECT_DEF(DR_XML_NS_STR, XmlSubsystem, Subsystem);
 DR_OBJECT_IMPL_SIMPLE(XmlSubsystem);
 
 
@@ -51,4 +51,4 @@ XmlSubsystem *XmlSubsystem::getImpl(const String &impl)
 	return new XmlSubsystem_lxml2();
 }
 
-DRXML_NS_END
+DR_XML_NS_END

@@ -37,11 +37,11 @@
 
 #include <dr/xml/XmlElement.hxx>
 
-DRXML_NS_BEGIN
+DR_XML_NS_BEGIN
 
 
-DR_OBJECT_DEF(DRXML_NS_STR, XmlElement, Object);
+DR_OBJECT_DEF(DR_XML_NS_STR, XmlElement, Object);
 DR_OBJECT_IMPL_SIMPLE(XmlElement);
 
 
-DRXML_NS_END
+DR_XML_NS_END

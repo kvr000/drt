@@ -8,6 +8,5 @@ SOURCES:
 	:${SD_LXML2}/XmlDoc_lxml2.cxx:g=s,t
 	:${SD_LXML2}/XmlNode_lxml2.hxx:g=di,t
 	:${SD_LXML2}/XmlNode_lxml2.cxx:g=s,t
-	:${SD_LXML2}/XmlElement_lxml2.hxx:g=di,t
-	:${SD_LXML2}/XmlElement_lxml2.cxx:g=s,t
+	:${SD_LXML2}/XmlElement_lxml2.cxx:g=s,t,gh,di
 

@@ -37,10 +37,10 @@
 
 #include <dr/xml/XmlNode_lxml2.hxx>
 
-DRXML_NS_BEGIN
+DR_XML_NS_BEGIN
 
 
-DR_OBJECT_DEF(DRXML_NS_STR, XmlNode_lxml2, XmlNode);
+DR_OBJECT_DEF(DR_XML_NS_STR, XmlNode_lxml2, XmlNode);
 DR_OBJECT_IMPL_SIMPLE(XmlNode_lxml2);
 
 
@@ -55,4 +55,4 @@ XmlNode_lxml2::~XmlNode_lxml2()
 }
 
 
-DRXML_NS_END
+DR_XML_NS_END

@@ -33,47 +33,49 @@
  * @license	http://www.gnu.org/licenses/lgpl.txt GNU Lesser General Public License v3
  **/
 
-#ifndef dr__xml__XmlElement_lxml2__hxx__
-# define dr__xml__XmlElement_lxml2__hxx__
-
-#include <libxml/parser.h>
-#include <libxml/xmlreader.h>
-#include <libxml/xpath.h>
-#include <libxml/tree.h>
-
-#include <dr/Ref.hxx>
-
-#include <dr/xml/def_xml.hxx>
-
-#include <dr/xml/XmlDoc_lxml2.hxx>
-
-#include <dr/xml/XmlElement.hxx>
-
-DRXML_NS_BEGIN
-
-
-/**
- * Base for all IO handles
+/*drt
+ * include:	dr/Exception.hxx
+ * include:	dr/net/def_net.hxx
+ *
+ * ns:		dr::net
  */
-class DR_XML_PUB XmlElement_lxml2: public XmlElement
+
+#include <dr/x_kw.hxx>
+
+#include <dr/net/HttpException.hxx>
+#include "_gen/HttpException-all.hxx"
+
+DR_NET_NS_BEGIN
+
+
+/*drt
+ * class:	HttpException
+ * type:	exception
+ * ancestor:	dr::Exception
+ *
+ * at:	int				code;			///< 0 - start, 1 - keep-alive, 2 - close
+ * at:	String				message;
+ */
+
+DR_MET(public)
+HttpException::HttpException(int code_, const String &message_):
+	code(code_),
+	message(message_)
 {
-	DR_OBJECT_DECL_SIMPLE(XmlElement_lxml2, XmlElement);
+}
 
-public:
-	DR_CONSTRUCT			XmlElement_lxml2(XmlDoc_lxml2 *owner, xmlElementPtr element);
+DR_MET(protected virtual)
+HttpException::~HttpException()
+{
+}
 
-protected:
-	virtual				~XmlElement_lxml2();
-
-	virtual String			getTexts();
-	virtual String			getAttribute(const String &attr);
-
-protected:
-	Ref<XmlDoc_lxml2>		owner;
-	xmlElementPtr			element;
-};
+DR_MET(public virtual)
+String HttpException::stringify() const
+{
+	String desc;
+	desc.append("http communication error occurred: ").appendNumber(code).append(" ").append(message);
+	return desc;
+}
 
 
-DRXML_NS_END
-
-#endif
+DR_NET_NS_END

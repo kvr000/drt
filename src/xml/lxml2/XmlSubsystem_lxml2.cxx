@@ -41,10 +41,10 @@
 
 #include <dr/xml/XmlSubsystem_lxml2.hxx>
 
-DRXML_NS_BEGIN
+DR_XML_NS_BEGIN
 
 
-DR_OBJECT_DEF(DRXML_NS_STR, XmlSubsystem_lxml2, XmlSubsystem);
+DR_OBJECT_DEF(DR_XML_NS_STR, XmlSubsystem_lxml2, XmlSubsystem);
 DR_OBJECT_IMPL_SIMPLE(XmlSubsystem_lxml2);
 
 
@@ -68,4 +68,4 @@ size_t XmlSubsystem_lxml2::createMultiDocFromFile(RArray<XmlDoc> *docs, const St
 	return XmlDoc_lxml2::multiDocFromFile(docs, path);
 }
 
-DRXML_NS_END
+DR_XML_NS_END

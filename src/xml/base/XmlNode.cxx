@@ -37,10 +37,10 @@
 
 #include <dr/xml/XmlNode.hxx>
 
-DRXML_NS_BEGIN
+DR_XML_NS_BEGIN
 
 
-DR_OBJECT_DEF(DRXML_NS_STR, XmlNode, Object);
+DR_OBJECT_DEF(DR_XML_NS_STR, XmlNode, Object);
 DR_OBJECT_IMPL_SIMPLE(XmlNode);
 
 
@@ -53,4 +53,4 @@ XmlNode::~XmlNode()
 }
 
 
-DRXML_NS_END
+DR_XML_NS_END

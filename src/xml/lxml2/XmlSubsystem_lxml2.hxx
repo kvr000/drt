@@ -42,7 +42,7 @@
 
 #include <dr/xml/XmlSubsystem.hxx>
 
-DRXML_NS_BEGIN
+DR_XML_NS_BEGIN
 
 
 /**
@@ -63,6 +63,6 @@ public:
 };
 
 
-DRXML_NS_END
+DR_XML_NS_END
 
 #endif

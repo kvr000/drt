@@ -37,10 +37,10 @@
 
 #include <dr/xml/XmlException.hxx>
 
-DRXML_NS_BEGIN
+DR_XML_NS_BEGIN
 
 
-DR_THROW_DEF(DRXML_NS_STR, XmlException, Exception);
+DR_THROW_DEF(DR_XML_NS_STR, XmlException, Exception);
 DR_THROW_IMPL_SIMPLE(XmlException);
 
 DR_EXPORT_MET XmlException::XmlException(const String &description_):
@@ -54,4 +54,4 @@ DR_EXPORT_MET String XmlException::stringify() const
 }
 
 
-DRXML_NS_END
+DR_XML_NS_END

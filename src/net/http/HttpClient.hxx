@@ -83,6 +83,8 @@ public:
 	virtual Blob			readFullContent();
 	virtual ssize_t			readFullContent(Blob *content);
 
+	static Blob			processEasy(const String &url);
+
 protected:
 	virtual void			createConnection(NetAddress *server_addr);
 

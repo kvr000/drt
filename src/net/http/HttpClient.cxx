@@ -37,9 +37,11 @@
 #include <dr/Const.hxx>
 
 #include <dr/EndOfDataException.hxx>
+#include <dr/InvalidFormatException.hxx>
 
 #include <dr/io/NetAddressInet4.hxx>
 
+#include <dr/net/HttpException.hxx>
 #include <dr/net/HttpClient.hxx>
 
 DR_NET_NS_BEGIN
@@ -245,6 +247,32 @@ void HttpClient::partialFinishBodyChunked()
 {
 	BString request("0\r\n\r\n");
 	read_stream.writeFull(request);
+}
+
+Blob HttpClient::processEasy(const String &url)
+{
+	int code;
+	String msg;
+	String addr;
+	String uri;
+	if (url.find("http://") != 0)
+		xthrownew(InvalidFormatException("URL", url));
+	ssize_t uri_p;
+	if ((uri_p = url.find("/", 7)) < 0) {
+		addr = url.mid(7);
+		uri = "/";
+	}
+	else {
+		addr = url.mid(7, uri_p-7);
+		uri = url.mid(uri_p);
+	}
+
+	HttpClient client(addr);
+	client.sendRequest("GET", uri, THash<String, String>());
+	if ((code = client.readHeaders(&msg)) != 200) {
+		xthrownew(HttpException(code, msg));
+	}
+	return client.readFullContent();
 }
 
 
