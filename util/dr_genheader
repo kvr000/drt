@@ -201,6 +201,7 @@ our $file_trans = dr::GenHeader::FileTransaction->new();
 our $hxx;
 our $def;
 our $str;
+our $sql;
 our $all;
 
 our $cxx = FileHandle->new($cxxname, "<")
@@ -213,6 +214,14 @@ our @includes = ();
 our $ns;
 our @ns_use = ();
 our @forwards = ();
+
+sub escapeCString($)
+{
+	my $str			= shift;
+
+	$str =~ s/(["'])/\\$1/g;
+	return $str;
+}
 
 sub printDirect($$)
 {
@@ -297,8 +306,17 @@ sub printClass($$)
 				printDirect($hxx, "\n");
 				printIndented($hxx, $level, "public:\n");
 				printClass($_, $level+1);
-				last
+				last;
 			}
+		}
+	}
+
+	if (@{$cld->{sqls}}) {
+		die "found sql but no sql file was opened" unless ($sql);
+		foreach my $sqd (@{$cld->{sqls}}) {
+			push(@{$cld->{methods}}, { specs => [ "protected" ], ret => "void", "decl" => "prep_$sqd->{name}()" });
+			push(@{$cld->{ats}}, " Ref<dr::sql::SqlStatement>\tst_$sqd->{name};");
+			$sql->printf("\nvoid %s::prep_%s()\n{\n\tst_%s.setNoref(db_connection->prepareStatement(\"%s\"));\n}\n", $cld->{class}, $sqd->{name}, $sqd->{name}, escapeCString($sqd->{query}));
 		}
 	}
 
@@ -366,27 +384,13 @@ sub printClass($$)
 }
 
 my $lineno = 0;
-my $defline;
-my $type = "object";
-my $class;
-my $class_last;
-my $ancestor;
-my @ifaces;
-my $cont = "";
-my @methods;
-my @ats;
-my @friends;
-my $doc;
+my $errors = 0;
+
+my $cld;
+
 my @strings;
 my @wstrings;
 my @bstrings;
-
-my $errors = 0;
-
-my @funcspec;
-my $func_comment;
-my $func_ret;
-my $func_decl;
 
 MAIN: while (<$cxx>) {
 	$lineno++;
@@ -413,34 +417,25 @@ MAIN: while (<$cxx>) {
 		}
 	}
 	if (m,^/\*drt\s*$,) {
-		if (defined $class) {
-			push(@cl_list, {
-					type		=> $type,
-					defline		=> $defline,
-					class		=> $class,
-					ancestor	=> $ancestor,
-					ifaces		=> [ @ifaces ],
-					cont		=> $cont,
-					ats		=> [ @ats ],
-					methods		=> [ @methods ],
-					friends		=> [ @friends ],
-					doc		=> $doc,
-				});
-			$type = "object";
-			undef $class;
-			undef $ancestor;
-			@ifaces = ();
-			$cont = "";
-			@ats = ();
-			@methods = ();
-			@friends = ();
-			undef $doc;
-		}
-		else {
-			if (defined $ancestor || $cont ne "" || @ifaces || @ats || @methods || @friends || defined $doc) {
-				STDERR->print("no class defined while some of the attributes are"), $errors++;
+		if (defined $cld) {
+			if ($cld->{class}) {
+				$cld->{type} = "object" unless (defined $cld->{type});
+				push(@cl_list, $cld);
+			}
+			else {
+				if (defined $cld->{ancestor} || $cld->{cont} ne "" || @{$cld->{ifaces}} || @{$cld->{ats}} || @{$cld->{methods}} || @{$cld->{friends}} || defined $cld->{doc}) {
+					STDERR->print("no class defined while some of the attributes are"), $errors++;
+				}
 			}
 		}
+		$cld = {
+			cont		=> "",
+			ifaces		=> [],
+			methods		=> [],
+			ats		=> [],
+			sqls		=> [],
+			friends		=> [],
+		};
 		while (<$cxx>) {
 			$lineno++;
 			if (m/^\s*\*\s*$/) {
@@ -465,35 +460,43 @@ MAIN: while (<$cxx>) {
 					push(@forwards, $val);
 				}
 				elsif ($key eq "type") {
-					$type = $val;
+					$cld->{type} = $val;
 				}
 				elsif ($key eq "class") {
 					STDERR->printf("$cxxname:$lineno: fatal: ns undefined\n"), exit(1) unless (defined $ns);
-					$class = $val;
-					($class_last = $class) =~ s/.*:://;
-					$defline = $lineno;
+					$cld->{class} = $val;
+					($cld->{class_last} = $cld->{class}) =~ s/.*:://;
+					$cld->{defline} = $lineno;
 				}
 				elsif ($key eq "ancestor") {
-					$ancestor = $val;
+					$cld->{ancestor} = $val;
 				}
 				elsif ($key eq "ifaces") {
-					push(@ifaces, split(/s+/, $val));
+					push(@{$cld->{ifaces}}, split(/s+/, $val));
 				}
 				elsif ($key eq "at") {
-					push(@ats, " $val");
+					push(@{$cld->{ats}}, " $val");
 				}
 				elsif ($key eq "ap") {
-					push(@ats, "+$val");
+					push(@{$cld->{ats}}, "+$val");
 				}
 				elsif ($key eq "am") {
-					push(@ats, "-$val");
+					push(@{$cld->{ats}}, "-$val");
+				}
+				elsif ($key eq "sql") {
+					if ($val !~ m/^(\w+)\s+(.*)$/) {
+						STDERR->print("$cxxname:$lineno: incorrect syntax for sql\n"), $errors++;
+					}
+					else {
+						push(@{$cld->{sqls}}, { name => $1, query => $2 });
+					}
 				}
 				elsif ($key eq "friend") {
-					push(@friends, $val);
+					push(@{$cld->{friends}}, $val);
 				}
 				elsif ($key eq "co") {
 					if ($val eq "{") {
-						eval { $cont .= readContent($cxx, \$lineno, "}co") };
+						eval { $cld->{cont} .= readContent($cxx, \$lineno, "}co") };
 						die "$cxxname:$lineno: incorrect syntax for co: $@" if ($@);
 					}
 					else {
@@ -502,7 +505,7 @@ MAIN: while (<$cxx>) {
 				}
 				elsif ($key eq "doc") {
 					if ($val eq "{") {
-						eval { $doc .= readContent($cxx, \$lineno, "}doc") };
+						eval { $cld->{doc} .= readContent($cxx, \$lineno, "}doc") };
 						die "$cxxname:$lineno: incorrect syntax for doc: $@" if ($@);
 					}
 					else {
@@ -523,56 +526,49 @@ MAIN: while (<$cxx>) {
 		}
 	}
 	elsif (m/^\s*$/) {
-		@funcspec = ();
-	}
-	elsif (m/^{\s*$/) {
-		if (defined $func_decl) {
-			push(@methods, { specs => [ @funcspec ], ret => $func_ret, decl => $func_decl, comment => $func_comment });
-			undef $func_decl;
-		}
+		#@funcspec = ();
 	}
 	elsif (m/^\s/) {
 		# skip
 	}
 	elsif (m/^DR_MET\((.*)\)\s*$/) {
-		@funcspec = split(/\s+/, $1);
-		undef $func_ret;
-		undef $func_decl;
-		undef $func_comment;
-		STDERR->printf("$cxxname:$lineno: fatal: class undefined\n"), exit(1) unless (defined $class);
+		my $metd = {
+			specs		=> [ split(/\s+/, $1) ],
+		};
+		STDERR->printf("$cxxname:$lineno: fatal: class undefined\n"), exit(1) unless (defined $cld && defined $cld->{class});
 		FUNC_DECL: while (<$cxx>) {
 			$lineno++;
 			#STDERR->printf("class=%s\n", $class);
 			#STDERR->printf("regex=%s\n", "^(.*)\\s*($class)::(\\w+)(\\(.*\\)):?\\s*\$");
 			#STDERR->print("matching $_");
 			if (m/^\/\*\*\s+$/) {
-				$func_comment = $_;
+				$metd->{comment} = $_;
 				while (<$cxx>) {
 					$lineno++;
-					$func_comment .= $_;
+					$metd->{comment} .= $_;
 					next FUNC_DECL if (m/^\s*\*\/\s*$/);
 				}
 				die "unable to find end of comment";
 			}
-			if (m/^${class}::(${class_last}\(.*\)(\s*const)?)\s*:?\s*$/) {
-				$func_ret = "DR_CONSTRUCT";
-				$func_decl = $1;
+			if (m/^$cld->{class}::($cld->{class_last}\(.*\)(\s*const)?)\s*:?\s*$/) {
+				$metd->{ret} = "DR_CONSTRUCT";
+				$metd->{decl} = $1;
 				last;
 			}
-			elsif (m/^${class}::(~${class_last}\(\))\s*$/) {
-				$func_ret = "";
-				$func_decl = $1;
-				push(@funcspec, "virtual");
+			elsif (m/^$cld->{class}::(~$cld->{class_last}\(\))\s*$/) {
+				$metd->{ret} = "";
+				$metd->{decl} = $1;
+				push(@{$metd->{spec}}, "virtual");
 				last;
 			}
-			elsif (m/^(.*?)\s*($class)::(operator[^(]+)(\(.*\)(\s+const)?)\s*$/) {
-				$func_ret = $1;
-				$func_decl = "$3$4";
+			elsif (m/^(.*?)\s*($cld->{class})::(operator[^(]+)(\(.*\)(\s+const)?)\s*$/) {
+				$metd->{ret} = $1;
+				$metd->{decl} = "$3$4";
 				last;
 			}
-			elsif (m/^(.*?)\s*($class)::(\w+)(\(.*\)(\s+const)?)\s*$/) {
-				$func_ret = $1;
-				$func_decl = "$3$4";
+			elsif (m/^(.*?)\s*($cld->{class})::(\w+)(\(.*\)(\s+const)?)\s*$/) {
+				$metd->{ret} = $1;
+				$metd->{decl} = "$3$4";
 				last;
 			}
 			else {
@@ -581,35 +577,27 @@ MAIN: while (<$cxx>) {
 				next MAIN;
 			}
 		}
+		push(@{$cld->{methods}}, $metd);
 	}
 	else {
 		# nothing
 	}
 }
 
-if (defined $class) {
-	push(@cl_list, {
-			type		=> $type,
-			defline		=> $defline,
-			class		=> $class,
-			ancestor	=> $ancestor,
-			ifaces		=> [ @ifaces ],
-			cont		=> $cont,
-			ats		=> [ @ats ],
-			methods		=> [ @methods ],
-			friends		=> [ @friends ],
-			doc		=> $doc,
-		});
+if (defined $cld->{class}) {
+	$cld->{type} = "object" unless (defined $cld->{type});
+	push(@cl_list, $cld);
 }
 else {
-	if (defined $ancestor || $cont ne "" || @ifaces || @ats || @methods || @friends || defined $doc) {
+	if (defined $cld->{ancestor} || $cld->{cont} ne "" || @{$cld->{ifaces}} || @{$cld->{ats}} || @{$cld->{methods}} || @{$cld->{friends}} || defined $cld->{doc}) {
 		STDERR->print("no class defined while some of the attributes are"), $errors++;
 	}
 }
 
 if (!%gen) {
 	%gen = map({ ( $_ => 1 ) } ( "def", "hxx", "all" ));
-	$gen{str} = 1 if (@strings);
+	$gen{str} = 1 if (@strings || @bstrings || @wstrings);
+	$gen{sql} = 1 if (grep({ @{$_->{sqls}} } @cl_list));
 }
 
 if ($gen{hxx} || $gen{def}) {
@@ -625,6 +613,9 @@ if ($gen{def}) {
 }
 if ($gen{str}) {
 	$str = $file_trans->createTruncated("$basename-str.hxx");
+}
+if ($gen{sql}) {
+	$sql = $file_trans->createTruncated("$basename-sql.hxx");
 }
 if ($gen{all}) {
 	$all = $file_trans->createTruncated("$basename-all.hxx");
@@ -664,6 +655,11 @@ if ($str) {
 		$wprinted{$_} = 1;
 		$str->printf("static const dr::WString drwstr_%s(dr::Const::wstring(\"%s\"));\n", $_, $_);
 	}
+}
+
+if ($sql) {
+	$sql->printf("/* The file is generated from %s, do not modify */\n", $cxxname);
+	$sql->printf("%s\n\n", nsToMacroBegin($ns));
 }
 
 if ($hxx) {
@@ -706,6 +702,9 @@ if (@cl_list) {
 		die "$cxxname:$lineno: cannot find any base class in the list: ".Dumper(\@cl_list) unless (defined $selected);
 		printClass($selected, 0);
 	}
+}
+if ($sql) {
+	$sql->printf("\n\n%s\n", nsToMacroEnd($ns));
 }
 if ($def) {
 	$def->printf("\n\n%s\n", nsToMacroEnd($ns));
