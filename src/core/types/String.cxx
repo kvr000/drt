@@ -1232,15 +1232,15 @@ out_float:
 					break;
 
 				case O_Adapt|F_WIDTH:
-					origlen += sprintf(data->b_str()+origlen, "%*Lg", width, value);
+					origlen += sprintf(data->b_str()+origlen, "%*Lg", (int)width, value);
 					break;
 
 				case O_Adapt|F_PREC:
-					origlen += sprintf(data->b_str()+origlen, "%.*Lg", prec, value);
+					origlen += sprintf(data->b_str()+origlen, "%.*Lg", (int)prec, value);
 					break;
 
 				case O_Adapt|F_WIDTH|F_PREC:
-					origlen += sprintf(data->b_str()+origlen, "%*.*Lg", width, prec, value);
+					origlen += sprintf(data->b_str()+origlen, "%*.*Lg", (int)width, (int)prec, value);
 					break;
 
 				case O_Dot|0:
@@ -1248,15 +1248,15 @@ out_float:
 					break;
 
 				case O_Dot|F_WIDTH:
-					origlen += sprintf(data->b_str()+origlen, "%*Lf", width, value);
+					origlen += sprintf(data->b_str()+origlen, "%*Lf", (int)width, value);
 					break;
 
 				case O_Dot|F_PREC:
-					origlen += sprintf(data->b_str()+origlen, "%.*Lf", prec, value);
+					origlen += sprintf(data->b_str()+origlen, "%.*Lf", (int)prec, value);
 					break;
 
 				case O_Dot|F_WIDTH|F_PREC:
-					origlen += sprintf(data->b_str()+origlen, "%*.*Lf", width, prec, value);
+					origlen += sprintf(data->b_str()+origlen, "%*.*Lf", (int)width, (int)prec, value);
 					break;
 
 				case O_Exp|0:
@@ -1264,15 +1264,15 @@ out_float:
 					break;
 
 				case O_Exp|F_WIDTH:
-					origlen += sprintf(data->b_str()+origlen, "%*Le", width, value);
+					origlen += sprintf(data->b_str()+origlen, "%*Le", (int)width, value);
 					break;
 
 				case O_Exp|F_PREC:
-					origlen += sprintf(data->b_str()+origlen, "%.*Le", prec, value);
+					origlen += sprintf(data->b_str()+origlen, "%.*Le", (int)prec, value);
 					break;
 
 				case O_Exp|F_WIDTH|F_PREC:
-					origlen += sprintf(data->b_str()+origlen, "%*.*Le", width, prec, value);
+					origlen += sprintf(data->b_str()+origlen, "%*.*Le", (int)width, (int)prec, value);
 					break;
 
 				case O_HexFloat|0:
@@ -1280,15 +1280,15 @@ out_float:
 					break;
 
 				case O_HexFloat|F_WIDTH:
-					origlen += sprintf(data->b_str()+origlen, "%*La", width, value);
+					origlen += sprintf(data->b_str()+origlen, "%*La", (int)width, value);
 					break;
 
 				case O_HexFloat|F_PREC:
-					origlen += sprintf(data->b_str()+origlen, "%.*La", prec, value);
+					origlen += sprintf(data->b_str()+origlen, "%.*La", (int)prec, value);
 					break;
 
 				case O_HexFloat|F_WIDTH|F_PREC:
-					origlen += sprintf(data->b_str()+origlen, "%*.*La", width, prec, value);
+					origlen += sprintf(data->b_str()+origlen, "%*.*La", (int)width, (int)prec, value);
 					break;
 
 				default:
