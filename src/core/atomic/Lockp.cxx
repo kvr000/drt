@@ -49,7 +49,7 @@ DR_NS_BEGIN
 
 static MutexCond *low_conds[LOW_COND_MAX+1];
 
-static inline MutexCond *getCond(void *volatile *ptr)
+static inline MutexCond *accCond(void *volatile *ptr)
 {
 	MutexCond *cond;
 	UintPtr hash = (UintPtr)ptr;
@@ -90,7 +90,7 @@ void Lockp::s_init()
 
 DR_EXPORT_MTS void Lockp::p_wake(void *volatile *ptr)
 {
-	MutexCond *cond = getCond(ptr);
+	MutexCond *cond = accCond(ptr);
 	cond->lock();
 	cond->signal();
 	cond->unlock();
@@ -101,8 +101,15 @@ DR_EXPORT_MTS void *Lockp::lock(void *volatile *ptr)
 	MutexCond *cond = NULL;
 	SintPtr val;
 
+	if (1) {
+		// use aggressive approach on initialization and always suppose
+		// unlocked on the first try
+		val = (SintPtr)*ptr&~(SintPtr)1;
+	}
+	else {
 retry:
-	val = (SintPtr)*ptr;
+		val = (SintPtr)*ptr;
+	}
 
 	if ((val&1) == 0) {
 		if (!Atomic::cmpxchg(ptr, (void *)val, (void *)(val&~3|(cond?1:3))))
@@ -115,7 +122,7 @@ retry:
 			val -= 2;
 		}
 		if (!cond)
-			(cond = getCond(ptr))->lock();
+			(cond = accCond(ptr))->lock();
 		if (*ptr == (void *)val)
 			cond->wait();
 		goto retry;
