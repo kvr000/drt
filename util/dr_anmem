@@ -53,12 +53,12 @@ for (;;) {
 	}
 	if ($pending =~ m/^(allocated|freeing) block 0x([\da-f]+) \((\d+)\)$/) {
 		my ( $op, $block, $length, $thread, $backtrace ) = ( $1, $2, $3, undef, undef );
-		if (defined ($pending = <>) && $pending =~ m/^--- Thread (\w+) backtrace:$/) {
+		if (defined ($pending = <>) && $pending =~ m/^\x00?--- Thread (\w+) backtrace:$/) {
 			$thread = $1;
 			$backtrace = $pending;
 			while (defined ($pending = <>)) {
 				$backtrace .= $pending;
-				undef $pending, last if ($pending =~ m/^--- Thread (\w+) end$/);
+				undef $pending, last if ($pending =~ m/^\x00?--- Thread (\w+) end$/);
 			}
 		}
 		if ($op eq "allocated") {
