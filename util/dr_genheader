@@ -596,7 +596,7 @@ sub printClass($$)
 				printIndented($hxx, $level, sprintf("%s:\n", $last_access));
 			}
 			printIndented($hxx, $level, sprintf("\t%s;\n", formatMemberDecl("static const $cnd->{type}", $cnd->{name})));
-			$val->printf("const %s %s::%s%s;\n", $cnd->{type}, $cld->{class}, $cnd->{name}, $cnd->{init});
+			$val->printf("const %s %s::%s%s;\n", $cnd->{type}, $cld->{class}, $cnd->{name}, ($cnd->{type} =~ m/^(B|W|)String$/) ? "(Const::".lc($cnd->{type}).$cnd->{init}.")" : $cnd->{init});
 			addTagConst($cld, $cnd, $cxxname);
 		}
 	}
