@@ -1,0 +1,13 @@
+.cdef SD_META_visstud	.
+
+META:
+	vsid:{096A9C4D-9899-47c0-9F2E-5AC04FBED00D}:g=s
+
+SOURCES:
+	no:${SD_META_visstud}/mklist:g=t
+
+FCHECK:
+	${ESUBDIRS}/*.cxx::s=t
+	${ESUBDIRS}/*.cxx::s=s
+	${ESUBDIRS}/*.hxx::s=t
+
