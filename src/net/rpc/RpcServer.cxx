@@ -57,7 +57,6 @@
 #include <dr/MethodConv.hxx>
 #include <dr/List.hxx>
 #include <dr/net/XmlRpcEncoder.hxx>
-#include <dr/net/FastRpcEncoder.hxx>
 
 #include <dr/net/RpcServer.hxx>
 #include "_gen/RpcServer-all.hxx"
@@ -152,43 +151,6 @@ int RpcServer::execute_system_listMethods(dr::net::RpcEncoder *result, dr::net::
 	return 0;
 }
 
-DR_MET(protected virtual)
-Blob RpcServer::processRequest(const Blob &request)
-{
-	ERef<dr::net::RpcDecoder> decoder(dr::net::RpcDecoder::createDecoder(request));
-	xtry {
-		decoder->readHeader();
-		String method = decoder->readMethodName();
-		int (RpcServer::*func_handler)(dr::net::RpcEncoder *result, dr::net::RpcDecoder *params);
-		if ((func_handler = MethodConv::funcToMptr((int (*)(RpcServer *this_, dr::net::RpcEncoder *result, dr::net::RpcDecoder *params))method_wrappers->findPtr(method)))) {
-			ERef<dr::net::RpcEncoder> encoder(new FastRpcEncoder);
-			allocateResources(method);
-			xtry {
-				int error = (this->*func_handler)(encoder, decoder);
-				if (error != 0) {
-					processFailure(method, encoder, error);
-				}
-			}
-			xcatch (dr::Exception, ex) {
-				processException(method, encoder, ex);
-			}
-			xend;
-			releaseResources();
-			return encoder->getContent();
-		}
-		else {
-			ERef<dr::net::RpcEncoder> encoder(new FastRpcEncoder);
-			processUnknownMethod(method, encoder);
-			return encoder->getContent();
-		}
-	}
-	xcatch (dr::Exception, ex) {
-		xsafe(releaseResources());
-		return Null();
-	}
-	xend;
-}
-
 DR_MET(public virtual)
 void RpcServer::run()
 {
@@ -199,17 +161,46 @@ void RpcServer::run()
 			if (req_uri.isNull())
 				break;
 			Blob body = client_http->readFullContent();
-			Blob response = processRequest(body);
-			if (response.isNull()) {
-				client_http->sendResponse(400, "Bad Request");
-				client_http->sendHeader("content-type", "text/plain");
-				client_http->sendContent("Bad request, maybe not binary fast rpc call?");
-			}
-			else {
+			xtry {
+				ERef<RpcDecoder> decoder(RpcDecoder::createDecoder(body));
+				ERef<RpcEncoder> encoder((RpcEncoder *)new XmlRpcEncoder);
+				xtry {
+					decoder->readHeader();
+					String method = decoder->readMethodName();
+					int (RpcServer::*func_handler)(dr::net::RpcEncoder *result, dr::net::RpcDecoder *params);
+					if ((func_handler = MethodConv::funcToMptr((int (*)(RpcServer *this_, dr::net::RpcEncoder *result, dr::net::RpcDecoder *params))method_wrappers->findPtr(method)))) {
+						allocateResources(method);
+						xtry {
+							int error = (this->*func_handler)(encoder, decoder);
+							if (error != 0) {
+								processFailure(method, encoder, error);
+							}
+						}
+						xcatch (dr::Exception, ex) {
+							processException(method, encoder, ex);
+						}
+						xend;
+						releaseResources();
+					}
+					else {
+						processUnknownMethod(method, encoder);
+					}
+				}
+				xcatchany {
+					xsafe(releaseResources());
+					xrethrowany;
+				}
+				xend;
 				client_http->sendResponse(200, "OK");
-				client_http->sendHeader("content-type", "application/x-frpc");
-				client_http->sendContent(response);
+				client_http->sendHeader("content-type", encoder->getMimeType());
+				client_http->sendContent(encoder->getContent());
 			}
+			xcatch (Exception, ex) {
+				client_http->sendResponse(400, "Bad Request");
+				client_http->sendHeader("content-type", "text/plain; charset=utf8");
+				client_http->sendContent(BString("Bad request, maybe not binary fast rpc call?: ")+ex->stringify().utf8());
+			}
+			xend;
 		}
 	}
 	xcatch (dr::Exception, ex) {
