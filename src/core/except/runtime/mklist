@@ -12,4 +12,5 @@ SOURCES:
 	:${SD_EXCEPT_RUNTIME}/UnsupportedException.cxx:g=s,t
 	:${SD_EXCEPT_RUNTIME}/OverflowException.hxx:g=di,t
 	:${SD_EXCEPT_RUNTIME}/OverflowException.cxx:g=s,t
+	:${SD_EXCEPT_RUNTIME}/MessagedException.cxx:g=s,t,gh,di
 
