@@ -298,19 +298,19 @@ out:
 	return ret;
 }
 
-DR_EXPORT_MET bool StrData::bcmp(StrData *sd)
+DR_EXPORT_MET int StrData::bcmp(StrData *sd)
 {
 	int ff, sf;
-	bool ret = false;
+	int ret = 0;
 
 	ff = this->getFlags(); sf = sd->getFlags();
 	switch ((ff|sf)&(Binv|Winv)) {
 	case 0:
 	case Winv:
-		ret = memcmp(this->b_str(), sd->b_str(), length) == 0;
+		ret = memcmp(this->b_str(), sd->b_str(), length);
 		break;
 	case Binv:
-		ret = wmemcmp(this->w_str(), sd->w_str(), length) == 0;
+		ret = wmemcmp(this->w_str(), sd->w_str(), length);
 		break;
 	case Binv|Winv:
 		if (length == 0) {
@@ -321,11 +321,11 @@ DR_EXPORT_MET bool StrData::bcmp(StrData *sd)
 			this->updateByte();
 		else
 			sd->updateByte();
-		ret = memcmp(this->b_str(), sd->b_str(), length) == 0;
+		ret = memcmp(this->b_str(), sd->b_str(), length);
 		break;
 	default:
 		DR_AssertInvalid();
-		ret = false;
+		ret = 0;
 	}
 
 	return ret;
@@ -1696,7 +1696,7 @@ DR_EXPORT_MET bool String::beq(const String &s) const
 	return d->beq(s.d);
 }
 
-DR_EXPORT_MET bool String::bcmp(const String &s) const
+DR_EXPORT_MET int String::bcmp(const String &s) const
 {
 	return d->bcmp(s.d);
 }

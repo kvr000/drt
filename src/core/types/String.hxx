@@ -112,7 +112,7 @@ public:
 
 public:
 	bool				beq(StrData *sd);
-	bool				bcmp(StrData *sd);
+	int				bcmp(StrData *sd);
 
 public:
 	DR_RINLINE StrData *		ref()					{ Atomic::inc(&refcnt); return this; }
@@ -233,7 +233,7 @@ public:
 	bool				isNull() const;
 	bool				isEmpty() const;
 	bool				beq(const String &s) const;
-	bool				bcmp(const String &s) const;
+	int				bcmp(const String &s) const;
 	bool				eqUtf8(const char *str, size_t size);
 	DR_RINLINE bool			operator==(const String &s) const	{ return beq(s); }
 	DR_RINLINE bool			operator!=(const String &s) const	{ return !beq(s); }

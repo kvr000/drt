@@ -142,13 +142,163 @@ Variant::Variant(Iface *object_val_):
 }
 
 DR_MET(public virtual)
-Variant::VType Variant::getType()
+Variant::VType Variant::getType() const
 {
 	return (VType)vtype;
 }
 
 DR_MET(public virtual)
-String Variant::getName()
+bool Variant::eq(const Iface *vs_) const
+{
+	if (!vs_) {
+		return false;
+	}
+	else if (Variant *vs = (Variant *)vs_->accCheckFinal(comp_name)) {
+		switch ((VType)vtype) {
+		case VT_Invalid:
+			return vs->vtype == VT_Invalid;
+
+		case VT_Null:
+			if (vs->vtype == VT_Null)
+				return true;
+			return vs->isNull();
+
+		case VT_Bool:
+			if (vs->vtype == VT_Bool) {
+				return vs->bool_val == bool_val;
+			}
+			break;
+
+		case VT_Int:
+			if (vs->vtype == VT_Int) {
+				return vs->int_val == int_val;
+			}
+			else if (vs->vtype == VT_Double) {
+				return vs->double_val == int_val;
+			}
+			break;
+
+		case VT_Double:
+			if (vs->vtype == VT_Double) {
+				return vs->double_val == double_val;
+			}
+			else if (vs->vtype == VT_Int) {
+				return vs->int_val == double_val;
+			}
+			break;
+
+		case VT_Binary:
+			if (((Blob *)&binary_val)->isNull() && vs->isNull())
+				return true;
+			if (vs->vtype == VT_Binary) {
+				return *(Blob *)&vs->binary_val == *(Blob *)&binary_val;
+			}
+			break;
+
+		case VT_String:
+			if (((String *)&string_val)->isNull() && vs->isNull())
+				return true;
+			if (vs->vtype == VT_String) {
+				return *(String *)&vs->string_val == *(String *)&string_val;
+			}
+			break;
+
+		case VT_Object:
+			if (object_val == NULL && vs->isNull())
+				return true;
+			if (vs->vtype == VT_Object && vs->object_val != NULL) {
+				return object_val->eq(vs->object_val);
+			}
+			return false;
+		}
+		return !vs->isNull() && toBinary() == vs->toBinary();
+	}
+	else {
+		return false;
+	}
+}
+
+DR_MET(public virtual)
+int Variant::cmp(const Iface *vs_) const
+{
+	if (!vs_) {
+		return 1;
+	}
+	else if (Variant *vs = (Variant *)vs_->accCheckFinal(comp_name)) {
+		switch ((VType)vtype) {
+		case VT_Invalid:
+			if (vs->vtype == VT_Invalid)
+				return 0;
+			return -1;
+
+		case VT_Null:
+			if (vs->vtype == VT_Null)
+				return 0;
+			if (vs->isNull())
+				return 0;
+			return -1;
+
+		case VT_Bool:
+			if (vs->vtype == VT_Bool) {
+				return vs->bool_val != bool_val ? bool_val-vs->bool_val : 0;
+			}
+			break;
+
+		case VT_Int:
+			if (vs->vtype == VT_Int) {
+				return vs->int_val != int_val ? int_val > vs->int_val ? 1 : -1 : 0;
+			}
+			else if (vs->vtype == VT_Double) {
+				return vs->double_val != int_val ? int_val > vs->double_val ? 1 : -1 : 0;
+			}
+			break;
+
+		case VT_Double:
+			if (vs->vtype == VT_Double) {
+				return vs->double_val == double_val;
+			}
+			else if (vs->vtype == VT_Int) {
+				return vs->int_val != double_val ? double_val > vs->int_val ? 1 : -1 : 0;
+			}
+			break;
+
+		case VT_Binary:
+			if (((Blob *)&binary_val)->isNull() && vs->isNull())
+				return 0;
+			if (vs->vtype == VT_Binary) {
+				return ((Blob *)&vs->binary_val)->bcmp(*(Blob *)&binary_val);
+			}
+			break;
+
+		case VT_String:
+			if (((String *)&string_val)->isNull() && vs->isNull())
+				return 0;
+			if (vs->vtype == VT_String) {
+				return string_val->bcmp(string_val);
+			}
+			break;
+
+		case VT_Object:
+			if (object_val == NULL && vs->isNull())
+				return 0;
+			if (vs->vtype == VT_Object) {
+				if (vs->object_val == NULL)
+					return 1;
+				return object_val->cmp(vs->object_val);
+			}
+			break;
+		}
+		if (vs->isNull())
+			return 1;
+		return toBinary().bcmp(vs->toBinary());
+	}
+	else {
+		return -1;
+	}
+}
+
+DR_MET(public virtual)
+String Variant::getName() const
 {
 	switch ((VType)vtype) {
 	case VT_Invalid:
@@ -181,7 +331,7 @@ String Variant::getName()
 }
 
 DR_MET(public virtual)
-bool Variant::isNull()
+bool Variant::isNull() const
 {
 	switch ((VType)vtype) {
 	case VT_Invalid:
@@ -210,7 +360,7 @@ bool Variant::isNull()
 }
 
 DR_MET(public virtual)
-bool Variant::toBool()
+bool Variant::toBool() const
 {
 	switch ((VType)vtype) {
 	case VT_Invalid:
@@ -241,7 +391,7 @@ bool Variant::toBool()
 }
 
 DR_MET(public virtual)
-Sint64 Variant::toInt()
+Sint64 Variant::toInt() const
 {
 	switch ((VType)vtype) {
 	case VT_Invalid:
@@ -272,7 +422,7 @@ Sint64 Variant::toInt()
 }
 
 DR_MET(public virtual)
-double Variant::toDouble()
+double Variant::toDouble() const
 {
 	switch ((VType)vtype) {
 	case VT_Invalid:
@@ -303,7 +453,7 @@ double Variant::toDouble()
 }
 
 DR_MET(public virtual)
-String Variant::toString()
+String Variant::toString() const
 {
 	switch ((VType)vtype) {
 	case VT_Invalid:
@@ -334,7 +484,7 @@ String Variant::toString()
 }
 
 DR_MET(public virtual)
-BString Variant::toUtf8()
+BString Variant::toUtf8() const
 {
 	switch ((VType)vtype) {
 	case VT_Invalid:
@@ -365,7 +515,7 @@ BString Variant::toUtf8()
 }
 
 DR_MET(public virtual)
-Blob Variant::toBinary()
+Blob Variant::toBinary() const
 {
 	switch ((VType)vtype) {
 	case VT_Invalid:
@@ -396,7 +546,7 @@ Blob Variant::toBinary()
 }
 
 DR_MET(public virtual)
-Object *Variant::toObject()
+Object *Variant::toObject() const
 {
 	switch ((VType)vtype) {
 	case VT_Invalid:

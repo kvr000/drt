@@ -190,24 +190,33 @@ sub readContent($$$)
 	my $lineno		= shift;
 	my $fin			= shift;
 
-	my $cont = "";
+	my $startline = $$lineno;
 
-	while (<$fd>) {
+	my $cont = "";
+	my $indent;
+
+	my $line = <$fd>;
+	if ($line =~ m/^(\s*\* ?)(\s+)/) {
+		$indent = $2;
+	}
+	do {
 		$$lineno++;
-		if (m/^\s*\*\*\//s) {
+		if ($line =~ m/^\s*\*\*\//s) {
 			die "didn't find close $fin block";
 		}
-		elsif (m/^\s*\*\s?$fin\s*$/s) {
+		elsif ($line =~ m/^\s*\*\s?$fin\s*$/s) {
 			return $cont;
 		}
-		elsif (m/^\s*\* ?(.*)$/s) {
-			$cont .= $1;
+		elsif ($line =~ m/^(\s*\* ?)(.*)$/s) {
+			my $l = $2;
+			$l = substr($l, length($indent)) if ((defined $indent) && substr($l, 0, length($indent)) eq $indent);
+			$cont .= $l;
 		}
 		else {
-			die "unexpected content";
+			die "unexpected content: $line";
 		}
-	}
-	die "didn't find close $fin block";
+	} while (defined ($line = <$fd>));
+	die "didn't find close $fin block starting at $startline";
 }
 
 sub readParagraph($$)

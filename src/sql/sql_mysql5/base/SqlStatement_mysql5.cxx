@@ -313,12 +313,19 @@ retry:
 Uint64 SqlStatement_mysql5::getAffectedRows()
 {
 	my_ulonglong r;
-	const char *info = mysql_info(stmt->mysql);
-	if ((info = strchr(info, ':')))
-		return strtoll(info+1, (char **)&info, 0);
-	if ((r = mysql_stmt_num_rows(stmt)) == (my_ulonglong)-1) {
+#if 0
+	if (const char *info = mysql_info(stmt->mysql)) {
+		if ((info = strchr(info, ':')))
+			return strtoll(info+1, (char **)&info, 0);
+		if ((r = mysql_stmt_num_rows(stmt)) == (my_ulonglong)-1) {
+			SqlConnection_mysql5::throwSqlExcept(mysql_stmt_sqlstate(stmt), mysql_stmt_error(stmt));
+		}
+	}
+#else
+	if ((r = mysql_stmt_affected_rows(stmt)) == (my_ulonglong)-1) {
 		SqlConnection_mysql5::throwSqlExcept(mysql_stmt_sqlstate(stmt), mysql_stmt_error(stmt));
 	}
+#endif
 	return r;
 }
 
