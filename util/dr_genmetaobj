@@ -322,6 +322,12 @@ foreach my $model (@models) {
 		}
 			or STDERR->print("failed to process $model->{full}.$accfilter->{name}:\n$@"), $errors++;
 	}
+	foreach my $check (sort({ $a->{order} <=> $b->{order} } values %{$model->getDrSpecs("check")})) {
+		eval {
+			$form->print(tabalign(tabalign("check", 16).$check->{spec}, 24).$check->{value}."\n");
+		}
+			or STDERR->print("failed to process $model->{full}.$check->{name}:\n$@"), $errors++;
+	}
 	$file_trans->closeFile($form);
 }
 

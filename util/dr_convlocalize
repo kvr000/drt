@@ -1,0 +1,150 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+
+use FileHandle;
+use File::Basename;
+use Data::Dumper;
+use Getopt::Std;
+#use DB_File;
+
+sub splitCsvLine($)
+{
+	my $line		= shift;
+
+	$line =~ s/\r?\n$//;
+	my @list = ();
+	return @list if ($line eq "");
+
+	for (my $p = 0; $p <= length($line); $p++) {
+		if (substr($line, $p, 1) eq '"') {
+			my $t = "";
+			$p++;
+			my $c;
+			for ($c = $p; ; $c++) {
+				if (($c = index($line, '"', $c)) < 0) {
+					die "missing ending quote: $line";
+				}
+				elsif ($c+1 == length($line) || substr($line, $c+1, 1) eq ",") {
+					$t .= substr($line, $p, $c-$p);
+					$c += 1;
+					last;
+				}
+				elsif (substr($line, $c+1, 1) eq '"') {
+					$t .= substr($line, $p, $c+1-$p);
+					$c += 1;
+					$p = $c+1;
+				}
+				else {
+					die "missing ending quote: $line";
+				}
+			}
+			push(@list, $t);
+			$p = $c;
+		}
+		else {
+			my $c = index($line, ',', $p);
+			if ($c < 0) {
+				$c = length($line);
+			}
+			push(@list, substr($line, $p, $c-$p));
+			$p = $c;
+		}
+	}
+	return @list;
+}
+
+sub compareFormats($$)
+{
+	my ($t0, $t1) = @_;
+	my ($c0, $c1) = ($t0, $t1);
+	for (;;) {
+		my ($f0, $f1);
+		($f0, $c0) = ($1, $2) if ($c0 =~ /^.*(%[^sdugf]*)(.*)$/);
+		($f1, $c1) = ($1, $2) if ($c1 =~ /^.*(%[^sdugf]*)(.*)$/);
+		die "different formats: $t0 $t1" unless ((defined $f0) == (defined $f1));
+		last unless (defined $f0 || defined $f1);
+		die "different formats: $t0 $t1" if ($f0 ne $f1);
+	}
+	return 1;
+}
+
+die "usage: $0 localize-file input-files..." unless (@ARGV > 1);
+
+our $db_load = $ENV{"db_load" } || "db4.8_load";
+our $db_name = shift @ARGV;
+our %db_cls;
+our $prefix = ($db_name =~ m,^(.*?)([^/]*)$,)[0];
+if ($db_name !~ m,^(.*/|)(\w+)/([^/]*)$,) {
+	die "db file not in language directory";
+}
+our $lang = $2;
+
+mkdir("${prefix}/cls");
+unlink($_) foreach (glob("${prefix}cls/*.cls.db"));
+unlink($db_name);
+
+open(my $db_full, "|$db_load -t btree -T $db_name")
+	or die "failed to open loader to $db_name: $!";
+
+my $errors = 0;
+eval {
+	foreach my $in_file (@ARGV) {
+		my $in_csv = FileHandle->new($in_file, "<")
+			or die "failed to open $in_file: $!";
+
+		my $col;
+		my $count;
+		my $line = 0;
+
+		if (defined (my $headline = <$in_csv>)) {
+			$line++;
+			my @head = splitCsvLine($headline);
+			$count = @head;
+			for (my $i = 0; ; $i++) {
+				if ($i == @head) {
+					die "$in_file:1: failed to find language $lang";
+				}
+				if ($head[$i] eq $lang) {
+					$col = $i;
+					last;
+				}
+			}
+		}
+		else {
+			die "$in_file:1: failed to find language header";
+			next;
+		}
+
+		while (<$in_csv>) {
+			$line++;
+			my @parsed = splitCsvLine($_);
+			next if (@parsed == 0);
+			die "$in_file:$line: need $count values: $_: ".Dumper(\@parsed) unless (@parsed == $count);
+			next if ($parsed[0] eq "" && $parsed[1] eq "" && $parsed[$col] eq "");
+			STDERR->print("$in_file:$line: invalid class name: $parsed[0]\n"), $errors++, next unless ($parsed[0] =~ m/^(\w|::)+$/);
+			$db_full->print("$parsed[0]\t$parsed[1]\n$parsed[$col]\n");
+			my $db_class;
+			if (!defined ($db_class = $db_cls{$parsed[0]}) && !exists $db_cls{$parsed[0]}) {
+				if ($parsed[0] =~ m/^([A-Za-z_]+::)*[A-Za-z_]+$/) {
+					my $name = $parsed[0];
+					$name =~ s/::/-/g;
+					open($db_class, "|$db_load -t btree -T ${prefix}cls/$name.cls.db")
+						or die "failed to open loader to ${prefix}cls/$name.cls.db: $!";
+					$db_cls{$parsed[0]} = $db_class;
+				}
+			}
+			if (defined $db_class) {
+				$db_class->print("$parsed[0]\t$parsed[1]\n$parsed[$col]\n");
+			}
+		}
+	}
+	close($db_full);
+	foreach (values %db_cls) {
+		close($_) or die "failed to close class file";
+	}
+	!$errors;
+}
+	or close($db_full), unlink($db_name), die $@;
+exit(0);
