@@ -187,6 +187,11 @@ foreach my $model (@models) {
 		foreach (qw(req_get req_set req_new req_del)) {
 			$form->print(tabalign("$_", 16).$model->getDrTagValue($_)."\n");
 		}
+		foreach (qw(trigger_set trigger_new trigger_del)) {
+			if (defined (my $v = $model->checkDrTagValue($_))) {
+				$form->print(tabalign("$_", 16).$model->getDrTagValue($_)."\n");
+			}
+		}
 		foreach (qw(order)) {
 			if (defined (my $v = $model->checkDrTagValue($_))) {
 				$form->print(tabalign("$_", 16).$model->getDrTagValue($_)."\n");
@@ -238,7 +243,7 @@ foreach my $model (@models) {
 			$form->print(tabalign("\trole", 24).$roles."\n");
 			if ($attr->{stype} eq "attr") {
 				my ( $type, $tagger ) = $attr->getFinalTypeWithTagger();
-				foreach (qw(db_conversion db_precision align gui_init)) {
+				foreach (qw(db_conversion db_precision db_mandatory align gui_init)) {
 					if (defined (my $val = $tagger->checkTagValue($_))) {
 						$form->print(tabalign("\t$_", 24).$val."\n");
 					}

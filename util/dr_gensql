@@ -182,7 +182,10 @@ sub translateSqlTypeDecl($$)
 	my $attr		= shift;
 
 	my $sql_type = translateSqlType($attr);
-	if ($main->{mandatory} eq 0) {
+	if (defined (my $db_mandatory = $main->checkDrTagValue("db_mandatory"))) {
+		$sql_type .= " not null default $db_mandatory";
+	}
+	elsif ($main->{mandatory} eq 0) {
 		$sql_type .= " null";
 	}
 	elsif ($main->{mandatory} eq 1) {
