@@ -947,6 +947,9 @@ sub expandAssocAttrs
 {
 	my $this		= shift;
 
+	if (caller(1024)) {
+		dr::Util::doDie("deep recursion");
+	}
 	my $target = $this->getAssocTarget();
 	my @primary = $target->getPrimary();
 	$this->dieContext("no primary key for $target->{full}") unless (@primary);

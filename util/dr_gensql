@@ -238,7 +238,7 @@ foreach my $model (@models) {
 					$sqlin->printObj("\t$pa->{name}");
 					$sqlin->printAligned(translateSqlTypeDecl($attr, $pa->{attr}), 40);
 					$sqlin->printAlignedAdd("-- $attr->{name}: $pa->{attr}->{owner}->{full}.$pa->{attr}->{name}", 72);
-					push(@primary, $pa->{name});
+					push(@primary, $pa->{name}) if ($attr->{stype} eq "compos");
 				}
 			}
 			else {

@@ -617,7 +617,7 @@ sub parseConstDef($)
 {
 	my $def			= shift;
 
-	die "incorrect syntax for const definition: $def" if ($def !~ m/^\s*(.*\S)\s+(\w+)(\(.+\))\s*$/);
+	die "incorrect syntax for const definition: $def" if ($def !~ m/^\s*(.*\S)\s+(\w+)(\(.+\))\s*;\s*$/);
 	die "type undefined" if ($1 eq "");
 	return ( type => $1, name => $2, init => $3 );
 }
