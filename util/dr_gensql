@@ -238,12 +238,10 @@ foreach my $model (@models) {
 			elsif ($attr->{stype} eq "assoc" || $attr->{stype} eq "compos") {
 				my @tprimary = $attr->expandAssocAttrs();
 				foreach my $pa (@tprimary) {
+					push(@primary, $pa->{name}) if ($attr->getRole()->{primary});
 					$sqlin->printObj("\t$pa->{name}");
 					$sqlin->printAligned(translateSqlTypeDecl($attr, $pa->{attr}), 40);
 					$sqlin->printAlignedAdd("-- $pa->{attr}->{owner}->{full}.$pa->{attr}->{name}", 72);
-				}
-				if ($attr->{stype} eq "assoc" && $attr->getRole()->{primary}) {
-					push(@primary, $attr->{name});
 				}
 			}
 			elsif ($attr->{stype} eq "child") {
