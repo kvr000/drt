@@ -601,6 +601,46 @@ sub genParallelAction($$@)
 	return $cont.$o;
 }
 
+sub printBuild($$$$$$$)
+{
+	my $config	= shift;
+	my $mf		= shift;
+	my $target	= shift;
+	my $deps	= shift;
+	my $order_deps	= shift;
+	my $command	= shift;
+	my $args	= shift;
+
+	$mf->printf("%s:%s", $target, join("", map({ " $_" } @$deps)));
+	if (defined $order_deps && @$order_deps) {
+		$mf->printf(" |%s", join("", map({ " $_" } @$order_deps)));
+	}
+	return $mf->printf("\n\t%s%s\n", $command, $args ? join("", map({ " $_" } @$args)) : "");
+}
+
+sub printSubBuild($$$$$$$)
+{
+	my $config	= shift;
+	my $mf		= shift;
+	my $target	= shift;
+	my $deps	= shift;
+	my $order_deps	= shift;
+	my $dir		= shift;
+	my $dirtarg	= shift;
+
+	return printBuild($config, $mf, $target, $deps, $order_deps, "\$(MAKE) -C $dir", defined $dirtarg ? [ $dirtarg ] : undef);
+}
+
+sub printDependency($$$$)
+{
+	my $config	= shift;
+	my $mf		= shift;
+	my $target	= shift;
+	my $deps	= shift;
+
+	$mf->printf("%s:%s\n", $target, join("", map({ " $_" } @$deps)));
+}
+
 sub createOutput
 {
 	my $this	= shift;
@@ -610,9 +650,10 @@ sub createOutput
 	my $config	= $this->{config};
 
 	my $targ_pre	= "";
-	my $targ_init	= " targ_pre";
-	my $targ_local	= " targ_init";
-	my $targ_post	= " targ_local";
+	my $targ_util	= "";
+	my $targ_init	= "";
+	my $targ_local	= "";
+	my $targ_post	= "";
 
 	my $gh_targall	= "";
 
@@ -689,7 +730,7 @@ sub createOutput
 
 	if (defined (my $deps = $vars->{DEPS})) {
 		foreach (@$deps) {
-			$mf->print("dep_$_:\n\t\$(MAKE) -C $_\n\n");
+			printSubBuild($config, $mf, "dep_$_", [], undef, "\$(MAKE) -C $_", undef);
 			$targ_local .= " dep_$_";
 		}
 		$mf->print("\n");
@@ -697,7 +738,7 @@ sub createOutput
 
 	if (defined (my $presubs = $vars->{PRESUBS})) {
 		foreach (@$presubs) {
-			$mf->printf("sub_%s: %s\n\t\$(MAKE) -C %s\n\n", $_->{name}, join(" ", map({ "sub_$_" } @{$_->{deps}})), $_->{name});
+			printSubBuild($config, $mf, "sub_$_->{name}", [ map({ "sub_$_" } @{$_->{deps}}) ], undef, $_->{name}, undef);
 			$targ_pre .= " sub_$_->{name}";
 		}
 		$mf->print("\n");
@@ -744,9 +785,8 @@ sub createOutput
 			push(@{$dp->{files}}, $sd);
 			if (dr::build::findArray("gh", $sd->{groups}) >= 0) {
 				my $base = basename($sd->{src}); $base =~ s/\.\w+$//; $base =~ s/.*\///;
-				$mgh->printf("%s %s: %s\n", "\$(GEN_)$base.hxx", "\$(GEN_)$base-def.hxx", $sd->{src});
-				$mgh->printf("\tdr_genheader %s %s\n", $sd->{src}, "\$(GEN_)$base");
-				$mf->printf("%s: %s %s\n", $sd->{out}, "\$(GEN_)$base.hxx", "\$(GEN_)$base-def.hxx");
+				printBuild($config, $mgh, "\$(GEN_)$base.hxx \$(GEN_)$base-def.hxx", [ $sd->{src} ], undef, "dr_genheader", [ $sd->{src}, "\$(GEN_)$base" ]);
+				printDependency($config, $mf, $sd->{out}, [ "\$(GEN_)$base.hxx", "\$(GEN_)$base-def.hxx" ]);
 				$gh_targall .= " \$(GEN_)$base.hxx";
 			}
 		}
@@ -809,7 +849,7 @@ sub createOutput
 	}
 	$mf->print("\$(GEN):\n\tmkdir -p \$(GEN)\n");
 	$mf->print("\$(OBJDIR):\n\tmkdir -p \$(OBJDIR)\n");
-	$targ_init .= " \$(GEN) \$(OBJDIR)";
+	#$targ_util .= " \$(GEN) \$(OBJDIR)";
 	if ($vars->{OUTPUT}) {
 		foreach my $od (@{$vars->{OUTPUT}}) {
 			my $ftarg;
@@ -823,7 +863,8 @@ sub createOutput
 					next unless ($_->{local});
 					$mf->print(" $_->{out}");
 				}
-				$mf->print("\n\tcd \$(TOPDIR) && \$(LDXX_SO) -o lib/$targ -Llib");
+				$mf->print("\n");
+				$mf->print("\tcd \$(TOPDIR) && \$(LDXX_SO) -o lib/$targ -Llib");
 				foreach (@{$od->{in_source}}) {
 					next unless (defined $_->{ocmd});
 					my $prefix = $_->{local}?"\$(DIRM_)":"";
@@ -840,7 +881,8 @@ sub createOutput
 					next unless ($_->{local});
 					$mf->print(" $_->{out}");
 				}
-				$mf->print("\n\t\$(LDXX_EXEC) -o \$\@");
+				$mf->print("\n");
+				$mf->print("\t\$(LDXX_EXEC) -o \$\@");
 				$mf->print(" -Wl,-rpath,\$(LIBDIR) -L\$(LIBDIR)");
 				foreach (@{$od->{in_source}}) {
 					next unless (defined $_->{ocmd});
@@ -851,7 +893,8 @@ sub createOutput
 			elsif ($od->{prog} eq "script") {
 				my $targ = $od->{out};
 				$ftarg = "\$(BINDIR_)$targ";
-				$mf->print("$ftarg:$targ_init");
+				$targ_util .= " $ftarg";
+				$mf->print("$ftarg:");
 				foreach (@{$od->{in_source}}) {
 					next if ($_->{disable});
 					$mf->print(" $_->{src}");
@@ -861,6 +904,7 @@ sub createOutput
 					next if ($_->{disable});
 					$mf->print("\trm -f $ftarg; ln -s ../\$(DIRM_)$_->{src} $ftarg\n");
 				}
+				next;
 			}
 			else {
 				die "unknown build-prog $od->{prog}\n";
@@ -953,7 +997,7 @@ sub createOutput
 		$mf->print("\n.depends:\n\ttouch .depends\n\t[ -n \"\$\$DR_NODEP\" ] || \$(MAKE) ldepends\ninclude .depends\n\n");
 	}
 	else {
-		$mf->print("\$(OBJDIR)/all_deps.mi:\n\tmkdir -p \$(GEN)\n\tmkdir -p \$(OBJDIR)\n\ttouch \$(OBJDIR)/dummy.dep\n\techo \"include \$(OBJDIR)/*.dep\" > \$@\n");
+		$mf->print("\$(OBJDIR)/all_deps.mi \$(GEN)/all_deps.mi:\n\tmkdir -p \$(GEN)\n\tmkdir -p \$(OBJDIR)\n\ttouch \$(GEN)/all_deps.mi\n\ttouch \$(OBJDIR)/dummy.dep\n\techo \"include \$(OBJDIR)/*.dep\" > \$@\n");
 		$mf->print("include \$(OBJDIR)/all_deps.mi\n\n");
 	}
 
@@ -964,11 +1008,27 @@ sub createOutput
 	}
 	$mf->print("\n");
 
-	$mf->print("targ_pre:$targ_pre\n");
-	$mf->print("targ_init:$targ_init\n");
-	$mf->print("targ_local:$targ_local\n");
-	$mf->print("targ_post:$targ_post\n");
-	$mf->print("targ_all: targ_pre targ_init targ_local targ_post\n\n");
+	if (0) {
+		$mf->print("targ_pre:$targ_pre\n");
+		$mf->print("targ_util: targ_pre$targ_util\n");
+		$mf->print("targ_init: targ_pre targ_util$targ_init\n");
+		$mf->print("targ_local: targ_init$targ_local\n");
+		$mf->print("targ_post: targ_local$targ_post\n");
+		$mf->print("targ_all: targ_pre targ_util targ_init targ_local targ_post\n\n");
+	}
+	else {
+		$mf->print("targ_pre:$targ_pre\n");
+		$mf->print("targ_util:$targ_util\n");
+		$mf->print("targ_init:$targ_init\n");
+		$mf->print("targ_local:$targ_local\n");
+		$mf->print("targ_post:$targ_post\n");
+		$mf->print("targ_all:\n");
+		$mf->print("\t\$(MAKE) targ_pre\n") if ($targ_pre);
+		$mf->print("\t\$(MAKE) targ_util\n") if ($targ_util);
+		$mf->print("\t\$(MAKE) targ_init\n") if ($targ_init);
+		$mf->print("\t\$(MAKE) targ_local\n") if ($targ_local);
+		$mf->print("\t\$(MAKE) targ_post\n") if ($targ_post);
+	}
 	$mf->close()
 		or die "failed to close file $dir/Makefile";
 
