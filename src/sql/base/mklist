@@ -19,4 +19,5 @@ SOURCES:
 	:${SD_BASE}/SqlStatementDummy.cxx:g=s,t
 	:${SD_BASE}/SqlManager.hxx:g=didev,t
 	:${SD_BASE}/SqlManager.cxx:g=s,t
+	:${SD_BASE}/DbObject.cxx:g=s,t,gh,di
 

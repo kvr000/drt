@@ -248,19 +248,44 @@ sub printIndented($$$)
 	}
 }
 
+sub printObjectHeader($$)
+{
+	my $cld			= shift;
+	my $level		= shift;
+	printIndented($hxx, $level, sprintf("%s %s: public %s%s\n{\n", "class", $cld->{iname}, $cld->{ancestor}, join("", map({ ", $_" } @{$cld->{ifaces}}))));
+	printIndented($hxx, $level, sprintf("\tDR_OBJECT_DECL_SIMPLE(%s, %s);\n", $cld->{iname}, $cld->{ancestor}));
+	printDirect($def, "\n");
+	printDirect($def, sprintf("DR_OBJECT_IMPL_IFACE%d(%s%s);\n", scalar @{$cld->{ifaces}}, $cld->{class}, join("", map({ ", $_" } @{$cld->{ifaces}}))));
+	printDirect($def, sprintf("DR_OBJECT_DEF(%s_STR, %s, %s);\n", nsToMacro($ns), $cld->{class}, $cld->{ancestor}));
+}
+
 sub printClass($$);
 sub printClass($$)
 {
 	my $cld			= shift;
 	my $level		= shift;
 
-	my $iname= $cld->{class};
+	$cld->{iname} = $cld->{class};
 	for (my $i = 0; $i < $level; $i++) {
-		$iname =~ s/^\w*:://;
+		$cld->{iname} =~ s/^\w*:://;
 	}
 
 	for (my $i = 0; ; $i++) {
 		splice(@cl_list, $i, 1), last if ($cl_list[$i] == $cld);
+	}
+
+	if ($cld->{type} eq "dbobject") {
+		$cld->{ancestor} = "dr::sql::DbObject" unless (defined $cld->{ancestor});
+		die "dbobject type used but no sql file opened" unless ($sql);
+		unshift(@{$cld->{methods}}, { specs => [ "protected" ], ret => "DR_CONSTRUCT", "decl" => "$cld->{class}(dr::sql::SqlConnectionHold *db_connection)" });
+		if ($cld->{typeflag}->{noreg}) {
+			$sql->printf("DR_MET(protected)\n%s::%s(dr::sql::SqlConnectionHold *db_connection_):\n\t%s(db_connection_)\n{\n}\n\n", $cld->{class}, $cld->{class}, $cld->{ancestor});
+		}
+		else {
+			push(@{$cld->{methods}}, { specs => [ "static", "public" ], ret => "$cld->{class} *", "decl" => "accCached(dr::sql::SqlConnectionHold *db_connection)" });
+			$sql->printf("DR_MET(protected)\n%s::%s(dr::sql::SqlConnectionHold *db_connection_):\n\t%s(db_connection_)\n{\n\tdb_connection_->addDbLayer(this);\n}\n\n", $cld->{class}, $cld->{class}, $cld->{ancestor});
+			$sql->printf("DR_MET(static public)\n%s *%s::accCached(dr::sql::SqlConnectionHold *holder)\n{\n\tif (%s *this_ = (%s *)holder->accDbLayer(comp_name))\n\t\treturn this_;\n\treturn tref(new %s(holder));\n}\n", $cld->{class}, $cld->{class}, $cld->{class}, $cld->{class}, $cld->{class});
+		}
 	}
 
 	die "$cxxname:$cld->{defline}: class $cld->{class} has no ancestor" if ($cld->{type} ne "struct" && !defined $cld->{ancestor});
@@ -272,21 +297,20 @@ sub printClass($$)
 		printIndented($hxx, $level, $doc);
 	}
 	if ($cld->{type} eq "object") {
-		printIndented($hxx, $level, sprintf("%s %s: public %s%s\n{\n", "class", $iname, $cld->{ancestor}, join("", map({ ", $_" } @{$cld->{ifaces}}))));
-		printIndented($hxx, $level, sprintf("\tDR_OBJECT_DECL_SIMPLE(%s, %s);\n", $iname, $cld->{ancestor}));
-		printDirect($def, "\n");
-		printDirect($def, sprintf("DR_OBJECT_IMPL_IFACE%d(%s%s);\n", scalar @{$cld->{ifaces}}, $cld->{class}, join("", map({ ", $_" } @{$cld->{ifaces}}))));
-		printDirect($def, sprintf("DR_OBJECT_DEF(%s_STR, %s, %s);\n", nsToMacro($ns), $cld->{class}, $cld->{ancestor}));
+		printObjectHeader($cld, $level);
+	}
+	elsif ($cld->{type} eq "dbobject") {
+		printObjectHeader($cld, $level);
 	}
 	elsif ($cld->{type} eq "noinfo") {
-		printIndented($hxx, $level, sprintf("%s %s: public %s\n{", "class", $iname, $cld->{ancestor}));
+		printIndented($hxx, $level, sprintf("%s %s: public %s\n{", "class", $cld->{iname}, $cld->{ancestor}));
 	}
 	elsif ($cld->{type} eq "struct") {
 		if (defined $cld->{ancestor}) {
-			printIndented($hxx, $level, sprintf("%s %s: public %s\n{", "struct", $iname, $cld->{ancestor}));
+			printIndented($hxx, $level, sprintf("%s %s: public %s\n{", "struct", $cld->{iname}, $cld->{ancestor}));
 		}
 		else {
-			printIndented($hxx, $level, sprintf("%s %s\n{", "struct", $iname));
+			printIndented($hxx, $level, sprintf("%s %s\n{", "struct", $cld->{iname}));
 		}
 	}
 	else {
@@ -430,6 +454,7 @@ MAIN: while (<$cxx>) {
 		}
 		$cld = {
 			cont		=> "",
+			typeflag	=> [],
 			ifaces		=> [],
 			methods		=> [],
 			ats		=> [],
@@ -460,7 +485,13 @@ MAIN: while (<$cxx>) {
 					push(@forwards, $val);
 				}
 				elsif ($key eq "type") {
-					$cld->{type} = $val;
+					if ($val =~ m/^(\w+)\((.*)\)$/) {
+						$cld->{type} = $1;
+						$cld->{typeflag} = { map({ ( $_ => 1 ) } split(",", $2)) };
+					}
+					else {
+						$cld->{type} = $val;
+					}
 				}
 				elsif ($key eq "class") {
 					STDERR->printf("$cxxname:$lineno: fatal: ns undefined\n"), exit(1) unless (defined $ns);
@@ -597,7 +628,7 @@ else {
 if (!%gen) {
 	%gen = map({ ( $_ => 1 ) } ( "def", "hxx", "all" ));
 	$gen{str} = 1 if (@strings || @bstrings || @wstrings);
-	$gen{sql} = 1 if (grep({ @{$_->{sqls}} } @cl_list));
+	$gen{sql} = 1 if (grep({ @{$_->{sqls}} || $_->{type} eq "dbobject" } @cl_list));
 }
 
 if ($gen{hxx} || $gen{def}) {
