@@ -166,7 +166,6 @@ sub printClass($$)
 
 	my $iname= $cld->{class};
 	for (my $i = 0; $i < $level; $i++) {
-		printIndented($hxx, $level, "public:\n");
 		$iname =~ s/^\w*:://;
 	}
 
@@ -209,6 +208,7 @@ sub printClass($$)
 			if ($_->{class} =~ m/^$cld->{class}::\w+$/) {
 				$found = 1;
 				$hxx->print("\n");
+				printIndented($hxx, $level, "public:\n");
 				printClass($_, $level+1);
 				last
 			}
@@ -323,41 +323,41 @@ MAIN: while (<$cxx>) {
 				next;
 			}
 			elsif (m/^\s*\*\s*(\w+):\s*(.*?)\s*$/) {
-				my ($key, $cont) = ($1, $2);
+				my ($key, $val) = ($1, $2);
 				if ($key eq "include") {
-					push(@includes, $cont);
+					push(@includes, $val);
 				}
 				elsif ($key eq "ns") {
-					$ns = $cont;
+					$ns = $val;
 				}
 				elsif ($key eq "use") {
-					push(@ns_use, $cont);
+					push(@ns_use, $val);
 				}
 				elsif ($key eq "type") {
-					$type = $cont;
+					$type = $val;
 				}
 				elsif ($key eq "class") {
-					$class = $cont;
+					$class = $val;
 					($class_last = $class) =~ s/.*:://;
 					$defline = $lineno;
 				}
 				elsif ($key eq "ancestor") {
-					$ancestor = $cont;
+					$ancestor = $val;
 				}
 				elsif ($key eq "ifaces") {
-					push(@ifaces, split(/s+/, $cont));
+					push(@ifaces, split(/s+/, $val));
 				}
 				elsif ($key eq "at") {
-					push(@ats, " $cont");
+					push(@ats, " $val");
 				}
 				elsif ($key eq "ap") {
-					push(@ats, "+$cont");
+					push(@ats, "+$val");
 				}
 				elsif ($key eq "am") {
-					push(@ats, "-$cont");
+					push(@ats, "-$val");
 				}
 				elsif ($key eq "co") {
-					if ($cont eq "{") {
+					if ($val eq "{") {
 						eval { $cont .= readContent($cxx, \$lineno, "}co") };
 						die "$cxxname:$lineno: incorrect syntax for co" if ($@);
 					}
@@ -460,13 +460,18 @@ else {
 STDERR->printf("$cxxname:$lineno: fatal: namespace undefined\n"), $errors++ unless (defined $ns);
 exit(1) if ($errors);
 
+$hxx->printf("/* The file is generated from %s, do not modify */\n", $cxxname);
+$hxx->printf("/* The same license applies to use of header file */\n\n");
 $hxx->printf("#ifndef %s\n# define %s\n\n", fileToHeader($ns, $hxxname), fileToHeader($ns, $hxxname));
 foreach my $inc (@includes) {
 	$hxx->printf("#include <$inc>\n");
 }
-$hxx->printf("\n%s\n\n", nsToMacroBegin($ns));
-foreach my $use (@ns_use) {
-	$hxx->printf("%s_USE;\n", nsToMacro($use));
+$hxx->printf("\n%s\n", nsToMacroBegin($ns));
+if (@ns_use) {
+	foreach my $use (@ns_use) {
+		$hxx->printf("%s_USE;\n", nsToMacro($use));
+	}
+	$hxx->printf("\n");
 }
 $hxx->printf("\n\n");
 
@@ -483,7 +488,7 @@ while (@cl_list) {
 	printClass($selected, 0);
 }
 $def->printf("\n\n%s\n", nsToMacroEnd($ns));
-$hxx->printf("\n\n%s\n#endif\n", nsToMacroEnd($ns));
+$hxx->printf("\n\n%s\n\n#endif\n", nsToMacroEnd($ns));
 
 
 $hxx->flush();
