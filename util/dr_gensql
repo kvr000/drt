@@ -246,6 +246,9 @@ foreach my $model (@models) {
 					push(@primary, $attr->{name});
 				}
 			}
+			elsif ($attr->{stype} eq "child") {
+				# ignore childs for db at all
+			}
 			else {
 				dr::Util::doDie("$attr->{owner}->{filename}:0: invalid stype $attr->{stype}");
 			}

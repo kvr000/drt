@@ -38,7 +38,7 @@ package dr::XmiParser;
 use strict;
 use warnings;
 
-use dr::Util qw(defvalue);
+use dr::Util qw(defvalue dumpSimple);
 
 
 package dr::XmiParser::Leveler;
@@ -717,6 +717,10 @@ sub read_processAssociationClass
 			$this->read_processOwnedAttribute($reader);
 			next;
 		}
+		elsif ($name eq "ownedOperation") {
+			$this->read_processOwnedOperation($reader);
+			next;
+		}
 		elsif ($name eq "ownedComment") {
 			$this->read_processClassComment($reader);
 			next;
@@ -946,6 +950,12 @@ sub read_processOwnedAttribute
 		}
 		elsif ($this->{read_attr}->{lower_value} eq "1" && $this->{read_attr}->{upper_value} eq "*") {
 			$this->{read_attr}->{mandatory} = "*";
+		}
+		elsif ($this->{read_attr}->{lower_value} eq "*" && $this->{read_attr}->{upper_value} eq "*") {
+			$this->{read_attr}->{mandatory} = undef;
+			if (defined $this->{read_attr}->{aggregation} && $this->{read_attr}->{aggregation} ne "none") {
+				$this->read_doDie("unexpected combination of lower/upper: * - * when aggregation type is not none");
+			}
 		}
 		else {
 			$this->read_doDie("unexpected combination of lower/upper: $this->{read_attr}->{lower_value} - $this->{read_attr}->{upper_value}");
@@ -1333,8 +1343,11 @@ sub postprocRefClass
 
 	my $resolved = 0;
 
-	foreach my $attr (@{$class->{attr_list}}) {
-		$this->postprocRefClassAttr($attr);
+	for (my $i = 0; $i < @{$class->{attr_list}}; $i++) {
+		$i-- if ($this->postprocRefClassAttr(${$class->{attr_list}}[$i]));
+	}
+	foreach my $ch_class (@{$class->{class_list}}) {
+		$this->postprocRefClass($ch_class);
 	}
 	if (defined $class->{ancestor_xid}) {
 		Scalar::Util::weaken($class->{ancestor} = $this->resolveDatatype($class->{ancestor_xid}));
@@ -1348,15 +1361,36 @@ sub postprocRefClassAttr
 	my $this		= shift;
 	my $attr		= shift;
 
-	my $resolved = 0;
-
 	eval {
 		$attr->{datatype} = $attr->{type_primitive} || $this->resolveDatatype($attr->{type_xid});
 		1;
 	}
 		or die "$attr->{parent}->{name}.$attr->{name}: $@";
 
-	return $resolved;
+	if (!defined $attr->{mandatory}) {
+		if ($attr->{aggregation} eq "none") {
+			my $found_attr;
+			foreach my $assoc_attr (@{$attr->{datatype}->{attr_list}}) {
+				if (defined $assoc_attr->{association_xid} && $assoc_attr->{association_xid} eq $attr->{association_xid}) {
+					$found_attr = $assoc_attr;
+					last;
+				}
+			}
+			if (!defined $found_attr) {
+				dr::Util::doDie("$attr->{parent}->{name}.$attr->{name}: association target not found: $attr->{association_xid}");
+			}
+			if ($found_attr->{aggregation} ne "composite") {
+				dr::Util::doDie("$attr->{parent}->{name}.$attr->{name}: association target is not composite as expected for * - * multiplicity: ".dumpSimple($found_attr));
+			}
+			$attr->{aggregation} = "child";
+			$attr->{mandatory} = "*";
+		}
+		else {
+			dr::Util::doDie("$attr->{parent}->{name}.$attr->{name}: mandatory not defined and aggregation is not none");
+		}
+	}
+
+	return 0;
 }
 
 sub postprocess

@@ -47,7 +47,7 @@ use lib dirname($0)."/perl";
 use dr::FileTransaction;
 use dr::FileParser;
 use dr::ModelStore;
-use dr::Util qw(defvalue tabalign);
+use dr::Util qw(defvalue tabalign dumpSimple);
 
 
 sub fixModelInfo($)
@@ -203,8 +203,14 @@ foreach my $model (@models) {
 					$form->print(tabalign("\t$_", 24).$v."\n");
 				}
 			}
-			foreach (qw(req_sys req_view req_mode)) {
+			foreach (qw(req_sys req_mode)) {
 				$form->print(tabalign("\t$_", 24).defvalue($attr->checkDrTagValue($_), "")."\n");
+			}
+			if (defined (my $req_view = $attr->checkDrTagValue("req_view"))) {
+				$form->print(tabalign("\treq_view", 24).$req_view."\n");
+			}
+			else {
+				$form->print(tabalign("\treq_view", 24).($attr->{stype} eq "child" ? "__explicit__" : "")."\n");
 			}
 			foreach (qw(req_get req_set req_new)) {
 				if (defined (my $v = $attr->checkDrTagValue($_))) {
@@ -215,6 +221,7 @@ foreach my $model (@models) {
 			my $roles = defvalue($attr->checkDrTagValue("role"), "")."";
 			$roles .= "," if ($roles ne "");
 			$roles .= "serial," if ($attr->checkDrTagValue("serial"));
+			$roles .= "compos," if ($attr->{stype} eq "compos");
 			$roles = substr($roles, 0, -1);
 			$form->print(tabalign("\trole", 24).$roles."\n");
 			if ($attr->{stype} eq "attr") {
@@ -244,6 +251,13 @@ foreach my $model (@models) {
 			elsif ($attr->{stype} eq "compos") {
 				$form->print(tabalign("\tref", 24).$attr->{ref}."\n");
 				$form->print(tabalign("\ttext", 24).defvalue($attr->checkDrTagValue("text"), $attr->{name})."\n");
+			}
+			elsif ($attr->{stype} eq "child") {
+				$form->print(tabalign("\tref", 24).$attr->{ref}."\n");
+				$form->print(tabalign("\ttext", 24).defvalue($attr->checkDrTagValue("text"), $attr->{name})."\n");
+			}
+			else {
+				dr::Util::doDie("unknown stype $attr->{stype}:\n".dumpSimple($attr)."\n");
 			}
 			1;
 		}

@@ -474,9 +474,10 @@ sub getIndexes
 
 our %CLASS_MAPPER = (
 	%dr::ModelStore::ClassBase::BASE_MAPPER,
+	compos			=> \&readClassCompos,
 	attr			=> \&readClassAttr,
 	assoc			=> \&readClassAssoc,
-	compos			=> \&readClassCompos,
+	child			=> \&readClassChild,
 	action			=> \&readClassAction,
 	view			=> \&readClassView,
 );
@@ -491,6 +492,19 @@ sub load
 	dr::ModelStore::Util::genericLoad($this, $reader, \%CLASS_MAPPER);
 
 	$this->postLoad();
+}
+
+sub readClassCompos
+{
+	my $this		= shift;
+	my $base		= shift;
+	my $key			= shift;
+	my $val			= shift;
+
+	my $compos = dr::ModelStore::Compos->new($this, { stype => "compos", name => $val });
+	$compos->load($base->getSubLeveler());
+
+	push(@{$this->{attr_list}}, $compos);
 }
 
 sub readClassAttr
@@ -519,17 +533,17 @@ sub readClassAssoc
 	push(@{$this->{attr_list}}, $assoc);
 }
 
-sub readClassCompos
+sub readClassChild
 {
 	my $this		= shift;
 	my $base		= shift;
 	my $key			= shift;
 	my $val			= shift;
 
-	my $compos = dr::ModelStore::Compos->new($this, { stype => "compos", name => $val });
-	$compos->load($base->getSubLeveler());
+	my $child = dr::ModelStore::Child->new($this, { stype => "child", name => $val });
+	$child->load($base->getSubLeveler());
 
-	push(@{$this->{attr_list}}, $compos);
+	push(@{$this->{attr_list}}, $child);
 }
 
 sub readClassAction
@@ -1131,6 +1145,14 @@ use base "dr::ModelStore::AssocBase";
 
 
 package dr::ModelStore::Compos;
+
+use strict;
+use warnings;
+
+use base "dr::ModelStore::AssocBase";
+
+
+package dr::ModelStore::Child;
 
 use strict;
 use warnings;

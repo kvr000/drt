@@ -186,11 +186,11 @@ foreach my $model (@models) {
 		my ( $type, $tagger ) = $attr->getFinalTypeWithTagger();
 		eval {
 			$form->print(tabalign("attr", 16).$attr->{name}."\n");
-			$form->print(tabalign("\ttext", 24).$tagger->getTag("text")->{value}."\n");
+			$form->print(tabalign("\ttext", 24).defvalue($tagger->checkTagValue("text"), $attr->{name})."\n");
 			$form->print(tabalign("\ttype", 24).translateFormType($attr)."\n");
 			$form->print(tabalign("\tmandatory", 24).$attr->{mandatory}."\n");
-			$form->print(tabalign("\tlogical", 24).$tagger->getTag("logical")->{value}."\n");
-			$form->print(tabalign("\tdisplay", 24).$tagger->getTag("display")->{value}."\n");
+			$form->print(tabalign("\tlogical", 24).$tagger->getTagValue("logical")."\n");
+			$form->print(tabalign("\tdisplay", 24).$tagger->getTagValue("display")."\n");
 			foreach (qw(req_sys req_get req_set req_view req_mode)) {
 				printAttrOptional($form, $attr, $_);
 			}

@@ -142,6 +142,10 @@ sub genClass
 				$fd->print(formatPair("compos", $attr->{name}));
 				$fd->print("\t".formatPair("ref", $xmi->formatDatatype($class->getAttrType($attr))));
 			}
+			elsif ($attr->{aggregation} eq "child") {
+				$fd->print(formatPair("child", $attr->{name}));
+				$fd->print("\t".formatPair("ref", $xmi->formatDatatype($class->getAttrType($attr))));
+			}
 			elsif ($attr->{aggregation} eq "none") {
 				$fd->print(formatPair("assoc", $attr->{name}));
 				$fd->print("\t".formatPair("ref", $xmi->formatDatatype($class->getAttrType($attr))));

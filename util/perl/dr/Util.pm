@@ -41,7 +41,9 @@ use warnings;
 use Exporter;
 
 our @ISA = qw(Exporter);
-our @EXPORT_OK = qw(doDie defvalue tablength tabalign);
+our @EXPORT_OK = qw(doDie dumpSimple defvalue tablength tabalign);
+
+use Scalar::Util qw(isweak reftype);
 
 our $TABSIZE = 8;
 
@@ -71,6 +73,45 @@ sub defvalue($$)
 	my $def			= shift;
 
 	return defined $val ? $val : $def;
+}
+
+# dump a structure, but avoiding weak references
+sub dumpSimple
+{
+	my $var			= shift;
+	my $level		= shift || 0;
+
+	return "" if ($level > 4);
+
+	my $out = "";
+
+	return "undef" if (!defined $var);
+	my $type = reftype($var) || "";
+	SW: {
+		if ($type eq "SCALAR") {
+			$out .= "\\".(isweak($$var) ? "__WEAK__" : dumpSimple($$var, $level));
+			last SW;
+		}
+		if ($type eq "ARRAY") {
+			$out .= "[\n";
+			for (my $i = 0; $i < @$var; $i++) {
+				$out .= ("\t" x ($level+1)).(isweak(${$var}[$i]) ? "__WEAK__" : dumpSimple(${$var}[$i], $level+1)).",\n";
+			}
+			$out .= ("\t" x $level)."]";
+			last SW;
+		}
+		if ($type eq "HASH") {
+			$out .= "{\n";
+			foreach my $i (keys %$var) {
+				$out .= ("\t" x ($level+1)).tabalign($i, 16)." => ".(isweak(${$var}{$i}) ? "__WEAK__" : dumpSimple(${$var}{$i}, $level+1)).",\n";
+			}
+			$out .= ("\t" x $level)."}";
+			last SW;
+		}
+		$out .= "$var";
+	}
+
+	return $out;
 }
 
 sub openStringStream
