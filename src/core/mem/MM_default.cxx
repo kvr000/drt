@@ -317,6 +317,7 @@ go_alloc:
 
 has_out:
 	if ((MM_impl::debug_options&~(MM_impl::MMD_THREAD)) != 0) {
+		Atomic::inc(&MM_impl::debug_current_seq);
 		if (MM_impl::debug_options&MM_impl::MMD_CLEAN)
 			memset(out, 0xcd, size);
 		if (MM_impl::debug_options&MM_impl::MMD_BOUND) {
@@ -365,9 +366,12 @@ has_out:
 			Fatal::pdata(buf, strlen(buf));
 		}
 		if (MM_impl::debug_options&MM_impl::MMD_STOPS) {
+			if (MM_impl::debug_current_seq == MM_impl::debug_stop_seq) {
+				Fatal::debugStop("memory sequence breakpoint\n");
+			}
 			for (size_t i = 0; i < MM_impl::debug_stops_length; i++) {
 				if ((char *)out+sizeof(SintPtr) == MM_impl::debug_stops[i]) {
-					Fatal::debugStop("memory breakpoint");
+					Fatal::debugStop("memory block breakpoint\n");
 				}
 			}
 		}

@@ -71,6 +71,8 @@ void (*MM_impl::impl_flushThreadCache)() = NULL;
 int MM_impl::debug_options = -1;
 size_t MM_impl::debug_stops_length = 0;
 void *MM_impl::debug_stops[sizeof(MM_impl::debug_stops)/sizeof(MM_impl::debug_stops[0])];
+Refcnt MM_impl::debug_stop_seq = 0;
+Refcnt MM_impl::debug_current_seq = 0;
 
 DR_EXPORT_MTS void MM_impl::setDebug(const char *opts)
 {
@@ -191,6 +193,13 @@ void MM::s_init()
 				}
 				else if ((MM_impl::debug_stops[MM_impl::debug_stops_length] = (void *)strtol(opts+1, (char **)&opts, 16)) == NULL || *opts != '-') {
 					Fatal::handleFailed("incorrect usage of DRO_MM 's' flag, requires hexa address finished with '-'\n");
+				}
+				break;
+
+			case 'S':
+				set_level |= MM_impl::MMD_STOPS;
+				if ((MM_impl::debug_stop_seq = strtol(opts+1, (char **)&opts, 0)) == 0 || *opts != '-') {
+					Fatal::handleFailed("incorrect usage of DRO_MM 'S' flag, requires number finished with '-'\n");
 				}
 				break;
 

@@ -55,8 +55,9 @@ class DR_PUB MM_default
 public:
 	struct RH_value
 	{
-		char *	bt;
-		size_t	size;
+		char *				bt;
+		size_t				size;
+		size_t				seq;
 	};
 	class DR_PUB RememberHash: public THash<void *, RH_value, HashCompar<void *, RH_value>, THashAlloc<void *, RH_value, AllocNat> >
 	{

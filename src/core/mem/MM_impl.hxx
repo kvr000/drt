@@ -78,6 +78,8 @@ public: /* implementation callbacks */
 	static int			debug_options;
 	static void *			debug_stops[16];
 	static size_t			debug_stops_length;
+	static Refcnt			debug_stop_seq;
+	static Refcnt			debug_current_seq;
 
 protected: /* intialization functions */
 	static void *			init_allocS(size_t size);

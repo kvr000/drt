@@ -45,6 +45,7 @@ my %mem;
 my $order = 0;
 
 my $pending;
+my $seq = 0;
 
 for (;;) {
 	if (!defined $pending) {
@@ -61,6 +62,7 @@ for (;;) {
 			}
 		}
 		if ($op eq "allocated") {
+			$seq++;
 			my $md = $mem{$block};
 			if ($md) {
 				print("memory $block ($length) allocated for second time:\n$md->{backtrace}\n");
@@ -71,6 +73,7 @@ for (;;) {
 				thread		=> $thread,
 				backtrace	=> $backtrace,
 				order		=> $order++,
+				seq		=> $seq,
 			};
 		}
 		else {
@@ -95,5 +98,6 @@ foreach my $md (sort({ $a->{order} <=> $b->{order} } values %mem)) {
 	next if ($md->{backtrace} =~ m/\(_ZN2dr9Subsystem12getSubsystem/);
 	next if ($md->{backtrace} =~ m/\(_ZN2dr6Thread19createMessageSerial/);
 	next if ($md->{backtrace} =~ m/\(_ZN2dr23createMemExceptInstanceEv/);
-	print("memory $md->{block} ($md->{length}) not freed:\n$md->{backtrace}\n");
+	next if ($md->{backtrace} =~ m/\(_ZN2dr3net9RpcHelper12StructMapperC1EPKNS_6StringElPFvPNS0_10RpcDecoderEPvES5_z/);
+	print("memory $md->{block} ($md->{length}) seq=$md->{seq} not freed:\n$md->{backtrace}\n");
 }

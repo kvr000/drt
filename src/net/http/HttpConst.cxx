@@ -46,15 +46,15 @@
 DR_NET_NS_BEGIN
 
 
-const String HttpConst::connection_string("connection");
-const String HttpConst::head_string("head");
-const String HttpConst::get_string("get");
-const String HttpConst::post_string("post");
-const String HttpConst::put_string("put");
-const String HttpConst::delete_string("delete");
-const String HttpConst::connect_string("connect");
-const String HttpConst::options_string("options");
-const String HttpConst::trace_string("trace");
+const String HttpConst::connection_string(Const::string("connection"));
+const String HttpConst::head_string(Const::string("head"));
+const String HttpConst::get_string(Const::string("get"));
+const String HttpConst::post_string(Const::string("post"));
+const String HttpConst::put_string(Const::string("put"));
+const String HttpConst::delete_string(Const::string("delete"));
+const String HttpConst::connect_string(Const::string("connect"));
+const String HttpConst::options_string(Const::string("options"));
+const String HttpConst::trace_string(Const::string("trace"));
 
 const StringIndex HttpConst::method_type_map(
 		&head_string, MT_Head,
