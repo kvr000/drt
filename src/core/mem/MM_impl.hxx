@@ -55,6 +55,7 @@ public:
 		MMD_PENDING	= 0x100000,
 		MMD_TEST	= 0x200000,
 		MMD_BOUND	= 0x400000,
+		MMD_STOPS	= 0x800000,
 	};
 
 public: /* debug interface, implementation, ... */
@@ -75,6 +76,8 @@ public: /* implementation callbacks */
 
 	/** debug options */
 	static int			debug_options;
+	static void *			debug_stops[16];
+	static size_t			debug_stops_length;
 
 protected: /* intialization functions */
 	static void *			init_allocS(size_t size);

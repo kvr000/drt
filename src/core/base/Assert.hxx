@@ -66,9 +66,11 @@ public:
 public:
 	/** assertion failed, todo code, unexpected result etc. */
 	static void			failedAssert(const char *expr, const char *file, int line, const char *func);
+
 	/** fatal error occured (syscall failure which is fatal for the rest of
 	 * the system, ...) */
 	static bool			failedFatal(const char *msg, const char *file, int line, const char *func);
+
 	/**
 	 * missing handling for specific situation
 	 */
@@ -77,18 +79,30 @@ public:
 public:
 	/** handle failure */
 	static void			handleFailed(const char *msg);
+
 	/** print failure */
 	static void			printFailed(const char *msg);
+
 	/** print failure with backtrace */
 	static void			printBacktrace(const char *msg);
+
 	/** debug log */
 	static void			log(const char *msg);
+
 	/** formatted debug log */
 	static void			flog(const char *msg, ...);
+
 	/** formatted log (printed always) */
 	static void			plog(const char *msg, ...);
+
 	/** non formatted log (printed always) */
 	static void			pdata(const char *msg, size_t size);
+
+	/**
+	 * stop for debugging reason
+	 */
+	static void			debugStop(const char *msg);
+
 
 public:
 	/** get backtrace */

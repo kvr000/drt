@@ -101,7 +101,7 @@ DR_NS_BEGIN
 	/**/ 0000|0000|0000|Winv: \
 	case Bbin|0000|0000|Winv
 
-DR_EXPORT_DTS StrData StrData::null = { 0, 0, -1, (BString::Data *)((UintPtr)Binv), (WString::Data *)((UintPtr)Winv/4) };
+DR_EXPORT_DTS StrData StrData::null = { 0, 0, 0x45432344, BString::Data::null.ref(), WString::Data::null.ref() };
 DR_EXPORT_DTS StrData StrData::zero = { 0, 0, -1, BString::Data::zero.ref(), WString::Data::zero.ref() };
 
 

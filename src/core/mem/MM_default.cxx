@@ -364,6 +364,13 @@ has_out:
 			sprintf(buf, "allocated block %p (%ld), pending %ld\n", (char *)out+sizeof(SintPtr), (long)size_, (long)instance.remember_hash->count());
 			Fatal::pdata(buf, strlen(buf));
 		}
+		if (MM_impl::debug_options&MM_impl::MMD_STOPS) {
+			for (size_t i = 0; i < MM_impl::debug_stops_length; i++) {
+				if ((char *)out+sizeof(SintPtr) == MM_impl::debug_stops[i]) {
+					Fatal::debugStop("memory breakpoint");
+				}
+			}
+		}
 	}
 	((SintPtr *)out)[0] = size_;
 	return (char *)out+sizeof(SintPtr);

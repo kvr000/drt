@@ -69,6 +69,8 @@ void (*MM_impl::impl_closingThread)() = NULL;
 void (*MM_impl::impl_flushThreadCache)() = NULL;
 
 int MM_impl::debug_options = -1;
+size_t MM_impl::debug_stops_length = 0;
+void *MM_impl::debug_stops[sizeof(MM_impl::debug_stops)/sizeof(MM_impl::debug_stops[0])];
 
 DR_EXPORT_MTS void MM_impl::setDebug(const char *opts)
 {
@@ -180,6 +182,16 @@ void MM::s_init()
 
 			case 'm':
 				set_level |= MM_impl::MMD_BOUND|MM_impl::MMD_CLEAN;
+				break;
+
+			case 's':
+				set_level |= MM_impl::MMD_STOPS;
+				if (MM_impl::debug_stops_length >= sizeof(MM_impl::debug_stops)/sizeof(MM_impl::debug_stops[0])) {
+					Fatal::handleFailed("too many memory breakpoints\n");
+				}
+				else if ((MM_impl::debug_stops[MM_impl::debug_stops_length] = (void *)strtol(opts+1, (char **)&opts, 16)) == NULL || *opts != '-') {
+					Fatal::handleFailed("incorrect usage of DRO_MM 's' flag, requires hexa address finished with '-'\n");
+				}
 				break;
 
 			case '_':

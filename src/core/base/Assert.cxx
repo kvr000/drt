@@ -349,5 +349,14 @@ void Fatal::flog(const char *msg, ...)
 	log(buf);
 }
 
+void Fatal::debugStop(const char *msg)
+{
+#ifdef DR_OS_UNIX
+	raise(SIGSTOP);
+#else
+	abort();
+#endif
+}
+
 
 DR_NS_END
