@@ -1656,6 +1656,42 @@ DR_EXPORT_MET String &String::append(const wchar_t *widestr, ssize_t length)
 	return append(String(widestr, length));
 }
 
+DR_EXPORT_MET String &String::appendUtf8(const char *utf8str, ssize_t length)
+{
+	return append(String(utf8str, length));
+}
+
+DR_EXPORT_MET String &String::appendUtf8FromUnicode(Uint32 code)
+{
+	char utf8str[8];
+	size_t len = 0;
+	if (code <= 0x7f) {
+		utf8str[len++] = code;
+	}
+	else if (code <= 0x7ff) {
+		utf8str[len++] = (code>>6)|0xc0;
+		utf8str[len++] = ((code>>0)&0x3f)|0x80;
+	}
+	else if (code <= 0xffff) {
+		utf8str[len++] = (code>>12)|0xe0;
+		utf8str[len++] = ((code>>6)&0x3f)|0x80;
+		utf8str[len++] = ((code>>0)&0x3f)|0x80;
+	}
+	else if (code <= 0x10ffff) {
+		utf8str[len++] = (code>>18)|0xf0;
+		utf8str[len++] = ((code>>12)&0x3f)|0x80;
+		utf8str[len++] = ((code>>6)&0x3f)|0x80;
+		utf8str[len++] = ((code>>0)&0x3f)|0x80;
+	}
+	else {
+		utf8str[len++] = ((code>>18)&0x3f)|0xf0;
+		utf8str[len++] = ((code>>12)&0x3f)|0x80;
+		utf8str[len++] = ((code>>6)&0x3f)|0x80;
+		utf8str[len++] = ((code>>0)&0x3f)|0x80;
+	}
+	return append(String(utf8str, len));
+}
+
 DR_EXPORT_MET String &String::appendAsciiReverse(const char *asciistr, size_t length)
 {
 	d = d->appendAsciiReverse(asciistr, length);

@@ -188,6 +188,7 @@ public:
 	String &			append(const char *ascii, ssize_t length = -1);
 	String &			append(const wchar_t *wide, ssize_t length = -1);
 	String &			appendUtf8(const char *utf8, ssize_t length = -1);
+	String &			appendUtf8FromUnicode(Uint32 code);
 	String &			appendAscii(const char *str, size_t size);
 	String &			appendAsciiReverse(const char *str, size_t size);
 	String &			appendNumber(Sint32 number, int base = 10);
