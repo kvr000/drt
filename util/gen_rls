@@ -35,11 +35,18 @@
 ## @license	http://www.gnu.org/licenses/lgpl.txt GNU Lesser General Public License v3
 ##
 
+set -e
+
+found=false
 for f in "$1"/*; do
-	if [ -e "$f" ]; then
-		echo "$f"
-	fi
-	if [ -d "$f" ]; then
+	if [ -d "$1" ]; then
 		"$0" "$f"
+	elif [ -e "$f" ]; then
+		echo "$f"
+	else
+		continue
 	fi
+	found=true
 done
+
+$found || echo $1
