@@ -298,6 +298,9 @@ foreach my $model (@models) {
 				}
 			}
 			printActionOptional($form, $action, "form_mode");
+			printActionOptional($form, $action, "form_name");
+			printActionOptional($form, $action, "form_view");
+			printActionOptional($form, $action, "actioner");
 			printActionOptional($form, $action, "options");
 			if (defined (my $form_actioner = $action->checkDrTagValue("form_actioner"))) {
 				my $a = $form_actioner eq "_" ? "$model->{full}_$action->{name}" : index($form_actioner, "_") == 0 ? "$model->{full}$form_actioner" : $form_actioner;
