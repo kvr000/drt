@@ -39,6 +39,8 @@
 
 #if (defined DR_OS_UNIX)
 # include <dlfcn.h>
+#elif (defined DR_OS_SYMBIAN)
+// nothing
 #elif (defined DR_OS_WNT)
 # include <windows.h>
 # ifdef  DR_LIBC_CYGWIN
@@ -104,7 +106,9 @@ Subsystem *Subsystem::getSubsystem(const String &name, Subsystem *(*create_func)
 				xthrownew(BadSubsysExcept(name, String("too long function name")));
 			if ((create_func = (Subsystem *(*)(const String &))dlsym(dl, libfile)) == NULL)
 				xthrownew(BadSubsysExcept(name, String("cannot find function ").append(libfile)));
-#else
+#elif (defined DR_OS_SYMBIAN)
+			xthrownew(BadSubsysExcept(name, "dynamic subsystem not supported on symbian"));
+#elif (defined DR_OS_WNT)
 			union {
 				WCHAR libfile[64];
 				char libfunc[64];
@@ -142,6 +146,8 @@ Subsystem *Subsystem::getSubsystem(const String &name, Subsystem *(*create_func)
 #endif
 				((HMODULE)dl, libfunc)) == NULL)
 				xthrownew(BadSubsysExcept(name, "too long function name"));
+#else
+# error unknown system
 #endif
 		}
 		{
@@ -160,6 +166,8 @@ Subsystem *Subsystem::getSubsystem(const String &name, Subsystem *(*create_func)
 		if (dl) {
 #if (defined DR_OS_UNIX)
 			dlclose(dl);
+#elif (defined DR_OS_SYMBIAN)
+			// nothing
 #elif (defined DR_OS_WNT)
 			FreeLibrary((HMODULE)dl);
 #else

@@ -72,6 +72,7 @@ sub createTruncated
 
 	my $fd = FileHandle->new($fname, ">")
 		or die "failed to open file $fname: $!";
+	binmode($fd);
 	push(@{$this->{opers}}, { op => "rm", fname => $fname, fd => $fd });
 	return $fd;
 }

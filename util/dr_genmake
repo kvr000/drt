@@ -518,35 +518,14 @@ sub createOutput
 }
 
 
-package dr::build::out::MakeGenerator;
+package dr::build::out::MakeCommon;
 
 use strict;
 use warnings;
 
-use Data::Dumper;
 use File::Path;
-use File::Basename;
 
 use base "dr::build::out::Generator";
-
-sub filterSources
-{
-	my $this	= shift;
-	my $list	= shift;
-
-	my @sd_o = ();
-	my @sd_l = ();
-
-	foreach my $sd (@$list) {
-		if ($sd->{prog} eq "lshlib") {
-			push(@sd_l, $sd);
-		}
-		else {
-			push(@sd_o, $sd);
-		}
-	}
-	return [ reverse(@sd_o), @sd_l ];
-}
 
 sub genRecursiveAction($$@) # recursive-action pre-list this-action post-list
 {
@@ -641,6 +620,240 @@ sub printDependency($$$$)
 	$mf->printf("%s:%s\n", $target, join("", map({ " $_" } @$deps)));
 }
 
+sub printPreSubs # list_of_presubs <- this makefile vars
+{
+	my $this	= shift;
+	my $mf		= shift;
+	my $vars	= shift;
+
+	my @presubs;
+	if (defined (my $presubs = $vars->{PRESUBS})) {
+		foreach (@$presubs) {
+			$mf->print("sub_$_->{name}:\n\t\$(MAKE) -C $_->{name}\n\n");
+			push(@presubs, "sub_$_->{name}");
+		}
+		$mf->print("\n");
+	}
+	return @presubs;
+}
+
+sub printPostSubs # list_of_presubs <- this makefile vars
+{
+	my $this	= shift;
+	my $mf		= shift;
+	my $vars	= shift;
+
+	my @postsubs;
+	if (defined (my $presubs = $vars->{POSTSUBS})) {
+		foreach (@$presubs) {
+			$mf->print("sub_$_->{name}:\n\t\$(MAKE) -C $_->{name}\n\n");
+			push(@postsubs, "sub_$_->{name}");
+		}
+		$mf->print("\n");
+	}
+	return @postsubs;
+}
+
+sub printNothing
+{
+	my $this	= shift;
+	my $mf		= shift;
+	my $vars	= shift;
+
+	$mf->print("lnothing:\n");
+	$mf->print(genParallelAction("nothing", "lnothing", $vars)."\n");
+}
+
+sub printDistInc # <- this makefile vars
+{
+	my $this	= shift;
+	my $mf		= shift;
+	my $vars	= shift;
+
+	my $dist_inc = "";
+	foreach my $did (values %{$vars->{DIST_INC}->{locations}}) {
+		$mf->printf("\$(INCDIR_)%s:\n\t%s\n", $did->{location}, $this->shellMkPath("\$(INCDIR_)$did->{location}"));
+		my $full_location = "../include/$did->{location}";
+		mkpath($full_location, 0, 0777);
+	}
+
+	foreach my $group (values %{$vars->{DIST_INC}->{groups}}) {
+		my @list = dr::build::findGroups($vars->{SOURCES}->{list}, [$group->{name}]);
+		my $deps = "";
+		foreach (@list) {
+			my $fname = $_->{src};
+			if (dr::build::findArray("gh", $_->{groups}) >= 0) {
+				$fname =~ s/\.cxx$/.hxx/; $fname =~ s/.*\///;
+				$fname = "\$(GEN)/$fname";
+				$_->{mark_header} = 1;
+			}
+			my $base_src = $fname;
+			$base_src =~ s#.*/##;
+			$deps .= $this->printLinkHeader($mf, $group, $fname);
+		}
+		$mf->print("DIST_INC_$group->{name}: \$(INCDIR_)$group->{location}$deps\n");
+		$dist_inc .= " DIST_INC_$group->{name}";
+	}
+
+	$mf->printf("ldistinc:$dist_inc\n\n");
+	$mf->print(genRecursiveAction("distinc", "ldistinc", $vars)."\n");
+}
+
+sub printTargs
+{
+	my $this	= shift;
+	my $mf		= shift;
+	my $targ_pre	= shift;
+	my $targ_util	= shift;
+	my $targ_init	= shift;
+	my $targ_build	= shift;
+	my $targ_post	= shift;
+
+	$mf->print("targ_pre:$targ_pre\n");
+	$mf->print("targ_util:$targ_util\n");
+	$mf->print("targ_init:$targ_init\n");
+	$mf->print("targ_build:$targ_build\n");
+	$mf->print("targ_post:$targ_post\n");
+	$mf->print("targ_all:\n");
+	$mf->print("\t\$(MAKE) targ_pre\n") if ($targ_pre);
+	$mf->print("\t\$(MAKE) targ_util\n") if ($targ_util);
+	$mf->print("\t\$(MAKE) targ_init\n") if ($targ_init);
+	$mf->print("\t\$(MAKE) targ_build\n") if ($targ_build);
+	$mf->print("\t\$(MAKE) targ_post\n") if ($targ_post);
+	$mf->print("lall ldefault:\n");
+	$mf->print("\t\$(MAKE) targ_util\n") if ($targ_util);
+	$mf->print("\t\$(MAKE) targ_init\n") if ($targ_init);
+	$mf->print("\t\$(MAKE) targ_build\n") if ($targ_build);
+}
+
+sub printSlist
+{
+	my $this	= shift;
+	my $mf		= shift;
+	my $vars	= shift;
+
+
+	$mf->print(dr::build::out::MakeCommon::genRecursiveAction("slist", "lslist", $vars)."\n");
+	$mf->print("lslist:\n");
+	foreach (dr::build::findGroups($vars->{SOURCES}->{list}, [ "t" ])) {
+		$mf->print("\techo \$(DIRS_)$_->{src}\n");
+	}
+	$mf->print("\n");
+}
+
+sub printOutclean
+{
+	my $this	= shift;
+	my $mf		= shift;
+	my $vars	= shift;
+
+	my @l;
+	@l = ();
+	$mf->print(dr::build::out::MakeCommon::genParallelAction("outclean", "loutclean", $vars)."\n");
+	$mf->print("loutclean:\n");
+	foreach (@{$vars->{OUTPUT}}) {
+		push(@l, $_->{out}) if (defined $_->{out} && dr::build::findArray("C", $_->{groups}) < 0 && !defined $_->{extern});
+	}
+	$mf->print("\trm -f ".join(" ", @l)."\n") if ($#l >= 0);
+	$mf->print("\n");
+	@l = ();
+	$mf->print(dr::build::out::MakeCommon::genParallelAction("clean", "lclean", $vars)."\n");
+	$mf->print("lclean: loutclean limmclean\n");
+	$mf->print("limmclean:\n");
+	foreach (@{$vars->{SOURCES}->{list}}) {
+		push(@l, $_->{out}, "$_->{out}.dep") if (defined $_->{out} && dr::build::findArray("C", $_->{groups}) < 0 && !defined $_->{extern} && $_->{local});
+	}
+	$mf->print("\trm -f ".join(" ", @l)."\n") if ($#l >= 0);
+	$mf->print("\n");
+	$mf->print(dr::build::out::MakeCommon::genParallelAction("wclean", "lwclean", $vars)."\n");
+	$mf->print("lwclean: lclean\n\trm -rf \$(BUILD)\n");
+	$mf->print("\n");
+}
+
+sub printGh
+{
+	my $this	= shift;
+	my $mf		= shift;
+	my $mgh		= shift;
+	my $sd		= shift;
+
+	my $config = $this->{config};
+
+	my $add_targ = "";
+
+	my $base = $sd->{src}; $base =~ s/.*\///; $base =~ s/\.\w+$//;
+	printDependency($config, $mf, $sd->{out}, [ "\$(GEN_)$base.gen" ]);
+	if ($config->{make}->{noautogh}) {
+		printBuild($config, $mf, "\$(GEN_)$base.gen", [ $sd->{src} ], undef, $this->shellPerl("dr_genheader -i"), [ $sd->{src}, "\$(GEN_)$base" ]);
+		printBuild($config, $mgh, "\$(GEN_)$base.gen".($sd->{mark_header} ? " \$(GEN_)$base.hxx" : ""), [ $sd->{src} ], undef, $this->shellPerl("dr_genheader"), [ $sd->{src}, "\$(GEN_)$base" ]);
+		$add_targ .= " \$(GEN_)$base.hxx" if ($sd->{mark_header});
+	}
+	else {
+		printBuild($config, $mgh, "\$(GEN_)$base.gen".($sd->{mark_header} ? " \$(GEN_)$base.hxx" : ""), [ $sd->{src} ], undef, $this->shellPerl("dr_genheader"), [ $sd->{src}, "\$(GEN_)$base" ]);
+		$add_targ .= " \$(GEN_)$base.hxx" if ($sd->{mark_header});
+	}
+	return $add_targ;
+}
+
+
+package dr::build::out::MakeGenerator;
+
+use strict;
+use warnings;
+
+use Data::Dumper;
+use File::Path;
+use File::Basename;
+
+use base "dr::build::out::MakeCommon";
+
+sub filterSources
+{
+	my $this	= shift;
+	my $list	= shift;
+
+	my @sd_o = ();
+	my @sd_l = ();
+
+	foreach my $sd (@$list) {
+		if ($sd->{prog} eq "lshlib") {
+			push(@sd_l, $sd);
+		}
+		else {
+			push(@sd_o, $sd);
+		}
+	}
+	return [ reverse(@sd_o), @sd_l ];
+}
+
+sub shellMkPath
+{
+	my $this	= shift;
+	my $dir		= shift;
+
+	return "mkdir -p $dir";
+}
+
+sub shellPerl
+{
+	my $this	= shift;
+	my $cmd		= shift;
+
+	return $cmd;
+}
+
+sub printLinkHeader
+{
+	my $this	= shift;
+	my $mf		= shift;
+	my $group	= shift;
+	my $fname	= shift;
+
+	my $base_src = $fname; $base_src =~ s#.*/##;
+	$mf->print("\$(INCDIR_)$group->{location}/$base_src: $fname\n\trm -f \$(INCDIR_)$group->{location}/$base_src; ln -sf ../$group->{rev_location}\$(DIRM_)$fname \$(INCDIR_)$group->{location}/$base_src\n");
+	return " \$(INCDIR_)$group->{location}/$base_src";
+}
+
 sub createOutput
 {
 	my $this	= shift;
@@ -722,17 +935,19 @@ sub createOutput
 	}
 	$mf->print("\n");
 
-	# tags generating
-	{
-		$mf->print("ldeltags:\n\trm -f tags\ntags: ldeltags\n\trun_p gen_tags .\n");
-		$mf->print(genParallelAction("deltags", "ldeltags", $vars)."\n");
-	}
+	$this->printNothing($mf, $vars);
 
 	# automatic header generation
-	$mf->print(genParallelAction("gh", "lgh", $vars)."\n");
+	$mf->print(dr::build::out::MakeCommon::genParallelAction("gh", "lgh", $vars)."\n");
 	if (!$config->{make}->{noautogh}) {
 		$mf->print("include Make_gh\n");
 		$targ_init .= " gh_gh";
+	}
+
+	# tags generating
+	{
+		$mf->print("ldeltags:\n\trm -f tags\ntags: ldeltags\n\trun_p gen_tags .\n");
+		$mf->print(dr::build::out::MakeCommon::genParallelAction("deltags", "ldeltags", $vars)."\n");
 	}
 
 	if (defined (my $deps = $vars->{DEPS})) {
@@ -743,13 +958,7 @@ sub createOutput
 		$mf->print("\n");
 	}
 
-	if (defined (my $presubs = $vars->{PRESUBS})) {
-		foreach (@$presubs) {
-			printSubBuild($config, $mf, "sub_$_->{name}", [ map({ "sub_$_" } @{$_->{deps}}) ], undef, $_->{name}, undef);
-			$targ_pre .= " sub_$_->{name}";
-		}
-		$mf->print("\n");
-	}
+	$targ_pre .= join("", map({ " $_" } $this->printPreSubs($mf, $vars)));
 
 	if (defined (my $flags = $vars->{FLAGS})) {
 		foreach (keys %$flags) {
@@ -769,40 +978,8 @@ sub createOutput
 		}
 	}
 
-	# distribute includes
-	{
-		my $dist_inc = "";
-		foreach my $did (values %{$vars->{DIST_INC}->{locations}}) {
-			$mf->print("\$(INCDIR_)$did->{location}:\n\tmkdir -p \$(INCDIR_)$did->{location}\n");
-			my $full_location = "../include/$did->{location}";
-			mkpath($full_location, 0, 0777);
-		}
-
-		foreach my $group (values %{$vars->{DIST_INC}->{groups}}) {
-			my @list = dr::build::findGroups($vars->{SOURCES}->{list}, [$group->{name}]);
-			$mf->print("DIST_INC_$group->{name}: \$(INCDIR_)$group->{location}");
-			my $deps = "";
-			my $perf = "";
-			foreach (@list) {
-				my $fname = $_->{src};
-				if (dr::build::findArray("gh", $_->{groups}) >= 0) {
-					$fname =~ s/\.cxx$/.hxx/; $fname =~ s/.*\///;
-					$fname = "\$(GEN)/$fname";
-					$_->{mark_header} = 1;
-				}
-				my $base_src = $fname;
-				$base_src =~ s#.*/##;
-				$deps .= " \$(INCDIR_)$group->{location}/$base_src";
-				$perf .= "\$(INCDIR_)$group->{location}/$base_src: $fname\n\trm -f \$(INCDIR_)$group->{location}/$base_src; ln -sf ../$group->{rev_location}\$(DIRM_)$fname \$(INCDIR_)$group->{location}/$base_src\n";
-			}
-			$mf->printf("%s\n%s\n", $deps, $perf);
-			$dist_inc .= " DIST_INC_$group->{name}";
-		}
-
-		$mf->printf("ldistinc:$dist_inc\n\n");
-		$mf->print(genRecursiveAction("distinc", "ldistinc", $vars)."\n");
-		$targ_init .= " ldistinc";
-	}
+	$this->printDistInc($mf, $vars);
+	$targ_init .= " ldistinc";
 
 	foreach my $sd (@{$vars->{SOURCES}->{list}}) {
 		next if ($sd->{disable});
@@ -826,17 +1003,7 @@ sub createOutput
 			}
 			push(@{$dp->{files}}, $sd);
 			if (dr::build::findArray("gh", $sd->{groups}) >= 0) {
-				my $base = basename($sd->{src}); $base =~ s/\.\w+$//; $base =~ s/.*\///;
-				printDependency($config, $mf, $sd->{out}, [ "\$(GEN_)$base.gen" ]);
-				if ($config->{make}->{noautogh}) {
-					printBuild($config, $mf, "\$(GEN_)$base.gen", [ $sd->{src} ], undef, "dr_genheader -i", [ $sd->{src}, "\$(GEN_)$base" ]);
-					printBuild($config, $mgh, "\$(GEN_)$base.gen".($sd->{mark_header} ? " \$(GEN_)$base.hxx" : ""), [ $sd->{src} ], undef, "dr_genheader", [ $sd->{src}, "\$(GEN_)$base" ]);
-					$gh_targall .= " \$(GEN_)$base.hxx" if ($sd->{mark_header});
-				}
-				else {
-					printBuild($config, $mgh, "\$(GEN_)$base.gen".($sd->{mark_header} ? " \$(GEN_)$base.hxx" : ""), [ $sd->{src} ], undef, "dr_genheader", [ $sd->{src}, "\$(GEN_)$base" ]);
-					$gh_targall .= " \$(GEN_)$base.hxx" if ($sd->{mark_header});
-				}
+				$gh_targall .= $this->printGh($mf, $mgh, $sd);
 			}
 		}
 		elsif ($sd->{prog} eq "lshlib") {
@@ -931,7 +1098,7 @@ sub createOutput
 
 	# generating tests
 	{
-		$mf->print(genRecursiveAction("test", "ltest", $vars)."\n");
+		$mf->print(dr::build::out::MakeCommon::genRecursiveAction("test", "ltest", $vars)."\n");
 		$mf->print("ltest:\n");
 		foreach my $td (@{$vars->{TEST}}) {
 			next if ($td->{disable});
@@ -948,57 +1115,14 @@ sub createOutput
 		$mf->print("\n");
 	}
 
-	# generating slist
-	{
-		$mf->print(genRecursiveAction("slist", "lslist", $vars)."\n");
-		$mf->print("lslist:\n");
-		foreach (dr::build::findGroups($vars->{SOURCES}->{list}, [ "t" ])) {
-			$mf->print("\techo \$(DIRS_)$_->{src}\n");
-		}
-		$mf->print("\n");
-	}
+	$this->printSlist($mf, $vars);
 
-	# generating outclean
-	{
-		my @l;
-		@l = ();
-		$mf->print(genParallelAction("outclean", "loutclean", $vars)."\n");
-		$mf->print("loutclean:\n");
-		foreach (@{$vars->{OUTPUT}}) {
-			push(@l, $_->{out}) if (defined $_->{out} && dr::build::findArray("C", $_->{groups}) < 0 && !defined $_->{extern});
-		}
-		$mf->print("\trm -f ".join(" ", @l)."\n") if ($#l >= 0);
-		$mf->print("\n");
-		@l = ();
-		$mf->print(genParallelAction("clean", "lclean", $vars)."\n");
-		$mf->print("lclean: loutclean limmclean\n");
-		$mf->print("limmclean:\n");
-		foreach (@{$vars->{SOURCES}->{list}}) {
-			push(@l, $_->{out}, "$_->{out}.dep") if (defined $_->{out} && dr::build::findArray("C", $_->{groups}) < 0 && !defined $_->{extern} && $_->{local});
-		}
-		$mf->print("\trm -f ".join(" ", @l)."\n") if ($#l >= 0);
-		$mf->print("\n");
-		$mf->print(genParallelAction("wclean", "lwclean", $vars)."\n");
-		$mf->print("lwclean: lclean\n\trm -rf \$(BUILD)\n");
-		$mf->print("\n");
-	}
+	$this->printOutclean($mf, $vars);
 
-	# nothing
-	{
-		$mf->print("lnothing:\n");
-		$mf->print(genParallelAction("nothing", "lnothing", $vars)."\n");
-	}
-
-	if (defined (my $postsubs = $vars->{POSTSUBS})) {
-		foreach (@$postsubs) {
-			$mf->printf("sub_%s: targ_build %s\n\t\$(MAKE) -C %s\n\n", $_->{name}, join(" ", map({ "sub_$_" } @{$_->{deps}})), $_->{name});
-			$targ_post .= " sub_$_->{name}";
-		}
-		$mf->print("\n");
-	}
+	$targ_post .= join("", map({ " $_" } $this->printPostSubs($mf, $vars)));
 
 	if (0) {
-		$mf->print(genRecursiveAction("depends", "ldepends", $vars)."\n");
+		$mf->print(dr::build::out::MakeCommon::genRecursiveAction("depends", "ldepends", $vars)."\n");
 		$mf->print("ldepends: ldistinc\n\techo >.depends\n");
 		foreach my $d (values %depends) {
 			$mf->print("\t$d->{cmd}");
@@ -1028,26 +1152,14 @@ sub createOutput
 		$mf->print("targ_all: targ_pre targ_util targ_init targ_build targ_post\n\n");
 	}
 	else {
-		$mf->print("targ_pre:$targ_pre\n");
-		$mf->print("targ_util:$targ_util\n");
-		$mf->print("targ_init:$targ_init\n");
-		$mf->print("targ_build:$targ_build\n");
-		$mf->print("targ_post:$targ_post\n");
-		$mf->print("targ_all:\n");
-		$mf->print("\t\$(MAKE) targ_pre\n") if ($targ_pre);
-		$mf->print("\t\$(MAKE) targ_util\n") if ($targ_util);
-		$mf->print("\t\$(MAKE) targ_init\n") if ($targ_init);
-		$mf->print("\t\$(MAKE) targ_build\n") if ($targ_build);
-		$mf->print("\t\$(MAKE) targ_post\n") if ($targ_post);
-		$mf->print("lall ldefault:\n");
-		$mf->print("\t\$(MAKE) targ_util\n") if ($targ_util);
-		$mf->print("\t\$(MAKE) targ_init\n") if ($targ_init);
-		$mf->print("\t\$(MAKE) targ_build\n") if ($targ_build);
+		$this->printTargs($mf, $targ_pre, $targ_util, $targ_init, $targ_build, $targ_post);
 	}
+
+	$mgh->print("gh_targall:$gh_targall\n");
+
 	$mf->close()
 		or die "failed to close file $dir/Makefile";
 
-	$mgh->print("gh_targall:$gh_targall\n");
 	$mgh->close()
 		or die "failed to close file $dir/Make_gh";
 }
@@ -1061,32 +1173,37 @@ use warnings;
 use Data::Dumper;
 use File::Path;
 
-use base "dr::build::out::Generator";
+use base "dr::build::out::MakeCommon";
 
-
-sub genRecursiveAction($$@) # recursive-action pre-list this-action post-list
+sub shellMkPath
 {
-	my $ract	= shift;
-	my $action	= shift;
-	my $vars	= shift;
+	my $this	= shift;
+	my $dir		= shift;
 
-	my $pre		= $vars->{PRESUBS};
-	my $post	= $vars->{POSTSUBS};
-	my $o;
+	$dir =~ s/\//\\/g;
+	return "mkdir $dir";
+}
 
-	$o = "$ract:\n";
-	if (defined ($pre)) {
-		foreach (@$pre) {
-			$o .= "\t\$(MAKE) -C $_->{name} $ract\n";
-		}
-	}
-	$o .= "\t\$(MAKE) $action\n";
-	if (defined ($post)) {
-		foreach (@$post) {
-			$o .= "\t\$(MAKE) -C $_->{name} $ract\n";
-		}
-	}
-	return $o;
+sub shellPerl
+{
+	my $this	= shift;
+	my $cmd		= shift;
+
+	return "perl -S $cmd";
+}
+
+sub printLinkHeader
+{
+	my $this	= shift;
+	my $mf		= shift;
+	my $group	= shift;
+	my $fname	= shift;
+
+	my $base_src = $fname; $base_src =~ s#.*/##;
+	$fname =~ s#/#\\#g;
+	my $dst_dir = "$group->{location}/"; $dst_dir =~ s#/#\\#g;
+	$mf->print("\$(INCDIR_)$group->{location}/$base_src: $fname\n\tcopy $fname \$(INCDIR_)$dst_dir$base_src\n");
+	return " \$(INCDIR_)$group->{location}/$base_src";
 }
 
 sub createOutput
@@ -1099,7 +1216,14 @@ sub createOutput
 
 	my $build_env	= "GCCE";
 
-	my $targlist	= "";
+	my $targ_pre	= "";
+	my $targ_util	= "";
+	my $targ_init	= "";
+	my $targ_build	= "";
+	my $targ_post	= "";
+
+	my $gh_targall	= "";
+
 	my $abld_used	= 0;
 
 	my $rdir;
@@ -1113,6 +1237,7 @@ sub createOutput
 
 	my $bf = FileHandle->new("$dir/bld.inf", ">") or die "failed to open $dir/bld.inf"; binmode($bf);
 	my $mf = FileHandle->new("$dir/Makefile", ">") or die "failed to open $dir/Makefile"; binmode($mf);
+	my $mgh = FileHandle->new("$dir/Make_gh", ">") or die "failed to open $dir/Make_gh"; binmode($mgh);
 
 	$mf->printf("NOTHING=\n");
 	$mf->printf("DIRS=%s\n", ($dir =~ m,^(\./)?(.*)$,)[1]);
@@ -1137,15 +1262,14 @@ sub createOutput
 	$mf->printf("INCDIR_=\$(TOPDIR_)include\\\$(NOTHING)\n");
 	$mf->print("\n");
 
-	$mf->print(<<EOT);
-all: targlist
+	$mf->print("all: targ_all\ndefault: targ_all\nno: nothing\n\n");
+	$mf->print("gmake:\n\t$vars->{genmake} $config->{fnames}".join("", map({ " \"$_\"" } @{$config->{addopt}}))." \$(DIRS)\n\n");
 
-default: targlist
-
-gmake:
-	perl -S dr_genmake $config->{fnames} \$(DIRS)
-	
-EOT
+	$mgh->printf("BUILD=%s\n", "_build");
+	$mgh->printf("BUILD_=%s\n", "\$(BUILD)\\\$(NOTHING)");
+	$mgh->printf("GEN=\$(BUILD_)_gen\n");
+	$mgh->printf("GEN_=\$(GEN)\\\$(NOTHING)\n");
+	$mgh->print("gh_gh: gh_targall\n\n");
 
 	$bf->print(<<EOT);
 PRJ_PLATFORMS
@@ -1154,53 +1278,53 @@ $build_env
 PRJ_MMPFILES
 EOT
 
+	$this->printNothing($mf, $vars);
+
+	# automatic header generation
+	$mf->print(dr::build::out::MakeCommon::genParallelAction("gh", "lgh", $vars)."\n");
+	if (!$config->{make}->{noautogh}) {
+		$mf->print("include Make_gh\n");
+		$targ_init .= " gh_gh";
+	}
+
 	# tags generating
 	{
 		$mf->print("ldeltags:\n\trm -f tags\ntags: ldeltags\n\trun_p gen_tags .\n");
-		$mf->print(genRecursiveAction("deltags", "ldeltags", $vars)."\n");
+		$mf->print(dr::build::out::MakeCommon::genParallelAction("deltags", "ldeltags", $vars)."\n");
 	}
 
-	if (defined (my $presubs = $vars->{PRESUBS})) {
-		foreach (@$presubs) {
-			$mf->print("sub_$_->{name}:\n\t\$(MAKE) -C $_->{name}\n\n");
-			$targlist .= " sub_$_->{name}";
-		}
-		$mf->print("\n");
-	}
+	$targ_pre .= join("", map({ " $_" } $this->printPreSubs($mf, $vars)));
 
-	# distribute includes
-	{
-		my $dist_inc = "";
-		foreach my $location (keys %{$vars->{DIST_INC}->{locations}}) {
-			my $shell_loc = $location; $shell_loc =~ s#/#\\#g;
-			$mf->print("\$(INCDIR_)$location:\n\tmkdir \$(INCDIR_)$shell_loc\n");
-		}
+	$this->printDistInc($mf, $vars);
+	$targ_init .= " ldistinc";
 
-		foreach my $group (values %{$vars->{DIST_INC}->{groups}}) {
-			my @list = dr::build::findGroups($vars->{SOURCES}->{list}, [$group->{name}]);
-			$mf->print("DIST_INC_$group->{name}:");
-			foreach (@list) {
-				my $base_src = $_->{src};
-				$base_src =~ s#.*/##;
-				$mf->print(" \$(INCDIR_)$group->{location}/$base_src");
+	foreach my $sd (@{$vars->{SOURCES}->{list}}) {
+		next if ($sd->{disable});
+		if ($sd->{prog} eq "no") {
+			next;
+		}
+		if ($sd->{prog} eq "cxx") {
+			if (dr::build::findArray("gh", $sd->{groups}) >= 0) {
+				$gh_targall .= $this->printGh($mf, $mgh, $sd);
 			}
-			$mf->print("\n");
-			foreach (@list) {
-				my $base_src = $_->{src};
-				$base_src =~ s#.*/##;
-				my $src_file = "$_->{src}"; $src_file =~ s#/#\\#g;
-				my $dst_dir = "$group->{location}/"; $dst_dir =~ s#/#\\#g;
-				$mf->print("\$(INCDIR_)$group->{location}/$base_src: $_->{src} $_->{location}\n\tcopy $src_file \$(INCDIR_)$dst_dir$base_src\n");
-			}
-			$mf->print("\n");
-			$dist_inc .= " DIST_INC_$group->{name}";
 		}
-
-		$mf->printf("ldistinc:$dist_inc\n\n");
-		$mf->print(genRecursiveAction("distinc", "ldistinc", $vars)."\n");
-		$targlist .= " ldistinc";
+		elsif ($sd->{prog} eq "lshlib") {
+		}
+		elsif ($sd->{prog} eq "gen") {
+			my $cmd = $sd->{src};
+			my $args;
+			if (!defined ($sd->{out} = dr::build::flagsOne($sd->{opts}, "o"))) {
+				die "$vars->{mkname}: source $sd->{src}: requiring option o=\n";
+			}
+			if (defined ($args = dr::build::flagsOne($sd->{opts}, "a"))) {
+				$cmd .= " $args";
+			}
+			$mf->print("$sd->{out}: $sd->{src}\n\t.\\$cmd\n");
+		}
+		else {
+			die "unknown build-prog $sd->{prog}\n";
+		}
 	}
-
 	foreach my $od (@{dr::build::defaultVal($vars->{OUTPUT}, [])}) {
 		my $config_type;
 		my $config_defs;
@@ -1211,11 +1335,6 @@ EOT
 
 		my $pf = FileHandle->new("$dir/$od->{out}.mmp", ">")
 			or die "failed to open $dir/$od->{out}.mmp: $!\n";
-
-		foreach my $md (@{$od->{in_meta}}) {
-			#die "too definition of vsid for project $od->{out}" if (defined $vsid);
-			#$vsid = $md->{meta};
-		}
 
 		if ($od->{prog} eq "exec") {
 			$config_id = "0x1000007a";
@@ -1261,9 +1380,9 @@ OPTION $build_env	$defines_str -x c++ -include c:\$(EPOCROOT)\\epoc32\\include\\
 
 SYSTEMINCLUDE	\\epoc32\\include
 SYSTEMINCLUDE	\\epoc32\\include\\libc
-SYSTEMINCLUDE	$rdir\\include
-SYSTEMINCLUDE	$rdir\\include\\arch-arm
-SYSTEMINCLUDE	$rdir\\include\\os-symbian
+SYSTEMINCLUDE	$rdir_bs\\include
+SYSTEMINCLUDE	$rdir_bs\\include\\arch-arm
+SYSTEMINCLUDE	$rdir_bs\\include\\os-symbian
 
 LIBRARY		euser.lib estlib.lib $input_libs
 EOT
@@ -1276,15 +1395,11 @@ EOT
 		$abld_used++;
 	}
 
-	# generating slist
-	{
-		$mf->print(genRecursiveAction("slist", "lslist", $vars)."\n");
-		$mf->print("lslist:\n");
-		foreach (dr::build::findGroups($vars->{SOURCES}->{list}, [ "t" ])) {
-			$mf->print("\techo \$(DIRS_)$_->{src}\n");
-		}
-		$mf->print("\n");
-	}
+	$this->printSlist($mf, $vars);
+	$this->printOutclean($mf, $vars);
+
+	$mf->print("\$(GEN)/all_deps.mi:\n\t-mkdir \$(GEN)\n\techo gen_dummy: > \$(GEN)/all_deps.mi\n");
+	$mf->print("include \$(GEN)/all_deps.mi\n\n");
 
 	if ($abld_used) {
 		$mf->print(<<EOT);
@@ -1294,20 +1409,19 @@ abld.bat: bld.inf
 build_symb: abld.bat
 	abld build $build_env UREL
 EOT
-		$targlist .= " build_symb";
+		$targ_build .= " build_symb";
 	}
 
-	if (defined (my $postsubs = $vars->{POSTSUBS})) {
-		foreach (@$postsubs) {
-			$mf->print("sub_$_->{name}:\n\t\$(MAKE) -C $_->{name}\n\n");
-			$targlist .= " sub_$_->{name}";
-		}
-		$mf->print("\n");
-	}
+	$targ_post .= join("", map({ " $_" } $this->printPostSubs($mf, $vars)));
 
-	$mf->print("targlist:$targlist\n");
+	$this->printTargs($mf, $targ_pre, $targ_util, $targ_init, $targ_build, $targ_post);
+
+	$mgh->print("gh_targall:$gh_targall\n");
+
 	$mf->close()
 		or die "failed to write Makefile";
+	$mgh->close()
+		or die "failed to close file $dir/Make_gh";
 }
 
 

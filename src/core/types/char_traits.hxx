@@ -33,11 +33,13 @@
  * @license	http://www.gnu.org/licenses/lgpl.txt GNU Lesser General Public License v3
  **/
 
-#ifndef drchar_traits_h__
-# define drchar_traits_h__
+#ifndef dr__char_traits_h__
+# define dr__char_traits_h__
 
 #include <ctype.h>
+#ifndef DR_OS_SYMBIAN
 #include <wctype.h>
+#endif
 #include <wchar.h>
 #include <string.h>
 
