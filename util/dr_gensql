@@ -272,7 +272,8 @@ foreach my $model (@models) {
 		$sqlin->print(")");
 	}
 	foreach my $index ($model->getIndexes()) {
-		$sqlin->printFlushing("\t$index->{type} index $index->{name} (");
+		my $type = $index->{type} eq "nonunique" ? "" : "$index->{type} ";
+		$sqlin->printFlushing("\t${type}index $index->{name} (");
 		my $sqlind = dr::SepOutput->new($sql, { sep_in => ", ", sep_all => "" });
 		$sqlind->printObj($_) foreach (@{$index->{fields}});
 		undef $sqlind;
