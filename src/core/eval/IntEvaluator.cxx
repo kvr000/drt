@@ -214,7 +214,7 @@ Evaluator::TokenType IntEvaluator::parseNextToken(const char **expr, ParserState
 			}
 		}
 		else {
-			xthrownew(InvalidFormatException("token", String(*expr, 1)));
+			xthrownew(InvalidFormatException("token", String(*expr)));
 		}
 		break;
 
@@ -401,7 +401,7 @@ Evaluator::TokenType IntEvaluator::parseNextToken(const char **expr, ParserState
 			}
 		}
 		else {
-			xthrownew(InvalidFormatException("token", String(*expr, 1)));
+			xthrownew(InvalidFormatException("token", String(*expr)));
 		}
 
 	case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9':
@@ -442,7 +442,7 @@ Evaluator::TokenType IntEvaluator::parseNextToken(const char **expr, ParserState
 		}
 
 	default:
-		xthrownew(InvalidFormatException("token", String(*expr, 1)));
+		xthrownew(InvalidFormatException("token", String(*expr)));
 	}
 	return TT_Finish;
 }
