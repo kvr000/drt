@@ -243,7 +243,7 @@ foreach my $model (@models) {
 			$form->print(tabalign("\trole", 24).$roles."\n");
 			if ($attr->{stype} eq "attr") {
 				my ( $type, $tagger ) = $attr->getFinalTypeWithTagger();
-				foreach (qw(db_conversion db_precision db_mandatory align gui_init)) {
+				foreach (qw(db_conversion db_precision do_mandatory align gui_init)) {
 					if (defined (my $val = $tagger->checkTagValue($_))) {
 						$form->print(tabalign("\t$_", 24).$val."\n");
 					}
