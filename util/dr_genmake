@@ -1943,7 +1943,7 @@ sub generateDir
 				my $conf;
 
 				if ($sd->{prog} eq "") {
-					$sd->{prog} = $sd->{suff};
+					die "prog undefined for $sd->{src}" unless (defined ($sd->{prog} = $sd->{suff}));
 					$sd->{prog} = "no" if ($sd->{prog} eq "h" || $sd->{prog} eq "hxx");
 				}
 				elsif ($sd->{prog} eq "gen") {

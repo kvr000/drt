@@ -669,7 +669,7 @@ SysTime XmlRpcDecoder::readTime()
 				tz = tz-40*(tz/100);
 			}
 		}
-		return Time::convertUTime(year, mon-1, mday-1, hour, min, sec, -tz);
+		return Time::convertUtcTime(year, mon-1, mday-1, hour, min, sec, -tz);
 	}
 	else {
 		xthrownew(InvalidFormatExcept("rpc::bool::code", String::createUtf8(el_start, el_length)));

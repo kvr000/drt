@@ -54,7 +54,7 @@ void Time::setInvalid(SysTime *time)
 	*time = INVALID_SYSTIME;
 }
 
-SysTime Time::convertUTime(int year, int mon, int day, int hour, int min, int sec, int timezone_min)
+SysTime Time::convertUtcTime(int year, int mon, int day, int hour, int min, int sec, int timezone_min)
 {
 	struct tm t;
 	t.tm_year = year-1900;

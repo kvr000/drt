@@ -18,6 +18,7 @@ OUTPUT:
 	exec:tmc:f=exec;s=tmc,common;r=test
 	exec:ttypes:f=exec;s=ttypes,common;r=test
 	exec:tvar:f=exec;s=tvar,common;r=test
+	exec:ttime:f=exec;s=ttime,common;r=test
 	exec:tstr:f=exec;s=tstr,common;r=test
 	exec:tmsg:f=exec;s=tmsg,common;r=test
 	exec:tthread:f=exec;s=tthread,common;r=test
@@ -40,6 +41,7 @@ SOURCES:
 	:tstr.cxx:f=cxx;g=tstr,t
 	:ttypes.cxx:f=cxx;g=ttypes,t
 	:tvar.cxx:f=cxx;g=tvar,t
+	:ttime.cxx:f=cxx;g=ttime,t
 	:tmsg.cxx:f=cxx;g=tmsg,t
 	:tthread.cxx:f=cxx;g=tthread,t
 	:tthrmemcache.cxx:f=cxx;g=tthrmemcache,t

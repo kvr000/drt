@@ -33,37 +33,32 @@
  * @license	http://www.gnu.org/licenses/lgpl.txt GNU Lesser General Public License v3
  **/
 
-#ifndef dr__Time__hxx__
-# define dr__Time__hxx__
+#include <dr/Const.hxx>
+#include <dr/Time.hxx>
 
-#include <dr/types.hxx>
+#include <dr/testenv/testenv.hxx>
 
-DR_NS_BEGIN
+DR_NS_USE
+DR_TESTENV_NS_USE
 
 
-typedef Sint64 SysTime;
+#define	TEST_TIME_INVALID
 
-#define INVALID_SYSTIME (((SysTime)-1)<<(sizeof(SysTime)*8-1))
 
-/**
- * Time functions
- * 
- * the class is intended to convert memory into basic types
- */
-class DR_PUB Time
+#ifdef TEST_TIME_INVALID
+TESTNS(time_invalid);
+void test()
 {
-public:
-	static SysTime			getTime();
-
-public:
-	static void			setInvalid(SysTime *time);
-
-public:
-	static SysTime			convertUtcTime(int year, int mon, int day, int hour, int min, int sec, int timezone_min);
-	static void			timeToUtcCalendar(SysTime tvalue, int *year, int *mon, int *day, int *hour, int *min, int *sec);
-};
-
-
-DR_NS_END
-
+	Fatal::plog("%llx\n", INVALID_SYSTIME);
+}
+TESTNSE(time_invalid);
 #endif
+
+DR_TESTENV_MAIN()
+{
+	test_init();
+#ifdef TEST_TIME_INVALID
+	TESTRUN(time_invalid);
+#endif
+	return 0;
+}
