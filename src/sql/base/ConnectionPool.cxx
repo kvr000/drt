@@ -33,20 +33,68 @@
  * @license	http://www.gnu.org/licenses/lgpl.txt GNU Lesser General Public License v3
  **/
 
+/*drt
+ * include:	dr/List.hxx
+ * include:	dr/MutexCond.hxx
+ * include:	dr/Time.hxx
+ *
+ * include:	dr/sql/ConnectionHold.hxx
+ * include:	dr/sql/dev/SqlManager.hxx
+ *
+ * ns:		dr::sql
+ */
+
 #include <dr/x_kw.hxx>
-#include <dr/Const.hxx>
 #include <dr/Exception.hxx>
 
-#include <dr/Array.hxx>
-
 #include <dr/sql/ConnectionPool.hxx>
+#include "_gen/ConnectionPool-all.hxx"
 
 DR_SQL_NS_BEGIN
 
-DR_OBJECT_DEF(DR_SQL_NS_STR, ConnectionPool, Connection);
-DR_OBJECT_IMPL_SIMPLE(ConnectionPool);
+
+/*drt
+ * class:	ConnectionPool::ConnectionHoldPool
+ * ancestor:	ConnectionHold
+ *
+ * at:	ConnectionPool *		owner;
+ * at:	Time::SysTime			created;
+ *
+ * friend:	class				ConnectionPool;
+ */
+
+DR_MET(public)
+ConnectionPool::ConnectionHoldPool::ConnectionHoldPool(ConnectionPool *owner_, Connection *conn):
+	Super(conn),
+	owner(owner_),
+	created(Time::getTime())
+{
+	// we are already under mutex protection
+	owner->num_connections++;
+}
+
+DR_MET(protected virtual)
+ConnectionPool::ConnectionHoldPool::~ConnectionHoldPool()
+{
+	owner->destroyingConnection(this);
+}
 
 
+/*drt
+ * class:	ConnectionPool
+ * ancestor:	dr::Object
+ *
+ * at:	String				connect_str;
+ * at:	THash<String, String>		connect_pars;
+ * at:	SysTime				max_oldness;
+ * at:	int				max_connections;
+ * at:	int				num_connections;
+ * at:	Ref<MutexCond>			list_mutex;
+ * at:	Ref<SqlManager>			manager;
+ * at:	RList<ConnectionHoldPool>	connection_list;
+ */
+
+DR_MET(public)
 ConnectionPool::ConnectionPool(const String &connect_str_, int init_conns):
 	connect_str(connect_str_),
 	max_oldness(0),
@@ -57,40 +105,44 @@ ConnectionPool::ConnectionPool(const String &connect_str_, int init_conns):
 	if (init_conns == 0)
 		init_conns = 1;
 	while (init_conns--) {
-		ERef<ConnectionHold> conn = new ConnectionHold(this, tref(Connection::openConnection(connect_str, &connect_pars, manager.mem())));
-		num_connections++;
+		ERef<ConnectionHoldPool> conn = new ConnectionHoldPool(this, tref(Connection::openConnection(connect_str, &connect_pars, manager.mem())));
 		releaseConnection(conn);
 	}
 	if (String *v = connect_pars.accValue("max"))
 		max_connections = atoi(v->utf8());
 }
 
+DR_MET(protected virtual)
 ConnectionPool::~ConnectionPool()
 {
 	connection_list.clean();
 }
 
+DR_MET(public virtual)
 void ConnectionPool::setMaxOldness(SysTime max_oldness_)
 {
 	max_oldness = max_oldness_;
 }
 
+DR_MET(public virtual)
 void ConnectionPool::setMaxConnections(int max_connections_)
 {
 	max_connections = max_connections_;
 }
 
+DR_MET(public virtual)
 int ConnectionPool::getMaxConnections()
 {
 	return max_connections;
 }
 
+DR_MET(public virtual)
 ConnectionHold *ConnectionPool::getConnection()
 {
 	MutexCondLocker list_mutex_locker(list_mutex);
 	ConnectionHold *conn;
 	for (;;) {
-		if (RList<ConnectionHold>::Node *n = connection_list.iterFirst()) {
+		if (RList<ConnectionHoldPool>::Node *n = connection_list.iterFirst()) {
 			if (max_oldness > 0 && n->v->created+max_oldness < Time::getTime()) {
 				connection_list.remove(n);
 			}
@@ -104,7 +156,7 @@ ConnectionHold *ConnectionPool::getConnection()
 			list_mutex->wait();
 		}
 		else {
-			conn = new ConnectionHold(this, tref(Connection::openConnection(connect_str, &connect_pars, manager.mem())));
+			conn = new ConnectionHoldPool(this, tref(Connection::openConnection(connect_str, &connect_pars, manager.mem())));
 			num_connections++;
 			break;
 		}
@@ -112,6 +164,7 @@ ConnectionHold *ConnectionPool::getConnection()
 	return conn;
 }
 
+DR_MET(public virtual)
 ConnectionHold *ConnectionPool::getConnectionPing()
 {
 	for (;;) {
@@ -127,14 +180,16 @@ ConnectionHold *ConnectionPool::getConnectionPing()
 	}
 }
 
+DR_MET(public virtual)
 void ConnectionPool::releaseConnection(ConnectionHold *connection)
 {
 	MutexCondLocker list_mutex_locker(list_mutex);
-	connection_list.insert(nref(connection));
+	connection_list.insert(nref((ConnectionHoldPool *)connection->getIfaceUnref(ConnectionHoldPool::comp_name)));
 	list_mutex->signal();
 }
 
-void ConnectionPool::destroyingConnection(ConnectionHold *connection)
+DR_MET(protected virtual)
+void ConnectionPool::destroyingConnection(ConnectionHoldPool *connection)
 {
 	MutexCondLocker list_mutex_locker(list_mutex);
 

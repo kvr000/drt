@@ -314,8 +314,8 @@ sub mapUmlType($)
 {
 	my $type		= shift;
 
-	return "Sint64" if ($type eq "long");
-	return "Sint32" if ($type eq "int");
+	return "Sint64" if ($type eq "long" || $type eq "Long");
+	return "Sint32" if ($type eq "int" || $type eq "Integer");
 	return "Time::SysTime" if ($type eq "systime");
 
 	die "unknown UML type $type";
@@ -421,11 +421,14 @@ sub printObjectHeader($$)
 {
 	my $cld			= shift;
 	my $level		= shift;
+
+	my $what = $cld->{type} eq "exception" ? "THROW" : "OBJECT";
+
 	printIndented($hxx, $level, sprintf("%s %s %s: public %s%s\n{\n", "class", nsToPub($ns), $cld->{iname}, $cld->{ancestor}, join("", map({ ", $_" } @{$cld->{ifaces}}))));
-	printIndented($hxx, $level, sprintf("\tDR_OBJECT_DECL_SIMPLE(%s, %s);\n", $cld->{iname}, $cld->{ancestor}));
+	printIndented($hxx, $level, sprintf("\tDR_%s_DECL_SIMPLE(%s, %s);\n", $what, $cld->{iname}, $cld->{ancestor}));
 	printDirect($def, "\n");
-	printDirect($def, sprintf("DR_OBJECT_IMPL_IFACE%d(%s%s);\n", scalar @{$cld->{ifaces}}, $cld->{class}, join("", map({ ", $_" } @{$cld->{ifaces}}))));
-	printDirect($def, sprintf("DR_OBJECT_DEF(%s_STR, %s, %s);\n", nsToMacro($ns), $cld->{class}, $cld->{ancestor}));
+	printDirect($def, sprintf("DR_%s_IMPL_IFACE%d(%s%s);\n", $what, scalar @{$cld->{ifaces}}, $cld->{class}, join("", map({ ", $_" } @{$cld->{ifaces}}))));
+	printDirect($def, sprintf("DR_%s_DEF(%s_STR, %s, %s);\n", $what, nsToMacro($ns), $cld->{class}, $cld->{ancestor}));
 }
 
 sub printClass($$);
@@ -478,6 +481,9 @@ sub printClass($$)
 		printIndented($hxx, $level, formatMultiComment($cld->{model}->{comment}));
 	}
 	if ($cld->{type} eq "object") {
+		printObjectHeader($cld, $level);
+	}
+	elsif ($cld->{type} eq "exception") {
 		printObjectHeader($cld, $level);
 	}
 	elsif ($cld->{type} eq "sqllayer") {
@@ -657,6 +663,7 @@ sub createModelCld($$)
 		ifaces			=> [],
 		methods			=> [],
 		ats			=> [],
+		ini			=> [],
 		consts			=> [],
 		sqls			=> [],
 		friends			=> [],

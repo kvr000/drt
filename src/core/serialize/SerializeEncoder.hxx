@@ -56,11 +56,6 @@ class DR_PUB SerializeEncoder: public Iface
 	DR_IFACE_DECL(SerializeEncoder);
 
 public:
-	virtual void			writeHeader() = 0;
-	virtual void			writeMethodName(const String &name) = 0;
-	virtual void			writeMethodResponse() = 0;
-	virtual void			writeFaultResponse(long code, const String &message) = 0;
-
 	virtual void			writeValue(const ScalarPtr &value) = 0;
 	virtual void			writeBool(bool value) = 0;
 	virtual void			writeInt(Sint32 value) = 0;
@@ -74,7 +69,7 @@ public:
 	virtual void			writeMemberName(const String &name) = 0;
 	virtual void			writeArrayEnd() = 0;
 	virtual void			writeStructEnd() = 0;
-	virtual void			writeClassName() = 0;
+	virtual void			writeClassName(const String &name) = 0;
 };
 
 

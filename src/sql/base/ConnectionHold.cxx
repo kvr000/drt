@@ -49,23 +49,12 @@ DR_OBJECT_IMPL_SIMPLE(ConnectionHold);
 
 
 ConnectionHold::ConnectionHold(Connection *connection_):
-	pool(NULL),
-	connection(connection_, true),
-	created(Time::getTime())
-{
-}
-
-ConnectionHold::ConnectionHold(ConnectionPool *pool_, Connection *connection_):
-	pool(pool_),
-	connection(connection_, true),
-	created(Time::getTime())
+	connection(connection_, true)
 {
 }
 
 ConnectionHold::~ConnectionHold()
 {
-	if (pool)
-		pool->destroyingConnection(this);
 }
 
 bool ConnectionHold::ping()

@@ -45,7 +45,7 @@ DR_TESTENV_NS_USE
 
 int main(void)
 {
-	ERef<ConnectionPool> connpool(new ConnectionPool("driver=drSql_mysql5;host=localhost;port=3306;db=dr_test;user=dr_test;pass=dr_test"));
+	ERef<ConnectionPool> connpool(new ConnectionPool("driver=drSql_mysql5;host=localhost;port=3306;db=dr_test;user=dr_test;pass=dr_test", 1));
 	connpool->setMaxOldness(1);
 	ERef<ConnectionHold> conn1(connpool->getConnectionPing());
 	ERef<ConnectionHold> conn2(connpool->getConnectionPing());

@@ -51,9 +51,10 @@ DR_NET_NS_BEGIN
 DR_IO_NS_USE;
 
 
-class DR_NET_PUB RpcEncoder: public Object
+class DR_NET_PUB RpcEncoder: public Object, public SerializeEncoder
 {
 	DR_OBJECT_DECL(RpcEncoder, Object);
+	DR_REDIR_BEHAV();
 
 public:
 	/* constructor */		RpcEncoder();
@@ -87,6 +88,8 @@ public:
 	virtual void			writeMemberName(const String &name) = 0;
 	virtual void			writeArrayEnd() = 0;
 	virtual void			writeStructEnd() = 0;
+	virtual void			writeClassName(const String &name);
+	virtual void			writeValue(const ScalarPtr &value);
 
 protected:
 	Blob				content;

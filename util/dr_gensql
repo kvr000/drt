@@ -240,6 +240,9 @@ foreach my $model (@models) {
 					$sqlin->printAlignedAdd("-- $attr->{name}: $pa->{attr}->{owner}->{full}.$pa->{attr}->{name}", 72);
 					push(@primary, $pa->{name}) if ($attr->{stype} eq "compos");
 				}
+				if ($attr->{stype} eq "assoc" && $attr->getRole()->{primary}) {
+					push(@primary, $attr->{name});
+				}
 			}
 			else {
 				dr::Util::doDie("$attr->{owner}->{filename}:0: invalid stype $attr->{stype}");

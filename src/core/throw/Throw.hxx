@@ -68,6 +68,9 @@ public: \
 #define DR_THROW_IMPL_SIMPLE(objname) \
 	DR_OBJECT_IMPL_SIMPLE(objname)
 
+#define DR_THROW_IMPL_IFACE0(objname) \
+	DR_OBJECT_IMPL_SIMPLE(objname)
+
 
 #define DR_THROW_INIT(objname, ancestor, args) \
 	DR_OBJECT_INIT(objname, ancestor, args) \

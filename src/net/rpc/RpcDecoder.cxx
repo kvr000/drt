@@ -48,7 +48,7 @@ DR_NET_NS_BEGIN
 
 
 DR_OBJECT_DEF(DR_NET_NS_STR, RpcDecoder, Object);
-DR_OBJECT_IMPL_SIMPLE(RpcDecoder);
+DR_OBJECT_IMPL_IFACE1(RpcDecoder, SerializeDecoder);
 
 
 RpcDecoder::RpcDecoder()
@@ -57,6 +57,80 @@ RpcDecoder::RpcDecoder()
 
 RpcDecoder::~RpcDecoder()
 {
+}
+
+String RpcDecoder::readClassName()
+{
+	return Null();
+}
+
+void RpcDecoder::readValue(const ScalarPtr &value)
+{
+	switch (value.getType()) {
+	case ScalarPtr::T_None:
+		readSkip();
+		break;
+
+	case ScalarPtr::T_Bool:
+		*(bool *)value.getPtr() = readBool();
+		break;
+
+	case ScalarPtr::T_Sint8:
+		*(Sint8 *)value.getPtr() = readInt32();
+		break;
+
+	case ScalarPtr::T_Sint16:
+		*(Sint16 *)value.getPtr() = readInt32();
+		break;
+
+	case ScalarPtr::T_Sint32:
+		*(Sint32 *)value.getPtr() = readInt32();
+		break;
+
+	case ScalarPtr::T_Sint64:
+		*(Sint64 *)value.getPtr() = readInt64();
+		break;
+
+	case ScalarPtr::T_Uint8:
+		*(Uint8 *)value.getPtr() = readInt32();
+		break;
+
+	case ScalarPtr::T_Uint16:
+		*(Uint16 *)value.getPtr() = readInt32();
+		break;
+
+	case ScalarPtr::T_Uint32:
+		*(Uint32 *)value.getPtr() = readInt32();
+		break;
+
+	case ScalarPtr::T_Uint64:
+		*(Uint64 *)value.getPtr() = readInt64();
+		break;
+
+	case ScalarPtr::T_Float:
+		*(float *)value.getPtr() = readDouble();
+		break;
+
+	case ScalarPtr::T_Double:
+		*(float *)value.getPtr() = readDouble();
+		break;
+
+	case ScalarPtr::T_LongDouble:
+		*(float *)value.getPtr() = readDouble();
+		break;
+
+	case ScalarPtr::T_String:
+		*(String *)value.getPtr() = readString();
+		break;
+
+	case ScalarPtr::T_Blob:
+		*(Blob *)value.getPtr() = readBinary();
+		break;
+
+	case ScalarPtr::T_Object:
+		((Object *)value.getPtr())->unserializeFrom(this);
+		break;
+	}
 }
 
 void RpcDecoder::setContent(const Blob &content_)

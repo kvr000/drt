@@ -7,8 +7,7 @@ SOURCES:
 	:${SD_BASE}/Connection.cxx:g=s,t
 	:${SD_BASE}/ConnectionHold.hxx:g=di,t
 	:${SD_BASE}/ConnectionHold.cxx:g=s,t
-	:${SD_BASE}/ConnectionPool.hxx:g=di,t
-	:${SD_BASE}/ConnectionPool.cxx:g=s,t
+	:${SD_BASE}/ConnectionPool.cxx:g=s,t,gh,di
 	:${SD_BASE}/Statement.hxx:g=di,t
 	:${SD_BASE}/Statement.cxx:g=s,t
 	:${SD_BASE}/ResultSet.hxx:g=di,t

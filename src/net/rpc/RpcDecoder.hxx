@@ -51,9 +51,10 @@ DR_NET_NS_BEGIN
 DR_IO_NS_USE;
 
 
-class DR_NET_PUB RpcDecoder: public Object
+class DR_NET_PUB RpcDecoder: public Object, SerializeDecoder
 {
 	DR_OBJECT_DECL(RpcDecoder, Object);
+	DR_REDIR_BEHAV();
 
 public:
 	/* constructor */		RpcDecoder();
@@ -108,6 +109,8 @@ public:
 	virtual String			readMemberName() = 0;
 	virtual bool			checkArrayNext(ssize_t *count) = 0;
 	virtual bool			checkStructNext(ssize_t *count) = 0;
+	virtual String			readClassName();
+	virtual void			readValue(const ScalarPtr &value);
 
 public:
 	static RpcDecoder *		createDecoder(const Blob &data);

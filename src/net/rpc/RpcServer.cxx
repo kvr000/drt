@@ -68,7 +68,7 @@ DR_MET(public)
 RpcServer::RpcServer(dr::io::SocketStream *client_conn_):
 	client_http(new dr::net::HttpServer(client_conn_), false)
 {
-	client_http->setTimeLimit(Time::getTime()+Time::interFromSecondsUp(10));
+	client_http->setTimeLimit(Time::getTime()+Time::interFromSecondsUp(4));
 }
 
 DR_MET(public)
@@ -131,6 +131,21 @@ DR_MET(protected virtual)
 void RpcServer::endResultStruct(dr::net::RpcEncoder *result)
 {
 	result->writeStructEnd();
+	result->writeResponseEnd();
+}
+
+DR_MET(protected virtual)
+void RpcServer::startResultArray(dr::net::RpcEncoder *result, size_t array_cnt)
+{
+	result->writeHeader();
+	result->writeMethodResponse();
+	result->writeArrayLength(array_cnt);
+}
+
+DR_MET(protected virtual)
+void RpcServer::endResultArray(dr::net::RpcEncoder *result)
+{
+	result->writeArrayEnd();
 	result->writeResponseEnd();
 }
 

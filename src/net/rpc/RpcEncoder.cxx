@@ -57,6 +57,79 @@ RpcEncoder::~RpcEncoder()
 {
 }
 
+void RpcEncoder::writeClassName(const String &name)
+{
+}
+
+void RpcEncoder::writeValue(const ScalarPtr &value)
+{
+	switch (value.getType()) {
+	case ScalarPtr::T_None:
+		DR_AssertInvalid();
+		break;
+
+	case ScalarPtr::T_Bool:
+		writeBool(*(bool *)value.getPtr());
+		break;
+
+	case ScalarPtr::T_Sint8:
+		writeInt(*(Sint8 *)value.getPtr());
+		break;
+
+	case ScalarPtr::T_Sint16:
+		writeInt(*(Sint16 *)value.getPtr());
+		break;
+
+	case ScalarPtr::T_Sint32:
+		writeInt(*(Sint32 *)value.getPtr());
+		break;
+
+	case ScalarPtr::T_Sint64:
+		writeInt(*(Sint64 *)value.getPtr());
+		break;
+
+	case ScalarPtr::T_Uint8:
+		writeInt(*(Sint8 *)value.getPtr());
+		break;
+
+	case ScalarPtr::T_Uint16:
+		writeInt(*(Sint16 *)value.getPtr());
+		break;
+
+	case ScalarPtr::T_Uint32:
+		writeInt(*(Sint32 *)value.getPtr());
+		break;
+
+	case ScalarPtr::T_Uint64:
+		writeInt(*(Sint64 *)value.getPtr());
+		break;
+
+	case ScalarPtr::T_Float:
+		writeDouble(*(float *)value.getPtr());
+		break;
+
+	case ScalarPtr::T_Double:
+		writeDouble(*(float *)value.getPtr());
+		break;
+
+	case ScalarPtr::T_LongDouble:
+		writeDouble(*(float *)value.getPtr());
+		break;
+
+	case ScalarPtr::T_String:
+		writeString(*(String *)value.getPtr());
+		break;
+
+	case ScalarPtr::T_Blob:
+		writeBinary(*(Blob *)value.getPtr());
+		break;
+
+	case ScalarPtr::T_Object:
+		((Object *)value.getPtr())->serializeTo(this);
+		break;
+	}
+}
+
 Blob RpcEncoder::getContent()
 {
 	return content;

@@ -1,0 +1,6 @@
+.cdef SD_EXCEPT_CONTROL .
+
+SOURCES:
+	no:${SD_EXCEPT_CONTROL}/mklist:g=t
+	:${SD_EXCEPT_CONTROL}/DeniedException.cxx:g=s,t,gh,di
+

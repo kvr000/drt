@@ -46,8 +46,6 @@ DR_SQL_NS_BEGIN
 
 DR_NS_USE
 
-class ConnectionPool;
-
 
 class ConnectionHold: public Connection
 {
@@ -55,7 +53,6 @@ class ConnectionHold: public Connection
 
 public:
 	DR_CONSTRUCT			ConnectionHold(Connection *connection);
-	DR_CONSTRUCT			ConnectionHold(ConnectionPool *pool, Connection *connection);
 
 protected:
 	virtual				~ConnectionHold();
@@ -121,13 +118,8 @@ public:
 	virtual void			addDbLayer(const String &name, Object *db_layer);
 
 protected:
-	ConnectionPool *		pool;
 	Ref<Connection>			connection;
-	SysTime				created;
 	THash<String, Ref<Object> >	db_layers;
-
-protected:
-	friend class ConnectionPool;
 };
 
 
