@@ -194,10 +194,11 @@ my $cxxname = shift(@ARGV);
 die "passed file does not end with suffix .cxx" unless ($cxxname =~ m/(.*)\.cxx$/);
 my $basename = shift(@ARGV);
 my $hxxname = "$basename.hxx";
-my $defname = "$basename-def.hxx";
 
 our $file_trans = dr::GenHeader::FileTransaction->new();
 
+our @tag_defs;
+our $tags;
 our $hxx;
 our $def;
 our $str;
@@ -214,6 +215,57 @@ our @includes = ();
 our $ns;
 our @ns_use = ();
 our @forwards = ();
+
+sub expandClassNames($)
+{
+	my $cld			= shift;
+
+	my @classes;
+	for (my $c = $cld->{class}; defined $c; $c = ($c =~ m/^(\w+)::(.*)$/) ? $2 : undef) {
+		push(@classes, $c);
+	}
+	return ( @classes );
+}
+
+sub escapeTagFind($)
+{
+	my $s			= shift;
+	$s =~ s/([\/])/\\$1/g;
+	return $s;
+}
+
+sub addTagClass($$)
+{
+	my $cld			= shift;
+	my $cxxname		= shift;
+	foreach my $cname (expandClassNames($cld)) {
+		push(@tag_defs, sprintf("%s\t%s\t/^%s\$/;\"\tc\tinherits:%s", $cname, $cxxname, escapeTagFind($cld->{line}), join(",", (defined $cld->{ancestor} ? $cld->{ancestor} : (), @{$cld->{ifaces}}))));
+	}
+}
+
+sub addTagMethod($$$)
+{
+	my $cld			= shift;
+	my $md			= shift;
+	my $cxxname		= shift;
+	foreach my $cname (expandClassNames($cld)) {
+	}
+}
+
+sub addTagAttribute($$$)
+{
+	my $cld			= shift;
+	my $ad			= shift;
+	my $cxxname		= shift;
+
+	if ($ad->{def} =~ m/^([^\t]*)\t*(\w+);\s*$/) {
+		my $name = $2;
+		push(@tag_defs, sprintf("%s\t%s\t/^%s\$/;\"\tm\tclass:%s\taccess:%s", $name, $cxxname, escapeTagFind($ad->{line}), $cld->{class}, $ad->{access}));
+		foreach my $cname (expandClassNames($cld)) {
+			push(@tag_defs, sprintf("%s.%s\t%s\t/^%s\$/;\"\tm\tclass:%s\taccess:%s", $cname, $name, $cxxname, escapeTagFind($ad->{line}), $cld->{class}, $ad->{access}));
+		}
+	}
+}
 
 sub escapeCString($)
 {
@@ -288,7 +340,7 @@ sub printClass($$)
 		}
 	}
 
-	die "$cxxname:$cld->{defline}: class $cld->{class} has no ancestor" if ($cld->{type} ne "struct" && !defined $cld->{ancestor});
+	die "$cxxname:$cld->{lineno}: class $cld->{class} has no ancestor" if ($cld->{type} ne "struct" && !defined $cld->{ancestor});
 
 	if ($cld->{doc}) {
 		my $doc = $cld->{doc};
@@ -296,6 +348,7 @@ sub printClass($$)
 		$doc = "/**\n$doc */\n";
 		printIndented($hxx, $level, $doc);
 	}
+	addTagClass($cld, $cxxname);
 	if ($cld->{type} eq "object") {
 		printObjectHeader($cld, $level);
 	}
@@ -314,7 +367,7 @@ sub printClass($$)
 		}
 	}
 	else {
-		die "$cxxname:$cld->{defline}: invalid implementation type specified for $cld->{class}";
+		die "$cxxname:$cld->{lineno}: invalid implementation type specified for $cld->{class}";
 	}
 
 	if ($cld->{cont} ne "") {
@@ -339,7 +392,7 @@ sub printClass($$)
 		die "found sql but no sql file was opened" unless ($sql);
 		foreach my $sqd (@{$cld->{sqls}}) {
 			push(@{$cld->{methods}}, { specs => [ "protected" ], ret => "void", "decl" => "prep_$sqd->{name}()" });
-			push(@{$cld->{ats}}, " Ref<dr::sql::SqlStatement>\tst_$sqd->{name};");
+			push(@{$cld->{ats}}, { access => "protected", def => "Ref<dr::sql::SqlStatement>\tst_$sqd->{name};", line => $sqd->{line}, lineno => $sqd->{lineno} });
 			$sql->printf("\nvoid %s::prep_%s()\n{\n\tst_%s.setNoref(db_connection->prepareStatement(\"%s\"));\n}\n", $cld->{class}, $sqd->{name}, $sqd->{name}, escapeCString($sqd->{query}));
 		}
 	}
@@ -386,14 +439,13 @@ sub printClass($$)
 			}
 		}
 		my $last_access = "";
-		foreach my $at (@{$cld->{ats}}) {
-			die "internal error: content of $at doesn't start with [ +-]" unless ($at =~ m/^([-+ ])(.*)$/);
-			my ($acc, $def) = ($1, $2);
-			if ($acc ne $last_access) {
-				printIndented($hxx, $level, sprintf("%s:\n", $acc eq "+" ? "public" : $acc eq " " ? "protected" : $acc eq "-" ? "private" : ""));
-				$last_access = $acc;
+		foreach my $ad (@{$cld->{ats}}) {
+			if ($ad->{access} ne $last_access) {
+				$last_access = $ad->{access};
+				printIndented($hxx, $level, sprintf("%s:\n", $last_access));
 			}
-			printIndented($hxx, $level, sprintf("\t%s\n", $def));
+			printIndented($hxx, $level, sprintf("\t%s\n", $ad->{def}));
+			addTagAttribute($cld, $ad, $cxxname);
 		}
 	}
 
@@ -417,6 +469,7 @@ my @wstrings;
 my @bstrings;
 
 MAIN: while (<$cxx>) {
+	chomp;
 	$lineno++;
 
 	if (m/DR_STR\(([^)]*)\)/) {
@@ -462,6 +515,7 @@ MAIN: while (<$cxx>) {
 			friends		=> [],
 		};
 		while (<$cxx>) {
+			chomp;
 			$lineno++;
 			if (m/^\s*\*\s*$/) {
 				next;
@@ -497,7 +551,8 @@ MAIN: while (<$cxx>) {
 					STDERR->printf("$cxxname:$lineno: fatal: ns undefined\n"), exit(1) unless (defined $ns);
 					$cld->{class} = $val;
 					($cld->{class_last} = $cld->{class}) =~ s/.*:://;
-					$cld->{defline} = $lineno;
+					$cld->{lineno} = $lineno;
+					$cld->{line} = $_;
 				}
 				elsif ($key eq "ancestor") {
 					$cld->{ancestor} = $val;
@@ -506,20 +561,20 @@ MAIN: while (<$cxx>) {
 					push(@{$cld->{ifaces}}, split(/s+/, $val));
 				}
 				elsif ($key eq "at") {
-					push(@{$cld->{ats}}, " $val");
+					push(@{$cld->{ats}}, { access => "protected", def => $val, line => $_, lineno => $lineno });
 				}
 				elsif ($key eq "ap") {
-					push(@{$cld->{ats}}, "+$val");
+					push(@{$cld->{ats}}, { access => "public", def => $val, line => $_, lineno => $lineno });
 				}
 				elsif ($key eq "am") {
-					push(@{$cld->{ats}}, "-$val");
+					push(@{$cld->{ats}}, { access => "private", def => $val, line => $_, lineno => $lineno });
 				}
 				elsif ($key eq "sql") {
 					if ($val !~ m/^(\w+)\s+(.*)$/) {
 						STDERR->print("$cxxname:$lineno: incorrect syntax for sql\n"), $errors++;
 					}
 					else {
-						push(@{$cld->{sqls}}, { name => $1, query => $2 });
+						push(@{$cld->{sqls}}, { line => $_, lineno => $lineno, name => $1, query => $2 });
 					}
 				}
 				elsif ($key eq "friend") {
@@ -568,15 +623,17 @@ MAIN: while (<$cxx>) {
 		};
 		STDERR->printf("$cxxname:$lineno: fatal: class undefined\n"), exit(1) unless (defined $cld && defined $cld->{class});
 		FUNC_DECL: while (<$cxx>) {
+			chomp;
 			$lineno++;
 			#STDERR->printf("class=%s\n", $class);
 			#STDERR->printf("regex=%s\n", "^(.*)\\s*($class)::(\\w+)(\\(.*\\)):?\\s*\$");
 			#STDERR->print("matching $_");
-			if (m/^\/\*\*\s+$/) {
-				$metd->{comment} = $_;
+			if (m/^\/\*\*\s*$/) {
+				$metd->{comment} = "$_\n";
 				while (<$cxx>) {
+					chomp;
 					$lineno++;
-					$metd->{comment} .= $_;
+					$metd->{comment} .= "$_\n";
 					next FUNC_DECL if (m/^\s*\*\/\s*$/);
 				}
 				die "unable to find end of comment";
@@ -651,6 +708,9 @@ if ($gen{sql}) {
 if ($gen{all}) {
 	$all = $file_trans->createTruncated("$basename-all.hxx");
 }
+if (!$gen{notags}) {
+	$tags = $file_trans->createTruncated("$basename.tags");
+}
 
 if ($all) {
 	my $name = $basename;
@@ -722,7 +782,6 @@ if ($def) {
 	$def->printf("%s\n\n", nsToMacroBegin($ns));
 }
 
-#STDERR->print(Dumper(\@cl_list));
 if (@cl_list) {
 	die "class list specified but header not open" unless ($gen{hxx});
 	while (@cl_list) {
@@ -742,6 +801,11 @@ if ($def) {
 }
 if ($hxx) {
 	$hxx->printf("\n\n%s\n\n#endif\n", nsToMacroEnd($ns));
+}
+if ($tags) {
+	foreach my $tagline (sort({ $a cmp $b } @tag_defs)) {
+		$tags->printf("%s\n", $tagline);
+	}
 }
 
 if ($file_trans->commit()) {

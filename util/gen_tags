@@ -35,12 +35,47 @@
 ## @license	http://www.gnu.org/licenses/lgpl.txt GNU Lesser General Public License v3
 ##
 
+set -e
+
 if test -n "$CTAGS"; then
-	$CTAGS "$@"
+	$CTAGS -o ctags.tags "$@"
 elif which exuberant-ctags >/dev/null 2>&1; then
-	exuberant-ctags --exclude=doc --c++-kinds=+p --fields=+iaS --extra=+q -R "$@"
+	exuberant-ctags --exclude=doc --c++-kinds=+p --fields=+iaS --extra=+q -o ctags.tags -R "$@"
 elif which ctags-exuberant >/dev/null 2>&1; then
-	ctags-exuberant --exclude=doc --c++-kinds=+p --fields=+iaS --extra=+q -R "$@"
+	ctags-exuberant --exclude=doc --c++-kinds=+p --fields=+iaS --extra=+q -o ctags.tags -R "$@"
 else
-	ctags -R "$@"
+	ctags -o ctags.tags -R "$@"
 fi
+for env in `env | grep ^LC_ | cut -d = -f 1`; do unset $env; done
+perl -e '
+use strict;
+use warnings;
+use File::Find;
+use FileHandle;
+use Data::Dumper;
+no locale;
+my $main_fd = FileHandle->new(shift @ARGV, "<") or die "failed to open main file: $!";
+my @files = ( { prefix => "", fd => $main_fd } );
+@ARGV = ( "." ) unless (@ARGV);
+find({ no_chdir => 1, wanted => sub {
+	if (m/(\.\/)?(.*\/|)_build\/_gen\/.*\.tags$/) {
+		if (my $fd = FileHandle->new($_, "<")) {
+			push(@files, { prefix => $2, fd => $fd });
+		}
+		else {
+			STDERR->printf("Failed to open %s: %s\n", $_, $!);
+		}
+	}
+} }, @ARGV);
+for (;;) {
+	my $best;
+	foreach my $ft (@files) {
+		next if (!defined $ft->{pending} && !defined ($ft->{pending} = $ft->{fd}->getline()));
+		$best = $ft if (!defined $best || $ft->{pending} lt $best->{pending});
+	}
+	last unless ($best);
+	$best->{pending} = "$1\t$best->{prefix}$2$3" if ($best->{pending} =~ m/^([^\t]*)\t([^\t]*)(\t.*)$/s);
+	STDOUT->printf("%s", $best->{pending});
+	undef $best->{pending};
+}
+' ctags.tags "$@" > tags && rm ctags.tags
