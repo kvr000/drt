@@ -157,7 +157,6 @@ ConnectionHold *ConnectionPool::getConnection()
 		}
 		else {
 			conn = new ConnectionHoldPool(this, tref(Connection::openConnection(connect_str, &connect_pars, manager.mem())));
-			num_connections++;
 			break;
 		}
 	}

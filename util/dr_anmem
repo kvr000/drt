@@ -54,7 +54,7 @@ our $ok_leaks = "[(<](".join("|", qw(
 
 our %opts;
 
-getopts('sl', \%opts)
+getopts('sli', \%opts)
 	or die "invalid option specified";
 
 my %frequent;
@@ -97,7 +97,7 @@ for (;;) {
 				order		=> $order++,
 				seq		=> $seq,
 			};
-			if ($opts{s} && defined $backtrace && $backtrace !~ m/$ok_leaks/o) {
+			if ($opts{s} && defined $backtrace && (!$opts{i} && $backtrace !~ m/$ok_leaks/o)) {
 				my $c = \$frequent{$backtrace};
 				$$c = 0 unless (defined $$c);
 				$$c++;
@@ -126,7 +126,7 @@ foreach my $md (sort({ $a->{order} <=> $b->{order} } values %mem)) {
 if ($opts{l}) {
 	my %leak_stat;
 	foreach my $md (sort({ $a->{order} <=> $b->{order} } values %mem)) {
-		next if ($md->{backtrace} =~ m/$ok_leaks/o);
+		next if (!$opts{i} && $md->{backtrace} =~ m/$ok_leaks/o);
 		$leak_stat{$md->{backtrace}} = { count => 0, first => $md->{seq} } unless (defined $leak_stat{$md->{backtrace}});
 		$leak_stat{$md->{backtrace}}->{count}++;
 	}
