@@ -76,6 +76,8 @@ public:
 	virtual long			getSockOption(const String &option);
 	virtual Blob			getSockOptionStr(const String &option);
 
+	DR_RINLINE void *		getOsHandle()				{ return os_handle; }
+
 protected:
 	void *				os_handle;
 
