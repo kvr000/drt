@@ -12,6 +12,7 @@ OUTPUT:
 	exec:tbench_dyn:f=exec;s=tbench_dyn,common;r=test,bench
 	exec:tbench_atomic:f=exec;s=tbench_atomic,common;r=test,bench
 	exec:tbench_strind:f=exec;s=tbench_strind,common;r=test,bench
+	exec:tbench_smp:f=exec;s=tbench_smp,common;r=test,bench
 	exec:tformat:f=exec;s=tformat,common;r=test
 	exec:tinfo:f=exec;s=tinfo,common;r=test
 	exec:t0:f=exec;s=t0,common;r=test
@@ -34,6 +35,7 @@ SOURCES:
 	:tbench_dyn.cxx:f=cxx;g=tbench_dyn,t
 	:tbench_atomic.cxx:f=cxx;g=tbench_atomic,t
 	:tbench_strind.cxx:f=cxx;g=tbench_strind,t
+	:tbench_smp.cxx:f=cxx;g=tbench_smp,t
 	:tformat.cxx:f=cxx;g=tformat,t
 	:tinfo.cxx:f=cxx;g=tinfo,t
 	:t0.cxx:f=cxx;g=t0,t
