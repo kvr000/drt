@@ -70,6 +70,9 @@ RpcHelper::StructMapper::StructMapper(const String *name0, long offs0, void (*re
 
 RpcHelper::StructMapper::~StructMapper()
 {
+	for (THash<String, MemberInfo *>::Node *node = map.iterFirst(); node; node = map.iterNext(node)) {
+		delete node->v;
+	}
 }
 
 void RpcHelper::readSkip(RpcDecoder *decoder, void *type_addr)

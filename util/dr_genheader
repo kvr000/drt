@@ -176,8 +176,14 @@ sub printClass($$)
 
 	die "$cxxname:$cld->{defline}: class $cld->{class} has no ancestor" if ($cld->{type} ne "struct" && !defined $cld->{ancestor});
 
+	if ($cld->{doc}) {
+		my $doc = $cld->{doc};
+		$doc =~ s/^/ \* /gm;
+		$doc = "/**\n$doc */\n";
+		printIndented($hxx, $level, $doc);
+	}
 	if ($cld->{type} eq "object") {
-		printIndented($hxx, $level, sprintf("%s %s: public %s\n{\n", "class", $iname, $cld->{ancestor}));
+		printIndented($hxx, $level, sprintf("%s %s: public %s%s\n{\n", "class", $iname, $cld->{ancestor}, join("", map({ ", $_" } @{$cld->{ifaces}}))));
 		printIndented($hxx, $level, sprintf("\tDR_OBJECT_DECL_SIMPLE(%s, %s);\n", $iname, $cld->{ancestor}));
 		$def->printf("\n");
 		$def->printf("DR_OBJECT_IMPL_IFACE%d(%s%s);\n", scalar @{$cld->{ifaces}}, $cld->{class}, join("", map({ ", $_" } @{$cld->{ifaces}})));
@@ -290,6 +296,7 @@ my $cont = "";
 my @methods;
 my @ats;
 my @friends;
+my $doc;
 
 my $errors = 0;
 
@@ -313,6 +320,7 @@ MAIN: while (<$cxx>) {
 					ats		=> [ @ats ],
 					methods		=> [ @methods ],
 					friends		=> [ @friends ],
+					doc		=> $doc,
 				});
 			$type = "object";
 			undef $class;
@@ -322,9 +330,10 @@ MAIN: while (<$cxx>) {
 			@ats = ();
 			@methods = ();
 			@friends = ();
+			undef $doc;
 		}
 		else {
-			if (defined $ancestor || $cont ne "" || @ifaces || @ats || @methods || @friends) {
+			if (defined $ancestor || $cont ne "" || @ifaces || @ats || @methods || @friends || defined $doc) {
 				STDERR->print("no class defined while some of the attributes are"), $errors++;
 			}
 		}
@@ -376,10 +385,19 @@ MAIN: while (<$cxx>) {
 				elsif ($key eq "co") {
 					if ($val eq "{") {
 						eval { $cont .= readContent($cxx, \$lineno, "}co") };
-						die "$cxxname:$lineno: incorrect syntax for co" if ($@);
+						die "$cxxname:$lineno: incorrect syntax for co: $@" if ($@);
 					}
 					else {
-						die "$cxxname:$lineno: incorrect syntax for co";
+						die "$cxxname:$lineno: incorrect syntax for co: need co:{";
+					}
+				}
+				elsif ($key eq "doc") {
+					if ($val eq "{") {
+						eval { $doc .= readContent($cxx, \$lineno, "}doc") };
+						die "$cxxname:$lineno: incorrect syntax for doc: $@" if ($@);
+					}
+					else {
+						die "$cxxname:$lineno: incorrect syntax for doc: need doc:{";
 					}
 				}
 				else {
@@ -472,10 +490,11 @@ if (defined $class) {
 			ats		=> [ @ats ],
 			methods		=> [ @methods ],
 			friends		=> [ @friends ],
+			doc		=> $doc,
 		});
 }
 else {
-	if (defined $ancestor || $cont ne "" || @ifaces || @ats || @methods || @friends) {
+	if (defined $ancestor || $cont ne "" || @ifaces || @ats || @methods || @friends || defined $doc) {
 		STDERR->print("no class defined while some of the attributes are"), $errors++;
 	}
 }
