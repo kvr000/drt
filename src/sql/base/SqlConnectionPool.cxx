@@ -57,7 +57,7 @@ SqlConnectionPool::SqlConnectionPool(const String &connect_str_, int init_conns)
 	if (init_conns == 0)
 		init_conns = 1;
 	while (init_conns--) {
-		ERef<SqlConnectionHold> conn = new SqlConnectionHold(tref(SqlConnection::openConnection(connect_str, &connect_pars, manager.mem())));
+		ERef<SqlConnectionHold> conn = new SqlConnectionHold(this, tref(SqlConnection::openConnection(connect_str, &connect_pars, manager.mem())));
 		num_connections++;
 		releaseConnection(conn);
 	}

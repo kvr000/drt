@@ -216,87 +216,101 @@ TESTNSE(atomic);
 #ifdef TEST_REF
 TESTNS(ref);
 
-class T0: public Shared
-{
-public:
-	DR_CONSTRUCT			T0()					{ alive++; CHECK(alive > 0); }
-	virtual				~T0()					{ alive--; CHECK(alive >= 0); }
-
-public:
-	static int			alive;
-};
-
-int T0::alive = 0;
-
-void func(Ref<T0> t)
+void func(Ref<TestObject> t)
 {
 }
 
-void ifunc(IRef<T0> t)
+void ifunc(IRef<TestObject> t)
 {
 }
 
-void efunc(ERef<T0> t)
+void efunc(ERef<TestObject> t)
 {
+}
+
+int global_x = 0;
+void testUsed()
+{
+	{
+		ERef<TestObject> hold(TestObject::createInstance());
+		CHECK(TestObject::countLiving() == 1);
+		CHECK(hold.checkSingleRef());
+		{
+			Ref<TestObject> hold2(hold);
+			CHECK(!hold.checkSingleRef());
+		}
+			CHECK(hold.checkSingleRef());
+		{
+			Ref<TestObject> hold2(hold);
+			CHECK(!hold.checkSingleRef());
+			hold.setNoref(TestObject::createInstance());
+			CHECK(hold.checkSingleRef());
+		}
+		CHECK(TestObject::countLiving() == 0);
+		hold.setNull();
+		CHECK(!hold.checkSingleRef());
+		CHECK(TestObject::countLiving() == 1);
+	}
+	CHECK(TestObject::countLiving() == 0);
 }
 
 void test()
 {
-	CHECK(T0::alive == 0);
+	CHECK(TestObject::countLiving() == 0);
 
 	{
-		Ref<T0> hold(new T0, false);
-		CHECK(T0::alive == 1);
+		Ref<TestObject> hold(TestObject::createInstance(), false);
+		CHECK(TestObject::countLiving() == 1);
 		func(hold);
 		ifunc(hold);
 		efunc(hold);
 	}
-	CHECK(T0::alive == 0);
+	CHECK(TestObject::countLiving() == 0);
 
 	{
-		ERef<T0> hold(new T0);
-		CHECK(T0::alive == 1);
-		ERef<T0> hold2(hold);
+		ERef<TestObject> hold(TestObject::createInstance());
+		CHECK(TestObject::countLiving() == 1);
+		ERef<TestObject> hold2(hold);
 		func(hold);
 		ifunc(hold);
 		efunc(hold);
 	}
-	CHECK(T0::alive == 0);
+	CHECK(TestObject::countLiving() == 0);
 
 	{
-		ERef<T0> hold(new T0);
-		CHECK(T0::alive == 1);
-		IRef<T0> hold2(hold);
+		ERef<TestObject> hold(TestObject::createInstance());
+		CHECK(TestObject::countLiving() == 1);
+		IRef<TestObject> hold2(hold);
 		func(hold);
 		ifunc(hold);
 		efunc(hold);
 	}
-	CHECK(T0::alive == 0);
+	CHECK(TestObject::countLiving() == 0);
 
 	{
-		IRef<T0> hold(new T0, Noref());
-		CHECK(T0::alive == 1);
-		ERef<T0> hold2(hold);
+		IRef<TestObject> hold(TestObject::createInstance(), Noref());
+		CHECK(TestObject::countLiving() == 1);
+		ERef<TestObject> hold2(hold);
 		func(hold);
 		ifunc(hold);
 		efunc(hold);
 	}
-	CHECK(T0::alive == 0);
+	CHECK(TestObject::countLiving() == 0);
 
 	{
-		IRef<T0> hold(new T0, Noref());
-		CHECK(T0::alive == 1);
-		IRef<T0> hold2(hold);
+		IRef<TestObject> hold(TestObject::createInstance(), Noref());
+		CHECK(TestObject::countLiving() == 1);
+		IRef<TestObject> hold2(hold);
 		func(hold);
 		ifunc(hold);
 		efunc(hold);
 	}
-	CHECK(T0::alive == 0);
+	CHECK(TestObject::countLiving() == 0);
 
 	{
-		tref(new T0);
+		tref(TestObject::createInstance());
 	}
-	CHECK(T0::alive == 0);
+	CHECK(TestObject::countLiving() == 0);
 }
 
 TESTNSE(ref);

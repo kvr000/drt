@@ -59,10 +59,9 @@ DR_EXPORT_DTS const String Object::comp_name(Const::string(DR_NS_STRP("Object"))
 DR_EXPORT_DTS const Static *Object::comp_static = NULL;
 
 
-static WeakRef_g *default_weak_iface_refs[256];
 DR_EXPORT_DTS Object::ObjectInfo Object::default_oi = {
 	NULL,
-	default_weak_iface_refs,
+	NULL,
 };
 
 Object::Object():
@@ -77,6 +76,29 @@ Object::Object(const None &)
 
 Object::~Object()
 {
+}
+
+Object *Object::acc() const
+{
+	return const_cast<Object *>(this);
+}
+
+Object *Object::ref() const
+{
+	DR_LOG4(("%s: referencing %p, new refcnt %d+1\n", DR_FUNCTION, this, refcnt+1));
+	if (!Atomic::incr(&refcnt)) {
+		const_cast<Object *>(this)->rerefed();
+	}
+	return const_cast<Object *>(this);
+}
+
+bool Object::unref() const
+{
+	DR_LOG4(("%s: unreferencing %p, new refcnt %d+1\n", DR_FUNCTION, this, refcnt-1));
+	if (!Atomic::decr(&refcnt)) {
+		return const_cast<Object *>(this)->unrefed();
+	}
+	return true;
 }
 
 bool Object::unrefed()
@@ -102,6 +124,20 @@ void Object::rerefed()
 {
 	if (core_data->group_ref != NULL)
 		core_data->group_ref->ref();
+}
+
+bool Object::checkReferenced() const
+{
+	if (refcnt > 0)
+		return true;
+	if (core_data->weak_iface_refs)
+		return true;
+	return false;
+}
+
+Object *Object::refLiving() const
+{
+	return refcnt < 0 ? NULL : ref();
 }
 
 void Object::destroy()
@@ -312,6 +348,11 @@ Object *Object::accCheckFinal(const String &name) const
 	if (name != classname())
 		return NULL;
 	return const_cast<Object *>(this);
+}
+
+const String &Object::classname() const
+{
+	return comp_name;
 }
 
 String Object::stringify() const

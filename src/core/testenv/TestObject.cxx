@@ -96,6 +96,12 @@ int TestObject::countLiving()
 	return living_count;
 }
 
+DR_MET(public static)
+TestObject *TestObject::createInstance()
+{
+	return new TestObject(0);
+}
+
 DR_MET(public virtual)
 int TestObject::cmp(const Iface *second) const
 {

@@ -218,6 +218,19 @@ public:
 	}
 
 	/**
+	 * checks if the object is referenced only by this ref
+	 *
+	 * @return true
+	 * 	if the object is refenced only by this ref
+	 * @return false
+	 * 	if this ref is NULL or the object is referenced by more refs
+	 */
+	DR_RINLINE bool			checkSingleRef()
+	{
+		return obj != NULL && obj->checkReferenced();
+	}
+
+	/**
 	 * assigns the object, not referencing it
 	 *
 	 * @param s

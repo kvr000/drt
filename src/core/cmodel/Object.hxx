@@ -150,6 +150,7 @@ public: \
 	DR_SUPER_REDIR0C(DR_NSP(Object) *, acc); \
 	DR_SUPER_REDIR0C(DR_NSP(Object) *, ref); \
 	DR_SUPER_REDIR0C(bool, unref); \
+	DR_SUPER_REDIR0C(bool, checkReferenced); \
 	DR_SUPER_REDIR0C(DR_NSP(Object) *, refLiving); \
 
 
@@ -250,17 +251,17 @@ public:		/* basic */
 	/**
 	 * @see Iface::acc
 	 */
-	virtual Object *		acc() const				{ return const_cast<Object *>(this); }
+	virtual Object *		acc() const;
 
 	/**
 	 * @see Iface::ref
 	 */
-	virtual Object *		ref() const				{ DR_LOG4(("%s: referencing %p, new refcnt %d+1\n", DR_FUNCTION, this, refcnt+1)); if (!Atomic::incr(&refcnt)) { const_cast<Object *>(this)->rerefed(); } return const_cast<Object *>(this); }
+	virtual Object *		ref() const;
 
 	/**
 	 * @see Iface::unref
 	 */
-	virtual bool			unref() const				{ DR_LOG4(("%s: unreferencing %p, new refcnt %d+1\n", DR_FUNCTION, this, refcnt-1)); if (!Atomic::decr(&refcnt)) { return const_cast<Object *>(this)->unrefed(); } return true; }
+	virtual bool			unref() const;
 
 	/**
 	 * @see Iface::getIface
@@ -290,12 +291,17 @@ public:		/* basic */
 	/**
 	 * @see Iface::refLiving()
 	 */
-	virtual Object *		refLiving() const			{ return refcnt < 0 ? NULL : ref(); }
+	virtual Object *		refLiving() const;
+
+	/**
+	 * @see Iface::checkReferenced()
+	 */
+	virtual bool			checkReferenced() const;
 
 	/**
 	 * @see Iface::classname
 	 */
-	virtual const String &		classname() const			{ return comp_name; }
+	virtual const String &		classname() const;
 
 	/**
 	 * @see Iface::stringify
@@ -347,7 +353,7 @@ private: /* implementation static data */
 	virtual void			object_reserved_1();
 	virtual void			object_reserved_2();
 	enum {
-		OVD_IFACE_DEF = 21,
+		OVD_IFACE_DEF = 22,
 		OVD_SECOND,
 		OVD_THIRD,
 	};

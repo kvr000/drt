@@ -54,6 +54,7 @@ public: \
 	virtual void *			getIfaceUnref(const DR_NSP(String) &iface) const = 0; \
  \
 	virtual DR_NSP(Object) *	refLiving() const = 0; \
+	virtual bool			checkReferenced() const = 0; \
  \
 	virtual const DR_NSP(String) &	classname() const = 0; \
  \
@@ -317,6 +318,17 @@ public:
 	 * 	if the object is not destroyed
 	 */
 	virtual Object *		refLiving() const = 0;
+
+	/**
+	 * checks if the object is referenced from other places
+	 * (including weak references)
+	 *
+	 * @return false
+	 * 	if the object is referenced only by the caller
+	 * @return true
+	 * 	if the object is referenced by others
+	 */
+	virtual bool			checkReferenced() const = 0;
 
 	/**
 	 * get the string describing the object
