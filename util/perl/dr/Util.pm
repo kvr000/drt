@@ -108,6 +108,26 @@ sub tabalign($$)
 	return $str;
 }
 
+sub hashUndef
+{
+	my %hash		= @_;
+
+	while (my ($k, $v) = each(%hash)) {
+		delete $hash{$k} unless (defined $v);
+	}
+	return %hash;
+}
+
+sub hashTrue
+{
+	my %hash		= @_;
+
+	while (my ($k, $v) = each(%hash)) {
+		delete $hash{$k} unless ($v);
+	}
+	return %hash;
+}
+
 sub splitString($)
 {
 	my $s			= shift;

@@ -172,6 +172,9 @@ foreach my $model (@models) {
 	foreach my $attr (@{$model->{attr_list}}) {
 		eval {
 			$form->print(tabalign($attr->{stype}, 16).$attr->{name}."\n");
+			foreach (qw(req_sys req_get req_set)) {
+				$form->print(tabalign("\t$_", 24).defvalue($attr->checkDrTagValue($_), "")."\n");
+			}
 			if ($attr->{stype} eq "attr") {
 				my ( $type, $tagger ) = $attr->getFinalTypeWithTagger();
 				$form->print(tabalign("\ttext", 24).defvalue($tagger->checkTagValue("text"), $attr->{name})."\n");
@@ -198,6 +201,11 @@ foreach my $model (@models) {
 			1;
 		}
 			or STDERR->print("failed to process $model->{full}.$attr->{name}: $@"), $errors++;
+	}
+	foreach my $action (@{$model->{action_list}}) {
+		eval {
+		}
+			or STDERR->print("failed to process $model->{full}.$action->{name}: $@"), $errors++;
 	}
 	foreach my $assoc_display (values %{$model->getDrSpecs("assoc_display")}) {
 		eval {

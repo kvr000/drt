@@ -38,7 +38,80 @@ package dr::XmiParser;
 use strict;
 use warnings;
 
+use dr::Util qw(defvalue);
+
+
+package dr::XmiParser::Leveler;
+
+use strict;
+use warnings;
+
 use dr::Util;
+use XML::LibXML::Reader;
+
+sub new
+{
+	my $ref			= shift;
+	my $class		= ref($ref) || $ref;
+	my $owner		= shift;
+	my $level		= shift;
+
+	my $this = bless {
+		owner			=> $owner,
+		level			=> $level,
+	}, $class;
+
+	return $this;
+}
+
+sub readNode
+{
+	my $this		= shift;
+
+	my ( $type, $name, $depth ) = $this->{owner}->readNode();
+
+	$this->{owner}->read_doDie("readed type undefined") unless (defined $type);
+	$this->{owner}->read_doDie("readed depth undefined") unless (defined $depth);
+
+	return if ($type == XML_READER_TYPE_END_ELEMENT && $depth < $this->{level});
+	$this->{owner}->read_doDie("sub level not read") if ($depth > $this->{level});
+
+	return $name;
+}
+
+sub skipNode
+{
+	my $this		= shift;
+
+	while (defined (my $name = $this->readNode())) {
+		$this->getSubLeveler()->skipNode();
+	}
+}
+
+sub getMandatoryAttr
+{
+	my $this		= shift;
+	my $name		= shift;
+
+	my $value = $this->{owner}->{reader}->getAttribute($name);
+	$this->{owner}->read_doDie("mandatory attribute $name not found in element") unless (defined $value);
+	return $value;
+}
+
+sub getOptionalAttr
+{
+	my $this		= shift;
+	my $name		= shift;
+
+	return $this->{owner}->{reader}->getAttribute($name);
+}
+
+sub getSubLeveler
+{
+	my $this		= shift;
+
+	return $this->new($this->{owner}, $this->{level}+1);
+}
 
 
 package dr::XmiParser::Comment;
@@ -125,6 +198,8 @@ sub new
 		package_hash		=> {},
 		attr_list		=> [],
 		attr_hash		=> {},
+		oper_list		=> [],
+		oper_hash		=> {},
 	}, $class;
 
 	Scalar::Util::weaken($this->{owner} = $owner);
@@ -168,6 +243,15 @@ sub addAttribute
 
 	push(@{$this->{attr_list}}, $attr);
 	$this->{attr_hash}->{$attr->{name}} = $attr;
+}
+
+sub addOperation
+{
+	my $this		= shift;
+	my $oper		= shift;
+
+	push(@{$this->{oper_list}}, $oper);
+	$this->{oper_hash}->{$oper->{name}} = $oper;
 }
 
 sub isTypedef
@@ -285,10 +369,9 @@ sub read_doDie
 sub read_warnUnknown
 {
 	my $this		= shift;
+	my $main_reader		= shift;
 
-	my $reader		= $this->{reader};
-
-	$this->read_doDie("unexpected element".$reader->name()."");
+	$this->read_doDie("unexpected element ".$this->{reader}->name()."");
 }
 
 sub readRelevant
@@ -347,6 +430,7 @@ sub read_processDump
 sub read_skipNode
 {
 	my $this		= shift;
+	my $main_reader		= shift;
 
 	my $reader		= $this->{reader};
 	my $exit_depth		= $reader->depth;
@@ -360,24 +444,22 @@ sub read_skipNode
 sub read_unknownNode
 {
 	my $this		= shift;
+	my $main_reader		= shift;
 
-	$this->read_warnUnknown();
-	$this->read_skipNode();
+	$this->read_warnUnknown($main_reader);
+	$this->read_skipNode($main_reader);
 }
 
 sub read_needNodeEnd
 {
 	my $this		= shift;
+	my $main_reader		= shift;
+	my $reader		= $main_reader->getSubLeveler();
 
-	my $reader		= $this->{reader};
-	my $exit_depth		= $reader->depth;
-
-	while (my ($type, $name, $depth) = $this->readNode()) {
-		return if ($depth == $exit_depth);
-		$this->read_warnUnknown();
-		$this->read_skipNode();
+	while (defined (my $name = $reader->readNode())) {
+		$this->read_warnUnknown($reader);
+		$reader->skipNode();
 	}
-	die "cannot get here";
 }
 
 sub read_getMandatoryAttr
@@ -407,50 +489,39 @@ sub read_processXml
 {
 	my $this		= shift;
 
-	my $reader		= $this->{reader};
+	my $reader		= dr::XmiParser::Leveler->new($this, 0);
 
-	while (my ($type, $name, $depth) = $this->readNode()) {
-		if ($type == XML_READER_TYPE_ELEMENT) {
-			if ($name eq "xmi:XMI") {
-				$this->read_processXmi($depth);
-				next;
-			}
-			else {
-				$this->read_doDie("expected xmi:XMI as root element, got $name");
-			}
+	if (defined (my $name = $reader->readNode())) {
+		if ($name eq "xmi:XMI") {
+			$this->read_processXmi($reader);
 		}
 		else {
-			$this->read_doDie("expected opening xmi:XMI, got ".$reader->nodeType." - ".$reader->name);
+			$this->read_doDie("expected xmi:XMI as root element, got $name");
 		}
+	}
+	else {
+		$this->read_doDie("unexpected end of XML");
 	}
 }
 
 sub read_processXmi
 {
 	my $this		= shift;
+	my $reader		= shift->getSubLeveler();
 
-	my $reader		= $this->{reader};
-	my $exit_depth		= $reader->depth;
-
-	for (;;) {
-		my ($type, $name, $depth) = $this->readNode()
-			or $this->read_doDie("unexpected end of XML");
-		return if ($depth == $exit_depth);
-		if ($type == XML_READER_TYPE_ELEMENT) {
-			if ($name eq "uml:Model") {
-				$this->read_processModel();
-				next;
-			}
-			elsif ($name eq "xmi:Documentation") {
-				$this->read_skipNode();
-				next;
-			}
-			else {
-				$this->read_unknownNode();
-			}
+	while (defined (my $name = $reader->readNode())) {
+		if ($name eq "uml:Model") {
+			$this->read_processModel($reader);
+			next;
+		}
+		elsif ($name eq "xmi:Documentation") {
+			$this->read_skipNode($reader);
+			next;
+		}
+		else {
+			$this->read_unknownNode($reader);
 		}
 	}
-	die "cannot get here";
 }
 
 sub createGenericComment
@@ -463,86 +534,76 @@ sub createGenericComment
 sub read_processGenericComment
 {
 	my $this		= shift;
+	my $main_reader		= shift;
 	my $comment		= shift;
 
-	my $reader		= $this->{reader};
-
 	eval {
-		$comment->processComment($this->read_getMandatoryAttr("body"));
+		$comment->processComment($main_reader->getMandatoryAttr("body"));
 		1;
 	}
 		or $this->read_doDie($@);
 
-	$this->read_needNodeEnd();
+	$this->read_needNodeEnd($main_reader);
 }
 
 sub read_processGenericTagged
 {
 	my $this		= shift;
+	my $main_reader		= shift;
 	my $comment		= shift;
 
-	my $reader		= $this->{reader};
-
 	eval {
-		$comment->processTag($this->read_getMandatoryAttr("tag"), $this->read_getMandatoryAttr("value"));
+		$comment->processTag($main_reader->getMandatoryAttr("tag"), $main_reader->getMandatoryAttr("value"));
 		1;
 	}
 		or $this->read_doDie($@);
 
-	$this->read_needNodeEnd();
+	$this->read_needNodeEnd($main_reader);
 }
 
 sub read_processModel
 {
 	my $this		= shift;
 
-	my $reader		= $this->{reader};
-	my $exit_depth		= $reader->depth;
+	my $reader		= shift->getSubLeveler();
 
-	for (;;) {
-		my ($type, $name, $depth) = $this->readNode()
-			or $this->read_doDie("unexpected end of XML");
-		return if ($depth == $exit_depth);
-		if ($type == XML_READER_TYPE_ELEMENT) {
-			if ($name eq "packagedElement") {
-				$this->read_processPackagedElement();
-				next;
-			}
-			else {
-				$this->read_unknownNode();
-			}
+	while (defined (my $name = $reader->readNode())) {
+		if ($name eq "packagedElement") {
+			$this->read_processPackagedElement($reader);
+			next;
+		}
+		else {
+			$this->read_unknownNode($reader);
 		}
 	}
-	die "cannot get here";
 }
 
 sub read_processPackagedElement
 {
 	my $this		= shift;
-
-	my $reader		= $this->{reader};
+	my $reader		= shift;
 
 	my $type = $this->read_getMandatoryAttr("xmi:type");
 	if ($type eq "uml:Package") {
-		$this->read_processPackage();
+		$this->read_processPackage($reader);
 	}
 	elsif ($type eq "uml:Class") {
-		$this->read_processClass();
+		$this->read_processClass($reader);
 	}
 	elsif ($type eq "uml:AssociationClass") {
-		$this->read_processAssociationClass();
+		$this->read_processAssociationClass($reader);
 	}
 	elsif ($type eq "uml:Enumeration") {
-		$this->read_processEnum();
+		$this->read_processEnum($reader);
 	}
 	elsif ($type eq "uml:Association") {
-		$this->read_processAssociation();
+		$this->read_processAssociation($reader);
 	}
 	elsif ($type eq "uml:Artifact") {
-		$this->read_processArtifact();
+		$this->read_processArtifact($reader);
 	}
 	elsif ($type eq "uml:DataType") {
-		$this->read_processDataType();
+		$this->read_processDataType($reader);
 	}
 	else {
 		$this->read_doDie("unknown type: $type");
@@ -552,29 +613,24 @@ sub read_processPackagedElement
 sub read_processPackage
 {
 	my $this		= shift;
-
-	my $reader		= $this->{reader};
-	my $exit_depth		= $reader->depth;
+	my $reader		= shift->getSubLeveler();
 
 	my $saved_context = $this->{read_context};
 	$this->{read_context} = dr::XmiParser::Package->new($this, "package");
 
 	my @classes;
 
-	for (;;) {
-		my ($type, $name, $depth) = $this->readNode()
-			or $this->read_doDie("unexpected end of XML");
-		last if ($depth == $exit_depth);
+	while (defined (my $name = $reader->readNode())) {
 		if ($name eq "packagedElement") {
-			$this->read_processPackagedElement();
+			$this->read_processPackagedElement($reader);
 			next;
 		}
 		elsif ($name eq "xmi:Extension") {
-			$this->read_skipNode();
+			$this->read_skipNode($reader);
 			next;
 		}
 		else {
-			$this->read_unknownNode();
+			$this->read_unknownNode($reader);
 		}
 	}
 	push(@{$this->{packages}}, $this->{read_context});
@@ -584,41 +640,40 @@ sub read_processPackage
 sub read_processClass
 {
 	my $this		= shift;
-
-	my $reader		= $this->{reader};
-	my $exit_depth		= $reader->depth;
+	my $reader		= shift->getSubLeveler();
 
 	$this->read_doDie("class definition out of package context") unless (defined $this->{read_context});
 
 	my $saved_context = $this->{read_context};
 	$this->{read_context} = dr::XmiParser::Class->new($this, "class");
 
-	for (;;) {
-		my ($type, $name, $depth) = $this->readNode()
-			or $this->read_doDie("unexpected end of XML");
-		last if ($depth == $exit_depth);
+	while (defined (my $name = $reader->readNode())) {
 		if ($name eq "xmi:Extension") {
-			$this->read_processClassExtensions();
+			$this->read_processClassExtensions($reader);
 			next;
 		}
 		elsif ($name eq "ownedAttribute") {
-			$this->read_processOwnedAttribute();
+			$this->read_processOwnedAttribute($reader);
+			next;
+		}
+		elsif ($name eq "ownedOperation") {
+			$this->read_processOwnedOperation($reader);
 			next;
 		}
 		elsif ($name eq "ownedComment") {
-			$this->read_processClassComment();
+			$this->read_processClassComment($reader);
 			next;
 		}
 		elsif ($name eq "nestedClassifier") {
-			$this->read_processNestedClassifier();
+			$this->read_processNestedClassifier($reader);
 			next;
 		}
 		elsif ($name eq "generalization") {
-			$this->read_processClassGeneralization();
+			$this->read_processClassGeneralization($reader);
 			next;
 		}
 		else {
-			$this->read_unknownNode();
+			$this->read_unknownNode($reader);
 			next;
 		}
 	}
@@ -634,47 +689,43 @@ sub read_processClass
 sub read_processAssociationClass
 {
 	my $this		= shift;
+	my $main_reader		= shift;
+	my $reader		= $main_reader->getSubLeveler();
 
-	my $reader		= $this->{reader};
-	my $exit_depth		= $reader->depth();
-
-	my $association = $this->read_getOptionalAttr("association");
-	my $name = $this->read_getMandatoryAttr("name");
+	my $association = $main_reader->getOptionalAttr("association");
+	my $name = $main_reader->getMandatoryAttr("name");
 
 	if (defined $association && $name eq "") {
-		$this->read_skipNode();
+		$this->read_skipNode($reader);
 		return;
 	}
 
 	my $saved_context = $this->{read_context};
 	$this->{read_context} = dr::XmiParser::Class->new($this, "association");
 
-	for (;;) {
-		my ($type, $name, $depth) = $this->readNode()
-			or $this->read_doDie("unexpected end of XML");
-		last if ($depth == $exit_depth);
+	while (defined (my $name = $reader->readNode())) {
 		if ($name eq "xmi:Extension") {
-			$this->read_processClassExtensions();
+			$this->read_processClassExtensions($reader);
 			next;
 		}
 		elsif ($name eq "ownedAttribute") {
-			$this->read_processOwnedAttribute();
+			$this->read_processOwnedAttribute($reader);
 			next;
 		}
 		elsif ($name eq "ownedComment") {
-			$this->read_processClassComment();
+			$this->read_processClassComment($reader);
 			next;
 		}
 		elsif ($name eq "nestedClassifier") {
-			$this->read_processNestedClassifier();
+			$this->read_processNestedClassifier($reader);
 			next;
 		}
 		elsif ($name eq "memberEnd") {
-			$this->read_processClassMemberEnd();
+			$this->read_processClassMemberEnd($reader);
 			next;
 		}
 		else {
-			$this->read_unknownNode();
+			$this->read_unknownNode($reader);
 		}
 	}
 
@@ -689,37 +740,34 @@ sub read_processAssociationClass
 sub read_processNestedClassifier
 {
 	my $this		= shift;
+	my $main_reader		= shift;
 
-	return $this->read_processPackagedElement();
+	return $this->read_processPackagedElement($main_reader);
 }
 
 sub read_processClassExtensions
 {
 	my $this		= shift;
 
-	my $reader		= $this->{reader};
-	my $exit_depth		= $reader->depth;
+	my $reader		= shift->getSubLeveler();
 
 	my $saved_extender = $this->{read_extender};
 	$this->{read_extender} = $this->read_getMandatoryAttr("extender");
 
-	for (;;) {
-		my ($type, $name, $depth) = $this->readNode()
-			or $this->read_doDie("unexpected end of XML");
-		last if ($depth == $exit_depth);
+	while (defined (my $name = $reader->readNode())) {
 		if ($name eq "stereotype") {
-			$this->read_processClassExtensionStereotype();
+			$this->read_processClassExtensionStereotype($reader);
 			next;
 		}
 		elsif ($name eq "typedef") {
-			$this->read_processClassExtensionTypedef();
+			$this->read_processClassExtensionTypedef($reader);
 			next;
 		}
 		elsif ($name eq "taggedValue") {
-			$this->read_processClassTaggedValue();
+			$this->read_processClassTaggedValue($reader);
 		}
 		else {
-			$this->read_unknownNode();
+			$this->read_unknownNode($reader);
 		}
 	}
 
@@ -729,41 +777,36 @@ sub read_processClassExtensions
 sub read_processClassTaggedValue
 {
 	my $this		= shift;
+	my $main_reader		= shift;
 
-	$this->read_processGenericTagged($this->{read_context}->{comment});
+	$this->read_processGenericTagged($main_reader, $this->{read_context}->{comment});
 }
 
 sub read_processClassExtensionStereotype
 {
 	my $this		= shift;
-
-	my $reader		= $this->{reader};
+	my $main_reader		= shift;
 
 	$this->{read_context}->{stereotype} = $this->read_getMandatoryAttr("name");
 
-	$this->read_needNodeEnd();
+	$this->read_needNodeEnd($main_reader);
 }
 
 sub read_processClassExtensionTypedef
 {
 	my $this		= shift;
-
-	my $reader		= $this->{reader};
-	my $exit_depth		= $reader->depth;
+	my $main_reader		= shift;
+	my $reader		= $main_reader->getSubLeveler();
 
 	$this->{read_context}->{type} = "typedef";
 	$this->{read_context}->{typedef} = { type_type => undef, type_primitive => undef, type_xid => undef };
 
-	for (;;) {
-		my ($type, $name, $depth) = $this->readNode()
-			or $this->read_doDie("unexpected end of XML");
-		last if ($depth == $exit_depth);
-
+	while (defined (my $name = $reader->readNode())) {
 		if ($name eq "base") {
-			$this->read_processClassExtensionTypedefBase();
+			$this->read_processClassExtensionTypedefBase($reader);
 		}
 		else {
-			$this->read_unknownNode();
+			$this->read_unknownNode($reader);
 		}
 	}
 
@@ -773,8 +816,8 @@ sub read_processClassExtensionTypedef
 sub read_processClassExtensionTypedefBase
 {
 	my $this		= shift;
-
-	my $reader		= $this->{reader};
+	my $main_reader		= shift;
+	my $reader		= $main_reader->getSubLeveler();
 
 	my $type_type = $this->read_getMandatoryAttr("xmi:type");
 	if ($type_type eq "uml:PrimitiveType") {
@@ -798,8 +841,7 @@ sub read_processClassExtensionTypedefBase
 sub read_processClassComment
 {
 	my $this		= shift;
-
-	my $reader		= $this->{reader};
+	my $main_reader		= shift;
 
 	eval {
 		$this->{read_context}->{comment}->processComment($this->read_getMandatoryAttr("body"));
@@ -807,40 +849,38 @@ sub read_processClassComment
 	}
 		or $this->read_doDie($@);
 
-	$this->read_needNodeEnd();
+	$this->read_needNodeEnd($main_reader);
 }
 
 sub read_processClassGeneralization
 {
 	my $this		= shift;
+	my $main_reader		= shift;
 
-	my $reader		= $this->{reader};
+	$this->{read_context}->{ancestor_xid} = $main_reader->getMandatoryAttr("general");
 
-	$this->{read_context}->{ancestor_xid} = $this->read_getMandatoryAttr("general");
-
-	$this->read_needNodeEnd();
+	$this->read_needNodeEnd($main_reader);
 }
 
 sub read_processClassMemberEnd
 {
 	my $this		= shift;
+	my $main_reader		= shift;
 
-	$this->read_skipNode();
+	$this->read_skipNode($main_reader);
 }
 
 sub read_processOwnedAttribute
 {
 	my $this		= shift;
-
-	my $reader		= $this->{reader};
-	my $exit_depth		= $reader->depth();
+	my $reader		= shift->getSubLeveler();
 
 	my $association_xid = $this->read_getOptionalAttr("association");
 	my $aggregation = $this->read_getOptionalAttr("aggregation");
 	my $name = $this->read_getMandatoryAttr("name");
 
 	if (defined $association_xid && $name eq "") {
-		$this->read_skipNode();
+		$this->read_skipNode($reader);
 		return;
 	}
 
@@ -856,36 +896,33 @@ sub read_processOwnedAttribute
 		comment			=> dr::XmiParser::Comment->new(),
 	};
 
-	for (;;) {
-		my ($type, $name, $depth) = $this->readNode()
-			or $this->read_doDie("unexpected end of XML");
-		last if ($depth == $exit_depth);
+	while (defined (my $name = $reader->readNode())) {
 		if ($name eq "type") {
-			$this->read_processOwnedAttributeType();
+			$this->read_processOwnedAttributeType($reader);
 			next;
 		}
 		if ($name eq "defaultValue") {
-			$this->read_processOwnedAttributeDefaultValue();
+			$this->read_processOwnedAttributeDefaultValue($reader);
 			next;
 		}
 		elsif ($name eq "ownedComment") {
-			$this->read_processOwnedAttributeComment();
+			$this->read_processOwnedAttributeComment($reader);
 			next;
 		}
 		elsif ($name eq "lowerValue") {
-			$this->read_processOwnedAttributeLowerValue();
+			$this->read_processOwnedAttributeLowerValue($reader);
 			next;
 		}
 		elsif ($name eq "upperValue") {
-			$this->read_processOwnedAttributeUpperValue();
+			$this->read_processOwnedAttributeUpperValue($reader);
 			next;
 		}
 		elsif ($name eq "xmi:Extension") {
-			$this->read_processOwnedAttributeExtension();
+			$this->read_processOwnedAttributeExtension($reader);
 			next;
 		}
 		else {
-			$this->read_unknownNode();
+			$this->read_unknownNode($reader);
 		}
 	}
 
@@ -923,8 +960,7 @@ sub read_processOwnedAttribute
 sub read_processOwnedAttributeType
 {
 	my $this		= shift;
-
-	my $reader		= $this->{reader};
+	my $main_reader		= shift;
 
 	my $type_type = $this->read_getMandatoryAttr("xmi:type");
 	if ($type_type eq "uml:PrimitiveType") {
@@ -944,25 +980,23 @@ sub read_processOwnedAttributeType
 		$this->read_doDie("unknown type type: $type_type");
 	}
 
-	$this->read_needNodeEnd();
+	$this->read_needNodeEnd($main_reader);
 }
 
 sub read_processOwnedAttributeDefaultValue
 {
 	my $this		= shift;
-
-	my $reader		= $this->{reader};
+	my $main_reader		= shift;
 
 	$this->{read_attr}->{default_value} = $this->read_getMandatoryAttr("value");
 
-	$this->read_needNodeEnd();
+	$this->read_needNodeEnd($main_reader);
 }
 
 sub read_processOwnedAttributeComment
 {
 	my $this		= shift;
-
-	my $reader		= $this->{reader};
+	my $main_reader		= shift;
 
 	eval {
 		$this->{read_attr}->{comment}->processComment($this->read_getMandatoryAttr("body"));
@@ -970,47 +1004,82 @@ sub read_processOwnedAttributeComment
 	}
 		or $this->read_doDie($@);
 
-	$this->read_needNodeEnd();
+	$this->read_needNodeEnd($main_reader);
 }
 
 sub read_processOwnedAttributeLowerValue
 {
 	my $this		= shift;
-
-	my $reader		= $this->{reader};
+	my $main_reader		= shift;
 
 	$this->{read_attr}->{lower_value} = $this->read_getMandatoryAttr("value");
 
-	$this->read_needNodeEnd();
+	$this->read_needNodeEnd($main_reader);
 }
 
 sub read_processOwnedAttributeUpperValue
 {
 	my $this		= shift;
-
-	my $reader		= $this->{reader};
+	my $main_reader		= shift;
 
 	$this->{read_attr}->{upper_value} = $this->read_getMandatoryAttr("value");
 
-	$this->read_needNodeEnd();
+	$this->read_needNodeEnd($main_reader);
 }
 
 sub read_processOwnedAttributeExtension
 {
 	my $this		= shift;
+	my $reader		= shift->getSubLeveler();
 
-	my $reader		= $this->{reader};
-	my $exit_depth		= $reader->depth();
-
-	for (;;) {
-		my ($type, $name, $depth) = $this->readNode()
-			or $this->read_doDie("unexpected end of XML");
-		last if ($depth == $exit_depth);
+	while (defined (my $name = $reader->readNode())) {
 		if ($name eq "taggedValue") {
-			$this->read_processGenericTagged($this->{read_attr}->{comment});
+			$this->read_processGenericTagged($reader, $this->{read_attr}->{comment});
 		}
 		else {
-			$this->read_unknownNode();
+			$this->read_unknownNode($reader);
+		}
+	}
+}
+
+sub read_processOwnedOperation
+{
+	my $this		= shift;
+	my $main_reader		= shift;
+	my $reader		= $main_reader->getSubLeveler();
+
+	$this->{read_oper} = {
+		name			=> $main_reader->getMandatoryAttr("name"),
+		classify		=> { dr::Util::hashTrue(
+			static			=> defvalue($main_reader->getOptionalAttr("isStatic"), "false") eq "true",
+			abstract		=> defvalue($main_reader->getOptionalAttr("isAbstract"), "false") eq "true",
+		)},
+		comment			=> dr::XmiParser::Comment->new(),
+	};
+
+	while (defined (my $name = $reader->readNode())) {
+		if ($name eq "xmi:Extension") {
+			$this->read_processOwnedOperationExtension($reader);
+		}
+		else {
+			$this->read_unknownNode($reader);
+		}
+	}
+
+	$this->{read_context}->addOperation($this->{read_oper});
+}
+
+sub read_processOwnedOperationExtension
+{
+	my $this		= shift;
+	my $reader		= shift->getSubLeveler();
+
+	while (defined (my $name = $reader->readNode())) {
+		if ($name eq "taggedValue") {
+			$this->read_processGenericTagged($reader, $this->{read_oper}->{comment});
+		}
+		else {
+			$this->read_unknownNode($reader);
 		}
 	}
 }
@@ -1018,35 +1087,28 @@ sub read_processOwnedAttributeExtension
 sub read_processEnum
 {
 	my $this		= shift;
-
-	my $reader		= $this->{reader};
-	my $exit_depth		= $reader->depth();
-
-	my $name = $this->read_getMandatoryAttr("name");
+	my $reader		= shift->getSubLeveler();
 
 	my $saved_context = $this->{read_context};
 	$this->{read_context} = dr::XmiParser::Class->new($this, "enum");
 	$this->{read_context}->{stereotype} = "enum";
 	$this->{read_context}->{literal_list} = [];
 
-	for (;;) {
-		my ($type, $name, $depth) = $this->readNode()
-			or $this->read_doDie("unexpected end of XML");
-		last if ($depth == $exit_depth);
+	while (defined (my $name = $reader->readNode())) {
 		if ($name eq "ownedComment") {
-			$this->read_processGenericComment($this->{read_context}->{comment});
+			$this->read_processGenericComment($reader, $this->{read_context}->{comment});
 			next;
 		}
 		elsif ($name eq "xmi:Extension") {
-			$this->read_processEnumExtension();
+			$this->read_processEnumExtension($reader);
 			next;
 		}
 		elsif ($name eq "ownedLiteral") {
-			$this->read_processEnumLiteral();
+			$this->read_processEnumLiteral($reader);
 			next;
 		}
 		else {
-			$this->read_unknownNode();
+			$this->read_unknownNode($reader);
 		}
 	}
 
@@ -1059,23 +1121,18 @@ sub read_processEnum
 sub read_processEnumExtension
 {
 	my $this		= shift;
+	my $reader		= shift->getSubLeveler();
 
-	my $reader		= $this->{reader};
-	my $exit_depth		= $reader->depth();
-
-	for (;;) {
-		my ($type, $name, $depth) = $this->readNode()
-			or $this->read_doDie("unexpected end of XML");
-		last if ($depth == $exit_depth);
+	while (defined (my $name = $reader->readNode())) {
 		if ($name eq "stereotype") {
-			$this->read_processEnumExtensionStereotype();
+			$this->read_processEnumExtensionStereotype($reader);
 		}
 		elsif ($name eq "taggedValue") {
-			$this->read_processGenericTagged($this->{read_context}->{comment});
+			$this->read_processGenericTagged($reader, $this->{read_context}->{comment});
 			next;
 		}
 		else {
-			$this->read_unknownNode();
+			$this->read_unknownNode($reader);
 		}
 	}
 }
@@ -1083,18 +1140,17 @@ sub read_processEnumExtension
 sub read_processEnumExtensionStereotype
 {
 	my $this		= shift;
+	my $main_reader		= shift;
 
-	$this->read_doDie("expected stereotype enum for enum") unless ($this->read_getMandatoryAttr("name") eq "enum");
+	$this->read_doDie("expected stereotype enum for enum") unless ($main_reader->getMandatoryAttr("name") eq "enum");
 
-	$this->read_needNodeEnd();
+	$this->read_needNodeEnd($main_reader);
 }
 
 sub read_processEnumLiteral
 {
 	my $this		= shift;
-
-	my $reader		= $this->{reader};
-	my $exit_depth		= $reader->depth();
+	my $reader		= shift->getSubLeveler();
 
 	my $literal = {
 		name			=> $this->read_getMandatoryAttr("name"),
@@ -1103,23 +1159,20 @@ sub read_processEnumLiteral
 		default			=> undef,
 	};
 
-	for (;;) {
-		my ($type, $name, $depth) = $this->readNode()
-			or $this->read_doDie("unexpected end of XML");
-		last if ($depth == $exit_depth);
+	while (defined (my $name = $reader->readNode())) {
 		if ($name eq "ownedComment") {
-			$this->read_processGenericComment($literal->{comment});
+			$this->read_processGenericComment($reader, $literal->{comment});
 			next;
 		}
 		elsif ($name eq "xmi:Extension") {
-			$this->read_processEnumLiteralExtension($literal);
+			$this->read_processEnumLiteralExtension($reader, $literal);
 		}
 		elsif ($name eq "defaultValue") {
-			$this->read_processEnumLiteralDefault(\$literal->{default});
+			$this->read_processEnumLiteralDefault($reader, \$literal->{default});
 			next;
 		}
 		else {
-			$this->read_unknownNode();
+			$this->read_unknownNode($reader);
 		}
 	}
 
@@ -1129,31 +1182,27 @@ sub read_processEnumLiteral
 sub read_processEnumLiteralDefault
 {
 	my $this		= shift;
+	my $main_reader		= shift;
 	my $default		= shift;
 
-	$$default = $this->read_getMandatoryAttr("value");
+	$$default = $main_reader->getMandatoryAttr("value");
 
-	$this->read_needNodeEnd();
+	$this->read_needNodeEnd($main_reader);
 }
 
 sub read_processEnumLiteralExtension
 {
 	my $this		= shift;
+	my $reader		= shift->getSubLeveler();
 	my $literal		= shift;
 
-	my $reader		= $this->{reader};
-	my $exit_depth		= $reader->depth();
-
-	for (;;) {
-		my ($type, $name, $depth) = $this->readNode()
-			or $this->read_doDie("unexpected end of XML");
-		last if ($depth == $exit_depth);
+	while (defined (my $name = $reader->readNode())) {
 		if ($name eq "taggedValue") {
-			$this->read_processGenericTagged($literal->{comment});
+			$this->read_processGenericTagged($reader, $literal->{comment});
 			next;
 		}
 		else {
-			$this->read_unknownNode();
+			$this->read_unknownNode($reader);
 		}
 	}
 }
@@ -1161,31 +1210,32 @@ sub read_processEnumLiteralExtension
 sub read_processArtifact
 {
 	my $this		= shift;
+	my $main_reader		= shift;
 
-	$this->read_skipNode();
+	$this->read_skipNode($main_reader);
 }
 
 sub read_processAssociation
 {
 	my $this		= shift;
+	my $main_reader		= shift;
 
-	$this->read_skipNode();
+	$this->read_skipNode($main_reader);
 }
 
 sub read_processDataType
 {
 	my $this		= shift;
-
-	my $reader		= $this->{reader};
+	my $main_reader		= shift;
 
 	my $datatype = {
-		name			=> $this->read_getMandatoryAttr("name"),
-		xmi_id			=> $this->read_getMandatoryAttr("xmi:id"),
+		name			=> $main_reader->getMandatoryAttr("name"),
+		xmi_id			=> $main_reader->getMandatoryAttr("xmi:id"),
 	};
 
 	push(@{$this->{datatypes}}, $datatype);
 
-	$this->read_needNodeEnd();
+	$this->read_needNodeEnd($main_reader);
 }
 
 sub postprocRegisterDatatype

@@ -416,6 +416,7 @@ sub new
 	my $this = $class->SUPER::new($owner, $basic);
 
 	$this->{attr_list} = [];
+	$this->{action_list} = [];
 
 	return $this;
 }
@@ -464,6 +465,7 @@ our %CLASS_MAPPER = (
 	attr			=> \&readClassAttr,
 	assoc			=> \&readClassAssoc,
 	compos			=> \&readClassCompos,
+	action			=> \&readClassAction,
 );
 
 sub load
@@ -515,6 +517,19 @@ sub readClassCompos
 	$compos->load($base->getSubLeveler());
 
 	push(@{$this->{attr_list}}, $compos);
+}
+
+sub readClassAction
+{
+	my $this		= shift;
+	my $base		= shift;
+	my $key			= shift;
+	my $val			= shift;
+
+	my $action = dr::ModelStore::Action->new($this, { stype => "action", name => $val });
+	$action->load($base->getSubLeveler());
+
+	push(@{$this->{action_list}}, $action);
 }
 
 
@@ -812,6 +827,17 @@ sub getDrTag
 		or $this->dieContext($@);
 }
 
+sub getDrTagValue
+{
+	my $this		= shift;
+	my $tag			= shift;
+
+	eval {
+		return $this->{drtag}->getTagValue($tag);
+	}
+		or $this->dieContext($@);
+}
+
 sub checkDrTagValue
 {
 	my $this		= shift;
@@ -1055,6 +1081,92 @@ use strict;
 use warnings;
 
 use base "dr::ModelStore::AssocBase";
+
+
+package dr::ModelStore::ActionBase;
+
+use strict;
+use warnings;
+
+sub new
+{
+	my $ref			= shift;
+	my $class		= ref($ref) || $ref;
+
+	my $owner		= shift;
+	my $basic		= shift;
+
+	my $this = bless {
+		owner			=> $owner,
+		name			=> $basic->{name},
+		stype			=> $basic->{stype},
+		comment			=> [],
+		drtag			=> dr::ModelStore::Drtag->new(),
+	}, $class;
+
+	Scalar::Util::weaken($this->{owner});
+
+	return $this;
+}
+
+sub dieContext
+{
+	my $this		= shift;
+	my $msg			= shift;
+	my $cause		= shift;
+
+	dr::Util::doDie(((defined $cause)) ? "$this->{file_context}: $msg\n$cause" : "$this->{file_context}: $msg");
+}
+
+our %MODEL_ACTIONBASE_MAPPER = (
+	drtag			=> \&readDrtag,
+	comment			=> \&readComment,
+);
+
+sub postLoad
+{
+	my $this		= shift;
+}
+
+sub load
+{
+	my $this		= shift;
+	my $reader		= shift;
+
+	$this->{file_context} = $reader->getContext();
+
+	dr::ModelStore::Util::genericLoad($this, $reader, \%MODEL_ACTIONBASE_MAPPER);
+
+	$this->postLoad();
+}
+
+sub readComment
+{
+	my $this		= shift;
+	my $base		= shift;
+	my $key			= shift;
+	my $val			= shift;
+
+	push(@{$this->{comment}}, $val);
+}
+
+sub readDrtag
+{
+	my $this		= shift;
+	my $base		= shift;
+	my $key			= shift;
+	my $val			= shift;
+
+	$this->{drtag}->addTag($val);
+}
+
+
+package dr::ModelStore::Action;
+
+use strict;
+use warnings;
+
+use base "dr::ModelStore::ActionBase";
 
 
 package dr::ModelStore;

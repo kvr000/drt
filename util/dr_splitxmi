@@ -153,6 +153,10 @@ sub genClass
 			$fd->print("\t".formatPair("default", $attr->{default_value})) if (defined $attr->{default_value});
 			$fd->print(formatComment(1, $attr->{comment}));
 		}
+		foreach my $oper (map({ m/^dr\.action\.(.*)$/ ? $1 : () } @{$class->{oper_list}})) {
+			$fd->print(formatPair("action", $oper->{name}));
+			$fd->print("\t".formatPair("classify", join(",", keys %{$oper->{classify}})));
+		}
 	}
 	else {
 		die "unknown type for class ".$xmi->getFullName($class).": $class->{type}";
