@@ -268,6 +268,13 @@ sub printClass($$)
 		}
 	}
 
+	if (@{$cld->{friends}}) {
+		printIndented($hxx, $level, "\npublic:\n");
+		foreach my $friend (@{$cld->{friends}}) {
+			printIndented($hxx, $level, sprintf("\t%s;\n", formatMethodDecl("friend", $friend)));
+		}
+	}
+
 	printIndented($hxx, $level, sprintf("};\n"));
 }
 
@@ -278,9 +285,10 @@ my $class;
 my $class_last;
 my $ancestor;
 my @ifaces;
+my $cont = "";
 my @methods;
 my @ats;
-my $cont = "";
+my @friends;
 
 my $errors = 0;
 
@@ -303,6 +311,7 @@ MAIN: while (<$cxx>) {
 					cont		=> $cont,
 					ats		=> [ @ats ],
 					methods		=> [ @methods ],
+					friends		=> [ @friends ],
 				});
 			$type = "object";
 			undef $class;
@@ -311,9 +320,10 @@ MAIN: while (<$cxx>) {
 			$cont = "";
 			@ats = ();
 			@methods = ();
+			@friends = ();
 		}
 		else {
-			if (defined $ancestor || $cont ne "" || @ifaces || @ats || @methods) {
+			if (defined $ancestor || $cont ne "" || @ifaces || @ats || @methods || @friends) {
 				STDERR->print("no class defined while some of the attributes are"), $errors++;
 			}
 		}
@@ -355,6 +365,9 @@ MAIN: while (<$cxx>) {
 				}
 				elsif ($key eq "am") {
 					push(@ats, "-$val");
+				}
+				elsif ($key eq "friend") {
+					push(@friends, $val);
 				}
 				elsif ($key eq "co") {
 					if ($val eq "{") {
@@ -454,10 +467,11 @@ if (defined $class) {
 			cont		=> $cont,
 			ats		=> [ @ats ],
 			methods		=> [ @methods ],
+			friends		=> [ @friends ],
 		});
 }
 else {
-	if (defined $ancestor || $cont ne "" || @ifaces || @ats || @methods) {
+	if (defined $ancestor || $cont ne "" || @ifaces || @ats || @methods || @friends) {
 		STDERR->print("no class defined while some of the attributes are"), $errors++;
 	}
 }
@@ -473,10 +487,10 @@ foreach my $inc (@includes) {
 }
 $hxx->printf("\n%s\n", nsToMacroBegin($ns));
 if (@ns_use) {
+	$hxx->printf("\n");
 	foreach my $use (@ns_use) {
 		$hxx->printf("%s_USE;\n", nsToMacro($use));
 	}
-	$hxx->printf("\n");
 }
 $hxx->printf("\n\n");
 

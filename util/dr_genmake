@@ -285,7 +285,7 @@ sub getConfig($$$)
 	}
 
 	foreach my $line (@$addopt) {
-		if ($line =~ m/^(\w+):(.*?)\s*$/) {
+		if ($line =~ m/^(\w+):\s*(.*?)\s*$/) {
 			eval { addConfig($def, $1, $2); 1; }
 				or die "command_line:0:"." $@";
 		}
@@ -957,8 +957,9 @@ sub createOutput
 	# automatic header generation
 	$mf->print(genParallelAction("gh", "lgh", $vars)."\n");
 	if (!$config->{make}->{noautogh}) {
-		$mf->print("include Make_gh\n\n");
+		$mf->print("include Make_gh\n");
 	}
+	$mf->print("\n");
 
 	$mf->print("targ_pre:$targ_pre\n");
 	$mf->print("targ_init:$targ_init\n");
