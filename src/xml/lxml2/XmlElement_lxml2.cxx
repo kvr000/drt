@@ -58,7 +58,6 @@ DR_XML_NS_BEGIN
 
 /*drt
  * class:	XmlElement_lxml2
- * type:	object
  * ancestor:	XmlElement
  *
  * at:	Ref<XmlDoc_lxml2>		owner;
@@ -73,7 +72,7 @@ XmlElement_lxml2::XmlElement_lxml2(XmlDoc_lxml2 *owner_, xmlElementPtr element_)
 {
 }
 
-DR_MET(protected)
+DR_MET(protected virtual)
 XmlElement_lxml2::~XmlElement_lxml2()
 {
 }
@@ -107,6 +106,17 @@ String XmlElement_lxml2::checkAttribute(const String &name)
 			return (const char *)a->children->content;
 	}
 	return Null();
+}
+
+DR_MET(public virtual)
+XmlElement *XmlElement_lxml2::checkSubElement(const String &name)
+{
+	BString name8(name.utf8());
+	for (xmlNodePtr child = element->children; child; child = child->next) {
+		if (child->type == XML_ELEMENT_NODE && xmlStrEqual(child->name, (const xmlChar *)name8.toStr()))
+			return new XmlElement_lxml2(owner, (xmlElementPtr)child);
+	}
+	return NULL;
 }
 
 

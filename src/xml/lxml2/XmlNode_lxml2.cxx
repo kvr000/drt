@@ -33,23 +33,44 @@
  * @license	http://www.gnu.org/licenses/lgpl.txt GNU Lesser General Public License v3
  **/
 
-#include <dr/Const.hxx>
+/*drt
+ * include:	libxml/parser.h
+ * include:	libxml/xmlreader.h
+ * include:	libxml/xpath.h
+ * include:	libxml/tree.h
+ * 
+ * include:	dr/xml/XmlDoc_lxml2.hxx
+ *
+ * include:	dr/xml/XmlNode.hxx
+ *
+ * ns:		dr::xml
+ */
 
-#include <dr/xml/XmlNode_lxml2.hxx>
+#include "_gen/XmlNode_lxml2-all.hxx"
 
 DR_XML_NS_BEGIN
 
 
-DR_OBJECT_DEF(DR_XML_NS_STR, XmlNode_lxml2, XmlNode);
-DR_OBJECT_IMPL_SIMPLE(XmlNode_lxml2);
+/*drt
+ * class:	XmlNode_lxml2
+ * ancestor:	XmlNode
+ *
+ * at:	Ref<XmlDoc_lxml2>		owner;
+ * at:	xmlNodePtr			node;
+ *
+ * doc:{
+ * 	Xml Node - lxm2 implementation
+ * }doc
+ */
 
-
+DR_MET(public)
 XmlNode_lxml2::XmlNode_lxml2(XmlDoc_lxml2 *owner_, xmlNodePtr node_):
 	owner(owner_, true),
 	node(node_)
 {
 }
 
+DR_MET(protected virtual)
 XmlNode_lxml2::~XmlNode_lxml2()
 {
 }

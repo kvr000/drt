@@ -33,15 +33,46 @@
  * @license	http://www.gnu.org/licenses/lgpl.txt GNU Lesser General Public License v3
  **/
 
-#include <dr/Const.hxx>
+/*drt
+ * include: 	dr/xml/def_xml.hxx
+ * include: 	dr/Object.hxx
+ *
+ * ns:		dr::xml
+ */
 
-#include <dr/xml/XmlElement.hxx>
+#include "_gen/XmlElement-all.hxx"
 
 DR_XML_NS_BEGIN
 
 
-DR_OBJECT_DEF(DR_XML_NS_STR, XmlElement, Object);
-DR_OBJECT_IMPL_SIMPLE(XmlElement);
+/*drt
+ * class:	XmlElement
+ * ancestor:	dr::Object
+ *
+ * doc:{
+ * 	Base for all XML XmlElement implementations
+ * }doc
+ */
+
+DR_MET(public inline)
+//XmlElement::XmlElement()
+//{}
+
+DR_MET(public inline)
+//XmlElement::~XmlElement()
+//{}
+
+DR_MET(public abstract)
+//String XmlElement::getTexts()
+
+DR_MET(public abstract)
+//String XmlElement::getAttribute(const String &attr)
+
+DR_MET(public abstract)
+//String XmlElement::checkAttribute(const String &attr)
+
+DR_MET(public abstract)
+//XmlElement *XmlElement::checkSubElement(const String &name)
 
 
 DR_XML_NS_END

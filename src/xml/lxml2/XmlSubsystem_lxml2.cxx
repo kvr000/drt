@@ -33,39 +33,54 @@
  * @license	http://www.gnu.org/licenses/lgpl.txt GNU Lesser General Public License v3
  **/
 
-#include <dr/Const.hxx>
+/*drt
+ * include:	dr/xml/XmlSubsystem.hxx
+ *
+ * ns:		dr::xml
+ */
+
 
 #include <dr/io/File.hxx>
 
 #include <dr/xml/XmlDoc_lxml2.hxx>
 
-#include <dr/xml/XmlSubsystem_lxml2.hxx>
+#include "_gen/XmlSubsystem_lxml2-all.hxx"
 
 DR_XML_NS_BEGIN
 
 
-DR_OBJECT_DEF(DR_XML_NS_STR, XmlSubsystem_lxml2, XmlSubsystem);
-DR_OBJECT_IMPL_SIMPLE(XmlSubsystem_lxml2);
+/*drt
+ * class:	XmlSubsystem_lxml2
+ * ancestor:	XmlSubsystem
+ *
+ * doc:{
+ * 	Xml Subsystem - lxm2 implementation
+ * }doc
+ */
 
-
+DR_MET(public virtual)
 XmlDoc *XmlSubsystem_lxml2::createDocFromFile(const String &file)
 {
 	return XmlDoc_lxml2::fromFile(file);
 }
 
+DR_MET(public virtual)
 XmlDoc *XmlSubsystem_lxml2::createDocFromString(const String &str)
 {
 	return XmlDoc_lxml2::fromString(str);
 }
 
+DR_MET(public virtual)
 XmlDoc *XmlSubsystem_lxml2::createDocFromBlob(const Blob &str)
 {
 	return XmlDoc_lxml2::fromBlob(str);
 }
 
+DR_MET(public virtual)
 size_t XmlSubsystem_lxml2::createMultiDocFromFile(RArray<XmlDoc> *docs, const String &path)
 {
 	return XmlDoc_lxml2::multiDocFromFile(docs, path);
 }
+
 
 DR_XML_NS_END

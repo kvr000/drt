@@ -33,8 +33,19 @@
  * @license	http://www.gnu.org/licenses/lgpl.txt GNU Lesser General Public License v3
  **/
 
+/*drt
+ * include:	libxml/parser.h
+ * include:	libxml/xmlreader.h
+ * include:	libxml/xpath.h
+ * 
+ * include:	dr/Array.hxx
+ *
+ * include:	dr/xml/XmlDoc.hxx
+ *
+ * ns:		dr::xml
+ */
+
 #include <dr/x_kw.hxx>
-#include <dr/Const.hxx>
 
 #include <dr/io/File.hxx>
 
@@ -42,21 +53,40 @@
 #include <dr/xml/XmlNode_lxml2.hxx>
 #include <dr/xml/XmlElement_lxml2.hxx>
 
-#include <dr/xml/XmlDoc_lxml2.hxx>
+#include "_gen/XmlDoc_lxml2-all.hxx"
 
 DR_XML_NS_BEGIN
 
+/*drt
+ * class:	XmlDoc_lxml2
+ * ancestor:	XmlDoc
+ *
+ * at:	xmlDocPtr			doc;
+ * at:	xmlXPathContextPtr		xpath;
+ *
+ * doc:{
+ * 	Xml Document - lxm2 implementation
+ * }doc
+ */
 
-DR_OBJECT_DEF(DR_XML_NS_STR, XmlDoc_lxml2, XmlDoc);
-DR_OBJECT_IMPL_SIMPLE(XmlDoc_lxml2);
 
-
+DR_MET(public)
 XmlDoc_lxml2::XmlDoc_lxml2():
 	doc(NULL),
 	xpath(NULL)
 {
 }
 
+DR_MET(protected virtual)
+XmlDoc_lxml2::~XmlDoc_lxml2()
+{
+	if (xpath)
+		xmlXPathFreeContext(xpath);
+	if (doc)
+		xmlFreeDoc(doc);
+}
+
+DR_MET(public static)
 XmlDoc_lxml2 *XmlDoc_lxml2::fromFile(const String &file)
 {
 	ERef<XmlDoc_lxml2> this_(new XmlDoc_lxml2());
@@ -69,6 +99,7 @@ XmlDoc_lxml2 *XmlDoc_lxml2::fromFile(const String &file)
 	return this_.getAndNull();
 }
 
+DR_MET(public static)
 XmlDoc_lxml2 *XmlDoc_lxml2::fromString(const String &str)
 {
 	ERef<XmlDoc_lxml2> this_(new XmlDoc_lxml2());
@@ -81,6 +112,7 @@ XmlDoc_lxml2 *XmlDoc_lxml2::fromString(const String &str)
 	return this_.getAndNull();
 }
 
+DR_MET(public static)
 XmlDoc_lxml2 *XmlDoc_lxml2::fromBlob(const Blob &str)
 {
 	ERef<XmlDoc_lxml2> this_(new XmlDoc_lxml2());
@@ -93,6 +125,7 @@ XmlDoc_lxml2 *XmlDoc_lxml2::fromBlob(const Blob &str)
 	return this_.getAndNull();
 }
 
+DR_MET(public static)
 size_t XmlDoc_lxml2::multiDocFromFile(RArray<XmlDoc> *docs, const String &path)
 {
 	Blob buffer;
@@ -148,14 +181,7 @@ more_read:
 	return docs->count();
 }
 
-XmlDoc_lxml2::~XmlDoc_lxml2()
-{
-	if (xpath)
-		xmlXPathFreeContext(xpath);
-	if (doc)
-		xmlFreeDoc(doc);
-}
-
+DR_MET(public virtual)
 XmlNode *XmlDoc_lxml2::findPathNode(const String &path)
 {
 	xmlXPathObjectPtr pobj;
@@ -175,6 +201,7 @@ XmlNode *XmlDoc_lxml2::findPathNode(const String &path)
 	return new XmlNode_lxml2(this, n);
 }
 
+DR_MET(public virtual)
 XmlElement *XmlDoc_lxml2::findPathElement(const String &path)
 {
 	xmlXPathObjectPtr pobj;
@@ -192,11 +219,35 @@ XmlElement *XmlDoc_lxml2::findPathElement(const String &path)
 	xmlNodePtr n = pobj->nodesetval->nodeTab[0];
 	xmlXPathFreeObject(pobj);
 	if (n->type != XML_ELEMENT_NODE) {
-		xthrownew(XmlException(String("xpath not element: ")+path));
+		xthrownew(XmlException(String("xpath not an element: ")+path));
 	}
 	return new XmlElement_lxml2(this, (xmlElementPtr)n);
 }
 
+DR_MET(public virtual)
+XmlElement *XmlDoc_lxml2::checkPathElement(const String &path)
+{
+	xmlXPathObjectPtr pobj;
+	if (!(pobj = xmlXPathEval((xmlChar *)path.utf8().toStr(), xpath))) {
+		xthrownew(XmlException(String("xpath: ")+path));
+	}
+	if (pobj->type != XPATH_NODESET) {
+		xmlXPathFreeObject(pobj);
+		xthrownew(XmlException(String("xpath not nodeset: ")+path));
+	}
+	if (pobj->nodesetval->nodeNr == 0) {
+		xmlXPathFreeObject(pobj);
+		return NULL;
+	}
+	xmlNodePtr n = pobj->nodesetval->nodeTab[0];
+	xmlXPathFreeObject(pobj);
+	if (n->type != XML_ELEMENT_NODE) {
+		xthrownew(XmlException(String("xpath not an element: ")+path));
+	}
+	return new XmlElement_lxml2(this, (xmlElementPtr)n);
+}
+
+DR_MET(public virtual)
 size_t XmlDoc_lxml2::execPathElements(const String &path, const Eslot1<void, XmlElement *> &exec)
 {
 	size_t i;

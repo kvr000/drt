@@ -33,24 +33,35 @@
  * @license	http://www.gnu.org/licenses/lgpl.txt GNU Lesser General Public License v3
  **/
 
-#include <dr/Const.hxx>
+/*drt
+ * include: 	dr/xml/def_xml.hxx
+ *
+ * include:	dr/Object.hxx
+ *
+ * ns:		dr::xml
+ */
 
-#include <dr/xml/XmlNode.hxx>
+#include "_gen/XmlNode-all.hxx"
 
 DR_XML_NS_BEGIN
 
 
-DR_OBJECT_DEF(DR_XML_NS_STR, XmlNode, Object);
-DR_OBJECT_IMPL_SIMPLE(XmlNode);
+/*drt
+ * class:	XmlNode
+ * ancestor:	dr::Object
+ *
+ * doc:{
+ * 	Base for all XML Node implementations
+ * }doc
+ */
 
+DR_MET(public inline)
+//XmlNode::XmlNode()
+//{}
 
-XmlNode::XmlNode()
-{
-}
-
-XmlNode::~XmlNode()
-{
-}
+DR_MET(public inline)
+//XmlNode::~XmlNode()
+//{}
 
 
 DR_XML_NS_END

@@ -33,15 +33,47 @@
  * @license	http://www.gnu.org/licenses/lgpl.txt GNU Lesser General Public License v3
  **/
 
-#include <dr/Const.hxx>
+/*drt
+ * include: 	dr/xml/def_xml.hxx
+ * include: 	dr/Object.hxx
+ * include:	dr/emits.hxx
+ *
+ * ns:		dr::xml
+ *
+ * forward:	class XmlNode;
+ * forward:	class XmlElement;
+ */
 
-#include <dr/xml/XmlDoc.hxx>
+#include "_gen/XmlDoc-all.hxx"
 
 DR_XML_NS_BEGIN
 
 
-DR_OBJECT_DEF(DR_XML_NS_STR, XmlDoc, Object);
-DR_OBJECT_IMPL_SIMPLE(XmlDoc);
+/*drt
+ * class:	XmlDoc
+ * ancestor:	dr::Object
+ *
+ * doc:{
+ * 	Base for all XML Documents implementations
+ * }doc
+ */
+
+DR_MET(public inline)
+//XmlDoc::XmlDoc()
+//{}
+
+DR_MET(public virtual inline)
+//XmlDoc::~XmlDoc()
+//{}
+
+DR_MET(public abstract)
+//XmlNode *XmlDoc::findPathNode(const String &path)
+
+DR_MET(public abstract)
+//XmlElement *XmlDoc::findPathElement(const String &path)
+
+DR_MET(public abstract)
+//size_t XmlDoc::execPathElements(const String &path, const Eslot1<void, XmlElement *> &exec)
 
 
 DR_XML_NS_END
