@@ -200,17 +200,17 @@ foreach my $model (@models) {
 		1;
 	}
 		or STDERR->print("failed to process $model->{full}:\n$@"), $errors++;
-	foreach my $action (@{$model->{view_list}}) {
+	foreach my $view (@{$model->{view_list}}) {
 		eval {
-			$form->print(tabalign("view", 16).$action->{name}."\n");
-			foreach (qw(suggest supplier renderer addcompos compos_mand iniclass)) {
-				if (defined (my $v = $action->checkDrTagValue($_))) {
+			$form->print(tabalign("view", 16).$view->{name}."\n");
+			foreach (qw(nocompos suggest supplier renderer addcompos iniclass gui_filter)) {
+				if (defined (my $v = $view->checkDrTagValue($_))) {
 					$form->print(tabalign("\t$_", 24).$v."\n")
 				}
 			}
 			1;
 		}
-			or STDERR->print("failed to process $model->{full}.$action->{name}:\n$@"), $errors++;
+			or STDERR->print("failed to process $model->{full}.$view->{name}:\n$@"), $errors++;
 	}
 	foreach my $attr (@{$model->{attr_list}}) {
 		eval {
