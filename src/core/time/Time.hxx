@@ -81,6 +81,11 @@ public:
 	static SysTime			toSeconds(SysTime time)			{ return time != INVAL_TIME ? time/SEC_BASE : INVAL_TIME; }
 
 	/**
+	 * Convert time to Epoch seconds (i.e. 1970-01-01 00:00:00 UTC)
+	 */
+	static SysTime			toSecondsUp(SysTime time)		{ return time != INVAL_TIME ? (time+SEC_BASE-1)/SEC_BASE : INVAL_TIME; }
+
+	/**
 	 * Compute time from Epoch seconds (i.e. 1970-01-01 00:00:00 UTC)
 	 */
 	static SysTime			fromMseconds(SysTime mseconds)		{ return mseconds != INVAL_TIME ? mseconds*SEC_BASE/1000 : INVAL_TIME; }

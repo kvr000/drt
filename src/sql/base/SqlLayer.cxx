@@ -35,8 +35,13 @@
 
 /*drt
  * include: 	dr/sql/SqlConnectionHold.hxx
+ * include:	dr/sql/SqlStatement.hxx
  * include: 	dr/Ref.hxx
+ *
  * ns:		dr::sql
+ */
+
+/*drt
  * class:	SqlLayer
  * ancestor:	dr::Object
  * ifaces:	

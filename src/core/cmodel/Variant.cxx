@@ -44,8 +44,7 @@
  * class:	Variant
  * ancestor:	dr::Object
  *
- * co:{
- * public:
+ * co:public{
  * 	enum VType
  * 	{
  * 		VT_Invalid,
@@ -63,10 +62,8 @@
  * 	};
  * }co
  *
- * co:{
- * protected:
- * 	int				vtype:7;
- * 	int				is_null:1;
+ * co:protected{
+ * 	int				vtype;
  * 	union
  * 	{
  * 		bool				bool_val;
@@ -94,8 +91,7 @@ DR_NS_BEGIN
 
 DR_MET(public)
 Variant::Variant():
-	vtype(VT_Invalid),
-	is_null(1)
+	vtype(VT_Invalid)
 {
 }
 
@@ -103,7 +99,6 @@ DR_MET(public)
 Variant::Variant(const Null &):
 	vtype(VT_Null)
 {
-	is_null = 1;
 }
 
 DR_MET(public)
@@ -131,21 +126,30 @@ DR_MET(public)
 Variant::Variant(const Blob &binary_val_):
 	vtype(VT_Binary)
 {
-	new (&binary_val) Blob(binary_val_);
+	if (binary_val_.isNull())
+		vtype = VT_Null;
+	else
+		new (&binary_val) Blob(binary_val_);
 }
 
 DR_MET(public)
 Variant::Variant(const String &string_val_):
 	vtype(VT_String)
 {
-	new (&string_val) String(string_val_);
+	if (string_val_.isNull())
+		vtype = VT_Null;
+	else
+		new (&string_val) String(string_val_);
 }
 
 DR_MET(public)
 Variant::Variant(Iface *object_val_):
 	vtype(VT_Object)
 {
-	object_val = object_val_ == NULL ? NULL : object_val_->ref();
+	if (object_val_ == NULL)
+		vtype = VT_Null;
+	else
+		object_val = object_val_->ref();
 }
 
 DR_MET(public virtual)
@@ -276,9 +280,6 @@ bool Variant::eq(const Iface *vs_) const
 		case VT_Binary:
 			if (((Blob *)&binary_val)->isNull() && vs->isNull())
 				return true;
-			if (vs->is_null) {
-				return false;
-			}
 			if (vs->vtype == VT_Binary) {
 				return *(Blob *)&vs->binary_val == *(Blob *)&binary_val;
 			}
@@ -422,30 +423,7 @@ String Variant::getName() const
 DR_MET(public virtual)
 bool Variant::isNull() const
 {
-	switch ((VType)vtype) {
-	case VT_Invalid:
-		return false;
-
-	case VT_Null:
-		return true;
-
-	case VT_Bool:
-	case VT_Int:
-	case VT_Double:
-		return false;
-
-	case VT_Binary:
-		return ((Blob *)&binary_val)->isNull();
-
-	case VT_String:
-		return ((String *)&string_val)->isNull();
-
-	case VT_Object:
-		return object_val == NULL;
-	}
-
-	DR_AssertMsg("Invalid type for Variant Type");
-	return false;
+	return vtype == VT_Null;
 }
 
 DR_MET(public virtual)

@@ -42,6 +42,7 @@ DR_NS_USE
 DR_TESTENV_NS_USE
 
 #define TEST_VARIANT
+#define TEST_EQ
 
 #ifdef TEST_VARIANT
 TESTNS(variant);
@@ -52,11 +53,34 @@ void test()
 TESTNSE(variant);
 #endif
 
+
+#ifdef TEST_EQ
+TESTNS(eq);
+void test()
+{
+	CHECK(tref(new Variant(BString(Null())))->eq(tref(new Variant(BString(Null())))));
+	CHECK(tref(new Variant(Null()))->eq(tref(new Variant(BString(Null())))));
+	CHECK(tref(new Variant(BString(Null())))->eq(tref(new Variant(Null()))));
+	CHECK(!tref(new Variant(Null()))->eq(tref(new Variant(BString("0")))));
+	CHECK(!tref(new Variant(BString(Null())))->eq(tref(new Variant(BString("0")))));
+	CHECK(!tref(new Variant(BString("")))->eq(tref(new Variant(BString("0")))));
+	CHECK(tref(new Variant((Sint64)0))->eq(tref(new Variant(BString("0")))));
+	CHECK(!tref(new Variant((Sint64)0))->eq(tref(new Variant(BString("1")))));
+	CHECK(!tref(new Variant((Sint64)0))->eq(tref(new Variant(BString("")))));
+	CHECK(!tref(new Variant(BString("")))->eq(tref(new Variant((Sint64)0))));
+}
+TESTNSE(eq);
+#endif
+
+
 int main()
 {
 	test_init();
 #ifdef TEST_VARIANT
 	TESTRUN(variant);
+#endif
+#ifdef TEST_EQ
+	TESTRUN(eq);
 #endif
 	return 0;
 }
