@@ -219,12 +219,12 @@ sub readParagraph($$)
 
 	my $cont = "";
 
-	while (<$fd>) {
+	while (defined (my $line = <$fd>)) {
 		$$lineno++;
-		if (m/^\s*\*\s+(\S.*)$/s) {
+		if ($line =~ m/^\s*\*\s+(\S.*)$/s) {
 			$cont .= $1;
 		}
-		elsif (m/^\s*\*\s*$/) {
+		elsif ($line =~ m/^\s*\*\s*$/) {
 			chomp $cont;
 			return $cont;
 		}

@@ -47,38 +47,42 @@ else
 	ctags -o ctags.tags -R "$@"
 fi
 for env in `env | grep ^LC_ | cut -d = -f 1`; do unset $env; done
-perl -e '
-use strict;
-use warnings;
-use File::Find;
-use FileHandle;
-use Data::Dumper;
-no locale;
-my $main_fd = FileHandle->new(shift @ARGV, "<") or die "failed to open main file: $!";
-my @files = ( { prefix => "", fd => $main_fd } );
-@ARGV = ( "." ) unless (@ARGV);
-find({ no_chdir => 1, wanted => sub {
-	if (m/(\.\/)?(.*\/|)_build\/_gen\/.*\.tags$/) {
-		if (my $fd = FileHandle->new($_, "<")) {
-			push(@files, { prefix => $2, fd => $fd });
+if false; then
+	find . -name \*.tags -type f -print0 | sort --files0-from=- -m -o tags && rm ctags.tags
+else
+	perl -e '
+	use strict;
+	use warnings;
+	use File::Find;
+	use FileHandle;
+	use Data::Dumper;
+	no locale;
+	my $main_fd = FileHandle->new(shift @ARGV, "<") or die "failed to open main file: $!";
+	my @files = ( { prefix => "", fd => $main_fd } );
+	@ARGV = ( "." ) unless (@ARGV);
+	find({ no_chdir => 1, wanted => sub {
+		if (m/(\.\/)?(.*\/|)_build\/_gen\/(.*\.tags)$/) {
+			if (my $fd = FileHandle->new($_, "<")) {
+				push(@files, { prefix => $2, fd => $fd });
+			}
+			else {
+				STDERR->printf("Failed to open %s: %s\n", $_, $!);
+			}
 		}
-		else {
-			STDERR->printf("Failed to open %s: %s\n", $_, $!);
+	} }, @ARGV);
+	for (;;) {
+		my $best;
+		foreach my $ft (@files) {
+			if (!defined $ft->{pending}) {
+				next if (!defined $ft->{fd});
+				undef $ft->{fd}, next if (!defined ($ft->{pending} = $ft->{fd}->getline()));
+				$ft->{pending} = "$1\t$ft->{prefix}$2$3" if ($ft->{pending} =~ m/^([^\t]*)\t([^\t]*)(\t.*)$/s);
+			}
+			$best = $ft if (!(defined $best) || $ft->{pending} lt $best->{pending});
 		}
+		last unless ($best);
+		STDOUT->printf("%s", $best->{pending});
+		undef $best->{pending};
 	}
-} }, @ARGV);
-for (;;) {
-	my $best;
-	foreach my $ft (@files) {
-		if (!defined $ft->{pending}) {
-			next if (!defined $ft->{fd});
-			undef $ft->{fd}, next if (!defined ($ft->{pending} = $ft->{fd}->getline()));
-		}
-		$best = $ft if (!defined $best || $ft->{pending} lt $best->{pending});
-	}
-	last unless ($best);
-	$best->{pending} = "$1\t$best->{prefix}$2$3" if ($best->{pending} =~ m/^([^\t]*)\t([^\t]*)(\t.*)$/s);
-	STDOUT->printf("%s", $best->{pending});
-	undef $best->{pending};
-}
-' ctags.tags "$@" > tags && rm ctags.tags
+	' ctags.tags "$@" > tags && rm ctags.tags
+fi
