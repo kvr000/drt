@@ -53,7 +53,7 @@ class SqlManager_mysql5: public SqlManager
 	DR_OBJECT_DECL_SIMPLE(SqlManager, Object);
 
 public:
-	virtual SqlConnection *		openConnection(Hash<String, String> *conn_str);
+	virtual SqlConnection *		openConnection(THash<String, String> *conn_str);
 };
 
 

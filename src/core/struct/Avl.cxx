@@ -174,7 +174,7 @@ bool Avl_c::replace_g(const void *key, const void *value)
 	*cur = nodeDef(key, value);
 	count++;
 	(*cur)->balance = 0;
-	if (((*cur)->direction = last_step) < 0) {
+	if (((*cur)->direction = last_step) == 0) {
 		(*cur)->parent = NULL;
 		lowest = *cur;
 	}
@@ -289,6 +289,7 @@ bool Avl_c::remove_g(const void *key)
 				// previous block
 				node->parent->refs[1+node->direction] = NULL;
 				rebalanceRemoved_g(node->parent, node->direction);
+				nodeDestroy(node);
 				return true;
 			}
 			dir = 1;

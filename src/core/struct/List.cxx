@@ -43,14 +43,15 @@ DR_EXPORT_MET void List_c::destroy_g()
 	ListNode_c *p, *m;
 	for (p = link.next; p; p = m) {
 		m = p->next;
-		el_destroy(p);
+		item_count--;
+		node_destroy(p);
 	}
 	link.prev = link.next = NULL;
 }
 
 DR_EXPORT_MET ListNode_c *List_c::append_g(ListNode_c *prev, const void *v)
 {
-	ListNode_c *n = el_create(v);
+	ListNode_c *n = node_create(v);
 	if ((n->prev = prev)) {
 		if ((n->next = prev->next))
 			n->next->prev = n;
@@ -65,13 +66,13 @@ DR_EXPORT_MET ListNode_c *List_c::append_g(ListNode_c *prev, const void *v)
 			link.prev = n;
 		link.next = n;
 	}
-	cnt++;
+	item_count++;
 	return n;
 }
 
 DR_EXPORT_MET ListNode_c *List_c::appendNew_g(ListNode_c *prev)
 {
-	ListNode_c *n = el_new();
+	ListNode_c *n = node_new();
 	if ((n->prev = prev)) {
 		if ((n->next = prev->next))
 			n->next->prev = n;
@@ -86,13 +87,13 @@ DR_EXPORT_MET ListNode_c *List_c::appendNew_g(ListNode_c *prev)
 			link.prev = n;
 		link.next = n;
 	}
-	cnt++;
+	item_count++;
 	return n;
 }
 
 DR_EXPORT_MET ListNode_c *List_c::insert_g(ListNode_c *next, const void *v)
 {
-	ListNode_c *n = el_create(v);
+	ListNode_c *n = node_create(v);
 	if ((n->next = next)) {
 		if ((n->prev = next->prev))
 			n->prev->next = n;
@@ -107,13 +108,13 @@ DR_EXPORT_MET ListNode_c *List_c::insert_g(ListNode_c *next, const void *v)
 			link.next = n;
 		link.prev = n;
 	}
-	cnt++;
+	item_count++;
 	return n;
 }
 
 DR_EXPORT_MET ListNode_c *List_c::insertNew_g(ListNode_c *next)
 {
-	ListNode_c *n = el_new();
+	ListNode_c *n = node_new();
 	if ((n->next = next)) {
 		if ((n->prev = next->prev))
 			n->prev->next = n;
@@ -128,7 +129,7 @@ DR_EXPORT_MET ListNode_c *List_c::insertNew_g(ListNode_c *next)
 			link.next = n;
 		link.prev = n;
 	}
-	cnt++;
+	item_count++;
 	return n;
 }
 
@@ -146,8 +147,8 @@ DR_EXPORT_MET void List_c::remove_g(ListNode_c *n)
 		else
 			link.prev = NULL;
 	}
-	cnt--;
-	el_destroy(n);
+	item_count--;
+	node_destroy(n);
 }
 
 

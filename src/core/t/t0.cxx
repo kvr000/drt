@@ -653,7 +653,7 @@ TESTNS(list);
 void test()
 {
 	{
-		List<int> li;
+		TList<int> li;
 		li.append(5);
 		li.append(8);
 		li.insert(3);

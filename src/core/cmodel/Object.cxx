@@ -360,10 +360,6 @@ void Object::object_reserved_2()
 {
 }
 
-void Object::object_reserved_3()
-{
-}
-
 const Static *Object::getObjectStatic() const
 {
 	if (comp_static)

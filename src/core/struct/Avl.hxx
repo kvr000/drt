@@ -121,70 +121,70 @@ public:
 };
 
 template <typename K, typename V>
-class AvlPair: public Avl_c::Node_c
+class TAvlNode: public Avl_c::Node_c
 {
 public:
 	K				k;
 	V				v;
 
 public:
-	DR_RINLINE			AvlPair(const K &k_, const V &v_)		: k(k_), v(v_) { }
+	DR_RINLINE			TAvlNode(const K &k_, const V &v_)		: k(k_), v(v_) { }
 };
 
 template <typename K, typename V, typename Allocator_ = Alloc>
 class AvlAlloc: public Allocator_
 {
-	typedef AvlPair<K, V> Type;
-	typedef Allocator_ Base;
+	typedef TAvlNode<K, V>		Type;
+	typedef Allocator_		Base;
 
 public:
-	DR_MINLINE static Type *	allocK(const K &key)					{ Type *t; t = (Type *)Base::allocC(sizeof(Type)); new(t) Type(key); return t; }
-	DR_MINLINE static Type *	alloc2(const K &key, const V &val)			{ Type *t; t = (Type *)Base::allocC(sizeof(Type)); new(t) Type(key, val); return t; }
-	DR_MINLINE static void		freePair(Type *t)					{ t->~Type(); Base::freeC(t, sizeof(Type)); }
-	DR_MINLINE static void *	reallocAr(void *m, size_t nsize, size_t osize)		{ return Base::realloc(m, nsize); }
-	DR_MINLINE static void		freeAr(void *m, size_t size)				{ return Base::free(m); }
+	DR_MINLINE static Type *	allocK(const K &key)				{ Type *t; t = (Type *)Base::allocC(sizeof(Type)); new(t) Type(key); return t; }
+	DR_MINLINE static Type *	alloc2(const K &key, const V &val)		{ Type *t; t = (Type *)Base::allocC(sizeof(Type)); new(t) Type(key, val); return t; }
+	DR_MINLINE static void		freePair(Type *t)				{ t->~Type(); Base::freeC(t, sizeof(Type)); }
+	DR_MINLINE static void *	reallocAr(void *m, size_t nsize, size_t osize)	{ return Base::realloc(m, nsize); }
+	DR_MINLINE static void		freeAr(void *m, size_t size)			{ return Base::free(m); }
 };
 
 /**
  * Avl container
  */
 template <typename K, typename V, typename Compar = AvlCompar<K, V>, typename Allocator = AvlAlloc<K, V> >
-class Avl: protected Avl_c, private typestore<Compar, 0>, private typestore<Allocator, 1>
+class TAvl: protected Avl_c, private typestore<Compar, 0>, private typestore<Allocator, 1>
 {
 public:
-	typedef AvlPair<K, V> Node;
-	typedef typestore<Compar, 0> ComparBase;
-	typedef typestore<Allocator, 1> AllocatorBase;
+	typedef TAvlNode<K, V>		Node;
+	typedef typestore<Compar, 0>	ComparBase;
+	typedef typestore<Allocator, 1>	AllocatorBase;
 
 protected:
-	DR_MINLINE virtual int		keycmp(Node_c *pair, const void *key) const		{ return comp().kcmp(((Node *)pair)->k, *(const K *)key); }
-	DR_MINLINE virtual Node_c *	nodeDef(const void *key, const void *val)		{ return allc().alloc2(*(const K *)key, *(const V *)val); }
-	DR_MINLINE virtual void		nodeUpdateValue(Node_c *node, const void *value)	{ ((Node *)node)->v = *(V *)value; }
-	DR_MINLINE virtual void		nodeDestroy(Node_c *p)					{ allc().freePair((Node *)p); }
+	DR_MINLINE virtual int		keycmp(Node_c *pair, const void *key) const	{ return comp().kcmp(((Node *)pair)->k, *(const K *)key); }
+	DR_MINLINE virtual Node_c *	nodeDef(const void *key, const void *val)	{ return allc().alloc2(*(const K *)key, *(const V *)val); }
+	DR_MINLINE virtual void		nodeUpdateValue(Node_c *node, const void *value){ ((Node *)node)->v = *(V *)value; }
+	DR_MINLINE virtual void		nodeDestroy(Node_c *p)				{ allc().freePair((Node *)p); }
 
 public:
-	DR_MINLINE Compar &		comp() const						{ return *reinterpret_cast<Compar *>((ComparBase *)this); }
-	DR_MINLINE Allocator &		allc() const						{ return *reinterpret_cast<Allocator *>((AllocatorBase *)this); }
+	DR_MINLINE Compar &		comp() const					{ return *reinterpret_cast<Compar *>((ComparBase *)this); }
+	DR_MINLINE Allocator &		allc() const					{ return *reinterpret_cast<Allocator *>((AllocatorBase *)this); }
 
 public:
-	DR_MINLINE			Avl(const Compar &comp_ = Compar(), const Allocator &allc_ = Allocator())	: ComparBase(comp_), AllocatorBase(allc_) { }
-	DR_MINLINE			Avl(const None &)					{ }
-	DR_MINLINE			~Avl()							{ destroy_g(); }
+	DR_MINLINE			TAvl(const Compar &comp_ = Compar(), const Allocator &allc_ = Allocator())	: ComparBase(comp_), AllocatorBase(allc_) { }
+	DR_MINLINE			TAvl(const None &)				{ }
+	DR_MINLINE			~TAvl()						{ destroy_g(); }
 
 public:
-	DR_RINLINE size_t		getCount() const					{ return count; }
+	DR_RINLINE size_t		getCount() const				{ return count; }
 
 public:
-	DR_MINLINE Node *		find(const K &k) const					{ return (Node *)Avl_c::find_g(&k); }
-	DR_MINLINE bool			create(const K &k, const V &v)				{ return Avl_c::create_g(&k, &v); }
-	DR_MINLINE bool			replace(const K &k, const V &v)				{ return Avl_c::replace_g(&k, &v); }
-	DR_MINLINE bool			remove(const K &k)					{ return Avl_c::remove_g(&k); }
-	DR_MINLINE void			clean()							{ clean_g(); }
-	DR_MINLINE void			run(Eslot1<void, Node *> &cb)				{ run_g((Eslot1<void, Node_c *> &)cb); }
+	DR_MINLINE Node *		find(const K &k) const				{ return (Node *)Avl_c::find_g(&k); }
+	DR_MINLINE bool			create(const K &k, const V &v)			{ return Avl_c::create_g(&k, &v); }
+	DR_MINLINE bool			replace(const K &k, const V &v)			{ return Avl_c::replace_g(&k, &v); }
+	DR_MINLINE bool			remove(const K &k)				{ return Avl_c::remove_g(&k); }
+	DR_MINLINE void			clean()						{ clean_g(); }
+	DR_MINLINE void			run(Eslot1<void, Node *> &cb)			{ run_g((Eslot1<void, Node_c *> &)cb); }
 
-	DR_MINLINE Node *		iterTop() const						{ return (Node *)root; }
-	DR_MINLINE Node *		iterFirst() const					{ return (Node *)Avl_c::iterFirst_g(); }
-	DR_MINLINE Node *		iterNext(Node *cur) const				{ return (Node *)Avl_c::iterNext_g(cur); }
+	DR_MINLINE Node *		iterTop() const					{ return (Node *)root; }
+	DR_MINLINE Node *		iterFirst() const				{ return (Node *)Avl_c::iterFirst_g(); }
+	DR_MINLINE Node *		iterNext(Node *cur) const			{ return (Node *)Avl_c::iterNext_g(cur); }
 };
 
 

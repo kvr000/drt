@@ -118,8 +118,8 @@ bool QueueManager::putNextWork(const Blob &data)
 	access_lock->lock();
 	xtry {
 		waiting_data.append(data);
-		if (num_free_workers < waiting_data.getCount()) {
-			if (all_workers.getCount() < max_workers) {
+		if (num_free_workers < waiting_data.count()) {
+			if (all_workers.count() < max_workers) {
 				all_workers.insert(tref(ThreadSimple::go((void *(*)(void *))&QueueManager::runWorker, this)));
 				num_free_workers++;
 			}
@@ -127,7 +127,7 @@ bool QueueManager::putNextWork(const Blob &data)
 		else {
 			access_lock->signal();
 		}
-		bool pop_data = waiting_data.getCount()+processed_data.getCount()-num_free_workers > max_pending || processed_data.find(return_counter) != NULL;
+		bool pop_data = waiting_data.count()+processed_data.count()-num_free_workers > max_pending || processed_data.find(return_counter) != NULL;
 		access_lock->unlock();
 		return pop_data;
 	}
@@ -143,8 +143,8 @@ Blob QueueManager::waitProcessedData()
 	access_lock->lock();
 	xtry {
 		for (;;) {
-			if (Hash<Sint64, Blob>::kvpair *n = processed_data.find(return_counter)) {
-				Blob data = n->v;
+			if (Blob *n = processed_data.accValue(return_counter)) {
+				Blob data = *n;
 				processed_data.remove(return_counter);
 				return_counter++;
 				access_lock->unlock();
@@ -299,8 +299,8 @@ Blob QueueManager::processOneData(Sint64 line_no, const Blob &line_data)
 	}
 	fprintf(stderr, "processing table %s (%ld)\n", tname.utf8().toStr(), (long)line_data.getSize());
 	RList<Evaluator> *tev;
-	if (Hash<String, RList<Evaluator> >::kvpair *ed = evaluators.find(tname)) {
-		tev = &ed->v;
+	if (RList<Evaluator> *ed = evaluators.accValue(tname)) {
+		tev = ed;
 	}
 	else {
 		return "";

@@ -52,34 +52,37 @@ DR_NS_BEGIN
 class DR_PUB Hash_c: public Object
 {
 public:
-	struct Entry_c
+	DR_RINLINE size_t		count() const				{ return item_count; }
+
+public:
+	struct Node_c
 	{
 		long			hash;
-		Entry_c *		next;
+		Node_c *		next;
 	};
 protected:
-	DR_MINLINE			Hash_c()				: hashmask(-1), list(NULL), count(0) {}
+	DR_MINLINE			Hash_c()				: hashmask(-1), list(NULL), item_count(0) {}
 	DR_MINLINE virtual		~Hash_c()				{ DR_Assert(list == NULL); } // do not call it!
 	void				destroy_g();				// must be called from child's destructor
 
 protected: // interface to template
-	virtual bool			keyeq(Entry_c *pair, const void *key) const = 0;
-	virtual Entry_c *		pairDef(const void *key, const void *val) = 0;
-	virtual Entry_c *		pairUndef(const void *key) = 0;
-	virtual void			pairDestroy(Entry_c *p) = 0;
+	virtual bool			keyeq(Node_c *pair, const void *key) const = 0;
+	virtual Node_c *		pairDef(const void *key, const void *val) = 0;
+	virtual Node_c *		pairUndef(const void *key) = 0;
+	virtual void			pairDestroy(Node_c *p) = 0;
 
 	virtual void *			reallocList(size_t nsize) = 0;
 	virtual void			freeList() = 0;
 
 protected:
-	Entry_c *			find_g(long hash, const void *key) const;
-	Entry_c *			create_g(long hash, const void *key, bool *created);
+	Node_c *			find_g(long hash, const void *key) const;
+	Node_c *			create_g(long hash, const void *key, bool *created);
 	bool				remove_g(long hash, const void *key);
 	void				clean_g();
 
 protected:
-	Entry_c *			iterFirst_g() const;
-	Entry_c *			iterNext_g(Entry_c *cur) const;
+	Node_c *			iterFirst_g() const;
+	Node_c *			iterNext_g(Node_c *cur) const;
 
 private:
 	/* disallowed */		Hash_c(const Hash_c &);
@@ -87,8 +90,8 @@ private:
 
 protected:
 	ssize_t				hashmask;
-	Entry_c **			list;
-	unsigned			count;
+	Node_c **			list;
+	unsigned			item_count;
 };
 
 
@@ -97,36 +100,36 @@ class HashCompar: public Compar<K>
 {
 	typedef Compar<K> KBase;
 public:
-	static DR_MINLINE long		khash(const K &k)				{ return hash(k); }
-	static DR_MINLINE bool		keq(const K &k1, const K &k2)			{ return k1 == k2; }
+	static DR_MINLINE long		khash(const K &k)			{ return hash(k); }
+	static DR_MINLINE bool		keq(const K &k1, const K &k2)		{ return k1 == k2; }
 
 	DR_RINLINE			HashCompar()				{}
-	DR_RINLINE			HashCompar(const HashCompar &)	{}
+	DR_RINLINE			HashCompar(const HashCompar &)		{}
 };
 
 template <typename K, typename V>
-class HashPair: public Hash_c::Entry_c
+class THashNode: public Hash_c::Node_c
 {
 public:
 	K				k;
 	V				v;
 
 public:
-	DR_RINLINE			HashPair()						{}
-	DR_RINLINE			HashPair(const K &key_)				: k(key_) { }
-	DR_RINLINE			HashPair(const K &key_, const V &val_)		: k(key_), v(val_) { }
+	DR_RINLINE			THashNode()				{}
+	DR_RINLINE			THashNode(const K &key_)		: k(key_) { }
+	DR_RINLINE			THashNode(const K &key_, const V &val_)	: k(key_), v(val_) { }
 };
 
 template <typename K, typename V, typename Allocator_ = Alloc>
-class HashAlloc: public Allocator_
+class THashAlloc: public Allocator_
 {
-	typedef HashPair<K, V> Type;
-	typedef Allocator_ Base;
+	typedef THashNode<K, V>		Node;
+	typedef Allocator_		Base;
 
 public:
-	DR_MINLINE static Type *	allocK(const K &key)					{ Type *t; t = (Type *)Base::allocC(sizeof(Type)); new(t) Type(key); return t; }
-	DR_MINLINE static Type *	alloc2(const K &key, const V &val)			{ Type *t; t = (Type *)Base::allocC(sizeof(Type)); new(t) Type(key, val); return t; }
-	DR_MINLINE static void		freePair(Type *t)					{ t->~Type(); Base::freeC(t, sizeof(Type)); }
+	DR_MINLINE static Node *	allocK(const K &key)					{ Node *t; t = (Node *)Base::allocC(sizeof(Node)); new(t) Node(key); return t; }
+	DR_MINLINE static Node *	alloc2(const K &key, const V &val)			{ Node *t; t = (Node *)Base::allocC(sizeof(Node)); new(t) Node(key, val); return t; }
+	DR_MINLINE static void		freePair(Node *t)					{ t->~Node(); Base::freeC(t, sizeof(Node)); }
 	DR_MINLINE static void *	reallocAr(void *m, size_t nsize, size_t osize)		{ return Base::realloc(m, nsize); }
 	DR_MINLINE static void		freeAr(void *m, size_t size)				{ return Base::free(m); }
 };
@@ -134,61 +137,58 @@ public:
 /**
  * Hash container
  */
-template <typename K, typename V, typename Compar = HashCompar<K, V>, typename Allocator = HashAlloc<K, V> >
-class Hash: public Hash_c, private typestore<Compar, 0>, private typestore<Allocator, 1>
+template <typename K, typename V, typename Compar = HashCompar<K, V>, typename Allocator = THashAlloc<K, V> >
+class THash: public Hash_c, private typestore<Compar, 0>, private typestore<Allocator, 1>
 {
 public:
-	typedef HashPair<K, V> kvpair;
-	typedef typestore<Compar, 0> ComparBase;
-	typedef typestore<Allocator, 1> AllocatorBase;
+	typedef THashNode<K, V>		Node;
+	typedef typestore<Compar, 0>	ComparBase;
+	typedef typestore<Allocator, 1>	AllocatorBase;
 
 protected:
-	DR_MINLINE virtual bool		keyeq(Entry_c *pair, const void *key) const		{ return comp().keq(((kvpair *)pair)->k, *(const K *)key); }
-	DR_MINLINE virtual Entry_c *	pairDef(const void *key, const void *val)		{ return allc().alloc2(*(const K *)key, *(const V *)val); }
-	DR_MINLINE virtual Entry_c *	pairUndef(const void *key)				{ return allc().allocK(*(const K *)key); }
-	DR_MINLINE virtual void		pairDestroy(Entry_c *p)				{ allc().freePair((kvpair *)p); }
+	DR_MINLINE virtual bool		keyeq(Node_c *pair, const void *key) const		{ return comp().keq(((Node *)pair)->k, *(const K *)key); }
+	DR_MINLINE virtual Node_c *	pairDef(const void *key, const void *val)		{ return allc().alloc2(*(const K *)key, *(const V *)val); }
+	DR_MINLINE virtual Node_c *	pairUndef(const void *key)				{ return allc().allocK(*(const K *)key); }
+	DR_MINLINE virtual void		pairDestroy(Node_c *p)					{ allc().freePair((Node *)p); }
 
-	DR_MINLINE virtual void *	reallocList(size_t nsize)				{ return allc().reallocAr(list, nsize, (hashmask+1)*sizeof(Entry_c *)); }
-	DR_MINLINE virtual void		freeList()						{ allc().freeAr(list, (hashmask+1)*sizeof(Entry_c *)); }
+	DR_MINLINE virtual void *	reallocList(size_t nsize)				{ return allc().reallocAr(list, nsize, (hashmask+1)*sizeof(Node_c *)); }
+	DR_MINLINE virtual void		freeList()						{ allc().freeAr(list, (hashmask+1)*sizeof(Node_c *)); }
 
 public:
 	DR_MINLINE Compar &		comp() const						{ return *reinterpret_cast<Compar *>((ComparBase *)this); }
 	DR_MINLINE Allocator &		allc() const						{ return *reinterpret_cast<Allocator *>((AllocatorBase *)this); }
 
 public:
-	DR_MINLINE			Hash(const Compar &comp_ = Compar(), const Allocator &allc_ = Allocator())	: ComparBase(comp_), AllocatorBase(allc_) { }
-	DR_MINLINE			Hash(const None &)					{ }
-	DR_MINLINE			~Hash()							{ destroy_g(); }
+	DR_MINLINE			THash(const Compar &comp_ = Compar(), const Allocator &allc_ = Allocator())	: ComparBase(comp_), AllocatorBase(allc_) { }
+	DR_MINLINE			THash(const None &)					{ }
+	DR_MINLINE			~THash()						{ destroy_g(); }
 
 public:
-	DR_RINLINE size_t		getCount() const					{ return count; }
-
-public:
-	DR_MINLINE kvpair *		find(const K &k) const					{ return (kvpair *)Hash_c::find_g(comp().khash(k), &k); }
-	DR_MINLINE kvpair *		accValue(const K &k) const				{ if (kvpair *kvp = (kvpair *)Hash_c::find_g(comp().khash(k), &k)) return &kvp->v; else return NULL; }
-	DR_MINLINE kvpair *		create(const K &k, bool *created = NULL){ return (kvpair *)Hash_c::create_g(comp().khash(k), &k, created); }
+	DR_MINLINE Node *		find(const K &k) const					{ return (Node *)Hash_c::find_g(comp().khash(k), &k); }
+	DR_MINLINE V *			accValue(const K &k) const				{ if (Node *kvp = (Node *)Hash_c::find_g(comp().khash(k), &k)) return &kvp->v; else return NULL; }
+	DR_MINLINE Node *		create(const K &k, bool *created = NULL)		{ return (Node *)Hash_c::create_g(comp().khash(k), &k, created); }
 	DR_MINLINE bool			remove(const K &k)					{ return Hash_c::remove_g(comp().khash(k), &k); }
 	DR_MINLINE void			clean()							{ clean_g(); }
 
-	DR_MINLINE kvpair *		iterFirst() const					{ return (kvpair *)Hash_c::iterFirst_g(); }
-	DR_MINLINE kvpair *		iterNext(kvpair *cur) const				{ return (kvpair *)Hash_c::iterNext_g(cur); }
+	DR_MINLINE Node *		iterFirst() const					{ return (Node *)Hash_c::iterFirst_g(); }
+	DR_MINLINE Node *		iterNext(Node *cur) const				{ return (Node *)Hash_c::iterNext_g(cur); }
 
 
 	DR_MINLINE V &			operator[](const K &k)					{ return create(k)->v; }
 };
 
 template <typename K, typename V, typename Compar = HashCompar<K, Ref<V> > >
-class RHash: public Hash<K, Ref<V>, Compar>
+class RHash: public THash<K, Ref<V>, Compar>
 {
 };
 
 
-template <typename K, typename V, typename Compar = HashCompar<K, V>, typename Allocator = HashAlloc<K, V> >
+template <typename K, typename V, typename Compar = HashCompar<K, V>, typename Allocator = THashAlloc<K, V> >
 class HashSerializer
 {
-	typedef Hash<V, Compar, Allocator> HashType;
+	typedef THash<V, Compar, Allocator> HashType;
 public:
-	void				serializeHash(HashType *hash, SerializeEncoder *stream) { stream->writeArrayLength(hash->count()); for (typename HashType::kvpair *i = hash->iterFirst(); i != NULL; i = hash->iterNext(i)) { stream->writeStructLength(2); stream->writeMemberName("k"); stream->writeValue(ScalarPtr(&i->k)); stream->writeMemberName("v"); stream->writeValue(ScalarPtr(&i->v)); stream->writeStructEnd(); } stream->writeArrayEnd(); }
+	void				serializeHash(HashType *hash, SerializeEncoder *stream) { stream->writeArrayLength(hash->count()); for (typename HashType::Node *i = hash->iterFirst(); i != NULL; i = hash->iterNext(i)) { stream->writeStructLength(2); stream->writeMemberName("k"); stream->writeValue(ScalarPtr(&i->k)); stream->writeMemberName("v"); stream->writeValue(ScalarPtr(&i->v)); stream->writeStructEnd(); } stream->writeArrayEnd(); }
 	void				unserializeHash(HashType *hash, SerializeDecoder *stream) { K k; V v; ScalarPtr kp(&k); ScalarPtr vp(&v); ssize_t cnt = stream->readArrayLength(); while (stream->checkArrayNext(&cnt)) { stream->readValue(vp); (*hash)[k] = v; } }
 };
 

@@ -74,8 +74,8 @@ public:
 		DR_OBJECT_DECL_SIMPLE(Arguments, Object);
 
 	public:
-		typedef Hash<String, Sint64>	Constants;
-		typedef Hash<unsigned, Sint64>	Values;
+		typedef THash<String, Sint64>	Constants;
+		typedef THash<unsigned, Sint64>	Values;
 
 	public:
 		DR_CONSTRUCT			Arguments(Constants *constants_, Values *values_): constants(constants_, true), values(values_, true) {}
@@ -144,7 +144,7 @@ protected:
 		DR_CONSTRUCT			VariableExpression(const String &var_name_): var_name(var_name_) {}
 
 	public:
-		virtual Sint64			evaluate(Arguments *args)	{ if (Arguments::Constants::kvpair *n = args->constants->find(var_name)) { return n->v; } xthrownew(DataNotFoundExcept("variable", var_name)); return 0; }
+		virtual Sint64			evaluate(Arguments *args)	{ if (Sint64 *v = args->constants->accValue(var_name)) { return *v; } xthrownew(DataNotFoundExcept("variable", var_name)); return 0; }
 
 	protected:
 		String				var_name;
@@ -157,7 +157,7 @@ protected:
 		DR_CONSTRUCT			ValueExpression(unsigned column_id_): column_id(column_id_) {}
 
 	public:
-		virtual Sint64			evaluate(Arguments *args)	{ if (Arguments::Values::kvpair *n = args->values->find(column_id)) { return n->v; } xthrownew(DataNotFoundExcept("constant", String::createNumber(column_id))); return 0;}
+		virtual Sint64			evaluate(Arguments *args)	{ if (Sint64 *v = args->values->accValue(column_id)) { return *v; } xthrownew(DataNotFoundExcept("constant", String::createNumber(column_id))); return 0;}
 
 	protected:
 		unsigned			column_id;

@@ -91,16 +91,16 @@ void RowAssignConfig::initialize(StreamBuffer *stream)
 
 String RowAssignConfig::getValue(const String &key)
 {
-	if (Hash<String, String>::kvpair *p = content.find(key))
-		return p->v;
+	if (String *v = content.accValue(key))
+		return *v;
 	xthrownew(NoValueExcept(this, key));
 	return Null();
 }
 
 String RowAssignConfig::getValue(const String &key, const String &default_val)
 {
-	if (Hash<String, String>::kvpair *p = content.find(key))
-		return p->v;
+	if (String *v = content.accValue(key))
+		return *v;
 	return default_val;
 }
 

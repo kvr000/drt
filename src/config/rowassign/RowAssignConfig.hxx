@@ -73,7 +73,7 @@ protected:
 	void				initialize(StreamBuffer *stream);
 
 protected:
-	Hash<String, String>		content;
+	THash<String, String>		content;
 };
 
 

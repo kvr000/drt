@@ -41,7 +41,7 @@ DR_NS_BEGIN
 
 bool GroupRef::unrefed()
 {
-	List<Object *>::Node *node;
+	TList<Object *>::Node *node;
 	for (node = object_list.getFirst(); node; node = node->next()) {
 		node->v->unref();
 	}

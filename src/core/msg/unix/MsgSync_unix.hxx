@@ -86,7 +86,7 @@ protected:
 	pthread_cond_t			sync_cond;
 
 	/* MsgSync_Socket interface */
-	List<socket_notif_data, ComparInv<socket_notif_data> >	socket_list;
+	TList<socket_notif_data, ComparInv<socket_notif_data> >	socket_list;
 	int				pipe_fd[2];
 };
 

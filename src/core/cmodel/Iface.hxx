@@ -281,6 +281,34 @@ public:
 	virtual int			cmp(const Iface *obj2) const = 0;
 
 	/**
+	 * get the object key hash
+	 *
+	 * @return
+	 * 	the object key hashed value
+	 */
+	virtual long			keyHash(int key) const = 0;
+
+	/**
+	 * compare the object key to another one for equality
+	 *
+	 * @return
+	 * 	the equality of the objects
+	 */
+	virtual bool			keyEq(const Iface *obj2, int key) const = 0;
+
+	/**
+	 * compare the object key to another one for lower/greater
+	 *
+	 * @return -1
+	 * 	if the current object is lower than argument
+	 * @return 0
+	 * 	if the current object is equal to argument
+	 * @return 1
+	 * 	if the current object is greater than argument
+	 */
+	virtual int			keyCmp(const Iface *obj2, int key) const = 0;
+
+	/**
 	 * returns state of the object
 	 *
 	 * @return true

@@ -75,7 +75,7 @@ public:
 		DR_CONSTRUCT			StructMapper(const String *name0, long offs0, void (*reader0)(RpcDecoder *decoder, void *type_addr), const String *name1, ...);
 		DR_DESTRUCT			~StructMapper();
 
-		Hash<String, MemberInfo *>	map;
+		THash<String, MemberInfo *>	map;
 	};
 
 	static void			readSkip(RpcDecoder *decoder, void *type_addr);

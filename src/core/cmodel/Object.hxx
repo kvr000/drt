@@ -146,7 +146,10 @@ public: \
 public: \
 	DR_SUPER_REDIR0C(long, hash); \
 	DR_SUPER_REDIR1C(bool, eq, const DR_NSP(Iface) *); \
-	DR_SUPER_REDIR1C(int, cmp, const DR_NSP(Iface) *)
+	DR_SUPER_REDIR1C(int, cmp, const DR_NSP(Iface) *); \
+	DR_SUPER_REDIR1C(long, keyHash, int); \
+	DR_SUPER_REDIR2C(bool, keyEq, const DR_NSP(Iface) *, int); \
+	DR_SUPER_REDIR2C(int, keyCmp, const DR_NSP(Iface) *, int)
 
 #define DR_REDIR_BEHAV()	\
 	DR_REDIR_STRINGIFY();	\
@@ -291,6 +294,21 @@ public:		/* basic */
 	virtual int			cmp(const Iface *obj) const;
 
 	/**
+	 * @see Iface::keyHash
+	 */
+	virtual long			keyHash(int key) const			{ return hash(); }
+
+	/**
+	 * @see Iface::keyEq
+	 */
+	virtual bool			keyEq(const Iface *obj, int key) const	{ return eq(obj); }
+
+	/**
+	 * @see Iface::keyCmp
+	 */
+	virtual int			keyCmp(const Iface *obj, int key) const	{ return cmp(obj); }
+
+	/**
 	 * @see Iface::serializeTo
 	 */
 	virtual void			serializeTo(SerializeEncoder *stream) const;
@@ -304,12 +322,10 @@ private: /* implementation static data */
 	virtual void			object_reserved_static();
 	virtual void			object_reserved_1();
 	virtual void			object_reserved_2();
-	virtual void			object_reserved_3();
 	enum {
-		OVD_IFACE_DEF = 18,
+		OVD_IFACE_DEF = 21,
 		OVD_SECOND,
 		OVD_THIRD,
-		OVD_FOURTH,
 	};
 
 public:

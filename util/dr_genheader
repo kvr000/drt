@@ -231,10 +231,15 @@ sub printClass($$)
 				printIndented($hxx, $level, "$access:\n");
 				$last_allmod = $allmod;
 			}
+			elsif (defined $met->{comment}) {
+				$hxx->print("\n");
+			}
 			if (defined $met->{comment}) {
 				my $c = $met->{comment};
-				$c =~ s/^/\t/mg;
-				printIndented($hxx, $level, sprintf("%s", $c));
+				if ($c ne "") {
+					$c =~ s/^/\t/mg;
+					printIndented($hxx, $level, sprintf("%s", $c));
+				}
 			}
 			printIndented($hxx, $level, sprintf("\t%s;\n", formatMethodDecl("$mods$met->{ret}", "$met->{decl}")));
 		}

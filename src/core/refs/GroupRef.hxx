@@ -62,7 +62,7 @@ public:
 protected:
 	Refcnt				refcnt;
 
-	List<Object *>			object_list;
+	TList<Object *>			object_list;
 };
 
 

@@ -102,8 +102,8 @@ int HttpClient::readHeaders(String *message)
 		response_headers[key] = val;
 	}
 
-	if (Hash<String, String>::kvpair *f = response_headers.find("content-length"))
-		response_size = strtol(f->v.utf8(), NULL, 0);
+	if (String *f = response_headers.accValue("content-length"))
+		response_size = strtol(f->utf8(), NULL, 0);
 	else
 		response_size = -1;
 
@@ -112,8 +112,8 @@ int HttpClient::readHeaders(String *message)
 
 String HttpClient::getHeader(const String &key)
 {
-	if (Hash<String, String>::kvpair *f = response_headers.find(key))
-		return f->v;
+	if (String *f = response_headers.accValue(key))
+		return *f;
 	return Null();
 }
 
@@ -165,18 +165,18 @@ HttpClient::~HttpClient()
 {
 }
 
-void HttpClient::sendRequest(const String &method, const String &uri, const Hash<String, String> &headers, const Blob &content)
+void HttpClient::sendRequest(const String &method, const String &uri, const THash<String, String> &headers, const Blob &content)
 {
 	BString request;
-	Hash<String, String>::kvpair *f;
 	request.append(method.isEmpty() ? "GET" : method.utf8().toStr()).append(" ").append(uri.utf8()).append(" HTTP/1.0\r\n");
-	if ((f = headers.find("host"))) {
-		//request += "host: "; request += f->val.utf8(); request += "\r\n";
+	if (String *v = headers.accValue("host")) {
+		(void)v;
+		//request += "host: "; request += v->utf8(); request += "\r\n";
 	}
 	else if (!host.isEmpty()) {
 		request.append("host: ").append(host.utf8()).append("\r\n");
 	}
-	for (f = headers.iterFirst(); f; f = headers.iterNext(f)) {
+	for (THash<String, String>:: Node *f = headers.iterFirst(); f; f = headers.iterNext(f)) {
 		request.append(f->k.utf8()).append(": ").append(f->v.utf8()).append("\r\n");
 	}
 	if (!content.isNull()) {
@@ -188,18 +188,18 @@ void HttpClient::sendRequest(const String &method, const String &uri, const Hash
 	((SocketStream *)read_stream.accHandle())->shutdown(2);
 }
 
-void HttpClient::partialRequest(const String &method, const String &uri, const Hash<String, String> &headers)
+void HttpClient::partialRequest(const String &method, const String &uri, const THash<String, String> &headers)
 {
 	BString request;
-	Hash<String, String>::kvpair *f;
 	request.append(method.isEmpty() ? "GET" : method.utf8().toStr()).append(" ").append(uri.utf8()).append(" HTTP/1.0\r\n");
-	if ((f = headers.find("host"))) {
-		//request += "host: "; request += f->val.utf8(); request += "\r\n";
+	if (String *v = headers.accValue("host")) {
+		(void)v;
+		//request += "host: "; request += v->utf8(); request += "\r\n";
 	}
 	else if (!host.isEmpty()) {
 		request.append("host: ").append(host.utf8()).append("\r\n");
 	}
-	for (f = headers.iterFirst(); f; f = headers.iterNext(f)) {
+	for (THash<String, String>:: Node *f = headers.iterFirst(); f; f = headers.iterNext(f)) {
 		request.append(f->k.utf8()).append(": ").append(f->v.utf8()).append("\r\n");
 	}
 	read_stream.writeFull(request);

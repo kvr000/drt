@@ -66,8 +66,8 @@ public:
 	virtual void			setTimeLimit(SysTime abs_time)		{ read_stream.setTimeLimit(abs_time); }
 
 public:
-	virtual void			sendRequest(const String &method, const String &uri, const Hash<String, String> &headers, const Blob &content = Null());
-	virtual void			partialRequest(const String &method, const String &uri, const Hash<String, String> &headers);
+	virtual void			sendRequest(const String &method, const String &uri, const THash<String, String> &headers, const Blob &content = Null());
+	virtual void			partialRequest(const String &method, const String &uri, const THash<String, String> &headers);
 	virtual void			partialHeader(const String &key, const String &value);
 	virtual void			partialNoBody();
 	virtual void			partialSendBody(const Blob &data);
@@ -89,7 +89,7 @@ protected:
 protected:
 	StreamBuffer			read_stream;
 	String				host;
-	Hash<String, String>		response_headers;
+	THash<String, String>		response_headers;
 	ssize_t				response_size;
 };
 

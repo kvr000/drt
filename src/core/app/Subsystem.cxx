@@ -69,7 +69,7 @@ typedef struct
 } subsystem_struct;
 DR_ANON_END;
 
-static Hash<String, subsystem_struct> subsystems;
+static THash<String, subsystem_struct> subsystems;
 static Mutex *subsystems_lock;
 
 
@@ -86,7 +86,7 @@ Subsystem *Subsystem::getSubsystem(const String &name, Subsystem *(*create_func)
 	MutexLocker subsys_locker(Mutex::createOnce(&subsystems_lock));
 
 	xtry {
-		if (Hash<String, subsystem_struct>::kvpair *ss = subsystems.find(name)) {
+		if (THash<String, subsystem_struct>::Node *ss = subsystems.find(name)) {
 			subsys = ss->v.subsys;
 			subsys->ref();
 			goto out;

@@ -76,8 +76,6 @@ SocketStream *HttpServer::getSocket()
 
 String HttpServer::readRequest()
 {
-	Hash<String, String>::kvpair *f;
-
 	if (connection_state >= 2)
 		return Null();
 	connection_state = 0;
@@ -162,8 +160,8 @@ String HttpServer::readRequest()
 			processHeader(key, val);
 		}
 
-		if ((f = req_headers.find("content-length")) != NULL) {
-			req_body_size = strtol(f->v.utf8(), NULL, 0);
+		if (String *f = req_headers.accValue("content-length")) {
+			req_body_size = strtol(f->utf8(), NULL, 0);
 		}
 		else {
 			switch (method_type) {
@@ -182,8 +180,8 @@ String HttpServer::readRequest()
 			}
 		}
 
-		if ((f = req_headers.find("transfer-encoding")) != NULL) {
-			if (f->v.eqUtf8("chunked", 7)) {
+		if (String *f = req_headers.accValue("transfer-encoding")) {
+			if (f->eqUtf8("chunked", 7)) {
 				{
 					ssize_t n = read_stream.readUntilChar('\n');
 					req_body_size = strtol(read_stream.ptrCache()->toStr(), NULL, 16);
@@ -253,8 +251,8 @@ void HttpServer::processHeaderConnection(const String &header, const String &val
 
 String HttpServer::getHeader(const String &key)
 {
-	if (Hash<String, String>::kvpair *f = req_headers.find(key))
-		return f->v;
+	if (String *f = req_headers.accValue(key))
+		return *f;
 	return Null();
 }
 

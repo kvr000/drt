@@ -55,7 +55,7 @@ class SqlManager: public Object
 	DR_OBJECT_DECL_SIMPLE(SqlManager, Object);
 
 public:
-	virtual SqlConnection *		openConnection(Hash<String, String> *conn_str) = 0;
+	virtual SqlConnection *		openConnection(THash<String, String> *conn_str) = 0;
 };
 
 

@@ -52,7 +52,7 @@ DR_OBJECT_IMPL_SIMPLE(SqlConnection);
 SqlConnection *SqlConnection::openConnection(const String &conn_str, SqlManager **manager)
 {
 	Ref<SqlConnection> conn;
-	Hash<String, String> pars;
+	THash<String, String> pars;
 	String driver;
 
 	ssize_t pos = 0;

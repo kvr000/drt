@@ -97,7 +97,7 @@ protected:
 	String				req_method;
 	String				req_uri;
 	unsigned			req_version;
-	Hash<String, String>		req_headers;
+	THash<String, String>		req_headers;
 	Sint64				req_body_size;
 
 	HttpConst::MethodType		method_type;

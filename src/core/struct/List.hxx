@@ -55,13 +55,12 @@ struct ListNode_c
  */
 class DR_PUB List_c: public Object
 {
-protected:
-	ListNode_c			link;
-	unsigned			cnt;
+public:
+	size_t				count()					{ return item_count; }
 
 public:
-	DR_MINLINE			List_c()				{ link.prev = NULL; link.next = NULL; cnt = 0; }
-	DR_MINLINE virtual		~List_c()				{ DR_Assert(link.prev == NULL && link.next == NULL); }
+	DR_MINLINE			List_c()				: item_count(0) { link.prev = NULL; link.next = NULL; }
+	DR_MINLINE virtual		~List_c()				{ DR_Assert(link.prev == NULL && link.next == NULL && item_count == 0); }
 	void				destroy_g();
 
 	ListNode_c *			append_g(ListNode_c *prev, const void *v);
@@ -71,28 +70,32 @@ public:
 	void				remove_g(ListNode_c *n);
 
 protected: // alloc and compare interface
-	virtual ListNode_c *		el_create(const void *v) = 0;
-	virtual ListNode_c *		el_new() = 0;
-	virtual void			el_destroy(ListNode_c *d) = 0;
+	virtual ListNode_c *		node_create(const void *v) = 0;
+	virtual ListNode_c *		node_new() = 0;
+	virtual void			node_destroy(ListNode_c *d) = 0;
 
-	virtual bool			el_eq(ListNode_c *n, const void *v) = 0;
+	virtual bool			node_eq(ListNode_c *n, const void *v) = 0;
+
+protected:
+	ListNode_c			link;
+	unsigned			item_count;
 };
 
 template <typename V>
-struct ListNode: public ListNode_c
+struct TListNode: public ListNode_c
 {
 	V				v;
-	DR_RINLINE			ListNode(const V &v_)			: v(v_) { }
-	DR_RINLINE			ListNode(const None &)			{}
-	DR_RINLINE ListNode *		prev()					{ return (ListNode *)ListNode_c::prev; }
-	DR_RINLINE ListNode *		next()					{ return (ListNode *)ListNode_c::next; }
+	DR_RINLINE			TListNode(const V &v_)			: v(v_) { }
+	DR_RINLINE			TListNode(const None &)			{}
+	DR_RINLINE TListNode *		prev()					{ return (TListNode *)ListNode_c::prev; }
+	DR_RINLINE TListNode *		next()					{ return (TListNode *)ListNode_c::next; }
 };
 
 /**
  * List container
  */
 template <typename V, typename Compar_ = Compar<V>, typename Allocator_ = Alloc>
-class List: public List_c, typestore<Compar_, 0>, typestore<Allocator_, 1>
+class TList: public List_c, typestore<Compar_, 0>, typestore<Allocator_, 1>
 {
 public:
 	typedef Compar_			Compar;
@@ -100,7 +103,7 @@ public:
 	typedef typestore<Compar, 0>	ComparBase;
 	typedef typestore<Allocator, 1> AllocatorBase;
 
-	typedef ListNode<V>		Node;
+	typedef TListNode<V>		Node;
 
 	struct iterator
 	{
@@ -117,8 +120,8 @@ public:
 	};
 
 public:
-	DR_RINLINE			List()					: List_c() { }
-	DR_RINLINE			~List()					{ destroy_g(); }
+	DR_RINLINE			TList()					: List_c() { }
+	DR_RINLINE			~TList()				{ destroy_g(); }
 
 	DR_MINLINE Node *		getFirst()				{ return (Node *)link.next; }
 	DR_MINLINE Node *		getLast()				{ return (Node *)link.prev; }
@@ -133,13 +136,11 @@ public:
 	DR_MINLINE iterator		begin()					{ return getFirst(); }
 	DR_MINLINE iterator		end()					{ return getLast(); }
 
-	size_t				getCount()				{ return cnt; }
-
 protected: // alloc and compare interface
-	virtual ListNode_c *		el_create(const void *v)		{ Node *n = (Node *)allc().allocC(sizeof(Node)); new(n) Node(*(const V *)v); return n; }
-	virtual ListNode_c *		el_new()				{ Node *n = (Node *)allc().allocC(sizeof(Node)); new(n) Node(None()); return n; }
-	virtual void			el_destroy(ListNode_c *n_)		{ Node *n = (Node *)n_; n->~Node(); allc().freeC(n, sizeof(Node)); }
-	virtual bool			el_eq(ListNode_c *n_, const void *v)	{ Node *n = (Node *)n_; return comp().teq(n->v, *(const V *)v); }
+	virtual ListNode_c *		node_create(const void *v)		{ Node *n = (Node *)allc().allocC(sizeof(Node)); new(n) Node(*(const V *)v); return n; }
+	virtual ListNode_c *		node_new()				{ Node *n = (Node *)allc().allocC(sizeof(Node)); new(n) Node(None()); return n; }
+	virtual void			node_destroy(ListNode_c *n_)		{ Node *n = (Node *)n_; n->~Node(); allc().freeC(n, sizeof(Node)); }
+	virtual bool			node_eq(ListNode_c *n_, const void *v)	{ Node *n = (Node *)n_; return comp().teq(n->v, *(const V *)v); }
 
 public:
 	DR_MINLINE Compar &		comp()					{ return *reinterpret_cast<Compar *>((ComparBase *)this); }
@@ -147,12 +148,12 @@ public:
 };
 
 template <typename V>
-class SList: public List<V, ComparInv<V>, Alloc>
+class SList: public TList<V, ComparInv<V>, Alloc>
 {
 };
 
 template <typename V>
-class RList: public List<Ref<V>, RCompar<V>, Alloc>
+class RList: public TList<Ref<V>, RCompar<V>, Alloc>
 {
 };
 

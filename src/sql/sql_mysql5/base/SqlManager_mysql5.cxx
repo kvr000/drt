@@ -52,7 +52,7 @@ DRSQL_MYSQL5_NS_BEGIN
 DR_OBJECT_DEF(DRSQL_MYSQL5_NS_STR, SqlManager_mysql5, SqlManager);
 DR_OBJECT_IMPL_SIMPLE(SqlManager_mysql5);
 
-SqlConnection *SqlManager_mysql5::openConnection(Hash<String, String> *args)
+SqlConnection *SqlManager_mysql5::openConnection(THash<String, String> *args)
 {
 	BString host((*args)["host"].utf8());
 	BString port((*args)["port"].utf8());

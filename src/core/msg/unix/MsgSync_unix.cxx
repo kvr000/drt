@@ -110,7 +110,7 @@ void MsgSync_unix::registerSocket(void *os_handle, WaitMode mode, const Eslot0<W
 
 void MsgSync_unix::unregisterSocket(void *os_handle)
 {
-	List<socket_notif_data>::Node *node;
+	TList<socket_notif_data>::Node *node;
 
 	for (node = socket_list.getFirst(); node->v.fd != (SintPtr)os_handle; node = node->next());
 	socket_list.remove(node);
@@ -126,7 +126,7 @@ bool MsgSync_unix::threadXchg(MsgSync *new_sync)
 /* thread sync interface */
 void MsgSync_unix::threadSleep()
 {
-	List<socket_notif_data>::Node *node;
+	TList<socket_notif_data>::Node *node;
 	int highest = -1;
 	int rhighest;
 	fd_set rs, ws, es;

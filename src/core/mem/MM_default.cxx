@@ -85,8 +85,8 @@ MM_default::MM_default()
 MM_default::~MM_default()
 {
 	if (MM_impl::debug_options&MM_impl::MMD_REMEMBER) {
-		RememberHash::kvpair *n;
-		Fatal::plog("pending memory (%ld):\n", (long)remember_hash->getCount());
+		RememberHash::Node *n;
+		Fatal::plog("pending memory (%ld):\n", (long)remember_hash->count());
 
 		for (n = remember_hash->iterFirst(); n; n = remember_hash->iterNext(n)) {
 			Fatal::plog("block %p:\n", (char *)n->k+sizeof(SintPtr));
@@ -342,8 +342,8 @@ has_out:
 		if (MM_impl::debug_options&MM_impl::MMD_REMEMBER) {
 			size_t btsize;
 			bool created;
-			RememberHash::kvpair *hc;
-			StringCache::kvpair *sc;
+			RememberHash::Node *hc;
+			StringCache::Node *sc;
 			instance.remember_mutex->lock();
 			hc = instance.remember_hash->create(out, &created);
 			if (!created)
@@ -361,7 +361,7 @@ has_out:
 		}
 		if (MM_impl::debug_options&MM_impl::MMD_PENDING) {
 			char buf[256];
-			sprintf(buf, "allocated block %p (%ld), pending %ld\n", (char *)out+sizeof(SintPtr), (long)size_, (long)instance.remember_hash->getCount());
+			sprintf(buf, "allocated block %p (%ld), pending %ld\n", (char *)out+sizeof(SintPtr), (long)size_, (long)instance.remember_hash->count());
 			Fatal::pdata(buf, strlen(buf));
 		}
 	}
@@ -388,7 +388,7 @@ void MM_default::impl_free(void *m)
 				Fatal::log(buf);
 		}
 		if (MM_impl::debug_options&MM_impl::MMD_REMEMBER) {
-			RememberHash::kvpair *rmem;
+			RememberHash::Node *rmem;
 			instance.remember_mutex->lock();
 			if (!(rmem = instance.remember_hash->find(m))) {
 				DR_AssertMsg("freeing not allocated memory");
@@ -399,7 +399,7 @@ void MM_default::impl_free(void *m)
 		}
 		if (MM_impl::debug_options&MM_impl::MMD_PENDING) {
 			char buf[256];
-			sprintf(buf, "freeing block %p (%ld), pending %ld\n", (char *)m+sizeof(SintPtr), (long)size_, (long)instance.remember_hash->getCount());
+			sprintf(buf, "freeing block %p (%ld), pending %ld\n", (char *)m+sizeof(SintPtr), (long)size_, (long)instance.remember_hash->count());
 			Fatal::plog(buf);
 		}
 		if (MM_impl::debug_options&MM_impl::MMD_TEST) {

@@ -60,10 +60,10 @@ protected:
 protected:
 	RList<ThreadSimple>		all_workers;
 	SList<Blob>			waiting_data;
-	Hash<Sint64, Blob>		processed_data;
+	THash<Sint64, Blob>		processed_data;
 	Sint64				proc_counter;
 	Sint64				return_counter;
-	Hash<String, RList<Evaluator> >	evaluators;
+	THash<String,RList<Evaluator> >	evaluators;
 	Evaluator::Arguments::Constants	constants;
 
 	unsigned			num_free_workers;

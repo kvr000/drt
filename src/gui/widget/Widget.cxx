@@ -435,9 +435,9 @@ DR_GUI_MET Visual *Widget::p_assignVisual()
 
 DR_EXPORT_MET Eslot_g *Widget::findNotifier(const String &notif_id)
 {
-	if (Hash<String, Notifier>::kvpair *p = notifiers.find(notif_id)) {
-		if (!p->v.isNull())
-			return &p->v;
+	if (Notifier *p = notifiers.accValue(notif_id)) {
+		if (!p->isNull())
+			return p;
 	}
 	return NULL;
 }

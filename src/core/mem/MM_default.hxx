@@ -58,7 +58,7 @@ public:
 		char *	bt;
 		size_t	size;
 	};
-	class DR_PUB RememberHash: public Hash<void *, RH_value, HashCompar<void *, RH_value>, HashAlloc<void *, RH_value, AllocNat> >
+	class DR_PUB RememberHash: public THash<void *, RH_value, HashCompar<void *, RH_value>, THashAlloc<void *, RH_value, AllocNat> >
 	{
 	};
 
@@ -68,7 +68,7 @@ public:
 		DR_MINLINE long		khash(const char *s)			{ long h; for (h = 0; *s != '\0'; h = h*31+*s++) ; return h; }
 		DR_MINLINE bool		keq(const char *s1, const char *s2)	{ return strcmp(s1, s2) == 0; }
 	};
-	typedef Hash<char *, bool, StrCompar, HashAlloc<char *, bool, AllocNat> > StringCache;
+	typedef THash<char *, bool, StrCompar, THashAlloc<char *, bool, AllocNat> > StringCache;
 
 public:
 	static void *			impl_alloc(size_t size);

@@ -117,9 +117,9 @@ void RpcHelper::readStruct(RpcDecoder *decoder, void *struct_addr, StructMapper 
 	ssize_t cnt = decoder->readStructLength();
 	while (decoder->checkStructNext(&cnt)) {
 		String name = decoder->readMemberName();
-		if (Hash<String, MemberInfo *>::kvpair *m = mapper->map.find(name)) {
+		if (MemberInfo **m = mapper->map.accValue(name)) {
 			xtry {
-				m->v->reader_func(decoder, (char *)struct_addr+m->v->offset);
+				(*m)->reader_func(decoder, (char *)struct_addr+(*m)->offset);
 			}
 			xcatch (Except, ex) {
 				xthrownew(RpcExcept(ex, String("failed to read ")+name));

@@ -101,8 +101,8 @@ TESTNSE(hash);
 
 #ifdef TEST_AVL
 typedef SArray<int>		TestList;
-typedef Avl<int, int>		TestTree;
-typedef Avl<int, int>::Node	TestNode;
+typedef TAvl<int, int>		TestTree;
+typedef TAvl<int, int>::Node	TestNode;
 
 TESTNS(avl)
 
@@ -142,7 +142,7 @@ static int checkSubtree(TestNode *node)
 	if ((node->refs[0]) != NULL) {
 		CHECK(node->refs[0]->parent == node);
 		CHECK(node->refs[0]->direction == -1);
-		lh = checkSubtree((Avl<int, int>::Node *)node->refs[0]);
+		lh = checkSubtree((TestNode *)node->refs[0]);
 	}
 	else {
 		lh = 0;
@@ -150,7 +150,7 @@ static int checkSubtree(TestNode *node)
 	if ((node->refs[2]) != NULL) {
 		CHECK(node->refs[2]->parent == node);
 		CHECK(node->refs[2]->direction == 1);
-		rh = checkSubtree((Avl<int, int>::Node *)node->refs[2]);
+		rh = checkSubtree((TestNode *)node->refs[2]);
 	}
 	else {
 		rh = 0;
@@ -187,7 +187,7 @@ static void remValue(TestList *list, TestTree *tree, size_t idx)
 
 void test()
 {
-	Avl<int, int> tree;
+	TAvl<int, int> tree;
 	SArray<int> added;
 	if (0) {
 		addValue(&added, &tree, 5);

@@ -120,7 +120,7 @@ public:
 protected:
 	Ref<SqlConnection>		connection;
 	SysTime				created;
-	Hash<String, Ref<Object> >	db_layers;
+	THash<String, Ref<Object> >	db_layers;
 
 protected:
 	friend class SqlConnectionPool;

@@ -199,6 +199,14 @@ public:
 	}
 
 	/**
+	 * check if object is null
+	 */
+	DR_RINLINE bool			isNull()
+	{
+		return obj == NULL;
+	}
+
+	/**
 	 * reset and unref object
 	 */
 	DR_RINLINE void			setNull()

@@ -45,7 +45,7 @@ void Hash_c::destroy_g()
 	if (list) {
 		int i;
 		for (i = 0; i <= hashmask; i++) {
-			struct Entry_c *c, *n;
+			struct Node_c *c, *n;
 			for (c = list[i]; c; c = n) {
 				n = c->next;
 				pairDestroy(c);
@@ -56,9 +56,9 @@ void Hash_c::destroy_g()
 	list = NULL;
 }
 
-Hash_c::Entry_c *Hash_c::find_g(long hash_value, const void *key) const
+Hash_c::Node_c *Hash_c::find_g(long hash_value, const void *key) const
 {
-	Entry_c *r = NULL;
+	Node_c *r = NULL;
 	if (list) {
 		for (r = list[hash_value&hashmask]; r; r = r->next) {
 			if (r->hash != hash_value)
@@ -71,23 +71,23 @@ Hash_c::Entry_c *Hash_c::find_g(long hash_value, const void *key) const
 	return r;
 }
 
-Hash_c::Entry_c *Hash_c::create_g(long hash_value, const void *key, bool *created)
+Hash_c::Node_c *Hash_c::create_g(long hash_value, const void *key, bool *created)
 {
-	Entry_c *r = find_g(hash_value, key);
+	Node_c *r = find_g(hash_value, key);
 	if (r) {
 		if (created)
 			*created = false;
 		return r;
 	}
-	if ((int)count >= hashmask-hashmask/4) {
+	if ((int)item_count >= hashmask-hashmask/4) {
 		unsigned olim = hashmask+1;
 		unsigned i;
 		if (list) {
-			list = (Entry_c **)reallocList((hashmask+1)*2*sizeof(Entry_c *));
+			list = (Node_c **)reallocList((hashmask+1)*2*sizeof(Node_c *));
 			hashmask = 2*hashmask+1;
 		}
 		else {
-			list = (Entry_c **)reallocList(4*sizeof(Entry_c *));
+			list = (Node_c **)reallocList(4*sizeof(Node_c *));
 			hashmask = 3;
 		}
 
@@ -95,7 +95,7 @@ Hash_c::Entry_c *Hash_c::create_g(long hash_value, const void *key, bool *create
 			list[i] = NULL;
 
 		for (i = 0; i < olim; i++) {
-			Entry_c **p;
+			Node_c **p;
 			for (p = &list[i]; *p; ) {
 				if ((unsigned)((*p)->hash&hashmask) != i) {
 					r = *p;
@@ -115,7 +115,7 @@ Hash_c::Entry_c *Hash_c::create_g(long hash_value, const void *key, bool *create
 	r->hash = hash_value;
 	r->next = list[hash_value&hashmask];
 	list[hash_value&hashmask] = r;
-	count++;
+	item_count++;
 	if (created)
 		*created = true;
 	return r;
@@ -124,8 +124,8 @@ Hash_c::Entry_c *Hash_c::create_g(long hash_value, const void *key, bool *create
 bool Hash_c::remove_g(long hash_value, const void *key)
 {
 	if (list) {
-		Entry_c *r;
-		Entry_c **s;
+		Node_c *r;
+		Node_c **s;
 		for (s = &list[hash_value&hashmask]; *s; s = &r->next) {
 			r = *s;
 			if (r->hash != hash_value)
@@ -133,7 +133,7 @@ bool Hash_c::remove_g(long hash_value, const void *key)
 			if (!keyeq(r, key))
 				continue;
 			*s = r->next;
-			count--;
+			item_count--;
 			pairDestroy(r);
 			return true;
 		}
@@ -145,9 +145,9 @@ void Hash_c::clean_g()
 {
 	if (list) {
 		for (ssize_t i = 0; i <= hashmask; i++) {
-			for (Entry_c *n, *r = list[i]; r != NULL; r = n) {
+			for (Node_c *n, *r = list[i]; r != NULL; r = n) {
 				n = r->next;
-				count--;
+				item_count--;
 				pairDestroy(r);
 			}
 			list[i] = NULL;
@@ -155,7 +155,7 @@ void Hash_c::clean_g()
 	}
 }
 
-Hash_c::Entry_c *Hash_c::iterFirst_g() const
+Hash_c::Node_c *Hash_c::iterFirst_g() const
 {
 	long i;
 
@@ -166,7 +166,7 @@ Hash_c::Entry_c *Hash_c::iterFirst_g() const
 	return NULL;
 }
 
-Hash_c::Entry_c *Hash_c::iterNext_g(Entry_c *c) const
+Hash_c::Node_c *Hash_c::iterNext_g(Node_c *c) const
 {
 	long i;
 

@@ -181,7 +181,7 @@ protected:
 	Eslot1<void, bool> *		findNotifierEnabled()			{ return (Eslot1<void, bool> *)findNotifier(notify_enabled); }
 
 protected:
-	Hash<String, Notifier>		notifiers;
+	THash<String, Notifier>		notifiers;
 
 protected:
 	/** type flags */
