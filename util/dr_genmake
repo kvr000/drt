@@ -644,9 +644,9 @@ sub printPostSubs # list_of_presubs <- this makefile vars
 	my $vars	= shift;
 
 	my @postsubs;
-	if (defined (my $presubs = $vars->{POSTSUBS})) {
-		foreach (@$presubs) {
-			$mf->print("sub_$_->{name}:\n\t\$(MAKE) -C $_->{name}\n\n");
+	if (defined (my $postsubs = $vars->{POSTSUBS})) {
+		foreach (@$postsubs) {
+			$mf->printf("sub_%s: targ_build %s\n\t\$(MAKE) -C %s\n\n", $_->{name}, join(" ", map({ "sub_$_" } @{$_->{deps}})), $_->{name});
 			push(@postsubs, "sub_$_->{name}");
 		}
 		$mf->print("\n");
