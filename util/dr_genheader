@@ -422,6 +422,11 @@ MAIN: while (<$cxx>) {
 				push(@funcspec, "virtual");
 				last;
 			}
+			elsif (m/^(.*?)\s*($class)::(operator[^(]+)(\(.*\)(\s+const)?)\s*$/) {
+				$func_ret = $1;
+				$func_decl = "$3$4";
+				last;
+			}
 			elsif (m/^(.*?)\s*($class)::(\w+)(\(.*\)(\s+const)?)\s*$/) {
 				$func_ret = $1;
 				$func_decl = "$3$4";
