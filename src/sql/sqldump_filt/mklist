@@ -17,7 +17,7 @@ FLAGS:
 	exec=$(EXELDXXFLAGS)
 
 OUTPUT:
-	exec:sqldump_filt:f=exec;s=s;r=test
+	exec:sqldump_filt:f=exec;s=s
 
 SOURCES:
 	no:mklist:g=t
