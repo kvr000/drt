@@ -43,6 +43,7 @@
 
 #include <dr/sql/mysql5/Connection_mysql5.hxx>
 #include <dr/sql/mysql5/Statement_mysql5.hxx>
+#include <dr/sql/mysql5/Statement_mysql5_direct.hxx>
 
 #include <dr/sql/mysql5/SqlManager_mysql5.hxx>
 
@@ -72,17 +73,26 @@ Connection *SqlManager_mysql5::openConnection(THash<String, String> *args)
 #endif
 		if (mysql_real_connect(handle, host.toStr(), user.toStr(), pass.toStr(), db.toStr(), atoi(port.toStr()), NULL, CLIENT_FOUND_ROWS)) {
 			xtry {
+				const char *charvars[] = { "character_set_server", "character_set_database", "character_set_connection", "character_set_client", "character_set_results" };
 				String charset((*args)["charset"]);
-				if (!charset.isNullEmpty() && mysql_set_character_set(handle, charset.utf8()) != 0) {
+				if (charset.isNullEmpty())
+					charset = "UTF8";
+				if (mysql_set_character_set(handle, charset.utf8()) != 0) {
 					Connection_mysql5::throwSqlExcept(mysql_sqlstate(handle), mysql_error(handle));
 				}
-				Connection_mysql5 *c = new dr::sql::mysql5::Connection_mysql5(handle);
+				ERef<Connection_mysql5> c(new dr::sql::mysql5::Connection_mysql5(handle));
+				handle = NULL;
+				tref(new Statement_mysql5_direct(c, String("SET CHARSET '")+charset+"'"))->executeUpdate();
+				for (size_t i = 0; i < sizeof(charvars)/sizeof(charvars[0]); i++) {
+					tref(new Statement_mysql5_direct(c, String("SET ")+charvars[i]+"='"+charset+"'"))->executeUpdate();
+				}
 				c->auto_reconnect = reconnect;
 				c->use_locks = locks;
-				return c;
+				return c.getAndNull();
 			}
 			xcatchany {
-				mysql_close(handle);
+				if (handle != NULL)
+					mysql_close(handle);
 				xrethrowany;
 			}
 			xend;
