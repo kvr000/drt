@@ -34,8 +34,11 @@
  **/
 
 #include <sys/mman.h>
+#include <errno.h>
+#include <unistd.h>
 
-#include <dr_def.hxx>
+#include <dr/types.hxx>
+#include <dr/Assert.hxx>
 
 DR_NS_BEGIN
 
@@ -45,8 +48,15 @@ namespace sys
 
 int makeMemWritable(void *addr, size_t size)
 {
+	static SintPtr pagesize = 0;
+	if (pagesize == 0) {
+		pagesize = sysconf(_SC_PAGESIZE);
+	}
+	size += ((char *)addr-(char *)((UintPtr)addr&-pagesize));
+	addr = (void *)((UintPtr)addr&-pagesize);
+	size = (size+pagesize-1)&-pagesize;
 	if (mprotect(addr, size, PROT_WRITE|PROT_READ|PROT_EXEC)) {
-		printf("mprotect failed: %d\n", errno);
+		Fatal::plog("mprotect failed: %d\n", errno);
 		return -1;
 	}
 	return 0;

@@ -49,14 +49,10 @@
 DR_NS_BEGIN
 
 
-#ifdef DR_RO_VTABLE
-
 namespace sys
 {
 	int makeMemWritable(void *addr, size_t size);
 };
-
-#endif
 
 
 DR_EXPORT_DTS const String Object::comp_name(Const::string(DR_NS_STRP("Object")));

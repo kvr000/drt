@@ -149,7 +149,7 @@ WorkerPoolThread::WorkMessage *WorkerPoolThread::checkNextWork()
 	}
 
 out:
-	if (wmsg->work != NULL) {
+	if (!wmsg->work.isNull()) {
 		return wmsg.getAndNull();
 	}
 
