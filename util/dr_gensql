@@ -102,6 +102,8 @@ our %SQL_UML_TYPES_PRIM = (
 	long			=> "bigint",
 	int			=> "int",
 	Integer			=> "int",
+	date			=> "date",
+	datetime		=> "datetime",
 );
 
 our %SQL_UML_TYPES_VAR = (
@@ -124,25 +126,24 @@ sub translateSqlType($)
 	eval {
 		my ( $type, $tagger ) = $attr->getFinalTypeWithTagger();
 
-		if (defined (my $db_type = $tagger->checkTagValue("db_type"))) {
-			if ($type->{stype} eq "enum") {
+		if (defined (my $db_type = defvalue($tagger->checkTagValue("db_type"), $tagger->checkTagValue("db_conversion")))) {
+			if ($db_type eq "enum" && $type->{stype} eq "enum") {
 				return "enum(".join(", ", map({
 							$_->getDrTagger()->getTag("db_value")->{value}
 						} @{$type->{literal_list}})).")";
 			}
 			else {
-				my $ptype = $type->{type};
-				if ($ptype =~ m/^(\w+)\((\d+)\)$/) {
+				if ($db_type =~ m/^(\w+)\((\d+)\)$/) {
 					if (my $sqlt = $SQL_UML_TYPES_VAR{$1}) {
 						return "$sqlt($2)";
 					}
-					die "cannot map $ptype";
+					die "cannot map $db_type";
 				}
 				else {
-					if (my $sqlt = $SQL_UML_TYPES_PRIM{$ptype}) {
+					if (my $sqlt = $SQL_UML_TYPES_PRIM{$db_type}) {
 						return $sqlt;
 					}
-					die "cannot map $ptype";
+					die "cannot map $db_type";
 				}
 			}
 		}

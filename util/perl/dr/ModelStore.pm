@@ -306,6 +306,17 @@ sub getDrTag
 		or $this->dieContext($@);
 }
 
+sub getDrTagValue
+{
+	my $this		= shift;
+	my $tag			= shift;
+
+	eval {
+		return $this->{drtag}->getTagValue($tag);
+	}
+		or $this->dieContext($@);
+}
+
 sub checkDrTagValue
 {
 	my $this		= shift;
@@ -417,6 +428,7 @@ sub new
 
 	$this->{attr_list} = [];
 	$this->{action_list} = [];
+	$this->{view_list} = [];
 
 	return $this;
 }
@@ -466,6 +478,7 @@ our %CLASS_MAPPER = (
 	assoc			=> \&readClassAssoc,
 	compos			=> \&readClassCompos,
 	action			=> \&readClassAction,
+	view			=> \&readClassView,
 );
 
 sub load
@@ -530,6 +543,19 @@ sub readClassAction
 	$action->load($base->getSubLeveler());
 
 	push(@{$this->{action_list}}, $action);
+}
+
+sub readClassView
+{
+	my $this		= shift;
+	my $base		= shift;
+	my $key			= shift;
+	my $val			= shift;
+
+	my $view = dr::ModelStore::View->new($this, { stype => "view", name => $val });
+	$view->load($base->getSubLeveler());
+
+	push(@{$this->{view_list}}, $view);
 }
 
 
@@ -989,11 +1015,40 @@ sub getAssocTarget
 		or $this->dieContext("failed to open final type", $@);
 };
 
-sub expandAssocAttrs
+sub getFinalType
 {
 	my $this		= shift;
 
-	if (caller(1024)) {
+	my @refs = $this->expandAssocAttrs();
+	if (@refs != 1) {
+		$this->dieContext("getFinalType called on reference to not single attributes");
+	}
+
+	return $refs[0]->{attr}->getFinalType();
+}
+
+sub getFinalTypeWithTagger
+{
+	my $this		= shift;
+
+	my @refs = $this->expandAssocAttrs();
+	if (@refs != 1) {
+		$this->dieContext("getFinalTypeWithTagger called on reference to not single attributes");
+	}
+
+	my ( $type, $tagger ) = $refs[0]->{attr}->getFinalTypeWithTagger();
+	$tagger->mergeReplacing($this->{drtag});
+
+	return ( $type, $tagger );
+}
+
+sub expandAssocAttrs
+{
+	our $deeprec_check = 0;
+
+	my $this		= shift;
+
+	if (++$deeprec_check%1024  == 0&& caller(1024)) {
 		dr::Util::doDie("deep recursion");
 	}
 	my $target = $this->getAssocTarget();
@@ -1083,7 +1138,7 @@ use warnings;
 use base "dr::ModelStore::AssocBase";
 
 
-package dr::ModelStore::ActionBase;
+package dr::ModelStore::OperInfo;
 
 use strict;
 use warnings;
@@ -1109,6 +1164,51 @@ sub new
 	return $this;
 }
 
+sub getDrTagger
+{
+	my $this		= shift;
+
+	return $this->{drtag};
+}
+
+sub getDrTag
+{
+	my $this		= shift;
+	my $tag			= shift;
+
+	eval {
+		return $this->{drtag}->getTag($tag);
+	}
+		or $this->dieContext($@);
+}
+
+sub getDrTagValue
+{
+	my $this		= shift;
+	my $tag			= shift;
+
+	eval {
+		return $this->{drtag}->getTagValue($tag);
+	}
+		or $this->dieContext($@);
+}
+
+sub checkDrTagValue
+{
+	my $this		= shift;
+	my $tag			= shift;
+
+	return $this->{drtag}->checkTagValue($tag);
+}
+
+sub getDrSpecs
+{
+	my $this		= shift;
+	my $spec		= shift;
+
+	return $this->{drtag}->getSpecs($spec);
+}
+
 sub dieContext
 {
 	my $this		= shift;
@@ -1118,7 +1218,7 @@ sub dieContext
 	dr::Util::doDie(((defined $cause)) ? "$this->{file_context}: $msg\n$cause" : "$this->{file_context}: $msg");
 }
 
-our %MODEL_ACTIONBASE_MAPPER = (
+our %MODEL_OPERINFO_MAPPER = (
 	drtag			=> \&readDrtag,
 	comment			=> \&readComment,
 );
@@ -1135,7 +1235,7 @@ sub load
 
 	$this->{file_context} = $reader->getContext();
 
-	dr::ModelStore::Util::genericLoad($this, $reader, \%MODEL_ACTIONBASE_MAPPER);
+	dr::ModelStore::Util::genericLoad($this, $reader, \%MODEL_OPERINFO_MAPPER);
 
 	$this->postLoad();
 }
@@ -1161,12 +1261,87 @@ sub readDrtag
 }
 
 
+package dr::ModelStore::ActionBase;
+
+use strict;
+use warnings;
+
+use base "dr::ModelStore::OperInfo";
+
+sub new
+{
+	my $ref			= shift;
+	my $class		= ref($ref) || $ref;
+
+	my $owner		= shift;
+	my $basic		= shift;
+
+	my $this = $class->SUPER::new($owner, $basic);
+	$this->{classify} = {};
+
+	return $this;
+}
+
+our %MODEL_ACTIONBASE_MAPPER = (
+	%MODEL_OPERINFO_MAPPER,
+	classify		=> \&readClassify,
+);
+
+sub load
+{
+	my $this		= shift;
+	my $reader		= shift;
+
+	$this->{file_context} = $reader->getContext();
+
+	dr::ModelStore::Util::genericLoad($this, $reader, \%MODEL_ACTIONBASE_MAPPER);
+
+	$this->postLoad();
+}
+
+sub readClassify
+{
+	my $this		= shift;
+	my $base		= shift;
+	my $key			= shift;
+	my $val			= shift;
+
+	foreach (split(/,\s*/, $val)) {
+		$this->{classify}->{$_} = 1;
+	}
+}
+
+
 package dr::ModelStore::Action;
 
 use strict;
 use warnings;
 
 use base "dr::ModelStore::ActionBase";
+
+
+package dr::ModelStore::View;
+
+use strict;
+use warnings;
+
+use base "dr::ModelStore::OperInfo";
+
+our %MODEL_VIEW_MAPPER = (
+	%MODEL_OPERINFO_MAPPER,
+);
+
+sub load
+{
+	my $this		= shift;
+	my $reader		= shift;
+
+	$this->{file_context} = $reader->getContext();
+
+	dr::ModelStore::Util::genericLoad($this, $reader, \%MODEL_VIEW_MAPPER);
+
+	$this->postLoad();
+}
 
 
 package dr::ModelStore;

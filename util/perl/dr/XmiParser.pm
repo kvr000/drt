@@ -125,6 +125,7 @@ sub new
 	my $class		= ref($ref) || $ref;
 
 	my $this = bless {
+		order			=> 0,
 		comment			=> [],
 		drtag_list		=> [],
 		drtag_hash		=> {},
@@ -140,7 +141,7 @@ sub processComment
 
 	foreach my $line (split("\n", $body)) {
 		if ($line =~ m/^(drt?-)(\w+(\(\w+\))?):\s*(.*?)\s*$/) {
-			my $comment = { name => $2, value => $4 };
+			my $comment = { order => $this->{order}++, name => $2, value => $4 };
 			push(@{$this->{drtag_list}}, $comment);
 			die "drcomment $2 already specified" if (defined $this->{drtag_hash}->{$2});
 			$this->{drtag_hash}->{$comment->{name}} = $comment;
@@ -160,8 +161,8 @@ sub processTag
 	my $tag			= shift;
 	my $value		= shift;
 
-	if ($tag =~ m/^\s*(drt?-)(\w+(\(\w+\))?)$/) {
-		my $comment = { name => $2, value => $value };
+	if ($tag =~ m/^\s*(drt?-)(\w+)(-(\d+))?(\(\w+\))?$/) {
+		my $comment = { order => defined $3 ? $4 : 0x7fffffff, name => $2.dr::Util::defvalue($5, ""), value => $value };
 		push(@{$this->{drtag_list}}, $comment);
 		die "drcomment $2 already specified" if (defined $this->{drtag_hash}->{$2});
 		$this->{drtag_hash}->{$comment->{name}} = $comment;

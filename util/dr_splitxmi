@@ -97,7 +97,7 @@ sub formatComment($$)
 
 	my $out = "";
 
-	foreach my $dr (@{$comment->{drtag_list}}) {
+	foreach my $dr (sort({ $a->{order} <=> $b->{order} } @{$comment->{drtag_list}})) {
 		$out .= sprintf("%s%s", "\t" x $indent, formatTriplet("drtag", $dr->{name}, $dr->{value}));
 	}
 	foreach my $com (@{$comment->{comment}}) {
@@ -153,9 +153,16 @@ sub genClass
 			$fd->print("\t".formatPair("default", $attr->{default_value})) if (defined $attr->{default_value});
 			$fd->print(formatComment(1, $attr->{comment}));
 		}
-		foreach my $oper (map({ m/^dr\.action\.(.*)$/ ? $1 : () } @{$class->{oper_list}})) {
-			$fd->print(formatPair("action", $oper->{name}));
-			$fd->print("\t".formatPair("classify", join(",", keys %{$oper->{classify}})));
+		foreach my $action (grep({ $_->{name} =~ m/^dr\.action\.(.*)$/ } @{$class->{oper_list}})) {
+			my $action_name = ($action->{name} =~ m/^dr\.action\.(.*)$/)[0];
+			$fd->print(formatPair("action", $action_name));
+			$fd->print("\t".formatPair("classify", join(",", keys %{$action->{classify}})));
+			$fd->print(formatComment(1, $action->{comment}));
+		}
+		foreach my $action (grep({ $_->{name} =~ m/^dr\.view\.(.*)$/ } @{$class->{oper_list}})) {
+			my $action_name = ($action->{name} =~ m/^dr\.view\.(.*)$/)[0];
+			$fd->print(formatPair("view", $action_name));
+			$fd->print(formatComment(1, $action->{comment}));
 		}
 	}
 	else {

@@ -130,6 +130,32 @@ sub translateFormType($)
 		or dieAttrContext($attr, $@);
 }
 
+sub printAttrOptional
+{
+	my $formfile		= shift;
+	my $attr		= shift;
+	my $name		= shift;
+
+	if (defined (my $v = $attr->checkDrTagValue($name))) {
+		$formfile->print(tabalign("\t$name", 24).$v."\n");
+		return 1;
+	}
+	return 0;
+}
+
+sub printActionOptional
+{
+	my $formfile		= shift;
+	my $action		= shift;
+	my $name		= shift;
+
+	if (defined (my $v = $action->checkDrTagValue($name))) {
+		$formfile->print(tabalign("\t$name", 24).$v."\n");
+		return 1;
+	}
+	return 0;
+}
+
 my $lineno = 0;
 
 my @models = ();
@@ -160,18 +186,28 @@ foreach my $model (@models) {
 			$form->print(tabalign("\tmandatory", 24).$attr->{mandatory}."\n");
 			$form->print(tabalign("\tlogical", 24).$tagger->getTag("logical")->{value}."\n");
 			$form->print(tabalign("\tdisplay", 24).$tagger->getTag("display")->{value}."\n");
+			foreach (qw(req_sys req_get req_set req_view req_mode)) {
+				printAttrOptional($form, $attr, $_);
+			}
 			1;
 		}
 			or die "failed to process $model->{full}.$attr->{name}: $@: ".Dumper($tagger);
 	}
-	foreach my $action (sort({ $a->{order} <=> $b->{order} } values %{$model->getDrSpecs("action")})) {
-		$form->print(tabalign("action", 16).$action->{spec}."\n");
-		my $ats = dr::Util::splitAttributes($action->{value});
-		$form->print(tabalign("\ttext", 24).defvalue($ats->{text}, $action->{spec})."\n");
-		if (defined $ats->{form_actioner}) {
-			my $a = $ats->{form_actioner} eq "_" ? "$model->{full}_$action->{spec}" : index($ats->{form_actioner}, "_") == 0 ? "$model->{full}$ats->{form_actioner}" : $ats->{form_actioner};
-			$form->print(tabalign("\tform_actioner", 24).$a."\n");
+	foreach my $action (@{$model->{action_list}}) {
+		eval {
+			$form->print(tabalign("action", 16).$action->{name}."\n");
+			$form->print(tabalign("\ttext", 24).defvalue($action->checkDrTagValue("text"), $action->{name})."\n");
+			$form->print(tabalign("\tclassify", 24).join(",", keys %{$action->{classify}})."\n");
+			if (defined (my $form_actioner = $action->checkDrTagValue("form_actioner"))) {
+				my $a = $form_actioner eq "_" ? "$model->{full}_$action->{name}" : index($form_actioner, "_") == 0 ? "$model->{full}$form_actioner" : $form_actioner;
+				$form->print(tabalign("\tform_actioner", 24).$a."\n");
+			}
+			foreach (qw(req_sys req_get req_set req_view req_mode)) {
+				printActionOptional($form, $action, $_);
+			}
+			1;
 		}
+			or STDERR->print("failed to process $model->{full}.$action->{name}: $@"), $errors++;
 	}
 	$file_trans->closeFile($form);
 }

@@ -7,7 +7,7 @@
 ##
 ## ----------------------------------------------------------------------------------
 ##
-## Copyright (C) 2004-2008 Zbyněk Vyškovský
+## Copyright (C) 2004-2009 Zbyněk Vyškovský
 ##
 ## ----------------------------------------------------------------------------------
 ##
@@ -29,7 +29,7 @@
 ## along with drt; if not, write to the Free Software Foundation, Inc., 51
 ## Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ##
-## @copyright	2004-2008 Zbyněk Vyškovský
+## @copyright	2004-2009 Zbyněk Vyškovský
 ## @link	mailto:kvr@matfyz.cz
 ## @link	http://kvr.matfyz.cz/drt/
 ## @license	http://www.gnu.org/licenses/lgpl.txt GNU Lesser General Public License v3
@@ -147,6 +147,19 @@ sub translateFormType($)
 		or dieAttrContext($attr, $@);
 }
 
+sub printActionOptional
+{
+	my $formfile		= shift;
+	my $action		= shift;
+	my $name		= shift;
+
+	if (defined (my $v = $action->checkDrTagValue($name))) {
+		$formfile->print(tabalign("\t$name", 24).$v."\n");
+		return 1;
+	}
+	return 0;
+}
+
 my $lineno = 0;
 
 my @models = ();
@@ -168,19 +181,40 @@ while (defined (my $line = $list->readLine())) {
 foreach my $model (@models) {
 	my $file = $model->{full}; $file =~ s/::/\//g;
 	my $form = $file_trans->createTruncated("$root/$file.metadb");
-	$form->print(tabalign("table", 16).$model->{db_table}."\n");
+	eval {
+		$form->print(tabalign("db_table", 16).$model->{db_table}."\n");
+		foreach (qw(req_get req_set req_new req_del)) {
+			$form->print(tabalign("$_", 16).$model->getDrTagValue($_)."\n");
+		}
+		1;
+	}
+		or STDERR->print("failed to process $model->{full}: $@"), $errors++;
 	foreach my $attr (@{$model->{attr_list}}) {
 		eval {
 			$form->print(tabalign($attr->{stype}, 16).$attr->{name}."\n");
-			foreach (qw(req_sys req_get req_set)) {
+			foreach (qw(db_name db_conversion)) {
+				if (defined (my $v = $attr->checkDrTagValue($_))) {
+					$form->print(tabalign("\t$_", 24).$v."\n");
+				}
+			}
+			foreach (qw(req_sys req_view req_mode)) {
 				$form->print(tabalign("\t$_", 24).defvalue($attr->checkDrTagValue($_), "")."\n");
 			}
+			foreach (qw(req_get req_set req_new)) {
+				if (defined (my $v = $attr->checkDrTagValue($_))) {
+					$form->print(tabalign("\t$_", 24).$v."\n");
+				}
+			}
+			$form->print(tabalign("\tmandatory", 24).$attr->{mandatory}."\n");
 			if ($attr->{stype} eq "attr") {
 				my ( $type, $tagger ) = $attr->getFinalTypeWithTagger();
+				my $roles = defvalue($tagger->checkTagValue("role"), "")."";
 				$form->print(tabalign("\ttext", 24).defvalue($tagger->checkTagValue("text"), $attr->{name})."\n");
-				$form->print(tabalign("\trole", 24).$tagger->getTag("role")->{value}."\n") if ($tagger->checkTag("role"));
+				$roles .= "," if ($roles ne "");
+				$roles .= "serial," if ($tagger->checkTagValue("serial"));
+				$roles = substr($roles, 0, -1);
+				$form->print(tabalign("\trole", 24).$roles."\n");
 				$form->print(tabalign("\ttype", 24).translateFormType($attr)."\n");
-				$form->print(tabalign("\tmandatory", 24).$attr->{mandatory}."\n");
 				$form->print(tabalign("\tlogical", 24).$tagger->getTag("logical")->{value}."\n");
 				$form->print(tabalign("\tdisplay", 24).$tagger->getTag("display")->{value}."\n");
 			}
@@ -191,21 +225,18 @@ foreach my $model (@models) {
 				$tagger->mergeReplacing($attr->getDrTagger());
 				$form->print(tabalign("\tref", 24).$attr->{ref}."\n");
 				$form->print(tabalign("\ttext", 24).defvalue($tagger->checkTagValue("text"), $attr->{name})."\n");
-				$form->print(tabalign("\trole", 24).$tagger->getTag("role")->{value}."\n") if ($tagger->checkTag("role"));
-				$form->print(tabalign("\ttype", 24).translateFormType($type)."\n");
-				$form->print(tabalign("\tmandatory", 24).$attr->{mandatory}."\n");
+				$form->print(tabalign("\ttype", 24).translateFormType($attr)."\n");
 				$form->print(tabalign("\tref_display", 24).$tagger->getTagValue("ref_display")."\n") if ($tagger->checkTag("ref_display"));
 				$form->print(tabalign("\tlogical", 24).$tagger->getTag("logical")->{value}."\n");
 				$form->print(tabalign("\tdisplay", 24).$tagger->getTag("display")->{value}."\n");
 			}
+			elsif ($attr->{stype} eq "compos") {
+				$form->print(tabalign("\tref", 24).$attr->{ref}."\n");
+				$form->print(tabalign("\ttext", 24).defvalue($attr->checkDrTagValue("text"), $attr->{name})."\n");
+			}
 			1;
 		}
 			or STDERR->print("failed to process $model->{full}.$attr->{name}: $@"), $errors++;
-	}
-	foreach my $action (@{$model->{action_list}}) {
-		eval {
-		}
-			or STDERR->print("failed to process $model->{full}.$action->{name}: $@"), $errors++;
 	}
 	foreach my $assoc_display (values %{$model->getDrSpecs("assoc_display")}) {
 		eval {
@@ -217,6 +248,44 @@ foreach my $model (@models) {
 			1;
 		}
 			or STDERR->print("failed to process $model->{full}.$assoc_display->{name}: $@"), $errors++;
+	}
+	foreach my $action (@{$model->{action_list}}) {
+		eval {
+			$form->print(tabalign("action", 16).$action->{name}."\n");
+			$form->print(tabalign("\ttext", 24).defvalue($action->checkDrTagValue("text"), $action->{name})."\n");
+			$form->print(tabalign("\tclassify", 24).join(",", keys %{$action->{classify}})."\n");
+			foreach (qw(req_sys req_view req_role)) {
+				if (defined (my $v = $action->checkDrTagValue($_))) {
+					$form->print(tabalign("\t$_", 24).$v."\n")
+				}
+			}
+			printActionOptional($form, $action, "form_mode");
+			if (defined (my $form_actioner = $action->checkDrTagValue("form_actioner"))) {
+				my $a = $form_actioner eq "_" ? "$model->{full}_$action->{name}" : index($form_actioner, "_") == 0 ? "$model->{full}$form_actioner" : $form_actioner;
+				$form->print(tabalign("\tform_actioner", 24).$a."\n");
+			}
+			1;
+		}
+			or STDERR->print("failed to process $model->{full}.$action->{name}: $@"), $errors++;
+	}
+	foreach my $action (@{$model->{view_list}}) {
+		eval {
+			$form->print(tabalign("view", 16).$action->{name}."\n");
+			foreach (qw(supplier renderer)) {
+				if (defined (my $v = $action->checkDrTagValue($_))) {
+					$form->print(tabalign("\t$_", 24).$v."\n")
+				}
+			}
+			1;
+		}
+			or STDERR->print("failed to process $model->{full}.$action->{name}: $@"), $errors++;
+	}
+	foreach my $accfilter (sort({ $a->{order} <=> $b->{order} } values %{$model->getDrSpecs("accfilter")})) {
+		eval {
+			$form->print(tabalign("accfilter", 16).$accfilter->{spec}."\n");
+			$form->print(tabalign("\tcontent", 24).$accfilter->{value}."\n");
+		}
+			or STDERR->print("failed to process $model->{full}.$accfilter->{name}: $@"), $errors++;
 	}
 	$file_trans->closeFile($form);
 }
