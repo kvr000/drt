@@ -37,20 +37,20 @@
  * include: 	dr/sql/SqlConnectionHold.hxx
  * include: 	dr/Ref.hxx
  * ns:		dr::sql
- * class:	DbObject
+ * class:	SqlLayer
  * ancestor:	dr::Object
  * ifaces:	
  *
  * at:	Ref<SqlConnection>		db_connection;
  */
 
-#include "_gen/DbObject-all.hxx"
+#include "_gen/SqlLayer-all.hxx"
 
 DR_SQL_NS_BEGIN
 
 
 DR_MET(public)
-DbObject::DbObject(SqlConnectionHold *db_connection_):
+SqlLayer::SqlLayer(SqlConnectionHold *db_connection_):
 	db_connection(db_connection_->accConnection(), true)
 {
 }
