@@ -208,10 +208,10 @@ long Variant::hash() const
 		if (double_val == 0)
 			return 0;
 		if (sizeof(long) >= sizeof(double_val)) {
-			return *(long *)&double_val;
+			return *(long *)(void *)&double_val;
 		}
 		else {
-			long h = *(long *)&double_val;
+			long h = *(long *)(void *)&double_val;
 			for (size_t i = 1; i < sizeof(double_val)/sizeof(long); i++) {
 				h ^= ((long *)&double_val)[i];
 			}

@@ -41,9 +41,6 @@
 DR_NS_BEGIN
 
 
-typedef Sint64 SysTime;
-
-
 /**
  * Time functions
  * 
@@ -51,6 +48,9 @@ typedef Sint64 SysTime;
  */
 class DR_PUB Time
 {
+public:
+	typedef Sint64			SysTime;
+
 public:
 	static const SysTime SEC_BASE	= 1000;
 	static const SysTime INVAL_TIME	= (((SysTime)-1)<<(sizeof(SysTime)*8-1));
@@ -203,6 +203,8 @@ public:
 	static void			timeToUtcCalendar(SysTime tvalue, int *year, int *mon, int *day, int *hour, int *min, int *sec);
 	static void			timeToUtcCalendarMsec(SysTime tvalue, int *year, int *mon, int *day, int *hour, int *min, int *sec, int *msec);
 };
+
+typedef Time::SysTime SysTime;
 
 
 DR_NS_END

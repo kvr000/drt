@@ -196,7 +196,7 @@ die "passed file does not end with suffix .cxx" unless ($cxxname =~ m/(.*)\.cxx$
 my $basename = shift(@ARGV);
 my $hxxname = "$basename.hxx";
 
-our $file_trans = dr::GenHeader::FileTransaction->new();
+our $file_trans = dr::FileTransaction->new();
 
 our @tag_defs;
 our $tags;

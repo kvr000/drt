@@ -33,7 +33,7 @@
 ## @license	http://www.gnu.org/licenses/lgpl.txt GNU Lesser General Public License v3
 ###
 
-package dr::GenHeader::FileTransaction;
+package dr::FileTransaction;
 
 use strict;
 use warnings;
@@ -51,13 +51,7 @@ sub commit
 
 	foreach my $op (@{$this->{opers}}) {
 		if ($op->{fd}) {
-			$op->{fd}->flush();
-			if ($op->{fd}->error()) {
-				die "failed to write to $op->{fname}: ".$op->{fd}->error();
-			}
-			chmod((stat($op->{fd}))[2]&07555, $op->{fd}) if (defined $this->{umask});
-			close($op->{fd});
-			undef $op->{fd};
+			$this->closeOp($op);
 		}
 	}
 
@@ -79,6 +73,37 @@ sub createTruncated
 	return $fd;
 }
 
+sub closeFile
+{
+	my $this		= shift;
+	my $fd			= shift;
+
+	my $op;
+	for (my $i = $#{$this->{opers}}; $i >= 0; $i--) {
+		if (defined $this->{opers}[$i]->{fd} && $this->{opers}[$i]->{fd} == $fd) {
+			$op = $this->{opers}[$i];
+			unshift(@{$this->{opers}}, splice(@{$this->{opers}}, $i, 1)) if ($i != $#{$this->{opers}});
+			$this->closeOp($op);
+			return;
+		}
+	}
+	die "fd $fd not opened within transaction";
+}
+
+sub closeOp
+{
+	my $this		= shift;
+	my $op			= shift;
+
+	$op->{fd}->flush();
+	if ($op->{fd}->error()) {
+		die "failed to write to $op->{fname}: ".$op->{fd}->error();
+	}
+	chmod((stat($op->{fd}))[2]&07555, $op->{fd}) if (defined $this->{umask});
+	close($op->{fd});
+	undef $op->{fd};
+}
+
 sub DESTROY
 {
 	my $this		= shift;
@@ -96,5 +121,6 @@ sub DESTROY
 		}
 	}
 }
+
 
 1;

@@ -385,7 +385,8 @@ Blob ResultSet_mysql5::getBlob(unsigned column)
 	b.length = &length;
 retry:
 	b.buffer = value.lock(b.buffer_length);
-	switch (mysql_stmt_fetch_column(stmt, &b, column, 0)) {
+	int ret;
+	switch ((ret = mysql_stmt_fetch_column(stmt, &b, column, 0))) {
 	case 0:
 #if (!defined MYSQL_DATA_TRUNCATED) || 1
 		if (b.buffer_length < length) {
