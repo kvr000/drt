@@ -1,7 +1,7 @@
 SOURCES:
 	no:mklist:g=t
 	no:dr/dr.prj:g=t
-	gen:dr/dr.xmi:c=dr_splitxmi;o=split.gen;a=rmu/rmu.xmi split;g=g,t,C
+	gen:dr/dr.xmi:c=dr_splitxmi;o=split.gen;a=dr/dr.xmi split;g=g,t,C
 	no:dr/generation_settings:g=t
 	no:dr/stereotypes:g=t
 	no:dr/tools:g=t
