@@ -21,6 +21,7 @@ OUTPUT:
 	exec:tstr:f=exec;s=tstr,common;r=test
 	exec:tmsg:f=exec;s=tmsg,common;r=test
 	exec:tthread:f=exec;s=tthread,common;r=test
+	exec:tthrmemcache:f=exec;s=tthrmemcache,common;r=ltest
 	exec:ta:f=exec;s=ta,common;r=test
 	exec:tabad:f=exec;s=tabad,common
 	exec:trstruct:f=exec;s=trstruct,common;r=test
@@ -41,6 +42,7 @@ SOURCES:
 	:tvar.cxx:f=cxx;g=tvar,t
 	:tmsg.cxx:f=cxx;g=tmsg,t
 	:tthread.cxx:f=cxx;g=tthread,t
+	:tthrmemcache.cxx:f=cxx;g=tthrmemcache,t
 	:ta.cxx:f=cxx;g=ta,t
 	:tabad.cxx:f=cxx;g=tabad,t
 	:trstruct.cxx:f=cxx;g=trstruct,t
