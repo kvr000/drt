@@ -54,6 +54,7 @@ void Avl_c::destroyRecursive_g(Node_c *node)
 		destroyRecursive_g(node->refs[0]);
 	if (node->refs[2])
 		destroyRecursive_g(node->refs[2]);
+	node_destroy(node);
 }
 
 Avl_c::Node_c *Avl_c::find_g(const void *key) const

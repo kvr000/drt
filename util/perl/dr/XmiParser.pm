@@ -58,7 +58,7 @@ sub processComment
 	my $body		= shift;
 
 	foreach my $line (split("\n", $body)) {
-		if ($line =~ m/^(drt-)(\w+):\s*(.*?)\s*$/) {
+		if ($line =~ m/^(drt?-)(\w+):\s*(.*?)\s*$/) {
 			my $comment = { name => $2, value => $3 };
 			push(@{$this->{dr_list}}, $comment);
 			die "drcomment $2 already specified" if (defined $this->{dr_hash}->{$2});
