@@ -33,8 +33,8 @@
  * @license	http://www.gnu.org/licenses/lgpl.txt GNU Lesser General Public License v3
  **/
 
-#ifndef dr__MemExcept__hxx__
-# define dr__MemExcept__hxx__
+#ifndef dr__MemException__hxx__
+# define dr__MemException__hxx__
 
 #include <dr/Exception.hxx>
 

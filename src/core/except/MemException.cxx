@@ -43,11 +43,11 @@ DR_THROW_DEF(DR_NS_STR, MemException, Exception);
 
 DR_THROW_IMPL_SIMPLE(MemException);
 
-MemException *createMemExceptInstance();
+MemException *createMemExceptionInstance();
 
-static MemException *MemExcept_instance = createMemExceptInstance();
+static MemException *MemException_instance = createMemExceptionInstance();
 
-MemException *createMemExceptInstance()
+MemException *createMemExceptionInstance()
 {
 	return new MemException(0);
 }
@@ -63,7 +63,7 @@ DR_EXPORT_MET String MemException::stringify() const
 
 DR_EXPORT_MTS void MemException::throwInstance(size_t size)
 {
-	DR_THROWREF(MemExcept_instance);
+	DR_THROWREF(MemException_instance);
 }
 
 

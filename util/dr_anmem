@@ -49,8 +49,7 @@ our $ok_leaks = "[(<](".join("|", qw(
 	_ZN2dr5Lockp6s_initEv
 	_ZN2dr9Subsystem12getSubsystem
 	_ZN2dr6Thread19createMessageSerial
-	_ZN2dr23createMemExceptInstanceEv
-	_ZN2dr3net9RpcHelper12StructMapperC1EPKNS_6StringElPFvPNS0_10RpcDecoderEPvES5_z
+	_ZN2dr26createMemExceptionInstanceEv
 )).")";
 
 our %opts;
