@@ -204,7 +204,7 @@ void test()
 		for (int r = 0; r < 8; r++) {
 			for (int i = 0; i < 64; i++) {
 				int k;
-				while (tree.find((k = rand())) != NULL);
+				while (tree.find((k = rand())) != NULL) ;
 				//printf("adding %d\n", k);
 				addValue(&added, &tree, k);
 			}

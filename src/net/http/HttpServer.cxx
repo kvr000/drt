@@ -104,17 +104,17 @@ String HttpServer::readRequest()
 			const char *b = read_stream.ptrCache()->toStr();
 			const char *a = b;
 			char *c;
-			for (c = (char *)b+n; b < c && !isspace(*b); b++);
+			for (c = (char *)b+n; b < c && !isspace(*b); b++) ;
 			if (b == c)
 				xthrownew(EndOfDataExcept("http", "method"));
 			req_method = String::createLowerUtf8(a, b-a);
 			if ((method_type = (HttpConst::MethodType)HttpConst::method_type_map.find(req_method)) < 0) {
 				xthrownew(UnsupportedExcept(this, "HttpServer", "method", req_method));
 			}
-			for (; b < c && isspace(*b); b++);
-			for (a = b; b < c && !isspace(*b); b++);
+			for (; b < c && isspace(*b); b++) ;
+			for (a = b; b < c && !isspace(*b); b++) ;
 			req_uri.setUtf8(a, b-a);
-			for (; b < c && isspace(*b); b++);
+			for (; b < c && isspace(*b); b++) ;
 			if (b == c) {
 				req_body_size = -1;
 				req_version = 0x100;
@@ -122,7 +122,7 @@ String HttpServer::readRequest()
 				read_stream.ptrCache()->removeLeft(n+1);
 				return req_uri;
 			}
-			for (; b < c && *b++ != '/';);
+			for (; b < c && *b++ != '/';) ;
 			if (b >= c) {
 				req_version = 0x100;
 			}
@@ -146,16 +146,16 @@ String HttpServer::readRequest()
 			const char *b = read_stream.ptrCache()->toStr();
 			const char *e = b+n;
 			const char *c;
-			for (; e > b && isspace(e[-1]); e--);
+			for (; e > b && isspace(e[-1]); e--) ;
 			if (e == b) {
 				read_stream.ptrCache()->removeLeft(n+1);
 				break;
 			}
-			for (c = b; c < e && *c != ':'; c++);
+			for (c = b; c < e && *c != ':'; c++) ;
 			if (c == e)
 				xthrownew(EndOfDataExcept("http", ":"));
 			String key(String::createLowerUtf8(b, c-b));
-			for (c++; c < e && isspace(*c); c++);
+			for (c++; c < e && isspace(*c); c++) ;
 			String val(String::createLowerUtf8(c, e-c));
 			read_stream.ptrCache()->removeLeft(n+1);
 			processHeader(key, val);
@@ -194,16 +194,16 @@ String HttpServer::readRequest()
 						const char *b = read_stream.ptrCache()->toStr();
 						const char *e = b+n;
 						const char *c;
-						for (; e > b && isspace(e[-1]); e--);
+						for (; e > b && isspace(e[-1]); e--) ;
 						if (e == b) {
 							read_stream.ptrCache()->removeLeft(n+1);
 							break;
 						}
-						for (c = b; c < e && *c != ':'; c++);
+						for (c = b; c < e && *c != ':'; c++) ;
 						if (c == e)
 							xthrownew(EndOfDataExcept("http", ":"));
 						String key(String::createLowerUtf8(b, c-b));
-						for (c++; c < e && isspace(*c); c++);
+						for (c++; c < e && isspace(*c); c++) ;
 						String val(String::createLowerUtf8(c, e-c));
 						read_stream.ptrCache()->removeLeft(n+1);
 					}
@@ -274,16 +274,16 @@ bool HttpServer::updateNextChunk()
 			const char *b = read_stream.ptrCache()->toStr();
 			const char *e = b+n;
 			const char *c;
-			for (; e > b && isspace(e[-1]); e--);
+			for (; e > b && isspace(e[-1]); e--) ;
 			if (e == b) {
 				read_stream.ptrCache()->removeLeft(n+1);
 				break;
 			}
-			for (c = b; c < e && *c != ':'; c++);
+			for (c = b; c < e && *c != ':'; c++) ;
 			if (c == e)
 				xthrownew(EndOfDataExcept("http", ":"));
 			String key(String::createLowerUtf8(b, c-b));
-			for (c++; c < e && isspace(*c); c++);
+			for (c++; c < e && isspace(*c); c++) ;
 			String val(String::createLowerUtf8(c, e-c));
 			read_stream.ptrCache()->removeLeft(n+1);
 			//req_headers[key] = val;
@@ -361,7 +361,7 @@ ssize_t HttpServer::readFullContent(Blob *content)
 		req_body_size -= read_stream.readFull(content, (size_t)req_body_size);
 	}
 	else {
-		while (read_stream.tryExtendCacheAdd(1) > 0);
+		while (read_stream.tryExtendCacheAdd(1) > 0) ;
 		*content = read_stream.ptrCache()->cleanGet();
 	}
 	return content->getSize();

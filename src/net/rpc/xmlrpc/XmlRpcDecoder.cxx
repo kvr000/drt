@@ -233,7 +233,7 @@ void XmlRpcDecoder::moveToNextElementReqEnd(const BString &tag_name)
 void XmlRpcDecoder::readContent(const char **cont_start, size_t *cont_length)
 {
 	*cont_start = (const char *)pos;
-	for (; pos < end && *pos != '<'; pos++);
+	for (; pos < end && *pos != '<'; pos++) ;
 	*cont_length = (const char *)pos-*cont_start;
 }
 

@@ -71,12 +71,12 @@ int HttpClient::readHeaders(String *message)
 		ssize_t n = read_stream.readUntilChar('\n');
 		const char *b = read_stream.ptrCache()->toStr();
 		char *c;
-		for (c = (char *)b+n; b < c && !isspace(*b); b++);
+		for (c = (char *)b+n; b < c && !isspace(*b); b++) ;
 		if (b == c)
 			xthrownew(EndOfDataExcept("http", "status"));
 		resp_code = strtol(b, &c, 10);
-		for (b += n; b > c && isspace(b[-1]); b--);
-		for (; c < b && isspace(*c); c++);
+		for (b += n; b > c && isspace(b[-1]); b--) ;
+		for (; c < b && isspace(*c); c++) ;
 		if (message)
 			message->setUtf8(c, b-c);
 		read_stream.ptrCache()->removeLeft(n+1);
@@ -87,16 +87,16 @@ int HttpClient::readHeaders(String *message)
 		const char *b = read_stream.ptrCache()->toStr();
 		const char *e = b+n;
 		const char *c;
-		for (; e > b && isspace(e[-1]); e--);
+		for (; e > b && isspace(e[-1]); e--) ;
 		if (e == b) {
 			read_stream.ptrCache()->removeLeft(n+1);
 			break;
 		}
-		for (c = b; c < e && *c != ':'; c++);
+		for (c = b; c < e && *c != ':'; c++) ;
 		if (c == e)
 			xthrownew(EndOfDataExcept("http", ":"));
 		String key(String::createLowerUtf8(b, c-b));
-		for (c++; c < e && isspace(*c); c++);
+		for (c++; c < e && isspace(*c); c++) ;
 		String val(String::createLowerUtf8(c, e-c));
 		read_stream.ptrCache()->removeLeft(n+1);
 		response_headers[key] = val;
@@ -136,7 +136,7 @@ Blob HttpClient::readFullContent()
 		read_stream.readFull(&data, response_size);
 	}
 	else {
-		while (read_stream.tryExtendCacheAdd(1) > 0);
+		while (read_stream.tryExtendCacheAdd(1) > 0) ;
 		data = read_stream.ptrCache()->cleanGet();
 	}
 	return data;
@@ -148,7 +148,7 @@ ssize_t HttpClient::readFullContent(Blob *content)
 		read_stream.readFull(content, response_size);
 	}
 	else {
-		while (read_stream.tryExtendCacheAdd(1) > 0);
+		while (read_stream.tryExtendCacheAdd(1) > 0) ;
 		*content = read_stream.ptrCache()->cleanGet();
 	}
 	return content->getSize();

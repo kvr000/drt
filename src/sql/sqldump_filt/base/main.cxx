@@ -47,13 +47,13 @@ static void processOptions(char **argv, QueueManager *queue_manager)
 					exit(2);
 				}
 				char *e;
-				for (e = *argv; isalnum(*e) || *e == '_'; e++);
+				for (e = *argv; isalnum(*e) || *e == '_'; e++) ;
 				if (*e != '=') {
 					fprintf(stderr, "-d requires format name=value\n");
 					exit(2);
 				}
 				char *f;
-				for (f = e+1; isdigit(*f); f++);
+				for (f = e+1; isdigit(*f); f++) ;
 				if (*f != '\0' || f == e+1) {
 					fprintf(stderr, "-d requires format name=value\n");
 					exit(2);

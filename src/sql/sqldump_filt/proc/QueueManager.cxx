@@ -42,8 +42,8 @@ void QueueManager::addRuleFile(dr::io::StreamBuffer *stream)
 		{
 			const char *t = s;
 			const char *te;
-			for (te = t; isalnum(*te) || *te == '_'; te++);
-			for (s = te; isspace(*s); s++);
+			for (te = t; isalnum(*te) || *te == '_'; te++) ;
+			for (s = te; isspace(*s); s++) ;
 			if (te == t || *s != ':') {
 				xthrownew(InvalidFormatExcept("rule syntax", "missing table name or colon"));
 			}
@@ -291,12 +291,12 @@ Blob QueueManager::processOneData(Sint64 line_no, const Blob &line_data)
 			return "";
 		}
 		tname.setUtf8(line_data.mid(pos, tend_p-pos));
-		for (pos = tend_p+1; isspace(line[pos]); pos++);
+		for (pos = tend_p+1; isspace(line[pos]); pos++) ;
 		if (memcmp(line+pos, "VALUES", 6) != 0) {
 			fprintf(stderr, "stdin:%lld: expected VALUES\n", (long long)line_no);
 			return "";
 		}
-		for (pos += 6; isspace(line[pos]); pos++);
+		for (pos += 6; isspace(line[pos]); pos++) ;
 	}
 	fprintf(stderr, "processing table %s (%ld)\n", tname.utf8().toStr(), (long)line_data.getSize());
 	RList<Evaluator> *tev;

@@ -112,7 +112,7 @@ void MsgSync_unix::unregisterSocket(void *os_handle)
 {
 	TList<socket_notif_data>::Node *node;
 
-	for (node = socket_list.iterFirst(); node->v.fd != (SintPtr)os_handle; node = socket_list.iterNext(node));
+	for (node = socket_list.iterFirst(); node->v.fd != (SintPtr)os_handle; node = socket_list.iterNext(node)) ;
 	socket_list.remove(node);
 }
 
@@ -209,7 +209,7 @@ void MsgSync_unix::threadSleep()
 		rhighest = highest+1;
 		if (FD_ISSET(pipe_fd[0], &rs)) {
 			char buf[256];
-			while (read(pipe_fd[0], buf, sizeof(buf)) == sizeof(buf));
+			while (read(pipe_fd[0], buf, sizeof(buf)) == sizeof(buf)) ;
 		}
 
 		/* check for set nodes */

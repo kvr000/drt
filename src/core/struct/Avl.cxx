@@ -142,7 +142,7 @@ bool Avl_c::create_g(const void *key, const void *value)
 {
 	Node_c **cur;
 	int last_step = 0;
-	for (cur = &root; *cur && (last_step = -node_cmp(*cur, key)) != 0; cur = &(*cur)->refs[1+last_step]);
+	for (cur = &root; *cur && (last_step = -node_cmp(*cur, key)) != 0; cur = &(*cur)->refs[1+last_step]) ;
 	if (*cur) {
 		return false;
 	}
@@ -166,7 +166,7 @@ bool Avl_c::replace_g(const void *key, const void *value)
 {
 	Node_c **cur;
 	int last_step = 0;
-	for (cur = &root; *cur && (last_step = -node_cmp(*cur, key)) != 0; cur = &(*cur)->refs[1+last_step]);
+	for (cur = &root; *cur && (last_step = -node_cmp(*cur, key)) != 0; cur = &(*cur)->refs[1+last_step]) ;
 	if (*cur) {
 		node_updateValue(*cur, value);
 		return false;
@@ -297,7 +297,7 @@ bool Avl_c::remove_g(const void *key)
 		else {
 			dir = node->balance;
 		}
-		for (repl = node->refs[1+dir]; repl->refs[1-dir] != NULL; repl = repl->refs[1-dir]);
+		for (repl = node->refs[1+dir]; repl->refs[1-dir] != NULL; repl = repl->refs[1-dir]) ;
 		DR_Assert(repl != NULL);
 		Node_c *parent = repl->parent;
 		if (parent == node) {
@@ -366,7 +366,7 @@ Avl_c::Node_c *Avl_c::iterFirst_g() const
 Avl_c::Node_c *Avl_c::iterNext_g(Node_c *c) const
 {
 	if (c->refs[2] != NULL) {
-		for (c = c->refs[2]; c->refs[0] != NULL; c = c->refs[0]);
+		for (c = c->refs[2]; c->refs[0] != NULL; c = c->refs[0]) ;
 	}
 	else if (c->direction < 0) {
 		c = c->parent;

@@ -191,7 +191,7 @@ DR_EXPORT_MET Widget *Widget::accShell()
 {
 	Widget *shell_;
 
-	for (shell_ = this; shell_->parent; shell_ = (Widget *)shell_->parent);
+	for (shell_ = this; shell_->parent; shell_ = (Widget *)shell_->parent) ;
 
 	return shell_;
 }
@@ -200,7 +200,7 @@ DR_EXPORT_MET Widget *Widget::accFinalFocused()
 {
 	Widget *focus;
 	
-	for (focus = accShell(); focus->focused_child; focus = focus->focused_child);
+	for (focus = accShell(); focus->focused_child; focus = focus->focused_child) ;
 
 	return focus;
 }
@@ -390,7 +390,7 @@ DR_GUI_MET bool Widget::setFocus()
 	if (change_focus->accParent()) {
 		change_focus = change_focus->accParent();
 	}
-	for (cur_focus = change_focus; cur_focus->focused_child; cur_focus = cur_focus->focused_child);
+	for (cur_focus = change_focus; cur_focus->focused_child; cur_focus = cur_focus->focused_child) ;
 #if 0
 	for (change_focus = change_focus->accParent(); cur_focus != change_focus; cur_focus = change_focus->accParent()) {
 		if (!cur_focus->loosingFocus())

@@ -694,12 +694,12 @@ void String_c<Subtype>::stripSpaces()
 {
 	size_t start_pos, end_pos;
 
-	for (start_pos = 0; start_pos < d->size && isspace(d->str()[start_pos]); start_pos++);
+	for (start_pos = 0; start_pos < d->size && isspace(d->str()[start_pos]); start_pos++) ;
 	if (start_pos == d->size) {
 		end_pos = start_pos;
 	}
 	else {
-		for (end_pos = d->size; isspace(d->str()[end_pos-1]); end_pos--);
+		for (end_pos = d->size; isspace(d->str()[end_pos-1]); end_pos--) ;
 	}
 
 	*this = mid(start_pos, end_pos-start_pos);
