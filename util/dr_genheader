@@ -910,63 +910,66 @@ for (my $curf = $cxx, my $curname = $cxxname; defined $curf; $curf = @ARGV ? $fi
 				specs		=> { map({ die "$curname:$lineno: invalid spec: $_" unless (m/^(\w+)(:(\S*))?$/); ( $1 => (defined $3 ? $3 : 1) ) } split(/\s+/, $1)) },
 			};
 			my $abstr = defined $metd->{specs}->{abstract};
-			print(Dumper($cld)) unless (defined $cld && defined $cld->{class});;
-			STDERR->printf("$curname:$lineno: fatal: class undefined\n"), exit(1) unless (defined $cld && defined $cld->{class});
-			FUNC_DECL: while (<$curf>) {
-				chomp;
-				$lineno++;
-				if (m/^\/\*\*\s*$/) {
-					$metd->{comment} = "$_\n";
-					while (<$curf>) {
-						chomp;
-						$lineno++;
-						$metd->{comment} .= "$_\n";
-						next FUNC_DECL if (m/^\s*\*\/\s*$/);
+			if (!(defined $cld && defined $cld->{class})) {
+				STDERR->printf("$curname:$lineno: fatal: class undefined\n"), $errors++ if (!$opts{i});
+			}
+			else {
+				FUNC_DECL: while (<$curf>) {
+					chomp;
+					$lineno++;
+					if (m/^\/\*\*\s*$/) {
+						$metd->{comment} = "$_\n";
+						while (<$curf>) {
+							chomp;
+							$lineno++;
+							$metd->{comment} .= "$_\n";
+							next FUNC_DECL if (m/^\s*\*\/\s*$/);
+						}
+						die "unable to find end of comment";
 					}
-					die "unable to find end of comment";
-				}
-				if ($abstr) {
-					if (m/^\/\/\s?(.*)$/s) {
-						$_ = $1;
+					if ($abstr) {
+						if (m/^\/\/\s?(.*)$/s) {
+							$_ = $1;
+						}
+						else {
+							STDERR->printf("$curname:$lineno: abstract declaration must start with //\n");
+							$errors++;
+						}
+					}
+					$metd->{line} = $_;
+					if (m/^$cld->{class}::(($cld->{class_last})\(.*\)(\s*const)?)\s*:?\s*$/) {
+						$metd->{ret} = "DR_CONSTRUCT";
+						$metd->{name} = $2;
+						$metd->{decl} = $1;
+						last;
+					}
+					elsif (m/^$cld->{class}::((~$cld->{class_last})\(\))\s*$/) {
+						$metd->{ret} = "";
+						$metd->{name} = $2;
+						$metd->{decl} = $1;
+						push(@{$metd->{spec}}, "virtual");
+						last;
+					}
+					elsif (m/^(.*?)\s*($cld->{class})::(operator[^(]+)(\(.*\)(\s+const)?)\s*$/) {
+						$metd->{ret} = $1;
+						$metd->{name} = $3;
+						$metd->{decl} = "$3$4";
+						last;
+					}
+					elsif (m/^(.*?)\s*($cld->{class})::(\w+)(\(.*\)(\s+const)?)\s*$/) {
+						$metd->{ret} = $1;
+						$metd->{name} = $3;
+						$metd->{decl} = "$3$4";
+						last;
 					}
 					else {
-						STDERR->printf("$curname:$lineno: abstract declaration must start with //\n");
+						STDERR->printf("$curname:$lineno: expected method declaration\n");
 						$errors++;
+						next MAIN;
 					}
 				}
-				$metd->{line} = $_;
-				if (m/^$cld->{class}::(($cld->{class_last})\(.*\)(\s*const)?)\s*:?\s*$/) {
-					$metd->{ret} = "DR_CONSTRUCT";
-					$metd->{name} = $2;
-					$metd->{decl} = $1;
-					last;
-				}
-				elsif (m/^$cld->{class}::((~$cld->{class_last})\(\))\s*$/) {
-					$metd->{ret} = "";
-					$metd->{name} = $2;
-					$metd->{decl} = $1;
-					push(@{$metd->{spec}}, "virtual");
-					last;
-				}
-				elsif (m/^(.*?)\s*($cld->{class})::(operator[^(]+)(\(.*\)(\s+const)?)\s*$/) {
-					$metd->{ret} = $1;
-					$metd->{name} = $3;
-					$metd->{decl} = "$3$4";
-					last;
-				}
-				elsif (m/^(.*?)\s*($cld->{class})::(\w+)(\(.*\)(\s+const)?)\s*$/) {
-					$metd->{ret} = $1;
-					$metd->{name} = $3;
-					$metd->{decl} = "$3$4";
-					last;
-				}
-				else {
-					STDERR->printf("$curname:$lineno: expected method declaration\n");
-					$errors++;
-					next MAIN;
-				}
+				push(@{$cld->{methods}}, $metd);
 			}
-			push(@{$cld->{methods}}, $metd);
 		}
 		else {
 			# nothing
