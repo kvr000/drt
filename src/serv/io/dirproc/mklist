@@ -1,0 +1,6 @@
+.cdef SD_DIRPROC	.
+
+SOURCES:
+	no:${SD_DIRPROC}/mklist:g=t
+	:${SD_DIRPROC}/DirProcessingWriter.cxx:g=s,t,gh,di
+

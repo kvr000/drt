@@ -207,6 +207,10 @@ public:
 	 */
 	static void			timeToUtcCalendar(SysTime tvalue, int *year, int *mon, int *day, int *hour, int *min, int *sec);
 	static void			timeToUtcCalendarMsec(SysTime tvalue, int *year, int *mon, int *day, int *hour, int *min, int *sec, int *msec);
+
+	static bool			sleepTime(Time::SysTime sleep_time);
+	static bool			sleepSec(Sint64 sleep_sec);
+	static bool			sleepNSec(Sint64 sleep_nsec);
 };
 
 typedef Time::SysTime SysTime;

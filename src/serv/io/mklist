@@ -1,0 +1,41 @@
+.def SD_BASE		base
+.def SD_DIRPROC		dirproc
+.def SD_META		meta
+
+.def SUBDIRS		${SD_BASE},${SD_DIRPROC},${SD_META}
+.def ESUBDIRS		{${SUBDIRS}}
+
+.include ${ESUBDIRS}/mklist
+
+
+POSTSUBS:
+	t
+
+NEED:
+	cxx
+
+DEPS:
+
+FLAGS:
+	cxx=$(CXXINC) $(SOCXXFLAGS)
+	shlib=$(SOLDXXFLAGS)
+
+OUTPUT:
+	shlib:drservio:f=shlib;s=s
+
+SOURCES:
+	no:mklist:g=t
+	no:Doxyfile:g=t
+	lshlib:dr:g=s
+	lshlib:drio:g=s
+
+FCHECK:
+	${ESUBDIRS}/*.cxx::s=t
+	${ESUBDIRS}/*.cxx::s=s
+	${ESUBDIRS}/*.hxx::s=t
+	${ESUBDIRS}/*.hxx::s=di,didev
+	${ESUBDIRS}/mklist::s=t
+
+DIST_INC:
+	di:dr/Merv/io
+

@@ -72,6 +72,7 @@ public:
 	virtual void			lockFull(int type);
 	virtual void			unlockFull(int type);
 	virtual void			updateTime(Sint64 time);
+	virtual void			close();
 
 protected:
 	virtual				~File();

@@ -45,6 +45,7 @@ DR_OBJECT_DEF(DR_IO_NS_STR, Directory, Handle);
 DR_OBJECT_IMPL_SIMPLE(Directory);
 
 DR_EXPORT_DTS const String Directory::rmdir_string(Const::string("rmdir"));
+DR_EXPORT_DTS const String Directory::mkdir_string(Const::string("mkdir"));
 
 
 Directory::Directory(const String &dirname_):
@@ -64,9 +65,14 @@ DR_EXPORT_MET bool Directory::getNext(String *entry)
 	return File_sysiface::nextDirEntry(this, entry);
 }
 
-DR_EXPORT_MET void Directory::remove(const String &dirname_)
+DR_EXPORT_MET void Directory::rmdir(const String &dirname_)
 {
 	File_sysiface::rmdir(dirname_);
+}
+
+DR_EXPORT_MET void Directory::mkdir(const String &dirname_)
+{
+	File_sysiface::mkdir(dirname_);
 }
 
 DR_EXPORT_MET Handle::HandleType Directory::getEntryType(const String &entryname)

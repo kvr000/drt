@@ -86,6 +86,7 @@ public:
 	virtual ssize_t			read(Blob *buf, size_t size, size_t offs);
 	virtual ssize_t			write(const void *buf, size_t size);
 	virtual FileOffset		seek(FileOffset off, int how);
+	virtual void			close();
 	virtual void			flush();
 	virtual void			setBlocking(bool blocking);
 
@@ -126,9 +127,14 @@ DR_RINLINE void Handle::flush()
 {
 }
 
+DR_RINLINE void Handle::close()
+{
+}
+
 DR_RINLINE void Handle::destroy()
 {
-	flush();
+	if (!(mode&M_NOCLOSE))
+		close();
 	Super::destroy();
 }
 

@@ -63,7 +63,8 @@ protected:
 	virtual				~Directory();
 
 public:
-	static void			remove(const String &directory);
+	static void			rmdir(const String &dirname);
+	static void			mkdir(const String &dirname);
 
 public:
 	virtual bool			getNext(String *entry);
@@ -84,6 +85,7 @@ public:
 
 public:
 	static const String		rmdir_string;
+	static const String		mkdir_string;
 
 private:
 	friend class File_sysiface_base;

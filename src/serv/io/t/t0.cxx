@@ -33,24 +33,45 @@
  * @license	http://www.gnu.org/licenses/lgpl.txt GNU Lesser General Public License v3
  **/
 
-#include <dr/testenv/testenv.hxx>
+#include <stdio.h>
+#include <string.h>
+
+#include <dr/x_kw.hxx>
+#include <dr/pe_error.hxx>
+
 #include <dr/Ref.hxx>
+#include <dr/Exception.hxx>
 
-#include <dr/sql/ConnectionPool.hxx>
+#include <dr/io/Directory.hxx>
+#include <dr/serv/io/DirProcessingWriter.hxx>
 
-DR_NS_USE
-DR_SQL_NS_USE
+#include <dr/testenv/testenv.hxx>
+#include <dr/testenv/TestObject.hxx>
+
 DR_TESTENV_NS_USE
 
 
-int main(void)
+#define TEST_DIRPROC
+
+#ifdef TEST_DIRPROC
+TESTNS(dirproc);
+
+void test()
 {
-	ERef<ConnectionPool> connpool(new ConnectionPool("driver=dr::sql::mysql5;host=localhost;port=3306;db=dr_test;user=dr_test;pass=dr_test", 1));
-	connpool->setMaxOldness(1);
-	ERef<ConnectionHold> conn1(connpool->getConnectionPing());
-	ERef<ConnectionHold> conn2(connpool->getConnectionPing());
-	connpool->releaseConnection(conn1); conn1.setNull();
-	test_sleep(1);
-	conn1.setNoref(connpool->getConnectionPing());
+	xsafe(dr::io::Directory::mkdir("tmp"););
+	xsafe(dr::io::Directory::mkdir("tmp/dp"););
+	ERef<dr::serv::io::DirProcessingWriter> dpw(dr::serv::io::DirProcessingWriter::createRooted("tmp/dp", 6));
+
+	dpw->putContent("bla");
+}
+TESTNSE(dirproc);
+#endif
+
+DR_TESTENV_MAIN()
+{
+	test_init();
+#ifdef TEST_DIRPROC
+	TESTRUN(dirproc);
+#endif
 	return 0;
 }

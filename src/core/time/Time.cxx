@@ -148,5 +148,29 @@ void Time::timeToUtcCalendarMsec(SysTime tvalue, int *year, int *mon, int *day, 
 	*msec = fractMsecs(tvalue);
 }
 
+bool Time::sleepTime(Time::SysTime sleep_time)
+{
+	struct timespec ts;
+	ts.tv_sec = Time::interToSeconds(sleep_time);
+	ts.tv_nsec = Time::interToNsecondsUp(sleep_time)%1000000000;
+	return nanosleep(&ts, NULL) == 0;
+}
+
+bool Time::sleepSec(Sint64 secs)
+{
+	struct timespec ts;
+	ts.tv_sec = secs;
+	ts.tv_nsec = 0;
+	return nanosleep(&ts, NULL) == 0;
+}
+
+bool Time::sleepNSec(Sint64 nsecs)
+{
+	struct timespec ts;
+	ts.tv_sec = nsecs/1000000000;
+	ts.tv_nsec = nsecs%1000000000;
+	return nanosleep(&ts, NULL) == 0;
+}
+
 
 DR_NS_END

@@ -1,0 +1,9 @@
+POSTSUBS:
+	io
+
+SOURCES:
+	no:mklist:g=t
+	no:Doxyfile:g=t
+
+FCHECK:
+

@@ -95,7 +95,8 @@ public:
 	static void			closeDir(Directory *handle);
 
 	static bool			nextDirEntry(Directory *handle, String *entry);
-	static void			rmdir(const String &entry);
+	static void			rmdir(const String &dirname);
+	static void			mkdir(const String &dirname);
 };
 
 #ifndef O_LARGEFILE
@@ -294,10 +295,16 @@ DR_RINLINE void File_sysiface_posix::closeDir(Directory *handle)
 	::close(getDirOsHandle(handle));
 }
 
-DR_RINLINE void File_sysiface_posix::rmdir(const String &filename)
+DR_RINLINE void File_sysiface_posix::rmdir(const String &dirname)
 {
-	if (::rmdir(filename.utf8().toStr()) < 0)
-		throwFileStaticSysException(filename, Directory::rmdir_string);
+	if (::rmdir(dirname.utf8().toStr()) < 0)
+		throwFileStaticSysException(dirname, Directory::rmdir_string);
+}
+
+DR_RINLINE void File_sysiface_posix::mkdir(const String &dirname)
+{
+	if (::mkdir(dirname.utf8().toStr(), 0777) < 0)
+		throwFileStaticSysException(dirname, Directory::mkdir_string);
 }
 
 DR_RINLINE bool File_sysiface_posix::nextDirEntry(Directory *handle, String *entry)

@@ -747,8 +747,10 @@ s_length:
 				goto s_type;
 			case 'l':
 				flength = L_l;
-				if (*++asciifmt == 'l')
+				if (*++asciifmt == 'l') {
 					flength = L_ll;
+					asciifmt++;
+				}
 				goto s_type;
 			case 'L':
 				flength = L_L;

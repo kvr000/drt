@@ -34,23 +34,14 @@
  **/
 
 #include <dr/testenv/testenv.hxx>
-#include <dr/Ref.hxx>
 
-#include <dr/sql/ConnectionPool.hxx>
+#include <dr/serv/io/def.hxx>
 
-DR_NS_USE
-DR_SQL_NS_USE
 DR_TESTENV_NS_USE
 
 
 int main(void)
 {
-	ERef<ConnectionPool> connpool(new ConnectionPool("driver=dr::sql::mysql5;host=localhost;port=3306;db=dr_test;user=dr_test;pass=dr_test", 1));
-	connpool->setMaxOldness(1);
-	ERef<ConnectionHold> conn1(connpool->getConnectionPing());
-	ERef<ConnectionHold> conn2(connpool->getConnectionPing());
-	connpool->releaseConnection(conn1); conn1.setNull();
-	test_sleep(1);
-	conn1.setNoref(connpool->getConnectionPing());
+	test_init();
 	return 0;
 }

@@ -94,6 +94,7 @@ public:
 
 	static bool			nextDirEntry(Directory *handle, String *entry);
 	static void			rmdir(const String &entry);
+	static void			mkdir(const String &entry);
 
 
 	static int			mapWntErrorToPosix(int error);
@@ -313,10 +314,16 @@ DR_RINLINE void File_sysiface_wnt::closeDir(Directory *handle)
 	FindClose(getDirOsHandle(handle));
 }
 
-DR_RINLINE void File_sysiface_wnt::rmdir(const String &filename)
+DR_RINLINE void File_sysiface_wnt::rmdir(const String &dirname)
 {
-	if (!::RemoveDirectoryW(filename.wide().toStr()))
-		throwFileStaticSysException(filename, Directory::rmdir_string, GetLastError());
+	if (!::RemoveDirectoryW(dirname.wide().toStr()))
+		throwFileStaticSysException(dirname, Directory::rmdir_string, GetLastError());
+}
+
+DR_RINLINE void File_sysiface_wnt::mkdir(const String &dirname)
+{
+	if (!::CreateDirectoryW(dirname.wide().toStr()))
+		throwFileStaticSysException(dirname, Directory::rmdir_string, GetLastError());
 }
 
 DR_RINLINE bool File_sysiface_wnt::nextDirEntry(Directory *handle, String *entry)

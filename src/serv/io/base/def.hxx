@@ -33,24 +33,45 @@
  * @license	http://www.gnu.org/licenses/lgpl.txt GNU Lesser General Public License v3
  **/
 
-#include <dr/testenv/testenv.hxx>
-#include <dr/Ref.hxx>
+#ifndef dr__serv__io__def__hxx__
+# define dr__serv__io__def__hxx__
 
-#include <dr/sql/ConnectionPool.hxx>
-
-DR_NS_USE
-DR_SQL_NS_USE
-DR_TESTENV_NS_USE
+#include <dr/def.hxx>
 
 
-int main(void)
-{
-	ERef<ConnectionPool> connpool(new ConnectionPool("driver=dr::sql::mysql5;host=localhost;port=3306;db=dr_test;user=dr_test;pass=dr_test", 1));
-	connpool->setMaxOldness(1);
-	ERef<ConnectionHold> conn1(connpool->getConnectionPing());
-	ERef<ConnectionHold> conn2(connpool->getConnectionPing());
-	connpool->releaseConnection(conn1); conn1.setNull();
-	test_sleep(1);
-	conn1.setNoref(connpool->getConnectionPing());
-	return 0;
-}
+#ifdef COMPILING_drservio
+# define DR_SERV_IO_PUB	DR_EXPORT_CLS
+# define DR_SERV_IO_FUN	DR_EXPORT_FUN
+# define DR_SERV_IO_MET	DR_EXPORT_MET
+# define DR_SERV_IO_MTS	DR_EXPORT_MTS
+# define DR_SERV_IO_DAT	DR_EXPORT_DAT
+# define DR_SERV_IO_DTC	DR_EXPORT_DTC
+# define DR_SERV_IO_CLS	DR_EXPORT_CLS
+#else
+# define DR_SERV_IO_PUB	DR_IMPORT_CLS
+# define DR_SERV_IO_FUN	DR_IMPORT_FUN
+# define DR_SERV_IO_MET	DR_IMPORT_MET
+# define DR_SERV_IO_MTS	DR_IMPORT_MTS
+# define DR_SERV_IO_DAT	DR_IMPORT_DAT
+# define DR_SERV_IO_DTC	DR_IMPORT_DTC
+# define DR_SERV_IO_CLS	DR_IMPORT_CLS
+#endif
+
+#define DR_SERV_IO_NS_USE using namespace dr; using namespace dr::serv::io;
+#define DR_SERV_IO_NS dr::serv::io
+#define DR_SERV_IO_NSP(rest) dr::serv::io::rest
+#define DR_SERV_IO_NS_STR "dr::serv::io::"
+#define DR_SERV_IO_NS_STRP(rest) "dr::serv::io::"rest
+#define DR_SERV_IO_NS_BEGIN namespace dr \
+{ \
+	namespace serv \
+	{ \
+		namespace io \
+		{
+#define DR_SERV_IO_NS_END }; }; };
+
+
+DR_SERV_IO_NS_BEGIN
+DR_SERV_IO_NS_END
+
+#endif

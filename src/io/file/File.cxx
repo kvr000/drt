@@ -73,8 +73,14 @@ File *File::createFromOsHandle(void *os_handle_, Mode mode_)
 
 DR_EXPORT_MET File::~File()
 {
-	if (!(mode&M_NOCLOSE))
+}
+
+void File::close()
+{
+	if (!File_sysiface::isHandleInvalid(this)) {
 		File_sysiface::close(this);
+		File_sysiface::setHandleInvalid(this);
+	}
 }
 
 DR_EXPORT_MET ssize_t File::read(void *buf, size_t buflen)
