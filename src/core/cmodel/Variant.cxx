@@ -40,6 +40,15 @@
  * ns:		dr
  */
 
+#include "_gen/Variant-all.hxx"
+
+#ifdef DR_LIBC_VC
+# define strtoll _strtoi64
+#endif
+
+DR_NS_BEGIN
+
+
 /*drt
  * class:	Variant
  * ancestor:	dr::Object
@@ -79,15 +88,6 @@
  * 	Holder of generic values
  * }doc
  */
-
-#include "_gen/Variant-all.hxx"
-
-#ifdef DR_LIBC_VC
-# define strtoll _strtoi64
-#endif
-
-DR_NS_BEGIN
-
 
 DR_MET(public)
 Variant::Variant():

@@ -2,6 +2,5 @@
 
 SOURCES:
 	no:${SD_ROWASSIGN}/mklist:g=t
-	:${SD_ROWASSIGN}/RowAssignConfig.cxx:g=s,t
-	:${SD_ROWASSIGN}/RowAssignConfig.hxx:g=di,t
+	:${SD_ROWASSIGN}/RowAssignConfig.cxx:g=s,t,gh,di
 

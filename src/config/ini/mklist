@@ -1,0 +1,6 @@
+.cdef SD_INI	.
+
+SOURCES:
+	no:${SD_INI}/mklist:g=t
+	:${SD_INI}/IniConfig.cxx:g=s,t,gh,di
+

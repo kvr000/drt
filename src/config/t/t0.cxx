@@ -44,6 +44,7 @@
 #include <dr/ThreadSimple.hxx>
 
 #include <dr/config/RowAssignConfig.hxx>
+#include <dr/config/IniConfig.hxx>
 
 #include <dr/testenv/testenv.hxx>
 
@@ -52,6 +53,7 @@ DR_TESTENV_NS_USE
 
 
 #define TEST_ROWASSIGN
+#define TEST_INI
 
 #ifdef TEST_ROWASSIGN
 TESTNS(rowassign);
@@ -71,11 +73,37 @@ void test()
 TESTNSE(rowassign);
 #endif
 
+#ifdef TEST_INI
+TESTNS(ini);
+void test()
+{
+	xtry {
+		ERef<IniConfig> ini(new IniConfig("testconf.ini"));
+		CHECK(ini->getValue("", "invalid", Null()) == String(Null()));
+		CHECK(ini->getValue("", "gl0") == "glob0");
+		CHECK(ini->getValue("main/sub", "gl1") == "glob1");
+		CHECK(ini->getValue("sub", "s1") == "sub");
+		CHECK(ini->getValue("main/sub", "s1") == "main");
+		CHECK(ini->getValue("main/sub", "s0") == "sub");
+		CHECK(tref(ini->getSection("main/sub"))->getValue("s0") == "sub");
+	}
+	xcatch (Exception, ex) {
+		printf("caught exception: %s\n", ex->stringify().utf8().toStr());
+		CHECK(0);
+	}
+	xend;
+}
+TESTNSE(ini);
+#endif
+
 DR_TESTENV_MAIN()
 {
 	test_init();
 #ifdef TEST_ROWASSIGN
 	TESTRUN(rowassign);
+#endif
+#ifdef TEST_INI
+	TESTRUN(ini);
 #endif
 	return 0;
 }

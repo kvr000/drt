@@ -33,6 +33,16 @@
  * @license	http://www.gnu.org/licenses/lgpl.txt GNU Lesser General Public License v3
  **/
 
+/*drt
+ * include: 	dr/String.hxx
+ * include:	dr/Hash.hxx
+ * include:	dr/io/Handle.hxx
+ * include:	dr/io/StreamBuffer.hxx
+ * include:	dr/config/def_config.hxx
+ *
+ * ns:		dr::config
+ */
+
 #include <dr/x_kw.hxx>
 #include <dr/Const.hxx>
 
@@ -42,34 +52,52 @@
 #include <dr/config/NoValueException.hxx>
 
 #include <dr/config/RowAssignConfig.hxx>
+#include "_gen/RowAssignConfig-all.hxx"
 
 DR_CONFIG_NS_BEGIN
 
 
-DR_OBJECT_DEF(DR_CONFIG_NS_STR, RowAssignConfig, Object);
-DR_OBJECT_IMPL_SIMPLE(RowAssignConfig);
+/*drt
+ * class:	RowAssignConfig
+ * ancestor:	dr::Object
+ *
+ * at:	THash<String, String>		values;
+ *
+ * doc:{
+ * 	Access to ini files
+ * }doc
+ */
 
+DR_MET(protected)
+RowAssignConfig::RowAssignConfig(const Null &)
+{
+}
 
+DR_MET(public)
 RowAssignConfig::RowAssignConfig(const String &filename)
 {
-	initialize(tref(new StreamBuffer(tref(new File(filename, File::M_READ)))));
+	initialize(tref(new dr::io::StreamBuffer(tref(new dr::io::File(filename, dr::io::File::M_READ)))));
 }
 
-RowAssignConfig::RowAssignConfig(Handle *file)
+DR_MET(public)
+RowAssignConfig::RowAssignConfig(dr::io::Handle *file)
 {
-	initialize(tref(new StreamBuffer(file)));
+	initialize(tref(new dr::io::StreamBuffer(file)));
 }
 
-RowAssignConfig::RowAssignConfig(StreamBuffer *sb)
+DR_MET(public)
+RowAssignConfig::RowAssignConfig(dr::io::StreamBuffer *sb)
 {
 	initialize(sb);
 }
 
+DR_MET(protected virtual)
 RowAssignConfig::~RowAssignConfig()
 {
 }
 
-void RowAssignConfig::initialize(StreamBuffer *stream)
+DR_MET(protected)
+void RowAssignConfig::initialize(dr::io::StreamBuffer *stream)
 {
 	Blob line;
 	while (!(line = stream->tryReadLine()).isNull()) {
@@ -85,21 +113,23 @@ void RowAssignConfig::initialize(StreamBuffer *stream)
 			continue;
 		key = line.left(p); key.trimSpaces();
 		value = line.mid(p+1); value.trimSpaces();
-		content[String(key.toStr(), key.getSize())] = String(value.toStr(), value.getSize());
+		values[String(key.toStr(), key.getSize())] = String(value.toStr(), value.getSize());
 	}
 }
 
+DR_MET(public virtual)
 String RowAssignConfig::getValue(const String &key)
 {
-	if (String *v = content.accValue(key))
-		return *v;
-	xthrownew(NoValueException(this, key));
-	return Null();
+	String val = getValue(key, Null());
+	if (val.isNull())
+		xthrownew(NoValueException(this, key));
+	return val;
 }
 
+DR_MET(public virtual)
 String RowAssignConfig::getValue(const String &key, const String &default_val)
 {
-	if (String *v = content.accValue(key))
+	if (String *v = values.accValue(key))
 		return *v;
 	return default_val;
 }

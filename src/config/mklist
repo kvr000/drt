@@ -1,9 +1,10 @@
 .def SD_BASE		base
 .def SD_EXCEPT		except
 .def SD_ROWASSIGN	rowassign
+.def SD_INI		ini
 .def SD_META		meta
 
-.def SUBDIRS		${SD_BASE},${SD_EXCEPT},${SD_ROWASSIGN},${SD_META}
+.def SUBDIRS		${SD_BASE},${SD_EXCEPT},${SD_ROWASSIGN},${SD_INI},${SD_META}
 .def ESUBDIRS		{${SUBDIRS}}
 
 .include ${ESUBDIRS}/mklist

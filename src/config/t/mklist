@@ -16,6 +16,7 @@ SOURCES:
 	:t0.cxx:f=cxx;g=t0,t
 	no:mklist:g=t
 	no:testconf.cfg:g=t
+	no:testconf.ini:g=t
 	lshlib:dr:g=common
 	lshlib:drconfig:g=common
 	lshlib:drtestenv:g=common
