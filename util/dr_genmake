@@ -629,7 +629,7 @@ sub printPreSubs # list_of_presubs <- this makefile vars
 	my @presubs;
 	if (defined (my $presubs = $vars->{PRESUBS})) {
 		foreach (@$presubs) {
-			$mf->print("sub_$_->{name}:\n\t\$(MAKE) -C $_->{name}\n\n");
+			printSubBuild($this->{config}, $mf, "sub_$_->{name}", [ map({ "sub_$_" } @{$_->{deps}}) ], undef, $_->{name}, undef);
 			push(@presubs, "sub_$_->{name}");
 		}
 		$mf->print("\n");
