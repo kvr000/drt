@@ -177,6 +177,7 @@ Thread_pthread::~Thread_pthread()
 {
 	if (attached)
 		pthread_detach(pt);
+	pthread_mutex_destroy(&joinlock);
 }
 
 void Thread_pthread::wait()

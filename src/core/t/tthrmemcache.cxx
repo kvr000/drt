@@ -67,8 +67,9 @@ static void allocateBuffers()
 
 void test()
 {
-	for (int i = 0; i < 1024; i++) {
+	for (int i = 0; i < 1*1024; i++) {
 		ThreadSimple::go(Eslot0<void>(&allocateBuffers))->waitUnref();
+		//allocateBuffers();
 	}
 }
 TESTNSE(tmcache);
