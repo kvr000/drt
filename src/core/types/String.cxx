@@ -1694,6 +1694,8 @@ DR_EXPORT_MET ssize_t String::find(const String &s, size_t start) const
 	BString am(ascii()), as(s.ascii());
 	const char *as_s = as.toStr(); size_t as_l = as.getSize();
 	const char *am_s = am.toStr(); size_t am_f = am.getSize()-as_l;
+	if (as_l > am.getSize())
+		return -1;
 	for (; start <= am_f; start++) {
 		if (am_s[start] != *as_s)
 			continue;
@@ -1711,6 +1713,8 @@ DR_EXPORT_MET ssize_t String::rfind(const String &s) const
 DR_EXPORT_MET ssize_t String::rfind(const String &s, size_t before) const
 {
 	BString am(ascii()), as(s.ascii());
+	if (as.getSize() > am.getSize())
+		return -1;
 	if (before > am.getSize()-as.getSize())
 		before = am.getSize()-as.getSize()+1;
 	for (before--; (ssize_t)before >= 0; before--) {
