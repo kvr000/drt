@@ -54,7 +54,8 @@ our $ok_leaks = "[(<](".join("|", qw(
 
 our %opts;
 
-getopts('s', \%opts);
+getopts('sl', \%opts)
+	or die "invalid option specified";
 
 my %frequent;
 my %mem;
@@ -120,6 +121,21 @@ for (;;) {
 foreach my $md (sort({ $a->{order} <=> $b->{order} } values %mem)) {
 	next if ($md->{backtrace} =~ m/$ok_leaks/o);
 	print("memory $md->{block} ($md->{length}) seq=$md->{seq} not freed (line $md->{lineno}):\n$md->{backtrace}\n");
+}
+
+if ($opts{l}) {
+	my %leak_stat;
+	foreach my $md (sort({ $a->{order} <=> $b->{order} } values %mem)) {
+		next if ($md->{backtrace} =~ m/$ok_leaks/o);
+		$leak_stat{$md->{backtrace}} = 0 unless (defined $leak_stat{$md->{backtrace}});
+		$leak_stat{$md->{backtrace}}++;
+	}
+	printf("Leak statistics (%d):\n\n", scalar %leak_stat/2);
+	foreach my $b (sort({ $leak_stat{$b} <=> $leak_stat{$a} } keys %leak_stat)) {
+		my $indb = $b;
+		$indb =~ s/^/\t/mg;
+		print("$leak_stat{$b} leaks:\n$indb\n");
+	}
 }
 
 if ($opts{s}) {
