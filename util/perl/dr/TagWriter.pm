@@ -108,7 +108,7 @@ sub addAttribute($$)
 	my $cld			= shift;
 	my $ad			= shift;
 
-	if ($ad->{def} =~ m/^([^\t]*)\t*(\w+);\s*$/) {
+	if ($ad->{def} =~ m/^([^\t]*)\s+(\w+);\s*$/) {
 		my $name = $2;
 		push(@{$this->{tags}}, sprintf("%s\t%s\t/^%s\$/;\"\tm\tclass:%s\taccess:%s", $name, $ad->{context}->{file}, $this->escapeTagFind($ad->{context}->{line}), $cld->{class}, $ad->{access}));
 		foreach my $cname ($this->expandClassNames($cld)) {

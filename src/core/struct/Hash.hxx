@@ -119,6 +119,20 @@ public:
 	DR_RINLINE			HashCompar(const HashCompar &)		{}
 };
 
+
+template <typename K, typename V>
+class OHashCompar: public Compar<K>
+{
+	typedef Compar<K> KBase;
+public:
+	static DR_MINLINE long		khash(const K &k)			{ return k->hash(); }
+	static DR_MINLINE bool		keq(const K &k1, const K &k2)		{ return k1->eq(k2); }
+
+	DR_RINLINE			OHashCompar()				{}
+	DR_RINLINE			OHashCompar(const OHashCompar &)	{}
+};
+
+
 template <typename K, typename V>
 class THashNode: public Hash_c::Node_c
 {
@@ -195,8 +209,17 @@ public:
 	DR_MINLINE void			replaceFrom(THash *source)				{ replaceFrom_g(source); }
 };
 
+
 template <typename K, typename V, typename Compar = HashCompar<K, Ref<V> > >
 class RHash: public THash<K, Ref<V>, Compar>
+{
+public:
+	DR_MINLINE V *			accDirect(const K &k)					{ if (Ref<V> *v = accValue(k)) return **v; else return NULL; }
+};
+
+
+template <typename K, typename V, typename Compar = OHashCompar<Ref<K>, Ref<V> > >
+class OHash: public RHash<Ref<K>, V, Compar>
 {
 };
 

@@ -475,7 +475,7 @@ String_c<Subtype> &String_c<Subtype>::appendReverse(const TC *s, size_t slen)
 template <typename Subtype>
 String_c<Subtype> &String_c<Subtype>::appendNumber(Sint32 number, int base)
 {
-	TC buf[32];
+	TC buf[33];
 	size_t len = 0;
 
 	TC sign = '\0';
@@ -484,8 +484,8 @@ String_c<Subtype> &String_c<Subtype>::appendNumber(Sint32 number, int base)
 		number = -number;
 	}
 	do {
-		buf[len++] = "0123456789abcdefghijklmnopqrstuvwxyz"[number%base];
-		number /= base;
+		buf[len++] = "0123456789abcdefghijklmnopqrstuvwxyz"[(Uint32)number%base];
+		number = (Uint32)number/base;
 	} while (number != 0);
 	if (sign)
 		buf[len++] = sign;
@@ -495,7 +495,7 @@ String_c<Subtype> &String_c<Subtype>::appendNumber(Sint32 number, int base)
 template <typename Subtype>
 String_c<Subtype> &String_c<Subtype>::appendNumber(Uint32 number, int base)
 {
-	TC buf[32];
+	TC buf[33];
 	size_t len = 0;
 
 	do {
@@ -508,7 +508,7 @@ String_c<Subtype> &String_c<Subtype>::appendNumber(Uint32 number, int base)
 template <typename Subtype>
 String_c<Subtype> &String_c<Subtype>::appendNumber(Sint64 number, int base)
 {
-	TC buf[64];
+	TC buf[65];
 	size_t len = 0;
 
 	TC sign = '\0';
@@ -517,8 +517,8 @@ String_c<Subtype> &String_c<Subtype>::appendNumber(Sint64 number, int base)
 		number = -number;
 	}
 	do {
-		buf[len++] = "0123456789abcdefghijklmnopqrstuvwxyz"[number%base];
-		number /= base;
+		buf[len++] = "0123456789abcdefghijklmnopqrstuvwxyz"[(Uint64)number%base];
+		number = (Uint64)number/base;
 	} while (number != 0);
 	if (sign)
 		buf[len++] = sign;
@@ -528,7 +528,7 @@ String_c<Subtype> &String_c<Subtype>::appendNumber(Sint64 number, int base)
 template <typename Subtype>
 String_c<Subtype> &String_c<Subtype>::appendNumber(Uint64 number, int base)
 {
-	TC buf[64];
+	TC buf[65];
 	size_t len = 0;
 
 	do {

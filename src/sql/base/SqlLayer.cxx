@@ -46,7 +46,7 @@
  * ancestor:	dr::Object
  * ifaces:	
  *
- * at:	Ref<Connection>		db_connection;
+ * at:	Ref<Connection>		db_conn;
  */
 
 #include "_gen/SqlLayer-all.hxx"
@@ -55,8 +55,8 @@ DR_SQL_NS_BEGIN
 
 
 DR_MET(public)
-SqlLayer::SqlLayer(ConnectionHold *db_connection_):
-	db_connection(db_connection_->accConnection(), true)
+SqlLayer::SqlLayer(ConnectionHold *db_conn_):
+	db_conn(db_conn_->accConnection(), true)
 {
 }
 

@@ -381,14 +381,22 @@ sub printClass($$)
 	if ($cld->{type} eq "sqllayer") {
 		$cld->{ancestor} = "dr::sql::SqlLayer" unless (defined $cld->{ancestor});
 		dieCldContext($cld, "sqllayer type used but no sql file opened") unless ($sql);
-		unshift(@{$cld->{methods}}, { specs => { "protected" => 1 }, ret => "DR_CONSTRUCT", "decl" => "$cld->{class}(dr::sql::ConnectionHold *db_connection)" });
-		if ($cld->{typeflag}->{noreg}) {
-			$sql->printf("DR_MET(protected)\n%s::%s(dr::sql::ConnectionHold *db_connection_):\n\t%s(db_connection_)\n{\n}\n\n", $cld->{class}, $cld->{class}, $cld->{ancestor});
+		if ($cld->{typeflag}->{noconstr}) {
+			if (!$cld->{typeflag}->{noreg}) {
+				push(@{$cld->{methods}}, { specs => { "static" => 1, "public" => 1 }, ret => "$cld->{class} *", "decl" => "accCached(dr::sql::ConnectionHold *db_conn)" });
+				$sql->printf("DR_MET(static public)\n%s *%s::accCached(dr::sql::ConnectionHold *holder)\n{\n\tif (%s *this_ = (%s *)holder->accDbLayer(comp_name))\n\t\treturn this_;\n\treturn tref(new %s(holder));\n}\n", $cld->{class}, $cld->{class}, $cld->{class}, $cld->{class}, $cld->{class});
+			}
 		}
 		else {
-			push(@{$cld->{methods}}, { specs => { "static" => 1, "public" => 1 }, ret => "$cld->{class} *", "decl" => "accCached(dr::sql::ConnectionHold *db_connection)" });
-			$sql->printf("DR_MET(protected)\n%s::%s(dr::sql::ConnectionHold *db_connection_):\n\t%s(db_connection_)\n{\n\tdb_connection_->addDbLayer(this);\n}\n\n", $cld->{class}, $cld->{class}, $cld->{ancestor});
-			$sql->printf("DR_MET(static public)\n%s *%s::accCached(dr::sql::ConnectionHold *holder)\n{\n\tif (%s *this_ = (%s *)holder->accDbLayer(comp_name))\n\t\treturn this_;\n\treturn tref(new %s(holder));\n}\n", $cld->{class}, $cld->{class}, $cld->{class}, $cld->{class}, $cld->{class});
+			unshift(@{$cld->{methods}}, { specs => { "protected" => 1 }, ret => "DR_CONSTRUCT", "decl" => "$cld->{class}(dr::sql::ConnectionHold *db_conn)" });
+			if ($cld->{typeflag}->{noreg}) {
+				$sql->printf("DR_MET(protected)\n%s::%s(dr::sql::ConnectionHold *db_connection_):\n\t%s(db_connection_)\n{\n}\n\n", $cld->{class}, $cld->{class}, $cld->{ancestor});
+			}
+			else {
+				push(@{$cld->{methods}}, { specs => { "static" => 1, "public" => 1 }, ret => "$cld->{class} *", "decl" => "accCached(dr::sql::ConnectionHold *db_conn)" });
+				$sql->printf("DR_MET(protected)\n%s::%s(dr::sql::ConnectionHold *db_connection_):\n\t%s(db_connection_)\n{\n\tdb_connection_->addDbLayer(this);\n}\n\n", $cld->{class}, $cld->{class}, $cld->{ancestor});
+				$sql->printf("DR_MET(static public)\n%s *%s::accCached(dr::sql::ConnectionHold *holder)\n{\n\tif (%s *this_ = (%s *)holder->accDbLayer(comp_name))\n\t\treturn this_;\n\treturn tref(new %s(holder));\n}\n", $cld->{class}, $cld->{class}, $cld->{class}, $cld->{class}, $cld->{class});
+			}
 		}
 	}
 
@@ -473,7 +481,7 @@ sub printClass($$)
 		foreach my $sqd (@{$cld->{sqls}}) {
 			push(@{$cld->{methods}}, { specs => { "protected" => 1 }, ret => "void", "decl" => "prep_$sqd->{name}()" });
 			push(@{$cld->{ats}}, { access => "protected", def => "Ref<dr::sql::Statement>\tst_$sqd->{name};", context => $sqd->{context} });
-			$sql->printf("\nvoid %s::prep_%s()\n{\n\tst_%s.setNoref(db_connection->prepareStatement(\"%s\"));\n}\n", $cld->{class}, $sqd->{name}, $sqd->{name}, escapeCString($sqd->{query}, 2));
+			$sql->printf("\nvoid %s::prep_%s()\n{\n\tst_%s.setNoref(db_conn->prepareStatement(\"%s\"));\n}\n", $cld->{class}, $sqd->{name}, $sqd->{name}, escapeCString($sqd->{query}, 2));
 			$tag_writer->addMethod($cld, { ret => "void", decl => "prep_$sqd->{name}", context => $sqd->{context} }) if ($tag_writer);
 		}
 	}
@@ -686,6 +694,9 @@ for (my $curf = $cxx, my $curname = $cxxname; defined $curf; $curf = @ARGV ? dr:
 			while ($_ = $curf->readLine()) {
 				chomp;
 				if (m/^\s*\*\s*$/) {
+					next;
+				}
+				elsif (m/^\s*\*\s*\/\//) {
 					next;
 				}
 				elsif (m/^\s*\*\s*(\w+):\s*(.*?)\s*$/) {
