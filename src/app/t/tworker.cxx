@@ -87,6 +87,7 @@ TESTNSE(worker);
 
 DR_TESTENV_MAIN()
 {
+	MM::enableThreadCache(1);
 	test_init();
 #ifdef TEST_WORKER
 	TESTRUN(worker);
