@@ -57,7 +57,7 @@ sub fixModelInfo($)
 	if (defined $model->{db_table}) {
 		# ok
 	}
-	elsif (defined (my $db_table = $model->checkDrTag("db_table"))) {
+	elsif (defined (my $db_table = $model->checkDrTagValue("db_table"))) {
 		$model->{db_table} = $db_table;
 	}
 	else {
@@ -124,7 +124,7 @@ sub translateSqlType($)
 	eval {
 		my ( $type, $tagger ) = $attr->getFinalTypeWithTagger();
 
-		if (defined (my $db_type = $tagger->checkTag("db_type"))) {
+		if (defined (my $db_type = $tagger->checkTagValue("db_type"))) {
 			if ($type->{stype} eq "enum") {
 				return "enum(".join(", ", map({
 							$_->getDrTagger()->getTag("db_value")->{value}
@@ -188,10 +188,10 @@ sub translateSqlTypeDecl($$)
 	else {
 		dieAttrContext($main, "unexpected mandatory: $main->{mandatory}");
 	}
-	if ($main->checkDrTag("serial")) {
+	if ($main->checkDrTagValue("serial")) {
 		$sql_type .= " auto_increment";
 	}
-	if (defined (my $db_default = $main->checkDrTag("db_default"))) {
+	if (defined (my $db_default = $main->checkDrTagValue("db_default"))) {
 		$sql_type .= " default $db_default";
 	}
 	elsif (defined (my $default = $main->{default})) {
@@ -226,7 +226,7 @@ foreach my $model (@models) {
 	foreach my $attr (@{$model->{attr_list}}) {
 		eval {
 			if ($attr->{stype} eq "attr") {
-				$sqlin->printObj("\t".defvalue($attr->checkDrTag("db_name"), $attr->{name}));
+				$sqlin->printObj("\t".defvalue($attr->checkDrTagValue("db_name"), $attr->{name}));
 				$sqlin->printAligned(translateSqlTypeDecl($attr, $attr), 40);
 				if ($attr->getRole()->{primary}) {
 					push(@primary, $attr->{name});

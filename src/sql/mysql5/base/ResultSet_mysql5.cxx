@@ -361,13 +361,12 @@ bool ResultSet_mysql5::isNull(const String &column)
 Sint64 ResultSet_mysql5::getInt(unsigned column)
 {
 	int err;
-	my_bool null;
 	Sint64 value = 0;
 	MYSQL_BIND b;
 	memset(&b, 0, sizeof(b));
 	b.buffer_type = MYSQL_TYPE_LONGLONG;
 	b.buffer = &value;
-	b.is_null = &null;
+	b.is_null = &b.is_null_value;
 	switch ((err = mysql_stmt_fetch_column(stmt, &b, column, 0))) {
 	case 0:
 		return value;
@@ -385,13 +384,12 @@ Sint64 ResultSet_mysql5::getInt(const String &column)
 double ResultSet_mysql5::getDouble(unsigned column)
 {
 	int err;
-	my_bool null;
 	double value = 0;
 	MYSQL_BIND b;
 	memset(&b, 0, sizeof(b));
 	b.buffer_type = MYSQL_TYPE_DOUBLE;
 	b.buffer = &value;
-	b.is_null = &null;
+	b.is_null = &b.is_null_value;
 	switch ((err = mysql_stmt_fetch_column(stmt, &b, column, 0))) {
 	case 0:
 		return value;

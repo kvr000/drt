@@ -114,7 +114,27 @@ sub getTag
 	dr::Util::doDie("tag '$tag' not found");
 }
 
+sub getTagValue
+{
+	my $this		= shift;
+	my $tag			= shift;
+
+	if (defined (my $val = $this->{drtag_hash}->{$tag})) {
+		return $val->{value};
+	}
+	dr::Util::doDie("tag '$tag' not found");
+}
+
 sub checkTag
+{
+	my $this		= shift;
+	my $tag			= shift;
+
+	return $this->{drtag_hash}->{$tag} if (defined $this->{drtag_hash}->{$tag});
+	return;
+}
+
+sub checkTagValue
 {
 	my $this		= shift;
 	my $tag			= shift;
@@ -286,12 +306,12 @@ sub getDrTag
 		or $this->dieContext($@);
 }
 
-sub checkDrTag
+sub checkDrTagValue
 {
 	my $this		= shift;
 	my $tag			= shift;
 
-	return $this->{drtag}->checkTag($tag);
+	return $this->{drtag}->checkTagValue($tag);
 }
 
 sub getDrSpecs
@@ -426,7 +446,7 @@ sub getIndexes
 	if (!defined $this->{index_list}) {
 		$this->{index_list} = [];
 		foreach my $def (sort({ $a->{order} <=> $b->{order} } values %{$this->{drtag}->getSpec("index")})) {
-			$this->dieContext("invalid index format: $def->{value}") unless ($def->{value} =~ m/^(\w+)\s+\(\s*((\w+(\s+(asc|desc))?\s*,\s*)*(\w+(\s+(asc|desc))?))\s*\)\s*$/);
+			$this->dieContext("invalid index format, expected (unique|nonunique) (col0 [asc|desc], col1...): $def->{value}") unless ($def->{value} =~ m/^(\w+)\s*\(\s*((\w+(\s+(asc|desc))?\s*,\s*)*(\w+(\s+(asc|desc))?))\s*\)\s*$/);
 			my $type = $1;
 			my @fields = split(/\s*,\s*/, $2);
 			push(@{$this->{index_list}}, {
@@ -764,7 +784,7 @@ sub getRole
 
 	if (!defined $this->{role}) {
 		$this->{role} = {};
-		if (defined (my $tag = $this->checkDrTag("role"))) {
+		if (defined (my $tag = $this->checkDrTagValue("role"))) {
 			foreach my $r (split(/\s+/, $tag)) {
 				$this->{role}->{$r} = 1;
 			}
@@ -792,12 +812,12 @@ sub getDrTag
 		or $this->dieContext($@);
 }
 
-sub checkDrTag
+sub checkDrTagValue
 {
 	my $this		= shift;
 	my $tag			= shift;
 
-	return $this->{drtag}->checkTag($tag);
+	return $this->{drtag}->checkTagValue($tag);
 }
 
 sub getDrSpecs
@@ -991,7 +1011,7 @@ sub postLoad
 
 	dr::Util::doDie("$this->{owner}->{full}.$this->{name}: ref undefined") unless (defined $this->{ref});
 
-	if (defined ($this->{assoc_prefix} = $this->{drtag}->checkTag("assoc_prefix"))) {
+	if (defined ($this->{assoc_prefix} = $this->{drtag}->checkTagValue("assoc_prefix"))) {
 		$this->{assoc_prefix} = "" if ($this->{assoc_prefix} eq "NULL");
 	}
 

@@ -50,6 +50,22 @@ use dr::ModelStore;
 use dr::Util qw(defvalue tabalign);
 
 
+sub fixModelInfo($)
+{
+	my $model		= shift;
+
+	if (defined $model->{db_table}) {
+		# ok
+	}
+	elsif (defined (my $db_table = $model->checkDrTagValue("db_table"))) {
+		$model->{db_table} = $db_table;
+	}
+	else {
+		($model->{db_table} = $model->{name}) =~ s/([[:lower:]])([[:upper:]])/$1_$2/g;
+		$model->{db_table} = lc($model->{db_table});
+	}
+}
+
 our %opts;
 getopts('', \%opts);
 
@@ -62,6 +78,7 @@ die "passed file does not end with suffix .list" unless ($listname =~ m/(.*)\.li
 our $file_trans = dr::FileTransaction->new();
 
 our $model_store = dr::ModelStore->new();
+$model_store->registerFixier(\&fixModelInfo);
 
 our $list = dr::FileParser->new($listname);
 
@@ -150,28 +167,48 @@ while (defined (my $line = $list->readLine())) {
 
 foreach my $model (@models) {
 	my $file = $model->{full}; $file =~ s/::/\//g;
-	my $form = $file_trans->createTruncated("$root/$file.form");
+	my $form = $file_trans->createTruncated("$root/$file.metadb");
+	$form->print(tabalign("table", 16).$model->{db_table}."\n");
 	foreach my $attr (@{$model->{attr_list}}) {
-		my ( $type, $tagger ) = $attr->getFinalTypeWithTagger();
 		eval {
-			$form->print(tabalign("attr", 16).$attr->{name}."\n");
-			$form->print(tabalign("\ttext", 24).$tagger->getTag("text")->{value}."\n");
-			$form->print(tabalign("\ttype", 24).translateFormType($attr)."\n");
-			$form->print(tabalign("\tmandatory", 24).$attr->{mandatory}."\n");
-			$form->print(tabalign("\tlogical", 24).$tagger->getTag("logical")->{value}."\n");
-			$form->print(tabalign("\tdisplay", 24).$tagger->getTag("display")->{value}."\n");
+			$form->print(tabalign($attr->{stype}, 16).$attr->{name}."\n");
+			if ($attr->{stype} eq "attr") {
+				my ( $type, $tagger ) = $attr->getFinalTypeWithTagger();
+				$form->print(tabalign("\ttext", 24).defvalue($tagger->checkTagValue("text"), $attr->{name})."\n");
+				$form->print(tabalign("\trole", 24).$tagger->getTag("role")->{value}."\n") if ($tagger->checkTag("role"));
+				$form->print(tabalign("\ttype", 24).translateFormType($attr)."\n");
+				$form->print(tabalign("\tmandatory", 24).$attr->{mandatory}."\n");
+				$form->print(tabalign("\tlogical", 24).$tagger->getTag("logical")->{value}."\n");
+				$form->print(tabalign("\tdisplay", 24).$tagger->getTag("display")->{value}."\n");
+			}
+			elsif ($attr->{stype} eq "assoc") {
+				my @tprimary = $attr->expandAssocAttrs();
+				die "association references more than one attribute, not yet supported" if (@tprimary != 1);
+				my ( $type, $tagger ) = $tprimary[0]->{attr}->getFinalTypeWithTagger();
+				$tagger->mergeReplacing($attr->getDrTagger());
+				$form->print(tabalign("\tref", 24).$attr->{ref}."\n");
+				$form->print(tabalign("\ttext", 24).defvalue($tagger->checkTagValue("text"), $attr->{name})."\n");
+				$form->print(tabalign("\trole", 24).$tagger->getTag("role")->{value}."\n") if ($tagger->checkTag("role"));
+				$form->print(tabalign("\ttype", 24).translateFormType($type)."\n");
+				$form->print(tabalign("\tmandatory", 24).$attr->{mandatory}."\n");
+				$form->print(tabalign("\tref_display", 24).$tagger->getTagValue("ref_display")."\n") if ($tagger->checkTag("ref_display"));
+				$form->print(tabalign("\tlogical", 24).$tagger->getTag("logical")->{value}."\n");
+				$form->print(tabalign("\tdisplay", 24).$tagger->getTag("display")->{value}."\n");
+			}
 			1;
 		}
-			or die "failed to process $model->{full}.$attr->{name}: $@: ".Dumper($tagger);
+			or STDERR->print("failed to process $model->{full}.$attr->{name}: $@"), $errors++;
 	}
-	foreach my $action (sort({ $a->{order} <=> $b->{order} } values %{$model->getDrSpecs("action")})) {
-		$form->print(tabalign("action", 16).$action->{spec}."\n");
-		my $ats = dr::Util::splitAttributes($action->{value});
-		$form->print(tabalign("\ttext", 24).defvalue($ats->{text}, $action->{spec})."\n");
-		if (defined $ats->{form_actioner}) {
-			my $a = $ats->{form_actioner} eq "_" ? "$model->{full}_$action->{spec}" : index($ats->{form_actioner}, "_") == 0 ? "$model->{full}$ats->{form_actioner}" : $ats->{form_actioner};
-			$form->print(tabalign("\tform_actioner", 24).$a."\n");
+	foreach my $assoc_display (values %{$model->getDrSpecs("assoc_display")}) {
+		eval {
+			$form->print(tabalign("assoc_display", 16).$assoc_display->{spec}."\n");
+			die "incorrect format for assoc_display, expected display_type(col0,...): $assoc_display->{value}" unless ($assoc_display->{value} =~ m/^(\w+)\(((\w+,)*(\w+))\)$/);
+			my ($dtype, $dcols) = ( $1, $2 );
+			$form->print(tabalign("\tdisplay", 24).$dtype."\n");
+			$form->print(tabalign("\tcolumns", 24).$dcols."\n");
+			1;
 		}
+			or STDERR->print("failed to process $model->{full}.$assoc_display->{name}: $@"), $errors++;
 	}
 	$file_trans->closeFile($form);
 }
