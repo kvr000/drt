@@ -21,7 +21,7 @@ FLAGS:
 	shlib=$(SOLDXXFLAGS) $(mysql5_SOLDXXFLAGS)
 
 OUTPUT:
-	shlib:drsql_mysql5:f=shlib;s=s;C=!c.no_sqlmysql5
+	shlib:drsqlmysql5:f=shlib;s=s;C=!c.no_sqlmysql5
 
 SOURCES:
 	no:mklist:g=t
