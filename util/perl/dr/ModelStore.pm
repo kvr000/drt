@@ -38,6 +38,7 @@ package dr::ModelStore::Util;
 use strict;
 use warnings;
 
+use Scalar::Util;
 use Data::Dumper;
 
 sub genericLoad
@@ -56,11 +57,11 @@ sub genericLoad
 	}
 }
 
-sub genericDrcom
+sub genericDrtag
 {
 	my $val			= shift;
 
-	dr::Util::doDie("invalid format of drcom: $val") unless ($val =~ m/^(\w+)(\((\w+)\))?\s+(\S.*)$/);
+	dr::Util::doDie("invalid format of drtag: $val") unless ($val =~ m/^(\w+)(\((\w+)\))?\s+(\S.*)$/);
 	return {
 		name			=> $1,
 		spec			=> $3,
@@ -69,18 +70,80 @@ sub genericDrcom
 }
 
 
+package dr::ModelStore::Drtag;
+
+use strict;
+use warnings;
+
+sub new
+{
+	my $ref			= shift; my $class = ref($ref) || $ref;
+
+	my $this = bless {
+		drtag_list		=> [],
+		drtag_hash		=> {},
+		drtag_spec		=> {},
+		drtag_cnt		=> 0,
+	}, $class;
+}
+
+sub addTag
+{
+	my $this		= shift;
+	my $val			= shift;
+
+	my $drtag = dr::ModelStore::Util::genericDrtag($val);
+	$drtag->{order} = ++$this->{drtag_cnt};
+	if (defined $drtag->{spec}) {
+		$this->{drtag_spec}->{$drtag->{name}}->{$drtag->{spec}} = $drtag;
+	}
+	else {
+		push(@{$this->{drtag_list}}, $drtag);
+		$this->{drtag_hash}->{$drtag->{name}} = $drtag;
+	}
+}
+
+sub getTag
+{
+	my $this		= shift;
+	my $tag			= shift;
+
+	if (defined (my $val = $this->{drtag_hash}->{$tag})) {
+		return $val;
+	}
+	dr::Util::doDie("tag '$tag' not found");
+}
+
+sub checkTag
+{
+	my $this		= shift;
+	my $tag			= shift;
+
+	return $this->{drtag_hash}->{$tag};
+}
+
+sub getSpec
+{
+	my $this		= shift;
+	my $tag			= shift;
+
+	if (defined (my $spec = $this->{drtag_spec}->{$tag})) {
+		return $spec;
+	}
+	return {};
+}
+
+
 package dr::ModelStore::ClassBase;
 
 use strict;
 use warnings;
 
-use Scalar::Util;
 use Data::Dumper;
 
 sub new
 {
-	my $ref			= shift;
-	my $class		= ref($ref) || $ref;
+	my $ref			= shift; my $class = ref($ref) || $ref;
 
 	my $owner		= shift;
 	my $basic		= shift;
@@ -94,10 +157,7 @@ sub new
 		full			=> "$basic->{package}::$basic->{name}",
 		stype			=> $basic->{stype},
 		comment			=> [],
-		drcom_list		=> [],
-		drcom_hash		=> {},
-		drcom_spec		=> {},
-		drcom_cnt		=> 0,
+		drtag			=> dr::ModelStore::Drtag->new(),
 	}, $class;
 
 	$owner->{class_hash}->{"$basic->{package}::$basic->{name}"} = $this;
@@ -115,7 +175,7 @@ sub dieContext
 }
 
 our %BASE_MAPPER = (
-	drcom			=> \&readBaseDrcom,
+	drtag			=> \&readBaseDrtag,
 	comment			=> \&readBaseComment,
 );
 
@@ -153,22 +213,14 @@ sub load
 	$this->postLoad();
 }
 
-sub readBaseDrcom
+sub readBaseDrtag
 {
 	my $this		= shift;
 	my $base		= shift;
 	my $key			= shift;
 	my $val			= shift;
 
-	my $drcom = dr::ModelStore::Util::genericDrcom($val);
-	$drcom->{order} = ++$this->{drcom_cnt};
-	if (defined $drcom->{spec}) {
-		$this->{drcom_spec}->{$drcom->{name}}->{$drcom->{spec}} = $drcom;
-	}
-	else {
-		push(@{$this->{drcom_list}}, $drcom);
-		$this->{drcom_hash}->{$drcom->{name}} = $drcom;
-	}
+	$this->{drtag}->addTag($val);
 }
 
 sub readBaseComment
@@ -275,17 +327,15 @@ sub getIndexes
 
 	if (!defined $this->{index_list}) {
 		$this->{index_list} = [];
-		if (defined $this->{drcom_spec}->{index}) {
-			foreach my $def (sort({ $a->{order} <=> $b->{order} } values %{$this->{drcom_spec}->{index}})) {
-				$this->dieContext("invalid index format: $def->{value}") unless ($def->{value} =~ m/^(\w+)\s+\(\s*((\w+(\s+(asc|desc))?\s*,\s*)*(\w+(\s+(asc|desc))?))\s*\)\s*$/);
-				my $type = $1;
-				my @fields = split(/\s*,\s*/, $2);
-				push(@{$this->{index_list}}, {
-						name			=> $def->{spec},
-						type			=> $type,
-						fields			=> \@fields,
-					});
-			}
+		foreach my $def (sort({ $a->{order} <=> $b->{order} } values %{$this->{drtag}->getSpec("index")})) {
+			$this->dieContext("invalid index format: $def->{value}") unless ($def->{value} =~ m/^(\w+)\s+\(\s*((\w+(\s+(asc|desc))?\s*,\s*)*(\w+(\s+(asc|desc))?))\s*\)\s*$/);
+			my $type = $1;
+			my @fields = split(/\s*,\s*/, $2);
+			push(@{$this->{index_list}}, {
+					name			=> $def->{spec},
+					type			=> $type,
+					fields			=> \@fields,
+				});
 		}
 	}
 	return @{$this->{index_list}};
@@ -514,10 +564,7 @@ sub new
 		stype			=> $basic->{stype},
 		mandatory		=> undef,
 		comment			=> [],
-		drcom_list		=> [],
-		drcom_hash		=> {},
-		drcom_spec		=> {},
-		drcom_cnt		=> 0,
+		drtag			=> dr::ModelStore::Drtag->new(),
 	}, $class;
 
 	Scalar::Util::weaken($this->{owner});
@@ -539,7 +586,7 @@ sub getRole
 
 	if (!defined $this->{role}) {
 		$this->{role} = {};
-		if (my $com = $this->{drcom_hash}->{role}) {
+		if (defined (my $com = $this->checkDrTag("role"))) {
 			foreach my $r (split(/\s+/, $com->{value})) {
 				$this->{role}->{$r} = 1;
 			}
@@ -549,19 +596,42 @@ sub getRole
 	return $this->{role};
 }
 
-sub getCom
+sub getDrTagger
 {
 	my $this		= shift;
-	my $com			= shift;
 
-	if (defined (my $val = $this->{drcom_hash}->{$com})) {
-		return $val->{value};
+	return $this->{drtag};
+}
+
+sub getDrTag
+{
+	my $this		= shift;
+	my $tag			= shift;
+
+	eval {
+		return $this->{drtag}->getTag($tag);
 	}
-	return;
+		or $this->dieContext($@);
+}
+
+sub checkDrTag
+{
+	my $this		= shift;
+	my $tag			= shift;
+
+	return $this->{drtag}->checkTag($tag);
+}
+
+sub getDrSpecs
+{
+	my $this		= shift;
+	my $spec		= shift;
+
+	return $this->{drtag}->getSpecs($spec);
 }
 
 our %MODEL_ATTRBASE_MAPPER = (
-	drcom			=> \&readClassAttrDrcom,
+	drtag			=> \&readClassAttrDrtag,
 	comment			=> \&readClassAttrComment,
 	type			=> \&readClassAttrDirect,
 	mandatory		=> \&readClassAttrDirect,
@@ -597,22 +667,14 @@ sub readClassAttrDirect
 	$this->{$key} = $val;
 }
 
-sub readClassAttrDrcom
+sub readClassAttrDrtag
 {
 	my $this		= shift;
 	my $base		= shift;
 	my $key			= shift;
 	my $val			= shift;
 
-	my $drcom = dr::ModelStore::Util::genericDrcom($val);
-	$drcom->{order} = ++$this->{drcom_cnt};
-	if (defined $drcom->{spec}) {
-		$this->{drcom_spec}->{$drcom->{name}}->{$drcom->{spec}} = $drcom;
-	}
-	else {
-		push(@{$this->{drcom_list}}, $drcom);
-		$this->{drcom_hash}->{$drcom->{name}} = $drcom;
-	}
+	$this->{drtag}->addTag($val);
 }
 
 sub readClassAttrComment
@@ -688,7 +750,7 @@ sub expandAssocAttrs
 
 	my $target = $this->getAssocTarget();
 	my @primary = $target->getPrimary();
-	dr::Util::doDie("no primary for $target->{full}") unless (@primary);
+	$this->dieContext("no primary key for $target->{full}") unless (@primary);
 
 	my @exp_primary;
 
@@ -709,7 +771,7 @@ sub expandAssocAttrs
 			}
 		}
 		else {
-			dr::Util::doDie("invalid attribute stype: $pa->{stype}");
+			$this->dieContext("invalid attribute stype: $pa->{stype}");
 		}
 	}
 
@@ -727,7 +789,7 @@ sub postLoad
 
 	dr::Util::doDie("$this->{owner}->{full}.$this->{name}: ref undefined") unless (defined $this->{ref});
 
-	if (defined ($this->{assoc_prefix} = $this->{drcom_hash}->{assoc_prefix})) {
+	if (defined ($this->{assoc_prefix} = $this->{drtag}->checkTag("assoc_prefix"))) {
 		$this->{assoc_prefix} = "" if ($this->{assoc_prefix} eq "NULL");
 	}
 

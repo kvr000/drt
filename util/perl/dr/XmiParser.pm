@@ -53,8 +53,8 @@ sub new
 
 	my $this = bless {
 		comment			=> [],
-		dr_list			=> [],
-		dr_hash			=> {},
+		drtag_list		=> [],
+		drtag_hash		=> {},
 	}, $class;
 
 	return $this;
@@ -68,9 +68,9 @@ sub processComment
 	foreach my $line (split("\n", $body)) {
 		if ($line =~ m/^(drt?-)(\w+(\(\w+\))?):\s*(.*?)\s*$/) {
 			my $comment = { name => $2, value => $4 };
-			push(@{$this->{dr_list}}, $comment);
-			die "drcomment $2 already specified" if (defined $this->{dr_hash}->{$2});
-			$this->{dr_hash}->{$comment->{name}} = $comment;
+			push(@{$this->{drtag_list}}, $comment);
+			die "drcomment $2 already specified" if (defined $this->{drtag_hash}->{$2});
+			$this->{drtag_hash}->{$comment->{name}} = $comment;
 		}
 		elsif ($line =~ m/^drt?-$/) {
 			die "invalid syntax for dr tag: $line";
@@ -89,9 +89,9 @@ sub processTag
 
 	if ($tag =~ m/^\s*(drt?-)(\w+(\(\w+\))?)$/) {
 		my $comment = { name => $2, value => $value };
-		push(@{$this->{dr_list}}, $comment);
-		die "drcomment $2 already specified" if (defined $this->{dr_hash}->{$2});
-		$this->{dr_hash}->{$comment->{name}} = $comment;
+		push(@{$this->{drtag_list}}, $comment);
+		die "drcomment $2 already specified" if (defined $this->{drtag_hash}->{$2});
+		$this->{drtag_hash}->{$comment->{name}} = $comment;
 	}
 	elsif ($tag =~ m/^\s*drt?-$/) {
 		die "invalid syntax for dr tag: $tag";

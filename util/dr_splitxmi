@@ -90,8 +90,8 @@ sub formatComment($$)
 
 	my $out = "";
 
-	foreach my $dr (@{$comment->{dr_list}}) {
-		$out .= sprintf("%s%s", "\t" x $indent, formatTriplet("drcom", $dr->{name}, $dr->{value}));
+	foreach my $dr (@{$comment->{drtag_list}}) {
+		$out .= sprintf("%s%s", "\t" x $indent, formatTriplet("drtag", $dr->{name}, $dr->{value}));
 	}
 	foreach my $com (@{$comment->{comment}}) {
 		$out .= sprintf("%s%s", "\t" x $indent, formatPair("comment", $com));

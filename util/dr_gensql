@@ -162,7 +162,7 @@ sub translateSqlTypeDecl($$)
 	else {
 		dieAttrContext($main, "unexpected mandatory: $main->{mandatory}");
 	}
-	if ($main->getCom("serial")) {
+	if ($main->checkDrTag("serial")) {
 		$sql_type .= " auto_increment";
 	}
 	if (defined $main->{default}) {
@@ -202,7 +202,7 @@ foreach my $model (@models) {
 			foreach my $pa (@tprimary) {
 				$sqlin->printObj("\t$pa->{name}");
 				$sqlin->printAligned(translateSqlTypeDecl($attr, $pa->{attr}), 40);
-				$sqlin->printAlignedAdd("\t\t-- $attr->{name}: $pa->{attr}->{owner}->{full}.$pa->{attr}->{name}", 72);
+				$sqlin->printAlignedAdd("-- $attr->{name}: $pa->{attr}->{owner}->{full}.$pa->{attr}->{name}", 72);
 				push(@primary, $pa->{name});
 			}
 		}
