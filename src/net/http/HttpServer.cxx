@@ -33,31 +33,50 @@
  * @license	http://www.gnu.org/licenses/lgpl.txt GNU Lesser General Public License v3
  **/
 
-#include <dr/x_kw.hxx>
-#include <dr/Const.hxx>
+/*drt
+ * include:	dr/Hash.hxx
+ * include:	dr/io/StreamBuffer.hxx
+ * include:	dr/io/NetAddress.hxx
+ * include:	dr/io/SocketStream.hxx
+ * include:	dr/net/HttpConst.hxx
+ *
+ * ns:		dr::net
+ */
 
+#include <dr/x_kw.hxx>
 #include <dr/MethodConv.hxx>
 #include <dr/EndOfDataException.hxx>
 #include <dr/UnsupportedException.hxx>
 #include <dr/TimeoutException.hxx>
 #include <dr/Thread.hxx>
 
-#include <dr/io/NetAddressInet4.hxx>
-
 #include <dr/net/HttpServer.hxx>
+#include "_gen/HttpServer-all.hxx"
 
 DR_NET_NS_BEGIN
 
 
-DR_OBJECT_DEF(DR_NET_NS_STR, HttpServer, Object);
-DR_OBJECT_IMPL_SIMPLE(HttpServer);
+/*drt
+ * class:	HttpServer
+ * type:	object
+ * ancestor:	dr::Object
+ *
+ * at:	StreamBuffer			read_stream;
+ * at:	String				req_method;
+ * at:	String				req_uri;
+ * at:	unsigned			req_version;
+ * at:	THash<String, String>		req_headers;
+ * at:	Sint64				req_body_size;
+ *
+ * at:	HttpConst::MethodType		method_type;
+ * at:	HttpConst::TransferEncoding	transfer_encoding;
+ *
+ * at:	int				connection_state;		///< 0 - start, 1 - keep-alive, 2 - close
+ *
+ * ini:	static const StringIndex	header_process_map;
+ */
 
-const StringIndex HttpServer::header_process_map(
-		&HttpConst::connection_string, (SintPtr)MethodConv::methodToFptr(&HttpServer::processHeaderConnection),
-		NULL
-		);
-
-
+DR_MET(public)
 HttpServer::HttpServer(SocketStream *stream):
 	read_stream(stream),
 	method_type(HttpConst::MT_Unknown),
@@ -65,15 +84,27 @@ HttpServer::HttpServer(SocketStream *stream):
 {
 }
 
+DR_MET(protected virtual)
 HttpServer::~HttpServer()
 {
 }
 
+DR_MET(public virtual)
+void HttpServer::setTimeLimit(SysTime abs_time)
+{
+	read_stream.setTimeLimit(abs_time);
+}
+
+DR_MET(public virtual)
 SocketStream *HttpServer::getSocket()
 {
 	return iref((SocketStream *)read_stream.accHandle());
 }
 
+DR_MET(public virtual)
+/**
+ * @return URI
+ */
 String HttpServer::readRequest()
 {
 	if (connection_state >= 2)
@@ -226,11 +257,16 @@ String HttpServer::readRequest()
 	return req_uri;
 }
 
+DR_MET(public virtual)
+/**
+ * @return the method name
+ */
 HttpConst::MethodType HttpServer::getMethod()
 {
 	return method_type;
 }
 
+DR_MET(protected virtual)
 void HttpServer::processHeader(const String &header, const String &value)
 {
 	req_headers[header] = value;
@@ -239,6 +275,7 @@ void HttpServer::processHeader(const String &header, const String &value)
 	}
 }
 
+DR_MET(protected virtual header_process_map:close)
 void HttpServer::processHeaderConnection(const String &header, const String &value)
 {
 	String lowvalue(String::createLower(value));
@@ -250,6 +287,7 @@ void HttpServer::processHeaderConnection(const String &header, const String &val
 		connection_state = 2;
 }
 
+DR_MET(public virtual)
 String HttpServer::getHeader(const String &key)
 {
 	if (String *f = req_headers.accValue(key))
@@ -257,6 +295,7 @@ String HttpServer::getHeader(const String &key)
 	return Null();
 }
 
+DR_MET(protected)
 bool HttpServer::updateNextChunk()
 {
 	{
@@ -294,6 +333,7 @@ bool HttpServer::updateNextChunk()
 	return true;
 }
 
+DR_MET(public virtual)
 Blob HttpServer::readContent(size_t maxsize)
 {
 	Blob data;
@@ -313,6 +353,7 @@ Blob HttpServer::readContent(size_t maxsize)
 	return data;
 }
 
+DR_MET(public virtual)
 ssize_t HttpServer::readContent(Blob *content, size_t maxsize)
 {
 	if (req_body_size == 0) {
@@ -331,6 +372,7 @@ ssize_t HttpServer::readContent(Blob *content, size_t maxsize)
 	return maxsize;
 }
 
+DR_MET(public virtual)
 Blob HttpServer::readFullContent()
 {
 	Blob data;
@@ -355,6 +397,7 @@ Blob HttpServer::readFullContent()
 	return data;
 }
 
+DR_MET(public virtual)
 ssize_t HttpServer::readFullContent(Blob *content)
 {
 	if (req_body_size >= 0) {
@@ -367,11 +410,13 @@ ssize_t HttpServer::readFullContent(Blob *content)
 	return content->getSize();
 }
 
+DR_MET(public virtual)
 void HttpServer::setCloseConnection()
 {
 	connection_state = 2;
 }
 
+DR_MET(public virtual)
 void HttpServer::sendResponse(int code, const String &message)
 {
 	BString resp("HTTP/");
@@ -385,12 +430,14 @@ void HttpServer::sendResponse(int code, const String &message)
 	read_stream.writeFull(resp);
 }
 
+DR_MET(public virtual)
 void HttpServer::sendHeader(const String &header, const String &value)
 {
 	Blob row(header.utf8()); row.append(": ").append(value.utf8()).append("\r\n");
 	read_stream.writeFull(row);
 }
 
+DR_MET(public virtual)
 void HttpServer::sendContent(const Blob &content)
 {
 	BString cs("content-length: "); cs.appendNumber(content.getSize()).append("\r\n\r\n");

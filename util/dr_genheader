@@ -553,7 +553,7 @@ sub printClass($$)
 				if (my $ini = (grep({ $_->{name} eq $spec } @{$cld->{ini}}))[0]) {
 					my $fullname = "$ini->{name}_$met->{name}";
 					push(@{$cld->{consts}}, { access => "public", type => "String", name => $fullname, init => "(\"$met->{specs}->{$spec}\")", line => $met->{line}, lineno => $met->{lineno} });
-					push(@{$ini->{ina}}, { line => $met->{line}, lineno => $met->{lineno}, def => "$fullname\t(UintPtr)MethodConv::methodToFptr(&$cld->{iname}::$met->{name})" });
+					push(@{$ini->{elements}}, { line => $met->{line}, lineno => $met->{lineno}, def => "$fullname\t(UintPtr)MethodConv::methodToFptr(&$cld->{iname}::$met->{name})" });
 					next;
 				}
 				dieCldContext($cld, "unknown method modifier $spec");
@@ -612,8 +612,8 @@ sub printClass($$)
 		dieCldContext($cld, "found ini but no val file was opened") unless ($val);
 		if ($ini->{type} eq "static const StringIndex") {
 			$val->printf("const StringIndex %s::%s(\n", $cld->{class}, $ini->{name});
-			foreach my $ina (@{$ini->{ina}}) {
-				dieCldContext($cld, "expected 'str_var value' for StringIndex") unless ($ina->{def} =~ m/^(\S+)\s+(.*)$/);
+			foreach my $inel (@{$ini->{elements}}) {
+				dieCldContext($cld, "expected 'str_var value' for StringIndex") unless ($inel->{def} =~ m/^(\S+)\s+(.*)$/);
 				$val->printf("\t&$1, $2,\n");
 			}
 			$val->printf("\tNULL\n);\n");
@@ -833,13 +833,13 @@ for (my $curf = $cxx, my $curname = $cxxname; defined $curf; $curf = @ARGV ? $fi
 					}
 					elsif ($key eq "ini") {
 						STDERR->print("$curname:$lineno: invalid syntax for ini, require 'type name;': $val"), $errors++, next unless ($val =~ m/^(.*?)\s+(\w+);$/);
-						push(@{$cld->{ini}}, { access => "protected", type => $1, name => $2, def => $val, line => $_, lineno => $lineno, ina => [] });
+						push(@{$cld->{ini}}, { access => "protected", type => $1, name => $2, def => $val, line => $_, lineno => $lineno, elements => [] });
 					}
-					elsif ($key eq "ina") {
-						STDERR->print("$curname:$lineno: invalid syntax for ina, require 'name ini': $val"), $errors++, next unless ($val =~ m/^(\w+)\s+(.+)$/);
+					elsif ($key eq "iniel") {
+						STDERR->print("$curname:$lineno: invalid syntax for iniel, require 'name ini': $val"), $errors++, next unless ($val =~ m/^(\w+)\s+(.+)$/);
 						my $ini = (grep({ $_->{name} eq $1 } @{$cld->{ini}}))[0]
 							or STDERR->print("$curname:$lineno: ini $1 not defined"), $errors++, next;
-						push(@{$ini->{ina}}, { line => $_, lineno => $lineno, def => $2 });
+						push(@{$ini->{elements}}, { line => $_, lineno => $lineno, def => $2 });
 					}
 					elsif ($key eq "cnp") {
 						eval {
