@@ -217,7 +217,7 @@ long Variant::hash() const
 		else {
 			long h = *(long *)(void *)&double_val;
 			for (size_t i = 1; i < sizeof(double_val)/sizeof(long); i++) {
-				h ^= ((long *)&double_val)[i];
+				h ^= ((long *)(void *)&double_val)[i];
 			}
 			return h;
 		}

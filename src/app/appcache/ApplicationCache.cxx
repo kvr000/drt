@@ -231,14 +231,13 @@ bool ApplicationCache::ValueHash::node_eq(dr::Hash_c::Node_c *entry, const void 
 DR_MET(protected virtual)
 dr::Hash_c::Node_c *ApplicationCache::ValueHash::node_def(const void *key, const void *value)
 {
-	return new ValueHashNode((int)((void **)key)[0], (Object *)((void **)key)[1], (Object *)value);
+	return new ValueHashNode((int)(long)((void **)key)[0], (Object *)((void **)key)[1], (Object *)value);
 }
 
 DR_MET(protected virtual)
 dr::Hash_c::Node_c *ApplicationCache::ValueHash::node_undef(const void *key)
 {
-	return new ValueHashNode((int)((void **)key)[0], (Object *)((void **)key)[1], NULL);
-	return NULL;
+	return new ValueHashNode((int)(long)((void **)key)[0], (Object *)((void **)key)[1], NULL);
 }
 
 DR_MET(protected virtual)

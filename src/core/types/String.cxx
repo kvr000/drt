@@ -1210,10 +1210,10 @@ out_float:
 				}
 				else if (output&O_Dot) {
 					if (fabsl(value) < 1) {
-						space = -log10(fabsl(value));
+						space = (long)-log10(fabsl(value));
 					}
 					else {
-						space = log10(fabsl(value))+prec;
+						space = (long)log10(fabsl(value))+prec;
 					}
 				}
 				else {

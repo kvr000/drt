@@ -87,7 +87,7 @@ diff:
 tarout:
 	@bdir=`pwd`; bdir=`basename "$$bdir"`/; \
 	$(MAKE) -s slist | \
-	grep -v '^etc/.*/' | grep -v '^util/.*/' | \
+	grep -v '^etc/.*/' | \
 	sed "s:^:$$bdir:" | \
 	( cd ..; exec tar fcv - --exclude $${bdir}etc/p/\* --exclude $${bdir}include/\* --exclude $${bdir}lib/\* --exclude $${bdir}bin/\* --exclude .svn --exclude \*.orig --exclude \*.rej -T - )
 
