@@ -93,7 +93,9 @@ Subsystem *Subsystem::getSubsystem(const String &name, Subsystem *(*create_func)
 			subsys->ref();
 			goto out;
 		}
-		String filename(name);
+		String funcname(name);
+		funcname.replace("::", "_");
+		String filename(funcname);
 		filename.replace("_", String());
 		if (create_func == NULL) {
 #if (defined DR_OS_UNIX)
@@ -104,7 +106,7 @@ Subsystem *Subsystem::getSubsystem(const String &name, Subsystem *(*create_func)
 				libfile[ic] = (char)tolower(libfile[ic]);
 			if ((dl = dlopen(libfile, RTLD_NOW|RTLD_GLOBAL)) == NULL)
 				xthrownew(BadSubsysException(name, String("unable to load library ").append(libfile).append(": ").append(dlerror())));
-			if ((unsigned)snprintf(libfile, sizeof(libfile), "createSS_%s", name.utf8().toStr()) >= sizeof(libfile))
+			if ((unsigned)snprintf(libfile, sizeof(libfile), "createSS_%s", funcname.utf8().toStr()) >= sizeof(libfile))
 				xthrownew(BadSubsysException(name, String("too long function name")));
 			if ((create_func = (Subsystem *(*)(const String &))dlsym(dl, libfile)) == NULL)
 				xthrownew(BadSubsysException(name, String("cannot find function ").append(libfile)));
@@ -119,7 +121,7 @@ Subsystem *Subsystem::getSubsystem(const String &name, Subsystem *(*create_func)
 #ifdef DR_LIBC_CYGWIN
 				snprintf(libfunc, sizeof(libfunc), "%s.dll", filename.utf8().toStr()) >= (ssize_t)(sizeof(libfunc)/sizeof(libfunc[0]))
 #else
-				StringCbPrintfW(libfile, sizeof(libfile), L"%s.dll", name.wide().toStr()) != 0
+				StringCbPrintfW(libfile, sizeof(libfile), L"%s.dll", filename.wide().toStr()) != 0
 #endif
 			)
 				xthrownew(BadSubsysException(name, "too long name"));
@@ -134,9 +136,9 @@ Subsystem *Subsystem::getSubsystem(const String &name, Subsystem *(*create_func)
 			}
 			if (
 #ifdef DR_LIBC_CYGWIN
-					snprintf(libfunc, sizeof(libfunc), "createSS_%S", name.wide().toStr()) >= (ssize_t)(sizeof(libfunc)/sizeof(libfunc[0]))
+					snprintf(libfunc, sizeof(libfunc), "createSS_%S", funcname.wide().toStr()) >= (ssize_t)(sizeof(libfunc)/sizeof(libfunc[0]))
 #else
-					StringCbPrintfA(libfunc, sizeof(libfile)/sizeof(libfile[0]), "createSS_%S", name.wide().toStr()) != 0
+					StringCbPrintfA(libfunc, sizeof(libfile)/sizeof(libfile[0]), "createSS_%S", funcname.wide().toStr()) != 0
 #endif
 			)
 				xthrownew(BadSubsysException(name, "too long function name"));
