@@ -284,6 +284,16 @@ bool ResultSet_mysql5::fetchRow()
 	}
 }
 
+bool ResultSet_mysql5::isNull(unsigned column)
+{
+	return *res_bindings[column].is_null;
+}
+
+bool ResultSet_mysql5::isNull(const String &column)
+{
+	return isNull(getColumnIdDirect(column));
+}
+
 Sint64 ResultSet_mysql5::getInt(unsigned column)
 {
 	int err;

@@ -76,6 +76,8 @@ public:
 	virtual bool			fetchRow() = 0;
 
 public:
+	virtual bool			isNull(unsigned column) = 0;
+	virtual bool			isNull(const String &column) = 0;
 	virtual Sint64			getInt(unsigned column) = 0;
 	virtual Sint64			getInt(const String &column) = 0;
 	virtual double			getDouble(unsigned column) = 0;
