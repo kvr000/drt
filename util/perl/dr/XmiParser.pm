@@ -1091,8 +1091,6 @@ sub postprocRefPackage
 
 	$this->{package_xi}->{$package->{xmi_id}} = $package;
 
-	STDERR->print("postprocessing $package->{name}\n");
-
 	foreach my $ch_package (@{$package->{package_list}}) {
 		$this->postprocRefPackage($ch_package);
 	}

@@ -46,7 +46,8 @@ use File::Basename;
 use lib dirname($0)."/perl";
 use dr::FileTransaction;
 use dr::XmiParser;
-use dr::IndentReader;
+use dr::ModelStore;
+use dr::Util;
 
 sub fileToName($$)
 {
@@ -188,6 +189,7 @@ our $str;
 our $val;
 our $sql;
 our $all;
+our $model_store = dr::ModelStore->new();
 
 our $cxx = FileHandle->new($cxxname, "<")
 	or die "failed to open $cxxname: $!";
@@ -200,220 +202,20 @@ our $ns;
 our @ns_use = ();
 our @forwards = ();
 
-our %MODEL_FUNC = (
-	package			=> \&readModelValue,
-	name			=> \&readModelValue,
-	type			=> \&readModelValue,
-	base			=> \&readModelValue,
-	attr			=> \&readModelAttr,
-	assoc			=> \&readModelAssoc,
-	compos			=> \&readModelCompos,
-	drcom			=> \&readModelDrcom,
-	comment			=> \&readModelComment,
-	enum			=> \&readModelEnum,
-);
-
-our %MODEL_ATTR_FUNC = (
-	type			=> \&readModelAttrValue,
-	drcom			=> \&readModelAttrDrcom,
-	comment			=> \&readModelAttrComment,
-);
-
-our %MODEL_ENUM_FUNC = (
-	value			=> \&readModelEnumValue,
-	comment			=> \&readModelEnumComment,
-);
-
-sub readModelValue
-{
-	my $model		= shift;
-	my $base		= shift;
-	my $key			= shift;
-	my $val			= shift;
-
-	$model->{$key} = $val;
-}
-
-sub readModelDrcom
-{
-	my $model		= shift;
-	my $base		= shift;
-	my $key			= shift;
-	my $val			= shift;
-
-	die "invalid format of drcom: $val" unless ($val =~ m/^(\S+)\s+(\S.*)$/);
-	my $drcom = { name => $1, value => $2 };
-	push(@{$model->{drcom_list}}, $drcom);
-	$model->{drcom_hash}->{$1} = $drcom;
-}
-
-sub readModelComment
-{
-	my $model		= shift;
-	my $base		= shift;
-	my $key			= shift;
-	my $val			= shift;
-
-	push(@{$model->{comment}}, $val);
-}
-
-sub readModelAttr
-{
-	my $model		= shift;
-	my $base		= shift;
-	my $key			= shift;
-	my $val			= shift;
-
-	my $reader		= $base->getSubLeveler();
-
-	my $attr = {
-		name			=> $val,
-	};
-
-	while (my ($k, $v ) = $reader->getPair()) {
-		if (my $func = $MODEL_ATTR_FUNC{$k}) {
-			&$func($attr, $reader, $k, $v);
-		}
-		else {
-			die "unknown key $k";
-		}
-	}
-}
-
-sub readModelAttrValue
-{
-	my $attr		= shift;
-	my $base		= shift;
-	my $key			= shift;
-	my $val			= shift;
-
-	$attr->{$key} = $val;
-}
-
-sub readModelAttrDrcom
-{
-	my $attr		= shift;
-	my $base		= shift;
-	my $key			= shift;
-	my $val			= shift;
-
-	die "invalid format of drcom: $val" unless ($val =~ m/^(\S+)\s+(\S.*)$/);
-	my $drcom = { name => $1, value => $2 };
-	push(@{$attr->{drcom_list}}, $drcom);
-	$attr->{drcom_hash}->{$1} = $drcom;
-}
-
-sub readModelAttrComment
-{
-	my $attr		= shift;
-	my $base		= shift;
-	my $key			= shift;
-	my $val			= shift;
-
-	push(@{$attr->{comment}}, $val);
-}
-
-sub readModelEnum
-{
-	my $model		= shift;
-	my $base		= shift;
-	my $key			= shift;
-	my $val			= shift;
-
-	my $enum = {
-		name			=> $val,
-		value			=> undef,
-		comment			=> [],
-	};
-	my $reader = $base->getSubLeveler();
-	while (my ($k, $v) = $reader->getPair()) {
-		if (my $func = $MODEL_ENUM_FUNC{$k}) {
-			&$func($enum, $reader, $k, $v);
-		}
-		else {
-			die "unknown key $k";
-		}
-	}
-
-	push(@{$model->{enums}}, $enum);
-}
-
-sub readModelEnumValue
-{
-	my $enum		= shift;
-	my $base		= shift;
-	my $key			= shift;
-	my $val			= shift;
-
-	$enum->{value} = $val;
-}
-
-sub readModelEnumComment
-{
-	my $enum		= shift;
-	my $base		= shift;
-	my $key			= shift;
-	my $val			= shift;
-
-	push(@{$enum->{comment}}, $val);
-}
-
-sub readModelAssoc
-{
-	my $model		= shift;
-	my $base		= shift;
-	my $key			= shift;
-	my $val			= shift;
-
-	my $reader		= $base->getSubLeveler();
-
-	$reader->skipRecursive();
-}
-
-sub readModelCompos
-{
-	my $model		= shift;
-	my $base		= shift;
-	my $key			= shift;
-	my $val			= shift;
-
-	my $reader		= $base->getSubLeveler();
-
-	$reader->skipRecursive();
-}
-
 sub readModel($$$)
 {
 	my $name		= shift;
 	my $ns			= shift;
 	my $class		= shift;
 
-	my $model = {
-		drcom_list		=> [],
-		drcom_hash		=> {},
-		comment			=> [],
-		enums			=> [],
-	};
 	if ($name =~ m/^(.*)\/\.$/) {
 		$name = $1;
 		$ns =~ s/::/\//g;
 		$class =~ s/::/\//g;
 		$name .= "/$ns/$class";
 	}
-	my $reader = dr::IndentReader->new("$name.clsdef")->getBaseLeveler();
 
-	eval {
-		while (my ( $k, $v )= $reader->getPair()) {
-			if (my $func = $MODEL_FUNC{$k}) {
-				&$func($model, $reader, $k, $v);
-			}
-			else {
-				die "unknown key $k";
-			}
-		}
-		1;
-	}
-		or die "\n".$reader->getContext().": $@";
+	my $model = $model_store->loadModel("$name");
 
 	return $model;
 }
@@ -432,6 +234,7 @@ sub expandClassNames($)
 sub escapeTagFind($)
 {
 	my $s			= shift;
+	dr::Util::doDie("s undefined") unless (defined $s);
 	$s =~ s/([\/])/\\$1/g;
 	return $s;
 }
@@ -717,7 +520,7 @@ sub printClass($$)
 	elsif ($cld->{type} eq "enum") {
 		$has_inner = 0;
 		printIndented($hxx, $level, "enum $cld->{iname}\n{\n");
-		foreach my $literal (@{$cld->{model}->{enums}}) {
+		foreach my $literal (@{$cld->{model}->{literal_list}}) {
 			printIndented($hxx, $level+1, formatEnumLiteral($literal->{name}, $literal->{value}, $literal->{comment}));
 		}
 		printIndented($hxx, $level, "};");
@@ -837,6 +640,27 @@ sub parseConstDef($)
 	return ( type => $1, name => $2, init => $3 );
 }
 
+sub createModelCld($$)
+{
+	my $location		= shift;
+	my $name		= shift;
+
+	return {
+		class			=> $name,
+		type			=> "model",
+		cont			=> "",
+		typeflag		=> {},
+		ifaces			=> [],
+		methods			=> [],
+		ats			=> [],
+		consts			=> [],
+		sqls			=> [],
+		friends			=> [],
+		model_loc		=> $location,
+		model			=> readModel($location, $ns, $name),
+	};
+}
+
 my $lineno = 0;
 my $errors = 0;
 
@@ -945,10 +769,26 @@ MAIN: while (<$cxx>) {
 					STDERR->print("$cxxname:$lineno: fatal: ns undefined\n"), exit(1) unless (defined $ns);
 					STDERR->print("$cxxname:$lineno: fatal: class undefined\n"), exit(1) unless (defined $cld->{class});
 					STDERR->print("$cxxname:$lineno: only one model allowed\n") if (defined $cld->{model});
+					$cld->{model_loc} = $val;
 					$cld->{model} = eval {
-						readModel($val, $ns, $cld->{class});
+						readModel($cld->{model_loc}, $ns, $cld->{class});
 					}
 						or STDERR->print("$cxxname:$lineno: failed to read model: $@\n"), $errors++;
+				}
+				elsif ($key eq "model_subs") {
+					STDERR->print("$cxxname:$lineno: fatal: ns undefined\n"), exit(1) unless (defined $ns);
+					STDERR->print("$cxxname:$lineno: fatal: class undefined\n"), exit(1) unless (defined $cld->{class});
+					STDERR->print("$cxxname:$lineno: fatal: model location undefined\n") unless (defined $cld->{model_loc});
+					foreach my $sub (split(/\s+/, $val)) {
+						eval {
+							my $scld = createModelCld($cld->{model_loc}, "$cld->{class}::$sub");
+							$scld->{lineno} = $lineno;
+							$scld->{line} = $_;
+							push(@cl_list, $scld);
+							1;
+						}
+							or STDERR->print("$cxxname:$lineno: failed to read model: $@\n"), $errors++;
+					}
 				}
 				elsif ($key eq "ancestor") {
 					$cld->{ancestor} = $val;
