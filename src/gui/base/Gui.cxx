@@ -51,8 +51,8 @@ DR_GUI_NS_BEGIN
 
 static String gui_impls[2] = 
 {
-	Const::string("drGui_wnt"),
-	Const::string("drGui_x11"),
+	Const::string("dr::gui::wnt"),
+	Const::string("dr::gui::x11"),
 };
 
 DR_OBJECT_DEF(DR_GUI_NS_STR, Gui, Object);

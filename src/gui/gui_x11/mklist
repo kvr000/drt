@@ -26,7 +26,7 @@ FLAGS:
 	shlib=$(SOLDXXFLAGS) $(x11_SOLDXXFLAGS)
 
 OUTPUT:
-	shlib:drgui_x11:f=shlib;s=s;C=!c.no_x11
+	shlib:drguix11:f=shlib;s=s;C=!c.no_x11
 
 SOURCES:
 	no:mklist:g=t

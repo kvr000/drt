@@ -228,7 +228,7 @@ Gui_SS_x11::~Gui_SS_x11()
 	// no way to release XContext
 }
 
-extern "C" DR_EXPORT_MTS Subsystem *createSS_drGui_x11(const String &name)
+extern "C" DR_EXPORT_MTS Subsystem *createSS_dr_gui_x11(const String &name)
 {
 	return new Gui_SS_x11;
 }

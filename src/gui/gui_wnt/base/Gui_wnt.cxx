@@ -203,7 +203,7 @@ DR_GUI_NS_END
 DR_NS_USE
 DR_GUI_NS_USE
 
-extern "C" __declspec(dllexport) dr::Subsystem *createSS_drGui_wnt(const String &name)
+extern "C" __declspec(dllexport) dr::Subsystem *createSS_dr_gui_wnt(const String &name)
 {
 	return new dr::gui::Gui_SS_wnt;
 }

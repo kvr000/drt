@@ -35,10 +35,10 @@
 
 #include <stdio.h>
 
-extern "C" void *createSS_drGui_wnt(void);
+extern "C" void *createSS_dr_gui_wnt(void);
 
 int main(void)
 {
-	printf("%p\n", createSS_drGui_wnt());
+	printf("%p\n", createSS_dr_gui_wnt());
 	return 0;
 }

@@ -24,7 +24,7 @@ FLAGS:
 	shlib=$(SOLDXXFLAGS)
 
 OUTPUT:
-	shlib:drgui_wnt:f=shlib;s=s;C=s.wnt
+	shlib:drguiwnt:f=shlib;s=s;C=s.wnt
 
 SOURCES:
 	no:mklist:g=t
