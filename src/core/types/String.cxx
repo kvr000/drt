@@ -36,6 +36,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #include <wchar.h>
 #include <limits.h>
 
@@ -206,6 +207,14 @@ DR_EXPORT_MET StrData *StrData::addAsciiSpace(size_t add)
 	memcpy(out->b_str(), b_str(), length);
 	unref();
 	return out;
+}
+
+DR_EXPORT_MET void StrData::updateAsciiLength(size_t newlen)
+{
+	DR_Assert(b_ok());
+	b_str()[newlen] = '\0';
+	b_get()->size = newlen;
+	length = newlen;
 }
 
 DR_EXPORT_MET StrData *StrData::addWideSpace(size_t add)
@@ -627,6 +636,8 @@ DR_EXPORT_MET StrData *StrData::vformatAscii(const char *asciifmt, va_list args)
 		F_MINUS		= 256,
 		F_SPACE		= 512,
 		F_ALT		= 1024,
+		F_WIDTH		= 2048,
+		F_PREC		= 4096,
 	};
 
 	StrData *data = this->ref();
@@ -693,6 +704,7 @@ s_width:
 			case 'd': case 'i': case 'b': case 'o': case 'u': case 'x': case 'X': case 'e': case 'E': case 'f': case 'F': case 'g': case 'G': case 'a': case 'A': case 'c': case 's': case 'p': case 'n':
 				goto s_type;
 			case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9':
+				output |= F_WIDTH;
 				width = 10*width+*asciifmt++-'0';
 				goto s_width;
 			case '.':
@@ -712,6 +724,7 @@ s_prec:
 			case 'd': case 'i': case 'b': case 'o': case 'u': case 'x': case 'X': case 'e': case 'E': case 'f': case 'F': case 'g': case 'G': case 'a': case 'A': case 'c': case 's': case 'p': case 'n':
 				goto s_type;
 			case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9':
+				output |= F_PREC;
 				prec = 10*prec+*asciifmt++-'0';
 				goto s_prec;
 			case '*':
@@ -788,19 +801,19 @@ s_type:
 				asciifmt++;
 				goto out_uint;
 			case 'e':
-				output |= O_Dot;
-				asciifmt++;
-				goto out_float;
-			case 'E':
-				output |= O_Dot|F_BIG;
-				asciifmt++;
-				goto out_float;
-			case 'f':
 				output |= O_Exp;
 				asciifmt++;
 				goto out_float;
-			case 'F':
+			case 'E':
 				output |= O_Exp|F_BIG;
+				asciifmt++;
+				goto out_float;
+			case 'f':
+				output |= O_Dot;
+				asciifmt++;
+				goto out_float;
+			case 'F':
+				output |= O_Dot|F_BIG;
 				asciifmt++;
 				goto out_float;
 			case 'g':
@@ -1183,9 +1196,105 @@ format_ulong_common:
 					data = data->appendAsciiChars(' ', width);
 				}
 			}
+			goto s_loop;
 
 out_float:
 			{
+				long space;
+				long double value = (flength&L_L) ? va_arg(args, long double) : va_arg(args, double);
+				if (!isfinite(value)) {
+					space = 16;
+				}
+				else if (value == 0) {
+					space = 8;
+				}
+				else if (output&O_Dot) {
+					if (fabsl(value) < 1) {
+						space = -log10(fabsl(value));
+					}
+					else {
+						space = log10(fabsl(value))+prec;
+					}
+				}
+				else {
+					space = 32;
+				}
+				if ((output&F_WIDTH) && width > space)
+					space = width;
+				if ((output&F_PREC) && prec > space)
+					space = prec;
+				space += 6;
+				size_t origlen = data->length;
+				data = data->addAsciiSpace(space);
+				switch ((output&(O_Exp|O_Dot|F_WIDTH|F_PREC))) {
+				case O_Adapt|0:
+					origlen += sprintf(data->b_str()+origlen, "%Lg", value);
+					break;
+
+				case O_Adapt|F_WIDTH:
+					origlen += sprintf(data->b_str()+origlen, "%*Lg", width, value);
+					break;
+
+				case O_Adapt|F_PREC:
+					origlen += sprintf(data->b_str()+origlen, "%.*Lg", prec, value);
+					break;
+
+				case O_Adapt|F_WIDTH|F_PREC:
+					origlen += sprintf(data->b_str()+origlen, "%*.*Lg", width, prec, value);
+					break;
+
+				case O_Dot|0:
+					origlen += sprintf(data->b_str()+origlen, "%Lf", value);
+					break;
+
+				case O_Dot|F_WIDTH:
+					origlen += sprintf(data->b_str()+origlen, "%*Lf", width, value);
+					break;
+
+				case O_Dot|F_PREC:
+					origlen += sprintf(data->b_str()+origlen, "%.*Lf", prec, value);
+					break;
+
+				case O_Dot|F_WIDTH|F_PREC:
+					origlen += sprintf(data->b_str()+origlen, "%*.*Lf", width, prec, value);
+					break;
+
+				case O_Exp|0:
+					origlen += sprintf(data->b_str()+origlen, "%Le", value);
+					break;
+
+				case O_Exp|F_WIDTH:
+					origlen += sprintf(data->b_str()+origlen, "%*Le", width, value);
+					break;
+
+				case O_Exp|F_PREC:
+					origlen += sprintf(data->b_str()+origlen, "%.*Le", prec, value);
+					break;
+
+				case O_Exp|F_WIDTH|F_PREC:
+					origlen += sprintf(data->b_str()+origlen, "%*.*Le", width, prec, value);
+					break;
+
+				case O_HexFloat|0:
+					origlen += sprintf(data->b_str()+origlen, "%La", value);
+					break;
+
+				case O_HexFloat|F_WIDTH:
+					origlen += sprintf(data->b_str()+origlen, "%*La", width, value);
+					break;
+
+				case O_HexFloat|F_PREC:
+					origlen += sprintf(data->b_str()+origlen, "%.*La", prec, value);
+					break;
+
+				case O_HexFloat|F_WIDTH|F_PREC:
+					origlen += sprintf(data->b_str()+origlen, "%*.*La", width, prec, value);
+					break;
+
+				default:
+					DR_AssertInvalid();
+				}
+				data->updateAsciiLength(origlen);
 			}
 			goto s_loop;
 out_char:

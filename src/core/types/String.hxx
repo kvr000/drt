@@ -73,6 +73,7 @@ public:
 	StrData *			addWideSpace(size_t add);
 	StrData *			makeAsciiSpace(size_t newlen);
 	StrData *			makeWideSpace(size_t newlen);
+	void				updateAsciiLength(size_t newlen);
 
 	void				destroy();
 

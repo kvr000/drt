@@ -53,6 +53,7 @@ DR_TESTENV_NS_USE
 TESTNS(format);
 
 #define TEST_FORMAT_BREAK() printf("\n")
+#define TEST_FORMAT_FLT(fstr) printf("%s: =%s="fstr"=\n", fstr, (const char *)String::formats(fstr, 53253240.0).ascii(), 53253240.0)
 #define TEST_FORMAT_NUM(fstr) printf("%s: =%s="fstr"=\n", fstr, (const char *)String::formats(fstr, 1234).ascii(), 1234)
 #define TEST_FORMAT_STR(fstr) printf("%s: =%s="fstr"=\n", fstr, (const char *)String::formats(fstr, "foobar").ascii(), "foobar")
 
@@ -97,6 +98,11 @@ void test()
 	TEST_FORMAT_NUM("%-#6o");
 	TEST_FORMAT_NUM("%-#6x");
 	TEST_FORMAT_NUM("%-#6X");
+	TEST_FORMAT_BREAK();
+
+	TEST_FORMAT_FLT("%-6.2f");
+	TEST_FORMAT_FLT("%-6.2e");
+	TEST_FORMAT_FLT("%-106.202g");
 	TEST_FORMAT_BREAK();
 
 	TEST_FORMAT_STR("%s");
