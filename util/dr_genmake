@@ -1670,7 +1670,7 @@ EOT
 			/>
 EOT
 				if (0) {
-					"<DebugSettings Environment=\"PATH=\$(TargetPath)/$rdir/lib\" />";
+					#"<DebugSettings Environment=\"PATH=\$(TargetPath)/$rdir/lib\" />";
 						foreach my $add_tool (@{$platform_def->{add_tool}}) {
 							my $def = $ADD_TOOLS{$add_tool};
 							$def =~ s/^/\t\t\t/gm;
