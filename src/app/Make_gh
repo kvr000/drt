@@ -1,9 +1,0 @@
-BUILD=_build
-BUILD_=$(BUILD)/
-GEN=$(BUILD_)_gen
-GEN_=$(GEN)/
-gh_gh: gh_targall
-
-$(GEN_)ApplicationCache.hxx $(GEN_)ApplicationCache-def.hxx: appcache/ApplicationCache.cxx
-	dr_genheader appcache/ApplicationCache.cxx $(GEN_)ApplicationCache
-gh_targall: $(GEN_)ApplicationCache.hxx
