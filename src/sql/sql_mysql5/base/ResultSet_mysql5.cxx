@@ -139,7 +139,6 @@ void ResultSet_mysql5::resConv_nullHandler(ResultSet_mysql5 *this_, conversion *
 void ResultSet_mysql5::bindResult(unsigned column, Sint8 *value)
 {
 	MYSQL_BIND *rb = allocResBinding(column);
-	memset(rb, 0, sizeof(*rb));
 	rb->buffer_type = MYSQL_TYPE_TINY;
 	rb->buffer = value;
 }
@@ -152,7 +151,6 @@ void ResultSet_mysql5::bindResult(const String &column, Sint8 *value)
 void ResultSet_mysql5::bindResult(unsigned column, Sint16 *value)
 {
 	MYSQL_BIND *rb = allocResBinding(column);
-	memset(rb, 0, sizeof(*rb));
 	rb->buffer_type = MYSQL_TYPE_SHORT;
 	rb->buffer = value;
 }
