@@ -54,7 +54,8 @@ DR_OBJECT_DEF(DR_NET_NS_STR, XmlRpcDecoder, RpcDecoder);
 DR_OBJECT_IMPL_SIMPLE(XmlRpcDecoder);
 
 
-XmlRpcDecoder::XmlRpcDecoder()
+XmlRpcDecoder::XmlRpcDecoder():
+	empty_el(NULL)
 {
 }
 
@@ -78,6 +79,40 @@ size_t XmlRpcDecoder::readGenLength(size_t length_octets)
 
 int XmlRpcDecoder::moveToNextElement(const char **start, size_t *length)
 {
+	if (empty_el != NULL) {
+		pos = empty_el;
+		empty_el = NULL;
+		for (;; pos++) {
+			if (pos == end)
+				xthrownew(EndOfDataException("char", "element name"));
+			if (isalnum(*pos) || *pos == '_' || *pos == '.')
+				continue;
+			break;
+		}
+		*length = (const char *)pos-*start;
+		for (; ; pos++) {
+			if (pos == end)
+				xthrownew(EndOfDataException("char", "element"));
+			if (isspace(*pos))
+				continue;
+			break;
+		}
+		if (*pos != '/') {
+			xthrownew(InvalidFormatException("end tag", "/"));
+		}
+		pos++;
+		for (; ; pos++) {
+			if (pos == end)
+				xthrownew(EndOfDataException("char", "element"));
+			if (isspace(*pos))
+				continue;
+			break;
+		}
+		if (*pos != '>') {
+			xthrownew(InvalidFormatException("end tag", ">"));
+		}
+		return 1;
+	}
 	for (;;) {
 next_step:
 		if (pos == end) {
@@ -165,7 +200,10 @@ next_step:
 						continue;
 					break;
 				}
-				if (*pos != '>') {
+				if (*pos == '/') {
+					empty_el = (const unsigned char *)*start;
+				}
+				else if (*pos != '>') {
 					xthrownew(InvalidFormatException("end tag", ">"));
 				}
 				pos++;
@@ -271,9 +309,19 @@ int XmlRpcDecoder::readHeader()
 {
 	const char *el_start;
 	size_t el_length;
-	if (memcmp(pos, "<?xml version=\"1.0\"?>", 21) != 0)
+	if (pos+5 >= end) {
+		xthrownew(InvalidFormatException("rpc::header", "incorrect length"));
+	}
+	if (memcmp(pos, "<?xml", 5) != 0)
 		xthrownew(InvalidFormatException("rpc::header", "unexpected header"));
-	pos += 21;
+	pos += 5;
+	for (;;) {
+		if (pos >= end) {
+			xthrownew(InvalidFormatException("rpc::header", "missing end of element"));
+		}
+		if (*pos++ == '>')
+			break;
+	}
 	const unsigned char *save_pos = pos;
 	if (moveToNextElement(&el_start, &el_length) != 0) {
 		xthrownew(InvalidFormatException("xmlrpc", "header"));
