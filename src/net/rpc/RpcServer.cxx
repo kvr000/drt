@@ -48,7 +48,7 @@
  * ancestor:	dr::Object
  *
  * at:	Ref<HttpServer>			client_http;
- * at:	StringIndex *			method_wrappers;
+ * at:	const StringIndex *		method_wrappers;
  *
  * cnp:	String				system_listMethods_name("system.listMethods");
  */
@@ -84,7 +84,7 @@ RpcServer::~RpcServer()
 }
 
 DR_MET(protected virtual)
-void RpcServer::setMethods(StringIndex *methods_wrappers_)
+void RpcServer::setMethodWrappers(const StringIndex *methods_wrappers_)
 {
 	method_wrappers = methods_wrappers_;
 }
@@ -161,25 +161,25 @@ Blob RpcServer::processRequest(const Blob &request)
 		String method = decoder->readMethodName();
 		int (RpcServer::*func_handler)(dr::net::RpcEncoder *result, dr::net::RpcDecoder *params);
 		if ((func_handler = MethodConv::funcToMptr((int (*)(RpcServer *this_, dr::net::RpcEncoder *result, dr::net::RpcDecoder *params))method_wrappers->findPtr(method)))) {
-			dr::net::XmlRpcEncoder encoder;
+			ERef<dr::net::RpcEncoder> encoder(new FastRpcEncoder);
 			allocateResources(method);
 			xtry {
-				int error = (this->*func_handler)(&encoder, decoder);
+				int error = (this->*func_handler)(encoder, decoder);
 				if (error != 0) {
-					processFailure(method, &encoder, error);
+					processFailure(method, encoder, error);
 				}
 			}
 			xcatch (dr::Exception, ex) {
-				processException(method, &encoder, ex);
+				processException(method, encoder, ex);
 			}
 			xend;
 			releaseResources();
-			return encoder.getContent();
+			return encoder->getContent();
 		}
 		else {
-			dr::net::XmlRpcEncoder encoder;
-			processUnknownMethod(method, &encoder);
-			return encoder.getContent();
+			ERef<dr::net::RpcEncoder> encoder(new FastRpcEncoder);
+			processUnknownMethod(method, encoder);
+			return encoder->getContent();
 		}
 	}
 	xcatch (dr::Exception, ex) {
@@ -189,7 +189,7 @@ Blob RpcServer::processRequest(const Blob &request)
 	xend;
 }
 
-DR_MET(protected virtual)
+DR_MET(public virtual)
 void RpcServer::run()
 {
 	xtry {

@@ -300,7 +300,7 @@ public:
 	void				reinitArraySizedConst(size_t count, const char *const *list, size_t el_size);
 
 public:
-	void				appendToList(SList<String> *list);
+	void				appendToList(SList<String> *list) const;
 
 protected:
 	void				init(size_t count, const String * const*strs);

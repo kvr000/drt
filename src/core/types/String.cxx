@@ -2261,7 +2261,7 @@ DR_EXPORT_MET void *StringIndex::findPtrXchg(const String &s)
 	return NULL;
 }
 
-DR_EXPORT_MET void StringIndex::appendToList(SList<String> *list)
+DR_EXPORT_MET void StringIndex::appendToList(SList<String> *list) const
 {
 	for (SintPtr hi = hash_mask; hi >= 0; hi--) {
 		for (element *e = hash_list[hi]; e; e = e->next)

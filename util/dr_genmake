@@ -794,13 +794,14 @@ sub printGh
 
 	my $base = $sd->{src}; $base =~ s/.*\///; $base =~ s/\.\w+$//;
 	printDependency($config, $mf, $sd->{out}, [ "\$(GEN_)$base.gen" ]);
+	my @group_files = $sd->{gh_group} ? map({ $_->{src} } @{$sd->{gh_group}}) : ();
 	if ($config->{make}->{noautogh}) {
-		printBuild($config, $mf, "\$(GEN_)$base.gen", [ $sd->{src} ], undef, $this->shellPerl("dr_genheader -i"), [ $sd->{src}, "\$(GEN_)$base" ]);
-		printBuild($config, $mgh, "\$(GEN_)$base.gen".($sd->{mark_header} ? " \$(GEN_)$base.hxx" : ""), [ $sd->{src} ], undef, $this->shellPerl("dr_genheader"), [ $sd->{src}, "\$(GEN_)$base" ]);
+		printBuild($config, $mf, "\$(GEN_)$base.gen", [ $sd->{src}, @group_files ], undef, $this->shellPerl("dr_genheader -i"), [ $sd->{src}, "\$(GEN_)$base", @group_files ]);
+		printBuild($config, $mgh, "\$(GEN_)$base.gen".($sd->{mark_header} ? " \$(GEN_)$base.hxx" : ""), [ $sd->{src}, @group_files ], undef, $this->shellPerl("dr_genheader"), [ $sd->{src}, "\$(GEN_)$base", @group_files ]);
 		$add_targ .= " \$(GEN_)$base.hxx" if ($sd->{mark_header});
 	}
 	else {
-		printBuild($config, $mgh, "\$(GEN_)$base.gen".($sd->{mark_header} ? " \$(GEN_)$base.hxx" : ""), [ $sd->{src} ], undef, $this->shellPerl("dr_genheader"), [ $sd->{src}, "\$(GEN_)$base" ]);
+		printBuild($config, $mgh, "\$(GEN_)$base.gen".($sd->{mark_header} ? " \$(GEN_)$base.hxx" : ""), [ $sd->{src}, @group_files ], undef, $this->shellPerl("dr_genheader"), [ $sd->{src}, "\$(GEN_)$base", @group_files ]);
 		$add_targ .= " \$(GEN_)$base.hxx" if ($sd->{mark_header});
 	}
 	return $add_targ;
@@ -2118,6 +2119,30 @@ sub generateDir
 			}
 			else {
 				STDERR->print("$mkname: fcheck $r: unknown format\n");
+			}
+		}
+	}
+
+	# post process
+	{
+		my $last_base = "";
+		my $last_gh;
+		foreach my $sd (sort({
+					die "file $a->{src} has incorrect name, expected dir/classname.cxx or dir/classname-add.cxx" unless ($a->{src} =~ m/^((\w+\/)*\w+)(-\w+)?\.cxx$/);
+					my $abase = $1; my $ahasadd = defined $3;
+					die "file $b->{src} has incorrect name, expected dir/classname.cxx or dir/classname-add.cxx" unless ($b->{src} =~ m/^((\w+\/)*\w+)(-\w+)?\.cxx$/);
+					my $bbase = $1; my $bhasadd = defined $3;
+					$abase cmp $bbase || $ahasadd <=> $bhasadd;
+				}
+				grep({ dr::build::findArray("gh", $_->{groups}) >= 0 } @{$vars{SOURCES}->{by_prog}->{cxx}}))) {
+			die "file $sd->{src} has incorrect name, expected dir/classname.cxx or dir/classname-add.cxx" unless ($sd->{src} =~ m/^((\w+\/)*\w+)(-\w+)?\.cxx$/);
+			if ($1 ne $last_base) {
+				$last_base = $1;
+				$last_gh = $sd;
+				$last_gh->{gh_group} = [];
+			}
+			else {
+				push(@{$last_gh->{gh_group}}, $sd);
 			}
 		}
 	}

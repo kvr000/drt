@@ -58,6 +58,16 @@ sub commit
 	$this->{opers} = [];
 }
 
+sub openRead
+{
+	my $this		= shift;
+	my $fname		= shift;
+
+	my $fd = FileHandle->new($fname, "<")
+		or die "failed to open file $fname for reading: $!";
+	return $fd;
+}
+
 sub createTruncated
 {
 	my $this		= shift;
