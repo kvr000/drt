@@ -53,7 +53,7 @@ DR_CONFIG_NS_BEGIN
 DR_IO_NS_USE;
 
 
-class RowAssignConfig: public Object
+class DR_CONFIG_PUB RowAssignConfig: public Object
 {
 	DR_OBJECT_DECL(RowAssignConfig, Object);
 

@@ -78,6 +78,10 @@
 
 #include "_gen/Variant-all.hxx"
 
+#ifdef DR_LIBC_VC
+# define strtoll _strtoi64
+#endif
+
 DR_NS_BEGIN
 
 

@@ -122,11 +122,10 @@ void *Thread_pthread::main_func(void *arg)
 void Thread_pthread::finish_func(void *impl_)
 {
 	Thread_pthread *impl = (Thread_pthread *)impl_;
-	if (!impl->main)
-		return;
 	pthread_setspecific(key_ptr, impl);
 	impl->ref();
-	impl->main->unref();
+	if (impl->main)
+		impl->main->unref();
 	impl->threadPreDestroy();
 	pthread_setspecific(key_ptr, NULL);
 	impl->unref();

@@ -54,7 +54,7 @@ DR_IO_NS_USE;
 /**
  * Shared namespace for HTTP constants
  */
-class HttpConst
+class DR_NET_PUB HttpConst
 {
 public:
 	enum MethodType

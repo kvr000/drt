@@ -44,6 +44,7 @@
 #endif
 #ifdef DR_OS_WNT
 #include <windows.h>
+#include <time.h>
 #ifndef STDOUT_ERROR_HANDLE
 # define STDOUT_ERROR_HANDLE ((DWORD)-12)
 #endif

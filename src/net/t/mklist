@@ -21,8 +21,8 @@ SOURCES:
 	lshlib:drtestenv:g=common
 
 META:
-	#vsid:{1D406DDD-1581-4e9a-AE2B-6A0179FD9B64}:g=tlink_drnet
-	#vsid:{F9D27B4E-CDAF-4892-B262-879AAD8F2BAA}:g=t0
+	vsid:{5941BE5B-7938-4b8b-A6ED-83E7C6A5E51F}:g=tlink_drnet
+	vsid:{DBBC3073-68C5-42d7-912F-9D7986924F43}:g=t0
 
 FCHECK:
 	*.cxx::s=t

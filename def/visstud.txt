@@ -12,4 +12,5 @@ define	DR_NO_BACKTRACE
 undef	DR_HAS_POSIX
 define	DR_RO_VTABLE
 define	DR_OS_WNT
+define	DR_LIBC_VC
 define	DR_NO_ALIGNED_FUNC

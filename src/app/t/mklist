@@ -20,6 +20,9 @@ SOURCES:
 	lshlib:drtestenv:g=common
 
 META:
+	vsid:{4D7927D7-6878-42af-ACB6-D20CE49D82BE}:g=tlink_drapp
+	vsid:{DF05D7F8-BB2E-4999-8EE9-248DA22CFFD2}:g=t0
+
 
 FCHECK:
 	*.cxx::s=t

@@ -52,7 +52,7 @@ DR_NET_NS_BEGIN
 DR_IO_NS_USE;
 
 
-class HttpServer: public Object
+class DR_NET_PUB HttpServer: public Object
 {
 	DR_OBJECT_DECL(HttpServer, Object);
 

@@ -44,7 +44,7 @@
 DR_NS_BEGIN
 
 
-class Evaluator: public Object
+class DR_PUB Evaluator: public Object
 {
 	DR_OBJECT_DECL_SIMPLE(Evaluator, Object);
 
@@ -68,7 +68,7 @@ public:
 	DR_CONSTRUCT			Evaluator(const String &expression);
 
 public:
-	class Arguments: public Object
+	class DR_PUB Arguments: public Object
 	{
 	public:
 		DR_OBJECT_DECL_SIMPLE(Arguments, Object);
@@ -94,7 +94,7 @@ public:
 	virtual String				getExpression();
 
 protected:
-	class Expression: public Object
+	class DR_PUB Expression: public Object
 	{
 	public:
 		DR_OBJECT_DECL_SIMPLE(Expression, Object);
@@ -109,7 +109,7 @@ protected:
 		virtual Sint64			evaluate(Arguments *args) = 0;
 	};
 
-	class MarkFunctionDummyExpression: public Expression
+	class DR_PUB MarkFunctionDummyExpression: public Expression
 	{
 	public:
 		DR_OBJECT_DECL_SIMPLE(MarkFunctionDummyExpression, Expression);
@@ -121,7 +121,7 @@ protected:
 		virtual Sint64			evaluate(Arguments *args)	{ DR_AssertInvalid(); return 0; }
 	};
 
-	class ConstantExpression: public Expression
+	class DR_PUB ConstantExpression: public Expression
 	{
 	public:
 		DR_OBJECT_DECL_SIMPLE(ConstantExpression, Expression);
@@ -136,7 +136,7 @@ protected:
 		Sint64				value;
 	};
 
-	class VariableExpression: public Expression
+	class DR_PUB VariableExpression: public Expression
 	{
 		DR_OBJECT_DECL_SIMPLE(VariableExpression, Expression);
 
@@ -150,7 +150,7 @@ protected:
 		String				var_name;
 	};
 
-	class ValueExpression: public Expression
+	class DR_PUB ValueExpression: public Expression
 	{
 		DR_OBJECT_DECL_SIMPLE(ValueExpression, Expression);
 	public:
@@ -163,7 +163,7 @@ protected:
 		unsigned			column_id;
 	};
 
-	class OperExpression: public Expression
+	class DR_PUB OperExpression: public Expression
 	{
 		DR_OBJECT_DECL_SIMPLE(OperExpression, Expression);
 
@@ -177,7 +177,7 @@ protected:
 		int				operation_id;
 	};
 
-	class UnaryExpression: public OperExpression
+	class DR_PUB UnaryExpression: public OperExpression
 	{
 		DR_OBJECT_DECL_SIMPLE(UnaryExpression, OperExpression);
 
@@ -191,7 +191,7 @@ protected:
 		Ref<Evaluator::Expression>	operand;
 	};
 
-	class BinaryExpression: public OperExpression
+	class DR_PUB BinaryExpression: public OperExpression
 	{
 		DR_OBJECT_DECL_SIMPLE(BinaryExpression, OperExpression);
 

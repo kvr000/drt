@@ -56,10 +56,10 @@ class RpcDecoder;
 #define DR_RPCHELPER_NAMEOFFS(struct, member) &Const::string(#member), ((char *)&((struct *)64)->member-(char *)64)
 
 
-class DR_NET_PUB RpcHelper
+class DR_NET_PUB RpcHelper: public Base
 {
 public:
-	struct MemberInfo: public Base
+	struct DR_NET_PUB MemberInfo: public Base
 	{
 		DR_CONSTRUCT			MemberInfo(const String &name, long offset, void (*reader_func)(RpcDecoder *decoder, void *type_addr), void (*writer_func)(RpcEncoder *encoder, void *type_addr));
 

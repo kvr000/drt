@@ -1513,7 +1513,7 @@ sub createOutput
 
 		foreach my $md (@{$od->{in_meta}}) {
 			next unless ($md->{prog} eq "vsid");
-			die "too definition of vsid for project $od->{out}" if (defined $vsid);
+			die "too many definitions of vsid for project $od->{out}" if (defined $vsid);
 			$vsid = $md->{meta};
 		}
 
@@ -1600,7 +1600,7 @@ EOT
 				Name="VCCLCompilerTool"
 				ExecutionBucket="7"
 				Optimization="$dbg_def->{optimization}"
-				AdditionalIncludeDirectories="$rdir/include;$rdir/include/arch-$platform_def->{arch_name};$rdir/include/os-wnt"
+				AdditionalIncludeDirectories="_build;$rdir/include;$rdir/include/arch-$platform_def->{arch_name};$rdir/include/os-wnt"
 				PreprocessorDefinitions="_DEBUG;$platform_def->{defs};DEBUG;_WINDOWS$config_defs;_UNICODE;UNICODE$defines_str"
 				RuntimeLibrary="0"
 				UsePrecompiledHeader="0"
@@ -1683,9 +1683,15 @@ EOT
 			$location =~ s#/#\\#g;
 			my @list = dr::build::findGroups($vars->{SOURCES}->{list}, [$group->{name}]);
 			foreach (@list) {
-				my $base_src = $_->{src};
+				my $fname = $_->{src};
+				if (dr::build::findArray("gh", $_->{groups}) >= 0) {
+					$fname =~ s/\.cxx$/.hxx/; $fname =~ s/.*\///;
+					$fname = "_build/_gen/$fname";
+					$_->{mark_header} = 1;
+				}
+				my $base_src = $fname;
 				$base_src =~ s#.*/##;
-				$pf->printf("\t\t\t<File RelativePath=\"%s\">\n", $_->{src});
+				$pf->printf("\t\t\t<File RelativePath=\"%s\">\n", $fname);
 				foreach my $dbg_type ("Debug", "Release") {
 					foreach my $vc_platf ($platform_def->{platform}) {
 						$pf->printf("\t\t\t\t<FileConfiguration Name=\"%s|%s\">\n".
@@ -1699,6 +1705,29 @@ EOT
 			}
 		}
 		$pf->print("\t\t</Filter>\n");
+
+		# generated headers
+		$pf->print("\t\t<Filter Name=\"Generated Files\" Filter=\"\">\n");
+		foreach my $sd (@{$od->{in_source}}) {
+			next unless ($sd->{prog} eq "cxx");
+			next unless (dr::build::findArray("gh", $sd->{groups}) >= 0);
+			my $fn = $sd->{src};
+			$fn =~ s#/#\\#g;
+			$pf->printf("\t\t\t<File RelativePath=\"%s\">\n", $fn);
+			my $fbase = $sd->{src}; $fbase =~ s/.*\///; $fbase =~ s/\.cxx$//;
+			foreach my $dbg_type ("Debug", "Release") {
+				foreach my $vc_platf ($platform_def->{platform}) {
+					$pf->printf("\t\t\t\t<FileConfiguration Name=\"%s|%s\">\n".
+						"\t\t\t\t\t<Tool Name=\"VCCustomBuildTool\" CommandLine=\"perl -S dr_genheader \$(InputPath) _build/_gen/%s\" Outputs=\"%s\" />\n".
+						"\t\t\t\t</FileConfiguration>\n",
+						$dbg_type, $vc_platf,
+						$fbase, join(";", "_build/_gen/$fbase-all.hxx", $sd->{mark_header} ? "_build/_gen/$fbase.hxx" : () ));
+				}
+			}
+				$pf->print("\t\t\t</File>\n");
+		}
+		$pf->print("\t\t</Filter>\n");
+
 		$pf->print("\t</Files>\n");
 		$pf->print(<<EOT);
 </VisualStudioProject>

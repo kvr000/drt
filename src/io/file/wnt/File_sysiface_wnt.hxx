@@ -79,6 +79,11 @@ public:
 	static FileOffset		seek(File *handle, FileOffset offset, int how);
 	static void			truncate(File *handle, FileOffset offset);
 
+	static void			lockFull(File *handle, int type);
+	static void			unlockFull(File *handle, int type);
+
+	static void			updateTime(File *handle, Sint64 time);
+
 	static File::HandleType		getType(const String &file);
 	static void			unlink(const String &file);
 	static void			rename(const String &file, const String &tofile);
@@ -215,6 +220,36 @@ DR_RINLINE void File_sysiface_wnt::truncate(File *handle, FileOffset offset)
 	if (::SetEndOfFile(getOsHandle(handle)) < 0)
 		throwSysException(handle, Handle::truncate_string, GetLastError());
 	seek(handle, old_pos, 0);
+}
+
+DR_RINLINE void File_sysiface_wnt::lockFull(File *handle, int type)
+{
+	OVERLAPPED linfo;
+	linfo.Offset = 0;
+	linfo.OffsetHigh = 0;
+	linfo.hEvent = NULL;
+	if (!LockFileEx(getOsHandle(handle), ((type&2) ? LOCKFILE_EXCLUSIVE_LOCK : 0), 0, 0xffffffff, 0x7fffffff, &linfo))
+		throwSysException(handle, Handle::lock_string, GetLastError());
+}
+
+DR_RINLINE void File_sysiface_wnt::unlockFull(File *handle, int type)
+{
+	OVERLAPPED linfo;
+	linfo.Offset = 0;
+	linfo.OffsetHigh = 0;
+	linfo.hEvent = NULL;
+	if (!UnlockFileEx(getOsHandle(handle), 0, 0xffffffff, 0x7fffffff, &linfo))
+		throwSysException(handle, Handle::lock_string, GetLastError());
+}
+
+DR_RINLINE void File_sysiface_wnt::updateTime(File *handle, Sint64 time)
+{
+	time = (time+11644473600)*10000000;
+	FILETIME ftime;
+	ftime.dwLowDateTime = (DWORD)time;
+	ftime.dwHighDateTime = (DWORD)(time>>32);
+	if (!SetFileTime(getOsHandle(handle), NULL, &ftime, &ftime))
+		throwSysException(handle, Handle::lock_string, GetLastError());
 }
 
 DR_RINLINE File::HandleType File_sysiface_wnt::getType(const String &filename)

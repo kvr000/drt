@@ -43,6 +43,10 @@
 
 #include <dr/IntEvaluator.hxx>
 
+#ifdef DR_LIBC_VC
+# define strtoll _strtoi64
+#endif
+
 DR_NS_BEGIN
 
 DR_OBJECT_DEF(DR_NS_STR, IntEvaluator, Object);

@@ -7,7 +7,7 @@
 .def SUBDIRS ${SD_META_gen},${SD_META_symbian},${SD_META_visstud}
 .def ESUBDIRS {${SUBDIRS}}
 
-#.include ${ESUBDIRS}/mklist
+.include ${ESUBDIRS}/mklist
 
 SOURCES:
 	no:${SD_META}/mklist:g=t

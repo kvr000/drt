@@ -1,8 +1,9 @@
 .def SD_BASE		base
 .def SD_PROC		proc
 .def SD_RULE		rule
+.def SD_META		meta
 
-.def SUBDIRS		${SD_BASE},${SD_RULE},${SD_PROC}
+.def SUBDIRS		${SD_BASE},${SD_RULE},${SD_PROC},${SD_META}
 .def ESUBDIRS		{${SUBDIRS}}
 
 .include ${ESUBDIRS}/mklist

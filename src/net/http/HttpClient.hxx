@@ -51,7 +51,7 @@ DR_NET_NS_BEGIN
 DR_IO_NS_USE;
 
 
-class HttpClient: public Object
+class DR_NET_PUB HttpClient: public Object
 {
 	DR_OBJECT_DECL(HttpClient, Object);
 

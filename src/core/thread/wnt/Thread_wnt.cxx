@@ -55,12 +55,10 @@ DR_NS_BEGIN
 class DR_PUB Thread_wnt: public Thread_impl
 {
 public:
-	void *				operator new(size_t size)		{ return malloc(size); }
-	void *				operator new(size_t size, void *p)	{ return p; }
-	void				operator delete(void *p)		{ return free(p); }
+	virtual void			wait();
 
 public:
-	virtual void			wait();
+	static void		createCurrent();
 
 protected:
 	HANDLE				pt;
@@ -85,24 +83,13 @@ private:
 };
 
 
-DR_OBJECT_DEF(DR_NS_STR, Thread_wnt, Thread_impl);
-
-//DR_OBJECT_IMPL_SIMPLE(Thread_wnt);
-DR_EXPORT_MET const Static *Thread_wnt::getObjectStatic() const
-{
-	if (comp_static)
-		return comp_static;
-	return createObjectStatic(Const::string(DR_NS_STRP("Thread_wnt")), &comp_static, Super::getObjectStatic(), 0, NULL);
-}
-
-
 DWORD Thread_wnt::key_ptr = (unsigned)-1;
 
 DWORD WINAPI Thread_wnt::main_func(void *arg)
 {
 	Thread_wnt *me = (Thread_wnt *)arg;
 
-	TlsSetValue(key_ptr, me->main);
+	TlsSetValue(key_ptr, me);
 	xtry {
 		me->runMain();
 	}
@@ -116,15 +103,17 @@ DWORD WINAPI Thread_wnt::main_func(void *arg)
 
 void Thread_wnt::finish_func(void *impl_)
 {
-	Thread_wnt *impl = (Thread *)impl_;
-	if (!impl)
-		return;
-	impl->main->unref();
-	Thread_impl::threadPreDestroy();
+	Thread_wnt *impl = (Thread_wnt *)impl_;
+	impl->ref();
+	if (impl->main)
+		impl->main->unref();
+	impl->threadPreDestroy();
+	impl->unref();
 }
 
 Thread_wnt::Thread_wnt(Thread *main_):
-	DR_OBJECT_INIT(Thread_wnt, Thread_impl, (main_))
+	Thread_impl(main_),
+	pt(NULL)
 {
 	InitializeCriticalSection(&joinlock);
 
@@ -139,7 +128,7 @@ Thread_wnt::Thread_wnt(Thread *main_):
 }
 
 Thread_wnt::Thread_wnt(Thread *main_, HANDLE current):
-	DR_OBJECT_INIT(Thread_wnt, Thread_impl, (main_)),
+	Thread_impl(main_),
 	pt(current)
 {
 	InitializeCriticalSection(&joinlock);
@@ -191,16 +180,17 @@ DR_EXPORT_MTS Thread *Thread::p_create(const Eslot1<void *, void *> &run_, const
 }
 #endif
 
-void Thread_pthread::createCurrent()
+void Thread_wnt::createCurrent()
 {
-	Thread_pthread *cur_impl = (Thread_pthread *)malloc(sizeof(Thread_pthread));
-	memset(cur_impl, 0, sizeof(Thread_pthread));
+	Thread_wnt *cur_impl = (Thread_wnt *)malloc(sizeof(Thread_wnt));
+	memset(cur_impl, 0, sizeof(Thread_wnt));
+	cur_impl->threadPreInit();
 	TlsSetValue(Thread_wnt::key_ptr, cur_impl);
 	ThreadDummy *cur = NULL;
 	xtry {
 		MM::initingThread();
 		cur = new ThreadDummy();
-		new (cur_impl) Thread_pthread(cur, pthread_self());
+		new (cur_impl) Thread_wnt(cur, GetCurrentThread());
 	}
 	xcatchany {
 		TlsSetValue(Thread_wnt::key_ptr, NULL);
@@ -215,7 +205,7 @@ void Thread_pthread::createCurrent()
 DR_EXPORT_MTS Thread_impl *Thread_impl::currentImpl()
 {
 	Thread_impl *cur_impl;
-	while ((cur_impl = (Thread_wnt *)TlsGetValue(Thread_pthread::key_ptr)) == NULL) {
+	while ((cur_impl = (Thread_wnt *)TlsGetValue(Thread_wnt::key_ptr)) == NULL) {
 		Thread_wnt::createCurrent();
 	}
 	return cur_impl;
@@ -224,7 +214,7 @@ DR_EXPORT_MTS Thread_impl *Thread_impl::currentImpl()
 DR_EXPORT_MTS Thread *Thread::current()
 {
 	Thread_impl *cur_impl;
-	while ((cur_impl = (Thread_wnt *)TlsGetValue(Thread_pthread::key_ptr)) == NULL) {
+	while ((cur_impl = (Thread_wnt *)TlsGetValue(Thread_wnt::key_ptr)) == NULL) {
 		Thread_wnt::createCurrent();
 	}
 	return cur_impl->main;
@@ -233,7 +223,7 @@ DR_EXPORT_MTS Thread *Thread::current()
 Thread *Thread_impl::preinitMainThread()
 {
 	ThreadDummy *cur;
-	pthread_key_create(&Thread_pthread::key_ptr, &Thread_pthread::finish_func);
+	Thread_wnt::key_ptr = TlsAlloc();
 	cur = (ThreadDummy *)malloc(sizeof(ThreadDummy));
 	memset(cur, 0, sizeof(ThreadDummy));
 	Thread_wnt *cur_impl = (Thread_wnt *)malloc(sizeof(Thread_wnt));

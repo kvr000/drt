@@ -49,7 +49,7 @@
 DR_NET_NS_BEGIN
 
 
-class XmlRpcDecoder: public RpcDecoder
+class DR_NET_PUB XmlRpcDecoder: public RpcDecoder
 {
 	DR_OBJECT_DECL(XmlRpcDecoder, RpcDecoder);
 

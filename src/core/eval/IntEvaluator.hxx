@@ -44,7 +44,7 @@
 DR_NS_BEGIN
 
 
-class IntEvaluator: public Evaluator
+class DR_PUB IntEvaluator: public Evaluator
 {
 	DR_OBJECT_DECL_SIMPLE(IntEvaluator, Evaluator);
 
@@ -72,7 +72,7 @@ public:
 		OP_OperatorCount,
 	};
 
-	class IntUnaryExpression: public UnaryExpression
+	class DR_PUB IntUnaryExpression: public UnaryExpression
 	{
 		DR_OBJECT_DECL_SIMPLE(IntUnaryExpression, UnaryExpression);
 
@@ -83,7 +83,7 @@ public:
 		virtual Sint64			evaluate(Arguments *args);
 	};
 
-	class IntBinaryExpression: public BinaryExpression
+	class DR_PUB IntBinaryExpression: public BinaryExpression
 	{
 		DR_OBJECT_DECL_SIMPLE(IntBinaryExpression, BinaryExpression);
 

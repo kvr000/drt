@@ -51,7 +51,7 @@ DR_NET_NS_BEGIN
 DR_IO_NS_USE;
 
 
-class XmlRpcEncoder: public RpcEncoder
+class DR_NET_PUB XmlRpcEncoder: public RpcEncoder
 {
 	DR_OBJECT_DECL(XmlRpcEncoder, RpcEncoder);
 

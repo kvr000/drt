@@ -104,7 +104,7 @@ void XmlRpcEncoder::writeInt(Sint64 value)
 {
 	if (value_level == 0)
 		content.append("<param>");
-	if (value >= -0x80000000 && value <= 0x7fffffff)
+	if (value >= -(Sint32)0x80000000 && value <= 0x7fffffff)
 		content.append("<value><int>").appendNumber((Sint32)value).append("</int></value>");
 	else
 		content.append("<value><i8>").appendNumber(value).append("</i8></value>");

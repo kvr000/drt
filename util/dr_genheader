@@ -126,6 +126,14 @@ sub fileToHeader($$)
 	return "${ns}__${file}__";
 }
 
+sub nsToPub($)
+{
+	my $ns			= shift;
+	$ns =~ s/::/_/g;
+	$ns = uc($ns);
+	return "${ns}_PUB";
+}
+
 sub nsToMacro($)
 {
 	my $ns			= shift;
@@ -306,7 +314,7 @@ sub printObjectHeader($$)
 {
 	my $cld			= shift;
 	my $level		= shift;
-	printIndented($hxx, $level, sprintf("%s %s: public %s%s\n{\n", "class", $cld->{iname}, $cld->{ancestor}, join("", map({ ", $_" } @{$cld->{ifaces}}))));
+	printIndented($hxx, $level, sprintf("%s %s %s: public %s%s\n{\n", "class", nsToPub($ns), $cld->{iname}, $cld->{ancestor}, join("", map({ ", $_" } @{$cld->{ifaces}}))));
 	printIndented($hxx, $level, sprintf("\tDR_OBJECT_DECL_SIMPLE(%s, %s);\n", $cld->{iname}, $cld->{ancestor}));
 	printDirect($def, "\n");
 	printDirect($def, sprintf("DR_OBJECT_IMPL_IFACE%d(%s%s);\n", scalar @{$cld->{ifaces}}, $cld->{class}, join("", map({ ", $_" } @{$cld->{ifaces}}))));
@@ -358,14 +366,14 @@ sub printClass($$)
 		printObjectHeader($cld, $level);
 	}
 	elsif ($cld->{type} eq "noinfo") {
-		printIndented($hxx, $level, sprintf("%s %s: public %s\n{", "class", $cld->{iname}, $cld->{ancestor}));
+		printIndented($hxx, $level, sprintf("%s %s %s: public %s\n{", "class", nsToPub($ns), $cld->{iname}, $cld->{ancestor}));
 	}
 	elsif ($cld->{type} eq "struct") {
 		if (defined $cld->{ancestor}) {
-			printIndented($hxx, $level, sprintf("%s %s: public %s\n{", "struct", $cld->{iname}, $cld->{ancestor}));
+			printIndented($hxx, $level, sprintf("%s %s %s: public %s\n{", "struct", nsToPub($ns), $cld->{iname}, $cld->{ancestor}));
 		}
 		else {
-			printIndented($hxx, $level, sprintf("%s %s\n{", "struct", $cld->{iname}));
+			printIndented($hxx, $level, sprintf("%s %s %s\n{", "struct", nsToPub($ns), $cld->{iname}));
 		}
 	}
 	else {
@@ -708,7 +716,7 @@ if ($gen{str}) {
 if ($gen{sql}) {
 	$sql = $file_trans->createTruncated("$basename-sql.hxx");
 }
-if ($gen{all}) {
+if (!$gen{noall}) {
 	$all = $file_trans->createTruncated("$basename-all.hxx");
 }
 if (!$gen{notags}) {

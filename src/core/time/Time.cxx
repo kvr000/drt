@@ -63,7 +63,11 @@ SysTime Time::convertUTime(int year, int mon, int day, int hour, int min, int se
 	t.tm_hour = hour;
 	t.tm_min = min;
 	t.tm_sec = sec;
+#ifdef DR_LIBC_VC
+	__time64_t tt = _mkgmtime64(&t);
+#else
 	time_t tt = timegm(&t);
+#endif
 	if (tt < 0)
 		return tt;
 	return tt+timezone_min*60;
@@ -73,7 +77,13 @@ void Time::timeToUtcCalendar(SysTime tvalue, int *year, int *mon, int *day, int 
 {
 	time_t tt = tvalue;
 	struct tm t;
-	if (gmtime_r(&tt, &t) == NULL) {
+	if (
+#ifdef DR_LIBC_VC
+		_gmtime64_s(&t, &tt) != 0
+#else
+		gmtime_r(&tt, &t) == NULL
+#endif
+		) {
 		xthrownew(Except());
 	}
 	*year = t.tm_year+1900;

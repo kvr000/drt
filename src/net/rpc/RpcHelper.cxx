@@ -63,7 +63,7 @@ RpcHelper::StructMapper::StructMapper(const String *name0, long offs0, void (*re
 	va_start(vl, name1);
 	for (name0 = name1; name0; name0 = va_arg(vl, String *)) {
 		offs0 = va_arg(vl, long);
-		reader0 = va_arg(vl, void (*)(RpcDecoder *, void *));
+		reader0 = (void (*)(RpcDecoder *, void *))va_arg(vl, void *);
 		map[*name0] = new MemberInfo(*name0, offs0, reader0, NULL);
 	}
 }
