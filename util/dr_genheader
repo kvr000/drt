@@ -405,7 +405,7 @@ sub printClass($$)
 
 	if ($cld->{type} eq "sqllayer") {
 		$cld->{ancestor} = "dr::sql::SqlLayer" unless (defined $cld->{ancestor});
-		die "sqllayer type used but no sql file opened" unless ($sql);
+		die "$cxxname:$cld->{lineno}: sqllayer type used but no sql file opened" unless ($sql);
 		unshift(@{$cld->{methods}}, { specs => [ "protected" ], ret => "DR_CONSTRUCT", "decl" => "$cld->{class}(dr::sql::SqlConnectionHold *db_connection)" });
 		if ($cld->{typeflag}->{noreg}) {
 			$sql->printf("DR_MET(protected)\n%s::%s(dr::sql::SqlConnectionHold *db_connection_):\n\t%s(db_connection_)\n{\n}\n\n", $cld->{class}, $cld->{class}, $cld->{ancestor});
@@ -466,7 +466,7 @@ sub printClass($$)
 	}
 
 	if (@{$cld->{sqls}}) {
-		die "found sql but no sql file was opened" unless ($sql);
+		die "$cxxname:$cld->{lineno}: found sql but no sql file was opened" unless ($sql);
 		foreach my $sqd (@{$cld->{sqls}}) {
 			push(@{$cld->{methods}}, { specs => [ "protected" ], ret => "void", "decl" => "prep_$sqd->{name}()" });
 			push(@{$cld->{ats}}, { access => "protected", def => "Ref<dr::sql::SqlStatement>\tst_$sqd->{name};", line => $sqd->{line}, lineno => $sqd->{lineno} });
@@ -480,9 +480,12 @@ sub printClass($$)
 		foreach my $met (@{$cld->{methods}}) {
 			my $access;
 			my $mods = "";
+			my $abstr = "";
 			foreach my $spec (@{$met->{specs}}) {
 				$access = $spec, next if ($spec eq "public" || $spec eq "protected" || $spec eq "private");
 				$mods .= "$spec ", next if ($spec eq "virtual" || $spec eq "static");
+				$abstr = " = 0", next if ($spec eq "abstract");
+				die "$cxxname:$met->{lineno}: unknown method modifier $spec";
 			}
 			$access = 'public' unless (defined $access);
 			while ($mods =~ s/\b(\w+)\b\s(.*\b\1\b)/$2/) {}
@@ -502,7 +505,7 @@ sub printClass($$)
 					printIndented($hxx, $level, sprintf("%s", $c));
 				}
 			}
-			printIndented($hxx, $level, sprintf("\t%s;\n", formatMethodDecl("$mods$met->{ret}", "$met->{decl}")));
+			printIndented($hxx, $level, sprintf("\t%s;\n", formatMethodDecl("$mods$met->{ret}", "$met->{decl}$abstr")));
 		}
 	}
 
@@ -519,7 +522,7 @@ sub printClass($$)
 		}
 	}
 	if (@{$cld->{consts}}) {
-		die "found consts but no val file was opened" unless ($val);
+		die "$cxxname:$cld->{lineno}: found consts but no val file was opened" unless ($val);
 		printDirect($hxx, "\n");
 		my $last_access = "";
 		foreach my $cnd (@{$cld->{consts}}) {
@@ -731,13 +734,11 @@ MAIN: while (<$cxx>) {
 		my $metd = {
 			specs		=> [ split(/\s+/, $1) ],
 		};
+		my $abstr = grep({ $_ eq "abstract" } @{$metd->{specs}});
 		STDERR->printf("$cxxname:$lineno: fatal: class undefined\n"), exit(1) unless (defined $cld && defined $cld->{class});
 		FUNC_DECL: while (<$cxx>) {
 			chomp;
 			$lineno++;
-			#STDERR->printf("class=%s\n", $class);
-			#STDERR->printf("regex=%s\n", "^(.*)\\s*($class)::(\\w+)(\\(.*\\)):?\\s*\$");
-			#STDERR->print("matching $_");
 			if (m/^\/\*\*\s*$/) {
 				$metd->{comment} = "$_\n";
 				while (<$cxx>) {
@@ -747,6 +748,15 @@ MAIN: while (<$cxx>) {
 					next FUNC_DECL if (m/^\s*\*\/\s*$/);
 				}
 				die "unable to find end of comment";
+			}
+			if ($abstr) {
+				if (m/^\/\/\s?(.*)$/s) {
+					$_ = $1;
+				}
+				else {
+					STDERR->printf("$cxxname:$lineno: abstract declaration must start with //\n");
+					$errors++;
+				}
 			}
 			if (m/^$cld->{class}::($cld->{class_last}\(.*\)(\s*const)?)\s*:?\s*$/) {
 				$metd->{ret} = "DR_CONSTRUCT";
@@ -782,7 +792,10 @@ MAIN: while (<$cxx>) {
 	}
 }
 
-if (defined $cld->{class}) {
+if (!defined $cld) {
+	# ignore
+}
+elsif (defined $cld->{class}) {
 	$cld->{type} = "object" unless (defined $cld->{type});
 	push(@cl_list, $cld);
 }
@@ -795,7 +808,7 @@ else {
 if (!%gen) {
 	%gen = map({ ( $_ => 1 ) } ( "def", "hxx", "all" ));
 	$gen{str} = 1 if (@strings || @bstrings || @wstrings);
-	$gen{val} = 1 if (@{$cld->{consts}});
+	$gen{val} = 1 if (grep({ @{$_->{consts}} } @cl_list));
 	$gen{sql} = 1 if (grep({ @{$_->{sqls}} || $_->{type} eq "sqllayer" } @cl_list));
 }
 
