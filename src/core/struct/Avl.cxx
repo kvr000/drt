@@ -45,7 +45,7 @@ void Avl_c::destroy_g()
 	if (root)
 		destroyRecursive_g(root);
 	root = lowest = NULL;
-	count = 0;
+	item_count = 0;
 }
 
 void Avl_c::destroyRecursive_g(Node_c *node)
@@ -147,7 +147,7 @@ bool Avl_c::create_g(const void *key, const void *value)
 		return false;
 	}
 	*cur = node_def(key, value);
-	count++;
+	item_count++;
 	(*cur)->balance = 0;
 	if (((*cur)->direction = last_step) == 0) {
 		(*cur)->parent = NULL;
@@ -172,7 +172,7 @@ bool Avl_c::replace_g(const void *key, const void *value)
 		return false;
 	}
 	*cur = node_def(key, value);
-	count++;
+	item_count++;
 	(*cur)->balance = 0;
 	if (((*cur)->direction = last_step) == 0) {
 		(*cur)->parent = NULL;
@@ -273,7 +273,7 @@ next:
 bool Avl_c::remove_g(const void *key)
 {
 	if (Node_c *node = find_g(key)) {
-		count--;
+		item_count--;
 		if (node == lowest) {
 			if ((lowest = node->refs[2]) == NULL && (lowest = node->parent) == NULL) {
 				root = NULL;
@@ -354,7 +354,7 @@ void Avl_c::clean_g()
 	if (root) {
 		destroyRecursive_g(root);
 		root = lowest = NULL;
-		count = 0;
+		item_count = 0;
 	}
 }
 
@@ -380,6 +380,17 @@ Avl_c::Node_c *Avl_c::iterNext_g(Node_c *c) const
 		}
 	}
 	return c;
+}
+
+void Avl_c::moveFrom_g(Avl_c *source)
+{
+	destroy_g();
+	lowest = source->lowest;
+	root = source->root;
+	item_count = source->item_count;
+	source->lowest = NULL;
+	source->root = NULL;
+	source->item_count = 0;
 }
 
 

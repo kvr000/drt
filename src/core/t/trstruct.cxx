@@ -165,7 +165,7 @@ static void checkTree(TestTree *tree)
 	size_t cnti = 0;
 	for (TestTree::Node *i = tree->iterFirst(); i != NULL; i = tree->iterNext(i))
 		cnti++;
-	CHECK(cnti == tree->getCount());
+	CHECK(cnti == tree->count());
 	if (tree->iterTop())
 		checkSubtree(tree->iterTop());
 }

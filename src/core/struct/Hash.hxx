@@ -60,6 +60,7 @@ public:
 		long			hash;
 		Node_c *		next;
 	};
+
 protected:
 	DR_MINLINE			Hash_c()				: hashmask(-1), list(NULL), item_count(0) {}
 	DR_MINLINE virtual		~Hash_c()				{ DR_Assert(list == NULL); } // do not call it!
@@ -75,6 +76,9 @@ protected: // interface to template
 	virtual void			freeList() = 0;
 
 protected:
+	void				moveFrom_g(Hash_c *source);
+
+protected:
 	Node_c *			find_g(long hash, const void *key) const;
 	Node_c *			create_g(long hash, const void *key, bool *created);
 	bool				remove_g(long hash, const void *key);
@@ -84,9 +88,9 @@ protected:
 	Node_c *			iterFirst_g() const;
 	Node_c *			iterNext_g(Node_c *cur) const;
 
-private:
-	/* disallowed */		Hash_c(const Hash_c &);
-	/* disallowed */		Hash_c &operator=(const Hash_c &);
+private: /* disallowed */
+	DR_CONSTRUCT			Hash_c(const Hash_c &);
+	Hash_c &			operator=(const Hash_c &);
 
 protected:
 	ssize_t				hashmask;
@@ -173,8 +177,9 @@ public:
 	DR_MINLINE Node *		iterFirst() const					{ return (Node *)Hash_c::iterFirst_g(); }
 	DR_MINLINE Node *		iterNext(Node *cur) const				{ return (Node *)Hash_c::iterNext_g(cur); }
 
-
 	DR_MINLINE V &			operator[](const K &k)					{ return create(k)->v; }
+
+	DR_MINLINE void			moveFrom(THash *source)					{ moveFrom_g(source); }
 };
 
 template <typename K, typename V, typename Compar = HashCompar<K, Ref<V> > >

@@ -63,7 +63,8 @@ SqlStatement_mysql5::SqlStatement_mysql5(SqlConnection_mysql5 *conn_, MYSQL_STMT
 	stmt_str(stmt_str_),
 	limit(-1),
 	offset(-1),
-	stmt(stmt_)
+	stmt(stmt_),
+	is_busy(false)
 {
 }
 
@@ -251,6 +252,11 @@ void SqlStatement_mysql5::bindParams(Variant **values, size_t values_count)
 	}
 }
 
+bool SqlStatement_mysql5::isBusy()
+{
+	return is_busy;
+}
+
 void SqlStatement_mysql5::executeUpdate()
 {
 	if (!stmt)
@@ -293,9 +299,11 @@ retry:
 		SqlConnection_mysql5::throwSqlExcept(mysql_stmt_sqlstate(stmt), mysql_stmt_error(stmt));
 	}
 	xtry {
+		is_busy = true;
 		return new ResultSet_mysql5(this);
 	}
 	xcatchany {
+		is_busy = false;
 		mysql_stmt_free_result(stmt);
 		xrethrowany;
 	}

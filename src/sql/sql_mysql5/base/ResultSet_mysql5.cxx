@@ -68,6 +68,7 @@ ResultSet_mysql5::~ResultSet_mysql5()
 {
 	mysql_stmt_free_result(stmt);
 	mysql_stmt_reset(stmt);
+	statement->is_busy = false;
 
 	for (conversion *i = res_conversions; i; ) {
 		conversion *n = i->next;

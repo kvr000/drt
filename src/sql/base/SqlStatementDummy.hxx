@@ -78,8 +78,13 @@ public:
 	virtual void			bindParams(Variant **values, size_t values_count);
 
 public:
+	virtual bool			isBusy();
+
+public:
 	virtual ResultSet *		executeQuery();
 	virtual void			executeUpdate();
+
+public:
 	virtual Uint64			getAffectedRows();
 	virtual Uint64			getInsertId();
 };

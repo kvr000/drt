@@ -63,12 +63,6 @@ public:
 	DR_MINLINE virtual		~List_c()				{ DR_Assert(link.prev == NULL && link.next == NULL && item_count == 0); }
 	void				destroy_g();
 
-	ListNode_c *			append_g(ListNode_c *prev, const void *v);
-	ListNode_c *			appendNew_g(ListNode_c *prev);
-	ListNode_c *			insertNew_g(ListNode_c *prev);
-	ListNode_c *			insert_g(ListNode_c *next, const void *v);
-	void				remove_g(ListNode_c *n);
-
 protected: // alloc and compare interface
 	virtual ListNode_c *		node_def(const void *v) = 0;
 	virtual ListNode_c *		node_undef() = 0;
@@ -77,8 +71,21 @@ protected: // alloc and compare interface
 	virtual bool			node_eq(ListNode_c *n, const void *v) = 0;
 
 protected:
+	ListNode_c *			append_g(ListNode_c *prev, const void *v);
+	ListNode_c *			appendNew_g(ListNode_c *prev);
+	ListNode_c *			insertNew_g(ListNode_c *prev);
+	ListNode_c *			insert_g(ListNode_c *next, const void *v);
+	void				remove_g(ListNode_c *n);
+
+public:
+	void				moveFrom_g(List_c *source);
+
+protected:
 	ListNode_c			link;
 	unsigned			item_count;
+
+private:
+	List_c &			operator=(const List_c &);
 };
 
 template <typename V>
@@ -118,6 +125,9 @@ public:
 	DR_RINLINE V			removeFirst()				{ Node *n = iterFirst(); V v = n->v; remove_g(n); return v; }
 	DR_RINLINE V *			accAppendingNew()			{ return &((Node *)appendNew_g(link.prev))->v; }
 	DR_RINLINE V *			accInsertingNew()			{ return &((Node *)insertNew_g(link.prev))->v; }
+
+public:
+	DR_MINLINE void			moveFrom(TList *source)			{ moveFrom_g(source); }
 
 protected: // alloc and compare interface
 	virtual ListNode_c *		node_def(const void *v)			{ Node *n = (Node *)allc().allocC(sizeof(Node)); new(n) Node(*(const V *)v); return n; }

@@ -58,6 +58,12 @@ public:
 	DR_MINLINE virtual		~Array_c()				{ DR_Assert(data == NULL); } // do not call it
 	void				destroy_g();				// must be called from  child's destructor
 
+public: // interface to template
+	virtual bool			el_eq(const void *d1, const void *d2) = 0;
+	virtual int			el_cmp(const void *d1, const void *d2) = 0;
+	virtual void *			reallocList(size_t osize, size_t nsize) = 0;
+	virtual void			freeList(size_t osize) = 0;
+
 public:
 	void				resize_g(size_t nsize);
 	void				sort_g(size_t tsize);
@@ -66,12 +72,7 @@ public:
 	void				rsort_g(size_t tsize);
 	void				rsortF_g(size_t tsize, int (*f)(void *d1, void *d2));
 	void				rsortD_g(size_t tsize, int (*f)(void *d1, void *d2, void *data), void *data);
-
-public: // interface to template
-	virtual bool			el_eq(const void *d1, const void *d2) = 0;
-	virtual int			el_cmp(const void *d1, const void *d2) = 0;
-	virtual void *			reallocList(size_t osize, size_t nsize) = 0;
-	virtual void			freeList(size_t osize) = 0;
+	void				moveFrom_g(Array_c *source);
 
 protected:
 	void				sort_i(char *start, char *end, struct sortdata *sd);
@@ -79,6 +80,9 @@ protected:
 protected:
 	unsigned			len;
 	char *				data;
+
+private:
+	Array_c &			operator=(const Array_c &);
 };
 
 
@@ -127,6 +131,8 @@ public:
 	DR_MINLINE void			rsortF(int (*f)(void *d1, void *d2))	{ Array_c::rsortF_g(tsize, f); }
 	DR_MINLINE void			rsortD(int (*f)(void *d1, void *d2, void *data), void *pass)	{ Array_c::rsortD_g(tsize, f, pass); }
 
+	DR_MINLINE void			moveFrom(SArray *source)		{ moveFrom_g(source); }
+
 public:
 	iterator			begin()					{ return (V *)data; }
 	iterator			end()					{ return (V *)((char *)data+len); }
@@ -168,6 +174,7 @@ public:
 	DR_RINLINE void			appendDoref(V *i);
 	DR_RINLINE void			appendNoref(V *i);
 
+	DR_MINLINE void			moveFrom(RArray *source)		{ moveFrom_g(source); }
 
 protected: // ancestor iface
 	virtual bool			el_eq(const void *d1, const void *d2)	{ return **(SV *)d1 == **(SV *)d2; }

@@ -82,6 +82,9 @@ public:
 	virtual void			bindParams(Variant **values, size_t values_count);
 
 public:
+	virtual bool			isBusy();
+
+public:
 	virtual ResultSet *		executeQuery();
 	virtual void			executeUpdate();
 
@@ -103,6 +106,7 @@ protected:
 
 	bool				has_limit:1;
 	bool				has_offset:1;
+	bool				is_busy:1;
 
 	friend class ResultSet_mysql5;
 };

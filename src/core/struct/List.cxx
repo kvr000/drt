@@ -151,5 +151,14 @@ DR_EXPORT_MET void List_c::remove_g(ListNode_c *n)
 	node_destroy(n);
 }
 
+DR_EXPORT_MET void List_c::moveFrom_g(List_c *source)
+{
+	destroy_g();
+	link = source->link;
+	item_count = source->item_count;
+	source->link.prev = NULL;
+	source->link.next = NULL;
+	source->item_count = 0;
+}
 
 DR_NS_END

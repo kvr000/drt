@@ -180,5 +180,16 @@ Hash_c::Node_c *Hash_c::iterNext_g(Node_c *c) const
 	return NULL;
 }
 
+void Hash_c::moveFrom_g(Hash_c *source)
+{
+	destroy_g();
+	hashmask = source->hashmask;
+	item_count = source->item_count;
+	list = source->list;
+	source->hashmask = 0;
+	source->list = NULL;
+	source->item_count = 0;
+}
+
 
 DR_NS_END

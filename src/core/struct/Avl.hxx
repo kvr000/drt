@@ -68,9 +68,14 @@ public:
 	};
 
 protected:
-	DR_MINLINE			Avl_c()					: root(NULL), lowest(NULL), count(0) {}
+	DR_MINLINE			Avl_c()					: root(NULL), lowest(NULL), item_count(0) {}
 	DR_MINLINE virtual		~Avl_c()				{ DR_Assert(root == NULL); } // do not call it!
 	void				destroy_g();				// must be called from child's destructor
+
+protected:
+	void				destroyRecursive_g(Node_c *node);
+	void				rebalanceAdded_g(Node_c *added);
+	void				rebalanceRemoved_g(Node_c *parent, int direction);
 
 protected: // interface to template
 	virtual int			node_cmp(Node_c *node, const void *key) const = 0;
@@ -88,24 +93,20 @@ protected:
 	void				run_g(Eslot1<void, Node_c *> &cb);
 
 protected:
-	void				destroyRecursive_g(Node_c *node);
-	static void			rotateLeft_g(Node_c **cur);
-	static void			rotateRight_g(Node_c **cur);
-	void				rebalanceAdded_g(Node_c *added);
-	void				rebalanceRemoved_g(Node_c *parent, int direction);
+	void				moveFrom_g(Avl_c *source);
 
 protected:
 	Node_c *			iterFirst_g() const;
 	Node_c *			iterNext_g(Node_c *cur) const;
 
-private:
-	/* disallowed */		Avl_c(const Avl_c &);
-	/* disallowed */		Avl_c &operator=(const Avl_c &);
+private: /* disallowed */
+	DR_CONSTRUCT			Avl_c(const Avl_c &);
+	Avl_c &				operator=(const Avl_c &);
 
 protected:
 	Node_c *			root;
 	Node_c *			lowest;
-	size_t				count;
+	size_t				item_count;
 };
 
 
@@ -172,7 +173,7 @@ public:
 	DR_MINLINE			~TAvl()						{ destroy_g(); }
 
 public:
-	DR_RINLINE size_t		getCount() const				{ return count; }
+	DR_RINLINE size_t		count() const					{ return item_count; }
 
 public:
 	DR_MINLINE Node *		find(const K &k) const				{ return (Node *)Avl_c::find_g(&k); }
@@ -185,6 +186,8 @@ public:
 	DR_MINLINE Node *		iterTop() const					{ return (Node *)root; }
 	DR_MINLINE Node *		iterFirst() const				{ return (Node *)Avl_c::iterFirst_g(); }
 	DR_MINLINE Node *		iterNext(Node *cur) const			{ return (Node *)Avl_c::iterNext_g(cur); }
+
+	DR_MINLINE void			moveFrom(TAvl *source)				{ moveFrom_g(source); }
 };
 
 

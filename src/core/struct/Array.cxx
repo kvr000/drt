@@ -224,5 +224,13 @@ DR_EXPORT_MET void Array_c::rsortD_g(size_t tsize, int (*f)(void *d1, void *d2, 
 	sort_i((char *)data, (char *)data+len-tsize, sd);
 }
 
+DR_EXPORT_MET void Array_c::moveFrom_g(Array_c *source)
+{
+	destroy_g();
+	data = source->data;
+	len = source->len;
+	source->data = NULL;
+	source->len = 0;
+}
 
 DR_NS_END

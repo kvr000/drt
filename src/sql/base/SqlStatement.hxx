@@ -76,6 +76,9 @@ public:
 	virtual void			bindParams(Variant **values, size_t values_count) = 0;
 
 public:
+	virtual bool			isBusy() = 0;
+
+public:
 	virtual ResultSet *		executeQuery() = 0;
 	virtual void			executeUpdate() = 0;
 

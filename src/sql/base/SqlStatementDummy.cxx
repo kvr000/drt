@@ -116,6 +116,11 @@ void SqlStatementDummy::bindParams(Variant **values, size_t values_count)
 	}
 }
 
+bool SqlStatementDummy::isBusy()
+{
+	return false;
+}
+
 void SqlStatementDummy::executeUpdate()
 {
 }
