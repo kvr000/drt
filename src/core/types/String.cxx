@@ -1787,7 +1787,7 @@ DR_EXPORT_MET void StringIndex::clean()
 {
 	if (hash_list == (element **)(void *)&hash_mask)
 		return;
-	for (UintPtr i = 0; i < hash_mask; i++) {
+	for (UintPtr i = 0; i <= hash_mask; i++) {
 		element *n;
 		for (element *e = hash_list[i]; e; e = n) {
 			n = e->next;

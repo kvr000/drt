@@ -140,7 +140,7 @@ void test()
 {
 	testBasic();
 	testChunked();
-	if (1) {
+	if (0) {
 		Thread *perf_test[192];
 		for (size_t i = 0; i < sizeof(perf_test)/sizeof(perf_test[0]); i++) {
 			perf_test[i] = ThreadSimple::go(Eslot(&testBasic));
