@@ -44,7 +44,7 @@
  * type:	struct
  *
  * co:{
- * 	#define DR_PROFILE(name, ind) Profiler name(DR_FUNCTION, name)
+ * 	#define DR_PROFILE(name, ind) Profiler name(DR_FUNCTION, #name)
  * 	#define DR_PROFILE_FUNC() Profiler func_profiler(DR_FUNCTION, "full")
  * }co
  *
@@ -67,14 +67,14 @@ Profiler::Profiler(const char *function, const char *part):
 	part_name(part),
 	start_time(Time::getTime())
 {
-	Fatal::plog("start function %s.%s at time %lld\n", function_name, part_name, (long long)Time::getTime());
+	Fatal::plog("start %s.%s at %lld\n", function_name, part_name, (long long)Time::getTime());
 }
 
 DR_MET(public)
 Profiler::~Profiler()
 {
 	Time::SysTime t = Time::getTime();
-	Fatal::plog("leave function %s.%s at time %lld (%lld)\n", function_name, part_name, (long long)t, (long long)(t-start_time));
+	Fatal::plog("leave %s.%s at %lld (%lld)\n", function_name, part_name, (long long)t, (long long)(t-start_time));
 }
 
 DR_MET(public)
