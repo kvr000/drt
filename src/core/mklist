@@ -30,6 +30,8 @@
 
 .include ${ESUBDIRS}/mklist
 
+PRESUBS:
+	design
 
 POSTSUBS:
 	testenv

@@ -299,7 +299,7 @@ sub getDrSpecs
 	my $this		= shift;
 	my $spec		= shift;
 
-	return $this->{drtag}->getSpecs($spec);
+	return $this->{drtag}->getSpec($spec);
 }
 
 sub postLoad

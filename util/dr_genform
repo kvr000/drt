@@ -1,0 +1,184 @@
+#!/usr/bin/perl
+
+###
+## drt library
+##
+## drt multiplatform development toolkit
+##
+## ----------------------------------------------------------------------------------
+##
+## Copyright (C) 2004-2008 Zbyněk Vyškovský
+##
+## ----------------------------------------------------------------------------------
+##
+## LICENSE:
+##
+## This file is part of drt
+##
+## drt is free software; you can redistribute it and/or modify it under the
+## terms of the GNU Lesser General Public License as published by the Free
+## Software Foundation; either version 3 of the License, or (at your option)
+## any later version.
+##
+## drt is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+## FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for
+## more details.
+##
+## You should have received a copy of the GNU Lesser General Public License
+## along with drt; if not, write to the Free Software Foundation, Inc., 51
+## Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+##
+## @copyright	2004-2008 Zbyněk Vyškovský
+## @link	mailto:kvr@matfyz.cz
+## @link	http://kvr.matfyz.cz/drt/
+## @license	http://www.gnu.org/licenses/lgpl.txt GNU Lesser General Public License v3
+###
+
+use strict;
+use warnings;
+
+use FileHandle;
+use Data::Dumper;
+use Getopt::Std;
+use File::Basename;
+
+use lib dirname($0)."/perl";
+use dr::FileTransaction;
+use dr::FileParser;
+use dr::ModelStore;
+use dr::Util qw(defvalue tabalign);
+
+
+our %opts;
+getopts('', \%opts);
+
+die "Usage: $0 list_file touch_file root" unless (@ARGV == 3);
+my $listname = shift(@ARGV);
+my $touch_name = shift(@ARGV);
+my $root = shift(@ARGV);
+die "passed file does not end with suffix .list" unless ($listname =~ m/(.*)\.list$/);
+
+our $file_trans = dr::FileTransaction->new();
+
+our $model_store = dr::ModelStore->new();
+
+our $list = dr::FileParser->new($listname);
+
+
+sub readModel($$)
+{
+	my $location		= shift;
+	my $name		= shift;
+
+	my $model = $model_store->loadModel($location, $name);
+
+	return $model;
+}
+
+our %FORM_UML_TYPES_PRIM = (
+	Boolean			=> "bool",
+	Integer			=> "int",
+	Long			=> "bigint",
+	long			=> "bigint",
+	int			=> "int",
+	Integer			=> "int",
+);
+
+our %FORM_UML_TYPES_VAR = (
+	string			=> "string",
+	binary			=> "string",
+);
+
+sub dieAttrContext($$)
+{
+	my $attr		= shift;
+	my $msg			= shift;
+
+	dr::Util::doDie("$attr->{owner}->{filename}:0: $attr->{owner}->{full}.$attr->{name}: $msg");
+}
+
+sub translateFormType($)
+{
+	my $attr		= shift;
+
+	eval {
+		my ( $type, $tagger ) = $attr->getFinalTypeWithTagger();
+
+		if ($type->{stype} eq "primitive") {
+			my $ptype = $type->{type};
+			if ($ptype =~ m/^(\w+)\((\d+)\)$/) {
+				if (my $sqlt = $FORM_UML_TYPES_VAR{$1}) {
+					return "$sqlt($2)";
+				}
+				die "cannot map $ptype";
+			}
+			else {
+				if (my $sqlt = $FORM_UML_TYPES_PRIM{$ptype}) {
+					return $sqlt;
+				}
+				die "cannot map $ptype";
+			}
+		}
+		elsif ($type->{stype} eq "enum") {
+			return "int";
+		}
+		else {
+			die "unknown stype $type->{stype} for class $type->{full}";
+		}
+	}
+		or dieAttrContext($attr, $@);
+}
+
+my $lineno = 0;
+
+my @models = ();
+
+my $errors = 0;
+
+while (defined (my $line = $list->readLine())) {
+	$lineno++;
+	next if ($line =~ m/^\s*(#.*|)$/);
+	chomp($line);
+	eval {
+		die "invalid format, need \"location classname\"" unless ($line =~ m/^(\S+)\s+((\w+::)*\w+)$/);
+		push(@models, readModel($1, $2));
+		1;
+	}
+		or $errors++, STDERR->print($@ =~ m/^\S+:\d+:/ ? $@ : $list->getContext().": $@");
+}
+
+foreach my $model (@models) {
+	my $file = $model->{full}; $file =~ s/::/\//g;
+	my $form = $file_trans->createTruncated("$root/$file.form");
+	foreach my $attr (@{$model->{attr_list}}) {
+		my ( $type, $tagger ) = $attr->getFinalTypeWithTagger();
+		eval {
+			$form->print(tabalign("field", 16).$attr->{name}."\n");
+			$form->print(tabalign("\ttext", 24).$attr->getDrTag("text")->{value}."\n");
+			$form->print(tabalign("\ttype", 24).translateFormType($attr)."\n");
+			$form->print(tabalign("\tmandatory", 24).$attr->{mandatory}."\n");
+			$form->print(tabalign("\tlogical", 24).$tagger->getTag("logical")->{value}."\n");
+			$form->print(tabalign("\tdisplay", 24).$tagger->getTag("display")->{value}."\n");
+			1;
+		}
+			or die "failed to process $model->{full}.$attr->{name}: $@: ".Dumper($tagger);
+	}
+	foreach my $action (sort({ $a->{order} <=> $b->{order} } values %{$model->getDrSpecs("action")})) {
+		$form->print(tabalign("action", 16).$action->{spec}."\n");
+		$form->print(tabalign("\ttext", 24).$action->{value}."\n");
+	}
+	$file_trans->closeFile($form);
+}
+
+die "Unrecoverable errors occurred" if ($errors);
+
+if ($errors == 0) {
+	$file_trans->createTruncated($touch_name);
+}
+else {
+	die "fatal errors occurred";
+}
+
+if ($file_trans->commit()) {
+}

@@ -46,9 +46,9 @@ use File::Basename;
 use lib dirname($0)."/perl";
 use dr::FileTransaction;
 use dr::SepOutput;
-use dr::XmiParser;
 use dr::ModelStore;
 use dr::Util qw(defvalue tabalign);
+
 
 sub fixModelInfo($)
 {

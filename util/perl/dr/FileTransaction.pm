@@ -38,6 +38,9 @@ package dr::FileTransaction;
 use strict;
 use warnings;
 
+use File::Basename;
+use File::Path;
+
 sub new
 {
 	my $class = shift; $class = ref($class) || $class;
@@ -76,8 +79,12 @@ sub createTruncated
 	if (my @st = stat($fname)) {
 		chmod(($st[2]&07777)|(0222&~$this->{umask}), $fname);
 	}
-	my $fd = FileHandle->new($fname, ">")
-		or die "failed to open file $fname: $!";
+	my $fd;
+	if (!defined ($fd = FileHandle->new($fname, ">"))) {
+		mkpath(dirname($fname));
+		$fd = FileHandle->new($fname, ">")
+			or die "failed to open file $fname: $!";
+	}
 	binmode($fd);
 	push(@{$this->{opers}}, { op => "rm", fname => $fname, fd => $fd });
 	return $fd;
