@@ -59,11 +59,11 @@ DR_APP_NS_BEGIN
  * ancestor:	Hash_c::Node_c
  * class:	ApplicationCache::ValueHashNode
  *
- * at:	ValueHashNode **		timed_pprev;
- * at:	ValueHashNode *			timed_next;
- * at:	int				key_id;
- * at:	Ref<Object>			key;
- * at:	Ref<Object>			value;
+ * ap:	ValueHashNode **		timed_pprev;
+ * ap:	ValueHashNode *			timed_next;
+ * ap:	int				key_id;
+ * ap:	Ref<Object>			key;
+ * ap:	Ref<Object>			value;
  */
 
 DR_MET(public)
@@ -89,8 +89,8 @@ ApplicationCache::ValueHashNode::~ValueHashNode()
  * class:	ApplicationCache::TimedTree::Node
  * ancestor:	Node_c
  *
- * at:	SysTime				expires;
- * at:	ValueHashNode *			list_first;
+ * ap:	SysTime				expires;
+ * ap:	ValueHashNode *			list_first;
  */
 
 DR_MET(public)

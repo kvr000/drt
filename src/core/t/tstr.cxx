@@ -92,6 +92,22 @@ void test()
 TESTNSE(gstr);
 #endif
 
+#ifdef TEST_STR
+TESTNS(str);
+void test()
+{
+	{
+		String sm(".");
+		String ss("..");
+		CHECK(sm.find(ss) < 0);
+		CHECK(ss.find(sm) == 0);
+		CHECK(ss.find(sm, 0) == 0);
+		CHECK(ss.find(sm, 1) == 1);
+	}
+}
+TESTNSE(str);
+#endif
+
 int main()
 {
 	test_init();

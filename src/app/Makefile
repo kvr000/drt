@@ -25,14 +25,14 @@ LIBDIR_=$(TOPDIR_)lib/
 INCDIR=$(TOPDIR_)include
 INCDIR_=$(TOPDIR_)include/
 
-DR_BUILD_CXX_FLAGS= -DDR_HAS_THREAD_LOCAL -DDR_OS_UNIX
+DR_BUILD_CXX_FLAGS= -DDR_HAS_THREAD_LOCAL -D_FILE_OFFSET_BITS=64 -DDR_OS_UNIX
 
 all: targ_all
 default: targ_all
 no: nothing
 
 gmake:
-	dr_genmake ../def/bsd.txt $(DIRS)
+	dr_genmake ../def/linux.txt $(DIRS)
 
 include $(ETCDIR_)main.mk
 
