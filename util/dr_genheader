@@ -461,7 +461,7 @@ sub printClass($$)
 		dieCldContext($cld, "no model loaded for class $cld->{class}") unless ($cld->{model});
 		$cld->{type} = $cld->{model}->{stype};
 		$cld->{type} = "object" if ($cld->{type} eq "class");
-		$cld->{type} = "object" if ($cld->{type} eq "association");
+		$cld->{type} = "object" if ($cld->{type} eq "assoc");
 		$cld->{ancestor} = $cld->{model}->{ancestor} unless (defined $cld->{ancestor});
 	}
 	dieCldContext($cld, "class $cld->{class} has no ancestor") if (!defined $cld->{ancestor} && !($cld->{type} eq "struct" || $cld->{type} eq "typedef" || $cld->{type} eq "enum"));
