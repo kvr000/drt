@@ -1,0 +1,234 @@
+#!/usr/bin/perl
+
+###
+## drt library
+##
+## drt multiplatform development toolkit
+##
+## ----------------------------------------------------------------------------------
+##
+## Copyright (C) 2004-2008 Zbyněk Vyškovský
+##
+## ----------------------------------------------------------------------------------
+##
+## LICENSE:
+##
+## This file is part of drt
+##
+## drt is free software; you can redistribute it and/or modify it under the
+## terms of the GNU Lesser General Public License as published by the Free
+## Software Foundation; either version 3 of the License, or (at your option)
+## any later version.
+##
+## drt is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+## FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for
+## more details.
+##
+## You should have received a copy of the GNU Lesser General Public License
+## along with drt; if not, write to the Free Software Foundation, Inc., 51
+## Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+##
+## @copyright	2004-2008 Zbyněk Vyškovský
+## @link	mailto:kvr@matfyz.cz
+## @link	http://kvr.matfyz.cz/drt/
+## @license	http://www.gnu.org/licenses/lgpl.txt GNU Lesser General Public License v3
+###
+
+use strict;
+use warnings;
+
+use FileHandle;
+use Data::Dumper;
+use Getopt::Std;
+use File::Path;
+
+use File::Basename;
+use lib dirname($0)."/perl";
+use dr::XmiParser;
+use dr::FileTransaction;
+
+our %opts;
+our $xmi_fname;
+our $dst_dir;
+our $file_trans;
+
+sub openClassFile($$)
+{
+	my $xmi			= shift;
+	my $class		= shift;
+
+	my $name = $xmi->getFullName($class);
+	my $fname = $name; $fname =~ s/::/\//g;
+	$fname = "$dst_dir/$fname";
+	mkpath(dirname($fname));
+	return $file_trans->createTruncated("$fname.clsdef");
+}
+
+sub formatPair($$)
+{
+	my $p0			= shift;
+	my $p1			= shift;
+
+	if (length($p0) < 32) {
+		$p0 .= "\t" x ((39-length($p0))/8);
+	}
+	else {
+		$p0 .= " ";
+	}
+	return "$p0$p1\n";
+}
+
+sub formatTriplet($$$)
+{
+	my $p0			= shift;
+	my $p1			= shift;
+	my $p2			= shift;
+
+	my $tot;
+	if (length($p0) < 32) {
+		$p0 .= "\t" x ((39-length($p0))/8);
+		$tot = 40;
+	}
+	else {
+		$p0 .= " ";
+		$tot = length($p0)+1;
+	}
+	if ($tot+length($p1) < 64) {
+		$p1 .= "\t" x ((71-length($p1)-$tot)/8);
+		$tot = 64;
+	}
+	else {
+		$p1 .= " ";
+		$tot += length($p0)+1;
+	}
+	return "$p0$p1$p2\n";
+}
+
+sub formatComment($$)
+{
+	my $indent		= shift;
+	my $comment		= shift;
+
+	my $out = "";
+
+	foreach my $dr (@{$comment->{dr_list}}) {
+		$out .= sprintf("%s%s", "\t" x $indent, formatTriplet("drcom", $dr->{name}, $dr->{value}));
+	}
+	foreach my $com (@{$comment->{comment}}) {
+		$out .= sprintf("%s%s", "\t" x $indent, formatPair("comment", $com));
+	}
+	return $out;
+}
+
+sub genClass
+{
+	my $xmi			= shift;
+	my $class		= shift;
+
+	my $fd = openClassFile($xmi, $class);
+
+	$fd->print(formatPair("package", $xmi->getPrefixName($class)));
+	$fd->print(formatPair("name", $class->{name}));
+	$fd->print(formatPair("type", $class->{type}));
+	$fd->print(formatComment(0, $class->{comment}));
+	if ($class->{type} eq "typedef") {
+		$fd->print(formatPair("base", $xmi->formatDatatype($class->getTypedefSource())));
+	}
+	elsif ($class->{type} eq "enum") {
+		foreach my $literal (@{$class->{literal_list}}) {
+			$fd->print(formatPair("enum", $literal->{name}));
+			$fd->print(formatComment(1, $literal->{comment}));
+			if (defined $literal->{value}) {
+				$fd->print("\t".formatPair("value", $literal->{value}));
+			}
+		}
+	}
+	elsif ($class->{type} eq "class" || $class->{type} eq "association") {
+		foreach my $attr (@{$class->{attr_list}}) {
+			if (!defined $attr->{association_xid}) {
+				$fd->print(formatPair("attr", $attr->{name}));
+				$fd->print("\t".formatPair("type", $xmi->formatDatatype($class->getAttrType($attr))));
+				$fd->print(formatComment(1, $attr->{comment}));
+			}
+			elsif ($attr->{aggregation} eq "composite") {
+				$fd->print(formatPair("compos", $attr->{name}));
+				$fd->print(formatPair("\tref", $xmi->formatDatatype($class->getAttrType($attr))));
+				$fd->print(formatComment(1, $attr->{comment}));
+			}
+			elsif ($attr->{aggregation} eq "none") {
+				$fd->print(formatPair("assoc", $attr->{name}));
+				$fd->print(formatPair("\tref", $xmi->formatDatatype($class->getAttrType($attr))));
+				$fd->print(formatComment(1, $attr->{comment}));
+			}
+			else {
+				die "unknown aggregation type for ".$xmi->getFullName($class).".$attr->{name}: $attr->{aggregation}";
+			}
+		}
+	}
+	else {
+		die "unknown type for class ".$xmi->getFullName($class).": $class->{type}";
+	}
+	$file_trans->closeFile($fd);
+
+	foreach my $ch_class (@{$class->{class_list}}) {
+		genClass($xmi, $ch_class);
+	}
+}
+
+sub genPackage
+{
+	my $xmi			= shift;
+	my $package		= shift;
+
+	my $location = $package->{name}; $location =~ s/::/\//g;
+	if ($location !~ /^(\w+)(\/(\w+))*$/) {
+		die "invalid package name: $package->{name}";
+	}
+	$location = "$dst_dir/$location";
+	mkpath($location);
+	$location .= "/";
+
+	foreach my $obj (@{$package->{class_list}}) {
+		genClass($xmi, $obj);
+	}
+}
+
+sub genObject
+{
+	my $xmi			= shift;
+	my $obj			= shift;
+
+	if ($obj->{type} eq "class") {
+		genClass($xmi, $obj);
+	}
+	elsif ($obj->{type} eq "package") {
+		genPackage($xmi, $obj);
+	}
+	else {
+		#print(Dumper($obj));
+		die "unknown object type for $obj->{name}: $obj->{type}";
+	}
+}
+
+getopts('', \%opts);
+
+die "Usage: $0 xmi_file target_dir" unless (@ARGV == 2);
+$xmi_fname = shift(@ARGV);
+$dst_dir = shift(@ARGV);
+
+$file_trans = dr::FileTransaction->new();
+
+my $xmi = dr::XmiParser->new($xmi_fname);
+
+foreach my $package (@{$xmi->{packages}}) {
+	genPackage($xmi, $package);
+}
+
+if ($file_trans->commit()) {
+	my $dummy = FileHandle->new("$dst_dir.gen", ">");
+	$dummy->printf("ok\n");
+	if (!$dummy->close()) {
+		die "failed to update dummy file $dst_dir.gen: $!";
+	}
+}
