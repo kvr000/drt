@@ -165,6 +165,7 @@ public:
 
 public:
 	DR_MINLINE kvpair *		find(const K &k) const					{ return (kvpair *)Hash_c::find_g(comp().khash(k), &k); }
+	DR_MINLINE kvpair *		accValue(const K &k) const				{ if (kvpair *kvp = (kvpair *)Hash_c::find_g(comp().khash(k), &k)) return &kvp->v; else return NULL; }
 	DR_MINLINE kvpair *		create(const K &k, bool *created = NULL){ return (kvpair *)Hash_c::create_g(comp().khash(k), &k, created); }
 	DR_MINLINE bool			remove(const K &k)					{ return Hash_c::remove_g(comp().khash(k), &k); }
 	DR_MINLINE void			clean()							{ clean_g(); }
