@@ -15,7 +15,7 @@ int main(int argc, char **argv)
 	String filename;
 
 	if (argc != 3) {
-		dr::Fatal::plog("Usage: %s filename filesize\n");
+		dr::Fatal::plog("Usage: %s filename filesize\n", argv[0]);
 		return 2;
 	}
 
@@ -41,7 +41,7 @@ int main(int argc, char **argv)
 
 	xtry {
 		while (pos < end) {
-			size_t towr = end-pos > MEMSIZE ? MEMSIZE : end-pos;
+			size_t towr = end-pos > MEMSIZE ? MEMSIZE : (size_t)(end-pos);
 			pos += fd->write(mem, towr);
 		}
 		fd.setNull();

@@ -307,7 +307,7 @@ Blob HttpServer::readContent(size_t maxsize)
 		}
 	}
 	if (req_body_size >= 0 && maxsize > req_body_size)
-		maxsize = req_body_size;
+		maxsize = (size_t)req_body_size;
 	maxsize = read_stream.read(&data, maxsize);
 	req_body_size -= maxsize;
 	return data;
@@ -325,7 +325,7 @@ ssize_t HttpServer::readContent(Blob *content, size_t maxsize)
 		}
 	}
 	if (req_body_size >= 0 && maxsize > req_body_size)
-		maxsize = req_body_size;
+		maxsize = (size_t)req_body_size;
 	maxsize = read_stream.read(content, maxsize);
 	req_body_size -= maxsize;
 	return maxsize;
@@ -345,7 +345,7 @@ Blob HttpServer::readFullContent()
 					break;
 				}
 			}
-			req_body_size -= read_stream.readExtendAdd(&data, req_body_size);
+			req_body_size -= read_stream.readExtendAdd(&data, (size_t)req_body_size);
 		}
 	}
 	else {
@@ -358,7 +358,7 @@ Blob HttpServer::readFullContent()
 ssize_t HttpServer::readFullContent(Blob *content)
 {
 	if (req_body_size >= 0) {
-		req_body_size -= read_stream.readFull(content, req_body_size);
+		req_body_size -= read_stream.readFull(content, (size_t)req_body_size);
 	}
 	else {
 		while (read_stream.tryExtendCacheAdd(1) > 0);

@@ -182,6 +182,11 @@ DR_EXPORT_MTS Thread *Thread::p_create(const Eslot1<void *, void *> &run_, const
 
 void Thread_wnt::createCurrent()
 {
+	if (Thread_wnt::key_ptr == (DWORD)-1) {
+		Thread_wnt::key_ptr = TlsAlloc();
+		Thread::current();
+		return;
+	}
 	Thread_wnt *cur_impl = (Thread_wnt *)malloc(sizeof(Thread_wnt));
 	memset(cur_impl, 0, sizeof(Thread_wnt));
 	cur_impl->threadPreInit();
@@ -222,8 +227,10 @@ DR_EXPORT_MTS Thread *Thread::current()
 
 Thread *Thread_impl::preinitMainThread()
 {
-	ThreadDummy *cur;
-	Thread_wnt::key_ptr = TlsAlloc();
+	Thread *cur;
+	cur = Thread::current();
+#if 0
+	Thread_wnt::createCurrent();
 	cur = (ThreadDummy *)malloc(sizeof(ThreadDummy));
 	memset(cur, 0, sizeof(ThreadDummy));
 	Thread_wnt *cur_impl = (Thread_wnt *)malloc(sizeof(Thread_wnt));
@@ -232,6 +239,7 @@ Thread *Thread_impl::preinitMainThread()
 	MM::initingThread();
 	cur_impl->main = cur;
 	cur_impl->setImpl();
+#endif
 	return cur;
 }
 

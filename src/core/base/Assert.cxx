@@ -157,8 +157,8 @@ void Fatal::setDebug(const char *opts)
 void Fatal::setSigHandlers(const char *opts)
 {
 	while (*opts != '\0') {
-		switch (*opts) {
 #ifdef DR_OS_UNIX
+		switch (*opts) {
 		case '.':
 			signal(SIGSEGV, &fatal_handler);
 			signal(SIGABRT, &fatal_handler);
@@ -186,8 +186,8 @@ void Fatal::setSigHandlers(const char *opts)
 		case 's':
 			signal(SIGSEGV, &fatal_handler);
 			break;
-#endif
 		}
+#endif
 		opts++;
 	}
 }

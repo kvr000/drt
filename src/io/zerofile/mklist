@@ -17,6 +17,7 @@ SOURCES:
 	lshlib:drio:g=s
 
 META:
+	vsid:{448224BA-196B-4cc3-8032-16E69E7E4496}:g=s
 
 FCHECK:
 	*.cxx::s=t
