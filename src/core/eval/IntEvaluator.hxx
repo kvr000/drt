@@ -54,6 +54,7 @@ public:
 		OP_UnPlus,
 		OP_UnMinus,
 		OP_UnNot,
+		OP_UnBitNot,
 		OP_BinPlus,
 		OP_BinMinus,
 		OP_BinMul,

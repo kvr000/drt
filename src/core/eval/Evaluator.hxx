@@ -75,7 +75,9 @@ public:
 
 	public:
 		virtual Sint64			getConstant(const String &name) = 0;
+		virtual bool			checkConstant(const String &name) = 0;
 		virtual Sint64			getValue(unsigned idx) = 0;
+		virtual bool			checkValue(unsigned idx) = 0;
 	};
 
 	class DR_PUB ArgumentsHash: public Arguments
@@ -95,6 +97,9 @@ public:
 
 		virtual Sint64			getConstant(const String &name)	{ if (Sint64 *v = constants->accValue(name)) { return *v; } xthrownew(DataNotFoundException("constant", name)); return 0; }
 		virtual Sint64			getValue(unsigned idx)		{ if (Sint64 *v = values->accValue(idx)) { return *v; } xthrownew(DataNotFoundException("value", String::createNumber(idx))); return 0; }
+
+		virtual bool			checkConstant(const String &name) { return constants->accValue(name) != NULL; }
+		virtual bool			checkValue(unsigned idx)	{ return values->accValue(idx) != NULL; }
 
 		Ref<Constants>			constants;
 		Ref<Values>			values;
@@ -134,13 +139,13 @@ protected:
 		virtual Sint64			evaluate(Arguments *args)	{ DR_AssertInvalid(); return 0; }
 	};
 
-	class DR_PUB ConstantExpression: public Expression
+	class DR_PUB DirectExpression: public Expression
 	{
 	public:
-		DR_OBJECT_DECL_SIMPLE(ConstantExpression, Expression);
+		DR_OBJECT_DECL_SIMPLE(DirectExpression, Expression);
 
 	public:
-		DR_CONSTRUCT			ConstantExpression(Sint64 value_): value(value_) {}
+		DR_CONSTRUCT			DirectExpression(Sint64 value_): value(value_) {}
 
 	public:
 		virtual Sint64			evaluate(Arguments *args)	{ return value; }
@@ -163,6 +168,20 @@ protected:
 		String				var_name;
 	};
 
+	class DR_PUB DefinedVariableExpression: public Expression
+	{
+		DR_OBJECT_DECL_SIMPLE(DefinedVariableExpression, Expression);
+
+	public:
+		DR_CONSTRUCT			DefinedVariableExpression(const String &var_name_): var_name(var_name_) {}
+
+	public:
+		virtual Sint64			evaluate(Arguments *args)	{ return args->checkConstant(var_name); }
+
+	protected:
+		String				var_name;
+	};
+
 	class DR_PUB ValueExpression: public Expression
 	{
 		DR_OBJECT_DECL_SIMPLE(ValueExpression, Expression);
@@ -171,6 +190,19 @@ protected:
 
 	public:
 		virtual Sint64			evaluate(Arguments *args)	{ return args->getValue(column_id); }
+
+	protected:
+		unsigned			column_id;
+	};
+
+	class DR_PUB DefinedValueExpression: public Expression
+	{
+		DR_OBJECT_DECL_SIMPLE(DefinedValueExpression, Expression);
+	public:
+		DR_CONSTRUCT			DefinedValueExpression(unsigned column_id_): column_id(column_id_) {}
+
+	public:
+		virtual Sint64			evaluate(Arguments *args)	{ return args->checkValue(column_id); }
 
 	protected:
 		unsigned			column_id;

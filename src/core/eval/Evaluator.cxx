@@ -67,27 +67,35 @@ DR_OBJECT_DEF(DR_NS_STR, Evaluator::MarkFunctionDummyExpression, Evaluator::Expr
 DR_OBJECT_IMPL_SIMPLE(Evaluator::MarkFunctionDummyExpression);
 
 
-DR_OBJECT_DEF(DR_NS_STR, Evaluator::ConstantExpression, Evaluator::Expression);
-DR_OBJECT_IMPL_SIMPLE(Evaluator::ConstantExpression);
+DR_OBJECT_DEF(DR_NS_STR, Evaluator::DirectExpression, Evaluator::Expression);
+DR_OBJECT_IMPL_SIMPLE(Evaluator::DirectExpression);
 
 
-DR_OBJECT_DEF(DR_NS_STR, Evaluator::ValueExpression, ValueExpression);
+DR_OBJECT_DEF(DR_NS_STR, Evaluator::ValueExpression, Expression);
 DR_OBJECT_IMPL_SIMPLE(Evaluator::ValueExpression);
 
 
-DR_OBJECT_DEF(DR_NS_STR, Evaluator::VariableExpression, VariableExpression);
+DR_OBJECT_DEF(DR_NS_STR, Evaluator::DefinedValueExpression, Expression);
+DR_OBJECT_IMPL_SIMPLE(Evaluator::DefinedValueExpression);
+
+
+DR_OBJECT_DEF(DR_NS_STR, Evaluator::VariableExpression, Expression);
 DR_OBJECT_IMPL_SIMPLE(Evaluator::VariableExpression);
 
 
-DR_OBJECT_DEF(DR_NS_STR, Evaluator::OperExpression, Object);
+DR_OBJECT_DEF(DR_NS_STR, Evaluator::DefinedVariableExpression, Expression);
+DR_OBJECT_IMPL_SIMPLE(Evaluator::DefinedVariableExpression);
+
+
+DR_OBJECT_DEF(DR_NS_STR, Evaluator::OperExpression, Expression);
 DR_OBJECT_IMPL_SIMPLE(Evaluator::OperExpression);
 
 
-DR_OBJECT_DEF(DR_NS_STR, Evaluator::UnaryExpression, Object);
+DR_OBJECT_DEF(DR_NS_STR, Evaluator::UnaryExpression, OperExpression);
 DR_OBJECT_IMPL_SIMPLE(Evaluator::UnaryExpression);
 
 
-DR_OBJECT_DEF(DR_NS_STR, Evaluator::BinaryExpression, Object);
+DR_OBJECT_DEF(DR_NS_STR, Evaluator::BinaryExpression, OperExpression);
 DR_OBJECT_IMPL_SIMPLE(Evaluator::BinaryExpression);
 
 

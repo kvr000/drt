@@ -70,6 +70,8 @@ Sint64 IntEvaluator::IntUnaryExpression::evaluate(Arguments *args)
 		return -operand->evaluate(args);
 	case IntEvaluator::OP_UnNot:
 		return !operand->evaluate(args);
+	case IntEvaluator::OP_UnBitNot:
+		return ~operand->evaluate(args);
 	default:
 		xthrownew(DataNotFoundException("unary operand", String::createNumber(operation_id)));
 	}
@@ -121,6 +123,7 @@ unsigned char IntEvaluator::priorities[OP_OperatorCount] = {
 	15,	//OP_UnPlus,
 	15,	//OP_UnMinus,
 	15,	//OP_UnNot,
+	15,	//OP_UnBitNot,
 	40,	//OP_BinPlus,
 	40,	//OP_BinMinus,
 	30,	//OP_BinMul,
@@ -167,7 +170,7 @@ Evaluator::TokenType IntEvaluator::parseNextToken(const char **expr, ParserState
 		}
 		else if (isdigit(**expr)) {
 			Sint64 val = strtoll(*expr, (char **)expr, 0);
-			DR_REF_XCHG(ret_expression, (Expression *)new ConstantExpression(val));
+			DR_REF_XCHG(ret_expression, (Expression *)new DirectExpression(val));
 			return TT_Expression;
 		}
 		else {
@@ -188,7 +191,7 @@ Evaluator::TokenType IntEvaluator::parseNextToken(const char **expr, ParserState
 		}
 		else if (isdigit(**expr)) {
 			Sint64 val = strtoll(*expr-1, (char **)expr, 0);
-			DR_REF_XCHG(ret_expression, (Expression *)new ConstantExpression(val));
+			DR_REF_XCHG(ret_expression, (Expression *)new DirectExpression(val));
 			return TT_Expression;
 		}
 		else {
@@ -407,7 +410,7 @@ Evaluator::TokenType IntEvaluator::parseNextToken(const char **expr, ParserState
 	case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9':
 		if (state == PS_Expression) {
 			Sint64 val = strtoll(*expr, (char **)expr, 0);
-			DR_REF_XCHG(ret_expression, (Expression *)new ConstantExpression(val));
+			DR_REF_XCHG(ret_expression, (Expression *)new DirectExpression(val));
 			return TT_Expression;
 		}
 		else {
@@ -417,12 +420,35 @@ Evaluator::TokenType IntEvaluator::parseNextToken(const char **expr, ParserState
 
 	case 'a': case 'b': case 'c': case 'd': case 'e': case 'f': case 'g': case 'h': case 'i': case 'j': case 'k': case 'l': case 'm': case 'n': case 'o': case 'p': case 'q': case 'r': case 's': case 't': case 'u': case 'v': case 'w': case 'x': case 'y': case 'z':
 	case 'A': case 'B': case 'C': case 'D': case 'E': case 'F': case 'G': case 'H': case 'I': case 'J': case 'K': case 'L': case 'M': case 'N': case 'O': case 'P': case 'Q': case 'R': case 'S': case 'T': case 'U': case 'V': case 'W': case 'X': case 'Y': case 'Z':
+	case '_':
 		if (state == PS_Expression) {
 			const char *start = *expr;
-			while (isalnum(**expr) || **expr == '_')
+			while (isalnum(**expr) || **expr == '_' || **expr == '.')
 				++*expr;
-			DR_REF_XCHG(ret_expression, (Expression *)new VariableExpression(String(start, *expr-start)));
-			return TT_Expression;
+			if (memcmp(start, "defined", 7) == 0 && *expr-start == 7) {
+				while (isspace(**expr))
+					++*expr;
+				start = *expr;
+				if (isalpha(*start) || *start == '_') {
+					for (*expr = start+1; isalnum(**expr) || **expr == '_' || **expr == '.'; ++*expr) ;
+					DR_REF_XCHG(ret_expression, (Expression *)new DefinedVariableExpression(String(start, *expr-start)));
+					return TT_Expression;
+				}
+				else if (*start == '\\') {
+					for (*expr = ++start; isdigit(**expr); ++*expr) ;
+					if (*expr == start)
+						xthrownew(InvalidFormatException("substitute", "missing id"));
+					DR_REF_XCHG(ret_expression, (Expression *)new DefinedValueExpression(strtoll(start, NULL, 0)));
+					return TT_Expression;
+				}
+				else {
+					xthrownew(InvalidFormatException("defined", "missing variable or value"));
+				}
+			}
+			else {
+				DR_REF_XCHG(ret_expression, (Expression *)new VariableExpression(String(start, *expr-start)));
+				return TT_Expression;
+			}
 		}
 		else {
 			xthrownew(InvalidFormatException("variable", "missing operator"));
