@@ -33,6 +33,14 @@
 ## @license	http://www.gnu.org/licenses/lgpl.txt GNU Lesser General Public License v3
 ###
 
+package dr::XmiParser;
+
+use strict;
+use warnings;
+
+use dr::Util;
+
+
 package dr::XmiParser::Comment;
 
 use strict;
@@ -58,15 +66,35 @@ sub processComment
 	my $body		= shift;
 
 	foreach my $line (split("\n", $body)) {
-		if ($line =~ m/^(drt?-)(\w+):\s*(.*?)\s*$/) {
-			my $comment = { name => $2, value => $3 };
+		if ($line =~ m/^(drt?-)(\w+(\(\w+\))?):\s*(.*?)\s*$/) {
+			my $comment = { name => $2, value => $4 };
 			push(@{$this->{dr_list}}, $comment);
 			die "drcomment $2 already specified" if (defined $this->{dr_hash}->{$2});
 			$this->{dr_hash}->{$comment->{name}} = $comment;
 		}
+		elsif ($line =~ m/^drt?-$/) {
+			die "invalid syntax for dr tag: $line";
+		}
 		else {
 			push(@{$this->{comment}}, "$line");
 		}
+	}
+}
+
+sub processTag
+{
+	my $this		= shift;
+	my $tag			= shift;
+	my $value		= shift;
+
+	if ($tag =~ m/^\s*(drt?-)(\w+(\(\w+\))?)$/) {
+		my $comment = { name => $2, value => $value };
+		push(@{$this->{dr_list}}, $comment);
+		die "drcomment $2 already specified" if (defined $this->{dr_hash}->{$2});
+		$this->{dr_hash}->{$comment->{name}} = $comment;
+	}
+	elsif ($tag =~ m/^\s*drt?-$/) {
+		die "invalid syntax for dr tag: $tag";
 	}
 }
 
@@ -244,20 +272,6 @@ sub new
 	return $this;
 }
 
-sub doDie
-{
-	my $msg			= shift;
-
-	my $stack = "";
-	for (my $i = 0; ; $i++) {
-		my ($pack, $fn, $ln, $sub) = caller($i)
-			or last;
-		$stack .= "$sub ($fn:$ln)\n";
-	}
-	$stack =~ s/^/\t/gm;
-	die "$msg\nstack:\n$stack";
-}
-
 sub read_doDie
 {
 	my $this		= shift;
@@ -265,14 +279,7 @@ sub read_doDie
 
 	my $reader		= $this->{reader};
 
-	my $stack = "";
-	for (my $i = 0; ; $i++) {
-		my ($pack, $fn, $ln, $sub) = caller($i)
-			or last;
-		$stack .= "$sub ($fn:$ln)\n";
-	}
-	$stack =~ s/^/\t/gm;
-	die "on element ".$reader->name().": $msg\nstack:\n$stack";
+	dr::Util::doDie("on element ".$reader->name().": $msg");
 }
 
 sub read_warnUnknown
@@ -462,6 +469,22 @@ sub read_processGenericComment
 
 	eval {
 		$comment->processComment($this->read_getMandatoryAttr("body"));
+		1;
+	}
+		or $this->read_doDie($@);
+
+	$this->read_needNodeEnd();
+}
+
+sub read_processGenericTagged
+{
+	my $this		= shift;
+	my $comment		= shift;
+
+	my $reader		= $this->{reader};
+
+	eval {
+		$comment->processTag($this->read_getMandatoryAttr("tag"), $this->read_getMandatoryAttr("value"));
 		1;
 	}
 		or $this->read_doDie($@);
@@ -692,12 +715,22 @@ sub read_processClassExtensions
 			$this->read_processClassExtensionTypedef();
 			next;
 		}
+		elsif ($name eq "taggedValue") {
+			$this->read_processClassTaggedValue();
+		}
 		else {
 			$this->read_unknownNode();
 		}
 	}
 
 	$this->{read_extender} = $saved_extender;
+}
+
+sub read_processClassTaggedValue
+{
+	my $this		= shift;
+
+	$this->read_processGenericTagged($this->{read_context}->{comment});
 }
 
 sub read_processClassExtensionStereotype
@@ -809,9 +842,37 @@ sub read_processOwnedAttribute
 			$this->read_processOwnedAttributeUpperValue();
 			next;
 		}
+		elsif ($name eq "xmi:Extension") {
+			$this->read_processOwnedAttributeExtension();
+			next;
+		}
 		else {
 			$this->read_unknownNode();
 		}
+	}
+
+	if (defined $this->{read_attr}->{lower_value} && defined $this->{read_attr}->{upper_value}) {
+		if ($this->{read_attr}->{lower_value} eq 0 && $this->{read_attr}->{upper_value} eq 0) {
+			$this->{read_attr}->{mandatory} = 0;
+		}
+		elsif ($this->{read_attr}->{lower_value} eq 0 && $this->{read_attr}->{upper_value} eq 1) {
+			$this->{read_attr}->{mandatory} = 0;
+		}
+		elsif ($this->{read_attr}->{lower_value} eq 1 && $this->{read_attr}->{upper_value} eq 1) {
+			$this->{read_attr}->{mandatory} = 1;
+		}
+		elsif ($this->{read_attr}->{lower_value} eq "0" && $this->{read_attr}->{upper_value} eq "*") {
+			$this->{read_attr}->{mandatory} = "*";
+		}
+		elsif ($this->{read_attr}->{lower_value} eq "1" && $this->{read_attr}->{upper_value} eq "*") {
+			$this->{read_attr}->{mandatory} = "*";
+		}
+		else {
+			$this->read_doDie("unexpected combination of lower/upper: $this->{read_attr}->{lower_value} - $this->{read_attr}->{upper_value}");
+		}
+	}
+	else {
+		$this->{read_attr}->{mandatory} = 1;
 	}
 
 	$this->read_doDie("type unspecified") unless (defined $this->{read_attr}->{type_type});
@@ -894,6 +955,26 @@ sub read_processOwnedAttributeUpperValue
 	$this->{read_attr}->{upper_value} = $this->read_getMandatoryAttr("value");
 
 	$this->read_needNodeEnd();
+}
+
+sub read_processOwnedAttributeExtension
+{
+	my $this		= shift;
+
+	my $reader		= $this->{reader};
+	my $exit_depth		= $reader->depth();
+
+	for (;;) {
+		my ($type, $name, $depth) = $this->readNode()
+			or $this->read_doDie("unexpected end of XML");
+		last if ($depth == $exit_depth);
+		if ($name eq "taggedValue") {
+			$this->read_processGenericTagged($this->{read_attr}->{comment});
+		}
+		else {
+			$this->read_unknownNode();
+		}
+	}
 }
 
 sub read_processEnum
@@ -1072,7 +1153,7 @@ sub resolveDatatype
 	my $this		= shift;
 	my $type_xi		= shift;
 
-	doDie("type_xi undefined") unless (defined $type_xi);
+	dr::Util::doDie("type_xi undefined") unless (defined $type_xi);
 	if (exists $this->{datatype_xi}->{$type_xi}) {
 		return $this->{datatype_xi}->{$type_xi};
 	}

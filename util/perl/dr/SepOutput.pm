@@ -38,6 +38,8 @@ package dr::SepOutput;
 use strict;
 use warnings;
 
+use dr::Util qw(tabalign);
+
 sub new
 {
 	my $class = shift; $class = ref($class) || $class;
@@ -49,6 +51,8 @@ sub new
 		sep_in			=> $options->{sep_in},
 		sep_all			=> $options->{sep_all},
 		state			=> 0,
+		pending			=> "",
+		add			=> undef,
 	}, $class;
 
 	return $this;
@@ -61,6 +65,16 @@ sub print
 	$this->{fd}->print(@_);
 }
 
+sub printFlushing
+{
+	my $this		= shift;
+	my $str			= shift;
+
+	$this->printObj($str);
+	$this->{fd}->print($this->{pending});
+	$this->{pending} = "";
+}
+
 sub printObj
 {
 	my $this		= shift;
@@ -70,15 +84,21 @@ sub printObj
 		$this->{state} = 1;
 	}
 	else {
-		$this->{fd}->print($this->{sep_in});
+		$this->{pending} .= $this->{sep_in};
 		if (defined $this->{add}) {
-			$this->{fd}->print($this->{add});
+			if (defined $this->{align_add}) {
+				$this->{pending} = tabalign($this->{pending}, $this->{align_add});
+				undef $this->{align_add};
+			}
+			$this->{pending} .= $this->{add};
 			undef $this->{add};
 		}
-		$this->{fd}->print($this->{sep_all});
+		$this->{pending} .= $this->{sep_all};
+		$this->{fd}->print($this->{pending});
+		$this->{pending} = "";
 	}
 
-	$this->{fd}->print($str);
+	$this->{pending} = $str;
 }
 
 sub printAdd
@@ -87,6 +107,31 @@ sub printAdd
 	my $str			= shift;
 
 	$this->{add} = $str;
+}
+
+sub printAligned
+{
+	my $this		= shift;
+	my $str			= shift;
+	my $align		= shift;
+
+	$this->{pending} = "" unless (defined $this->{pending});
+	$this->{pending} = tabalign($this->{pending}, $align).$str;
+}
+
+sub printAlignedAdd
+{
+	my $this		= shift;
+	my $str			= shift;
+	my $align		= shift;
+
+	if (defined $this->{add}) {
+		$this->{add} .= " ".$str;
+	}
+	else {
+		$this->{add} = $str;
+		$this->{align_add} = $align;
+	}
 }
 
 sub DESTROY
@@ -98,7 +143,17 @@ sub DESTROY
 		undef $this->{add};
 	}
 	if ($this->{state} != 0) {
+		if (defined $this->{add}) {
+			if (defined $this->{align_add}) {
+				$this->{pending} = tabalign($this->{pending}, $this->{align_add});
+				undef $this->{align_add};
+			}
+			$this->{pending} .= $this->{add};
+			undef $this->{add};
+		}
 		$this->{fd}->print($this->{sep_all});
+		$this->{fd}->print($this->{pending});
+		$this->{pending} = "";
 	}
 }
 

@@ -130,21 +130,21 @@ sub genClass
 			if (!defined $attr->{association_xid}) {
 				$fd->print(formatPair("attr", $attr->{name}));
 				$fd->print("\t".formatPair("type", $xmi->formatDatatype($class->getAttrType($attr))));
-				$fd->print(formatComment(1, $attr->{comment}));
 			}
 			elsif ($attr->{aggregation} eq "composite") {
 				$fd->print(formatPair("compos", $attr->{name}));
 				$fd->print("\t".formatPair("ref", $xmi->formatDatatype($class->getAttrType($attr))));
-				$fd->print(formatComment(1, $attr->{comment}));
 			}
 			elsif ($attr->{aggregation} eq "none") {
 				$fd->print(formatPair("assoc", $attr->{name}));
 				$fd->print("\t".formatPair("ref", $xmi->formatDatatype($class->getAttrType($attr))));
-				$fd->print(formatComment(1, $attr->{comment}));
 			}
 			else {
 				die "unknown aggregation type for ".$xmi->getFullName($class).".$attr->{name}: $attr->{aggregation}";
 			}
+			$fd->print("\t".formatPair("mandatory", $attr->{mandatory}));
+			$fd->print("\t".formatPair("default", $attr->{default_value})) if (defined $attr->{default_value});
+			$fd->print(formatComment(1, $attr->{comment}));
 		}
 	}
 	else {
@@ -201,6 +201,8 @@ $dst_dir = shift(@ARGV);
 $file_trans = dr::FileTransaction->new();
 
 my $xmi = dr::XmiParser->new($xmi_fname);
+
+#print(Dumper($xmi));
 
 foreach my $package (@{$xmi->{packages}}) {
 	genPackage($xmi, $package);

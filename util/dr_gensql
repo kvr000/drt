@@ -144,7 +144,31 @@ sub translateSqlType($)
 			die "unknown stype $type->{stype}";
 		}
 	}
-		or die "$attr->{owner}->{filename}:0: $attr->{owner}->{full}.$attr->{name}: $@";
+		or dieAttrContext($attr, $@);
+}
+
+sub translateSqlTypeDecl($$)
+{
+	my $main		= shift;
+	my $attr		= shift;
+
+	my $sql_type = translateSqlType($attr);
+	if ($main->{mandatory} eq 0) {
+		$sql_type .= " null";
+	}
+	elsif ($main->{mandatory} eq 1) {
+		$sql_type .= " not null";
+	}
+	else {
+		dieAttrContext($main, "unexpected mandatory: $main->{mandatory}");
+	}
+	if ($main->getCom("serial")) {
+		$sql_type .= " auto_increment";
+	}
+	if (defined $main->{default}) {
+		$sql_type .= " default $main->{default}";
+	}
+	return $sql_type;
 }
 
 my $lineno = 0;
@@ -167,7 +191,8 @@ foreach my $model (@models) {
 	my $sqlin = dr::SepOutput->new($sql, { sep_in => ",", sep_all => "\n" });
 	foreach my $attr (@{$model->{attr_list}}) {
 		if ($attr->{stype} eq "attr") {
-			$sqlin->printObj(tabalign("\t$attr->{name}", 40).translateSqlType($attr).($attr->getCom("serial") ? " auto_increment" : ""));
+			$sqlin->printObj("\t$attr->{name}");
+			$sqlin->printAligned(translateSqlTypeDecl($attr, $attr), 40);
 			if ($attr->getRole()->{primary}) {
 				push(@primary, $attr->{name});
 			}
@@ -175,8 +200,9 @@ foreach my $model (@models) {
 		elsif ($attr->{stype} eq "assoc" || $attr->{stype} eq "compos") {
 			my @tprimary = $attr->expandAssocAttrs();
 			foreach my $pa (@tprimary) {
-				$sqlin->printObj(tabalign("\t$pa->{name}", 40).translateSqlType($pa->{attr}));
-				$sqlin->printAdd("\t\t-- $attr->{name}: $pa->{attr}->{owner}->{full}.$pa->{attr}->{name}");
+				$sqlin->printObj("\t$pa->{name}");
+				$sqlin->printAligned(translateSqlTypeDecl($attr, $pa->{attr}), 40);
+				$sqlin->printAlignedAdd("\t\t-- $attr->{name}: $pa->{attr}->{owner}->{full}.$pa->{attr}->{name}", 72);
 				push(@primary, $pa->{name});
 			}
 		}
@@ -185,12 +211,19 @@ foreach my $model (@models) {
 		}
 	}
 	if (@primary) {
-		$sqlin->printObj("\tprimary key (");
+		$sqlin->printFlushing("\tprimary key (");
 		my $sqlprim = dr::SepOutput->new($sql, { sep_in => ", ", sep_all => "" });
 		foreach (@primary) {
 			$sqlprim->printObj($_);
 		}
 		undef $sqlprim;
+		$sqlin->print(")");
+	}
+	foreach my $index ($model->getIndexes()) {
+		$sqlin->printFlushing("\t$index->{type} index $index->{name} (");
+		my $sqlind = dr::SepOutput->new($sql, { sep_in => ", ", sep_all => "" });
+		$sqlind->printObj($_) foreach (@{$index->{fields}});
+		undef $sqlind;
 		$sqlin->print(")");
 	}
 	undef $sqlin;

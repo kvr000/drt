@@ -38,6 +38,8 @@ package dr::ModelStore::Util;
 use strict;
 use warnings;
 
+use Data::Dumper;
+
 sub genericLoad
 {
 	my $obj			= shift;
@@ -49,8 +51,7 @@ sub genericLoad
 			&$func($obj, $reader, $k, $v);
 		}
 		else {
-			STDERR->print(Dumper($splitter));
-			die "unknown key $k";
+			dr::Util::doDie("unknown key '$k': ".Dumper($splitter));
 		}
 	}
 }
@@ -59,10 +60,11 @@ sub genericDrcom
 {
 	my $val			= shift;
 
-	die "invalid format of drcom: $val" unless ($val =~ m/^(\S+)\s+(\S.*)$/);
+	dr::Util::doDie("invalid format of drcom: $val") unless ($val =~ m/^(\w+)(\((\w+)\))?\s+(\S.*)$/);
 	return {
 		name			=> $1,
-		value			=> $2,
+		spec			=> $3,
+		value			=> $4,
 	};
 }
 
@@ -94,12 +96,22 @@ sub new
 		comment			=> [],
 		drcom_list		=> [],
 		drcom_hash		=> {},
+		drcom_spec		=> {},
+		drcom_cnt		=> 0,
 	}, $class;
 
 	$owner->{class_hash}->{"$basic->{package}::$basic->{name}"} = $this;
 	Scalar::Util::weaken($this->{owner});
 
 	return $this;
+}
+
+sub dieContext
+{
+	my $this		= shift;
+	my $msg			= shift;
+
+	dr::Util::doDie("$this->{file_context}: $msg");
 }
 
 our %BASE_MAPPER = (
@@ -125,12 +137,20 @@ sub getFinalType
 	return $this;
 }
 
+sub postLoad
+{
+}
+
 sub load
 {
 	my $this		= shift;
 	my $reader		= shift;
 
+	$this->{file_context} = $reader->getContext();
+
 	dr::ModelStore::Util::genericLoad($this, $reader, \%BASE_MAPPER);
+
+	$this->postLoad();
 }
 
 sub readBaseDrcom
@@ -141,8 +161,14 @@ sub readBaseDrcom
 	my $val			= shift;
 
 	my $drcom = dr::ModelStore::Util::genericDrcom($val);
-	push(@{$this->{drcom_list}}, $drcom);
-	$this->{drcom_hash}->{$drcom->{name}} = $drcom;
+	$drcom->{order} = ++$this->{drcom_cnt};
+	if (defined $drcom->{spec}) {
+		$this->{drcom_spec}->{$drcom->{name}}->{$drcom->{spec}} = $drcom;
+	}
+	else {
+		push(@{$this->{drcom_list}}, $drcom);
+		$this->{drcom_hash}->{$drcom->{name}} = $drcom;
+	}
 }
 
 sub readBaseComment
@@ -224,13 +250,6 @@ sub new
 	return $this;
 }
 
-our %CLASS_MAPPER = (
-	%dr::ModelStore::ClassBase::BASE_MAPPER,
-	attr			=> \&readClassAttr,
-	assoc			=> \&readClassAssoc,
-	compos			=> \&readClassCompos,
-);
-
 sub getPrimary
 {
 	my $this		= shift;
@@ -250,12 +269,45 @@ sub getPrimary
 	return @{$this->{primary}};
 }
 
+sub getIndexes
+{
+	my $this		= shift;
+
+	if (!defined $this->{index_list}) {
+		$this->{index_list} = [];
+		if (defined $this->{drcom_spec}->{index}) {
+			foreach my $def (sort({ $a->{order} <=> $b->{order} } values %{$this->{drcom_spec}->{index}})) {
+				$this->dieContext("invalid index format: $def->{value}") unless ($def->{value} =~ m/^(\w+)\s+\(\s*((\w+(\s+(asc|desc))?\s*,\s*)*(\w+(\s+(asc|desc))?))\s*\)\s*$/);
+				my $type = $1;
+				my @fields = split(/\s*,\s*/, $2);
+				push(@{$this->{index_list}}, {
+						name			=> $def->{spec},
+						type			=> $type,
+						fields			=> \@fields,
+					});
+			}
+		}
+	}
+	return @{$this->{index_list}};
+}
+
+our %CLASS_MAPPER = (
+	%dr::ModelStore::ClassBase::BASE_MAPPER,
+	attr			=> \&readClassAttr,
+	assoc			=> \&readClassAssoc,
+	compos			=> \&readClassCompos,
+);
+
 sub load
 {
 	my $this		= shift;
 	my $reader		= shift;
 
+	$this->{file_context} = $reader->getContext();
+
 	dr::ModelStore::Util::genericLoad($this, $reader, \%CLASS_MAPPER);
+
+	$this->postLoad();
 }
 
 sub readClassAttr
@@ -342,7 +394,11 @@ sub load
 	my $this		= shift;
 	my $reader		= shift;
 
+	$this->{file_context} = $reader->getContext();
+
 	dr::ModelStore::Util::genericLoad($this, $reader, \%TYPEDEF_MAPPER);
+
+	$this->postLoad();
 }
 
 sub readTypedefDirect
@@ -388,7 +444,11 @@ sub load
 	my $this		= shift;
 	my $reader		= shift;
 
+	$this->{file_context} = $reader->getContext();
+
 	dr::ModelStore::Util::genericLoad($this, $reader, \%ENUM_MAPPER);
+
+	$this->postLoad();
 }
 
 our %ENUM_LITERAL_MAPPER = (
@@ -452,14 +512,25 @@ sub new
 		owner			=> $owner,
 		name			=> $basic->{name},
 		stype			=> $basic->{stype},
+		mandatory		=> undef,
 		comment			=> [],
 		drcom_list		=> [],
 		drcom_hash		=> {},
+		drcom_spec		=> {},
+		drcom_cnt		=> 0,
 	}, $class;
 
 	Scalar::Util::weaken($this->{owner});
 
 	return $this;
+}
+
+sub dieContext
+{
+	my $this		= shift;
+	my $msg			= shift;
+
+	dr::Util::doDie("$this->{file_context}: $msg");
 }
 
 sub getRole
@@ -493,17 +564,23 @@ our %MODEL_ATTRBASE_MAPPER = (
 	drcom			=> \&readClassAttrDrcom,
 	comment			=> \&readClassAttrComment,
 	type			=> \&readClassAttrDirect,
+	mandatory		=> \&readClassAttrDirect,
+	default			=> \&readClassAttrDirect,
 );
 
 sub postLoad
 {
 	my $this		= shift;
+
+	dr::Util::doDie("$this->{owner}->{full}.$this->{name}: mandatory undefined") unless (defined $this->{mandatory});
 }
 
 sub load
 {
 	my $this		= shift;
 	my $reader		= shift;
+
+	$this->{file_context} = $reader->getContext();
 
 	dr::ModelStore::Util::genericLoad($this, $reader, \%MODEL_ATTRBASE_MAPPER);
 
@@ -528,8 +605,14 @@ sub readClassAttrDrcom
 	my $val			= shift;
 
 	my $drcom = dr::ModelStore::Util::genericDrcom($val);
-	push(@{$this->{drcom_list}}, $drcom);
-	$this->{drcom_hash}->{$drcom->{name}} = $drcom;
+	$drcom->{order} = ++$this->{drcom_cnt};
+	if (defined $drcom->{spec}) {
+		$this->{drcom_spec}->{$drcom->{name}}->{$drcom->{spec}} = $drcom;
+	}
+	else {
+		push(@{$this->{drcom_list}}, $drcom);
+		$this->{drcom_hash}->{$drcom->{name}} = $drcom;
+	}
 }
 
 sub readClassAttrComment
@@ -655,6 +738,8 @@ sub load
 {
 	my $this		= shift;
 	my $reader		= shift;
+
+	$this->{file_context} = $reader->getContext();
 
 	dr::ModelStore::Util::genericLoad($this, $reader, \%MODEL_ASSOCBASE_MAPPER);
 
