@@ -99,7 +99,7 @@ protected:
 	Sint64				proc_counter;
 	Sint64				return_counter;
 	RHash<String,RList<Evaluator> >	evaluators;
-	Evaluator::Arguments::Constants	constants;
+	Evaluator::ArgumentsHash::Constants constants;
 
 	unsigned			num_free_workers;
 

@@ -349,7 +349,7 @@ Blob QueueManager::processOneData(Sint64 line_no, const Blob &line_data)
 		SArray<Blob> values;
 		if ((pos = getNextValues(&values, &ins_str, line_data, pos)) < 0)
 			break;
-		ERef<Evaluator::Arguments::Values> vals(new Evaluator::Arguments::Values());;
+		ERef<Evaluator::ArgumentsHash::Values> vals(new Evaluator::ArgumentsHash::Values());;
 		for (size_t i = 0; i < values.count(); i++) {
 			if (isdigit(*values[i].toStr())) {
 				vals->operator[](i) = strtoll(values[i].toStr(), NULL, 10);
@@ -361,7 +361,7 @@ Blob QueueManager::processOneData(Sint64 line_no, const Blob &line_data)
 				// skip value
 			}
 		}
-		ERef<Evaluator::Arguments> args(new Evaluator::Arguments(&constants, vals));
+		ERef<Evaluator::ArgumentsHash> args(new Evaluator::ArgumentsHash(&constants, vals));
 		for (RList<Evaluator>::Node *n = tev->iterFirst(); n; n = tev->iterNext(n)) {
 			xtry {
 				if (!n->v->evaluate(args))
