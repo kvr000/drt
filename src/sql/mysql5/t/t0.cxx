@@ -63,10 +63,10 @@ int main(void)
 		String vs;
 		rs->bindResult(i_str, &vi);
 		rs->bindResult(s_str, &vs);
-		if (rs->fetchRow()) {
+		if (rs->fetchNext()) {
 			do {
 				printf("b=%4d i=%4d s=%s z=%s\n", vi, (int)rs->getInt(i_str), rs->getString(s_str).utf8().toStr(), vs.utf8().toStr());
-			} while (rs->fetchRow());
+			} while (rs->fetchNext());
 			break;
 		}
 		else {

@@ -77,7 +77,7 @@ public:
 	virtual void			bindNullHandler(const String &column, void (*handler)(void *value)) = 0;
 
 public:
-	virtual bool			fetchRow() = 0;
+	virtual bool			fetchNext() = 0;
 	virtual void			store() = 0;
 
 public:
