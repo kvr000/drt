@@ -107,6 +107,7 @@ void testBasic()
 	}
 	xcatch (Except, ex) {
 		Fatal::plog("http exception: %s\n", ex->stringify().utf8().toStr());
+		return;
 	}
 	xend;
 	if (hserver_thr)
