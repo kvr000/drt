@@ -11,11 +11,13 @@ OUTPUT:
 	exec:tlink_drapp:f=exec;s=tlink_drapp,common
 	exec:t0:f=exec;s=t0,common;r=test
 	exec:tworker:f=exec;s=tworker,common;r=test
+	exec:tmemworkerleak:f=exec;s=tmemworkerleak,common
 
 SOURCES:
 	:tlink_drapp.cxx:f=cxx;g=tlink_drapp,t
 	:t0.cxx:f=cxx;g=t0,t
 	:tworker.cxx:f=cxx;g=gh,tworker,t
+	:tmemworkerleak.cxx:f=cxx;g=tmemworkerleak,t
 	no:mklist:g=t
 	lshlib:dr:g=common
 	lshlib:drapp:g=common
@@ -25,6 +27,7 @@ META:
 	vsid:{4D7927D7-6878-42af-ACB6-D20CE49D82BE}:g=tlink_drapp
 	vsid:{DF05D7F8-BB2E-4999-8EE9-248DA22CFFD2}:g=t0
 	vsid:{B02B7F46-65C8-4629-A083-6E0B2DFABFF3}:g=tworker
+	vsid:{8B7A1FE2-04C6-4FD7-92A3-5B0BA57CD08E}:g=tmemworkerleak
 
 
 FCHECK:
