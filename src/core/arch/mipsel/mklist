@@ -1,0 +1,12 @@
+.cdef SD_ARCH_mipsel .
+
+SOURCES:
+	no:${SD_ARCH_mipsel}/mklist:g=t
+	:${SD_ARCH_mipsel}/Atomic.arch.hxx:g=diarch_mipsel,t
+	:${SD_ARCH_mipsel}/def.arch.hxx:g=diarch_mipsel,t
+	:${SD_ARCH_mipsel}/sex.arch.hxx:g=diarch_mipsel,t
+	:${SD_ARCH_mipsel}/types.arch.hxx:g=diarch_mipsel,t
+
+DIST_INC:
+	diarch_mipsel:arch-mipsel/dr/arch
+
