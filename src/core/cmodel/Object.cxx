@@ -70,8 +70,12 @@ DR_EXPORT_DTS Object::ObjectInfo Object::default_oi = {
 };
 
 Object::Object():
-	core_data(&default_oi),
-	refcnt(0)
+	refcnt(0),
+	core_data(&default_oi)
+{
+}
+
+Object::Object(const None &)
 {
 }
 

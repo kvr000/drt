@@ -73,6 +73,9 @@ protected:
 
 	Ref<MutexCond>			access_lock;
 	bool				is_waiting;
+
+protected:
+	static const Blob		NULL_blob;
 };
 
 

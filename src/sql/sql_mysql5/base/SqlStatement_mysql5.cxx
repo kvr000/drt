@@ -39,6 +39,7 @@
 #include <dr/Const.hxx>
 #include <dr/Except.hxx>
 #include <dr/UnsupportedExcept.hxx>
+#include <dr/InvalidFormatExcept.hxx>
 
 #include <dr/sql/SqlExcept.hxx>
 #include <dr/sql/SqlParseExcept.hxx>
@@ -173,6 +174,14 @@ void SqlStatement_mysql5::bindParam(unsigned column, Sint64 value)
 	*(Sint64 *)b->buffer = value;
 }
 
+void SqlStatement_mysql5::bindParam(unsigned column, double value)
+{
+	MYSQL_BIND *b = allocParBinding(column);
+	b->buffer_type = MYSQL_TYPE_DOUBLE;
+	b->buffer = Alloc::alloc(sizeof(double));
+	*(double *)b->buffer = value;
+}
+
 void SqlStatement_mysql5::bindParam(unsigned column, const String &value)
 {
 	MYSQL_BIND *b = allocParBinding(column);
@@ -180,6 +189,15 @@ void SqlStatement_mysql5::bindParam(unsigned column, const String &value)
 	b->buffer = Alloc::alloc(value.utf8().getSize());
 	memcpy(b->buffer, value.utf8().toStr(), value.utf8().getSize());
 	b->buffer_length = value.utf8().getSize();
+}
+
+void SqlStatement_mysql5::bindParam(unsigned column, const Blob &value)
+{
+	MYSQL_BIND *b = allocParBinding(column);
+	b->buffer_type = MYSQL_TYPE_VAR_STRING;
+	b->buffer = Alloc::alloc(value.getSize());
+	memcpy(b->buffer, value.toStr(), value.getSize());
+	b->buffer_length = value.getSize();
 }
 
 void SqlStatement_mysql5::bindParam(unsigned column, const Date &value)
@@ -191,13 +209,37 @@ void SqlStatement_mysql5::bindParam(unsigned column, const Date &value)
 	//memcpy(b->buffer, value.utf8().toStr(), value.utf8().getSize());
 }
 
-void SqlStatement_mysql5::bindParam(unsigned column, const Blob &value)
+void SqlStatement_mysql5::bindParam(unsigned column, Variant *value)
 {
-	MYSQL_BIND *b = allocParBinding(column);
-	b->buffer_type = MYSQL_TYPE_VAR_STRING;
-	b->buffer = Alloc::alloc(value.getSize());
-	memcpy(b->buffer, value.toStr(), value.getSize());
-	b->buffer_length = value.getSize();
+	switch (value->getType()) {
+	case Variant::VT_Null:
+		bindParamNull(column);
+		break;
+
+	case Variant::VT_Bool:
+		bindParam(column, value->toBool() ? 1 : 0);
+		break;
+
+	case Variant::VT_Int:
+		bindParam(column, value->toInt());
+		break;
+
+	case Variant::VT_Double:
+		bindParam(column, value->toDouble());
+		break;
+
+	case Variant::VT_String:
+		bindParam(column, value->toString());
+		break;
+
+	case Variant::VT_Binary:
+		bindParam(column, value->toBinary());
+		break;
+
+	default:
+		xthrownew(InvalidFormatExcept("sql type", value->getName()));
+		break;
+	}
 }
 
 void SqlStatement_mysql5::executeUpdate()

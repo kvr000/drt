@@ -65,7 +65,7 @@ int main(void)
 		rs->bindResult(s_str, &vs);
 		if (rs->fetchRow()) {
 			do {
-				printf("b=%4d i=%4d s=%s z=%s\n", vi, rs->getInt(i_str), rs->getString(s_str).utf8().toStr(), vs.utf8().toStr());
+				printf("b=%4d i=%4d s=%s z=%s\n", vi, (int)rs->getInt(i_str), rs->getString(s_str).utf8().toStr(), vs.utf8().toStr());
 			} while (rs->fetchRow());
 			break;
 		}

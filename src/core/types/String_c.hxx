@@ -179,12 +179,14 @@ public:
 	String_c &			append(const String_c &s);
 	String_c &			append(const TC *str, size_t size);
 	String_c &			append(const TC *str);
+	String_c &			appendAscii(const char *str, size_t size);
 	String_c &			appendChar(TC c);
 	String_c &			appendReverse(const TC *str, size_t size);
 	String_c &			appendNumber(Sint32 number, int base = 10);
 	String_c &			appendNumber(Uint32 number, int base = 10);
 	String_c &			appendNumber(Sint64 number, int base = 10);
 	String_c &			appendNumber(Uint64 number, int base = 10);
+	String_c &			appendNumber(double number);
 
 	DR_MINLINE String_c &		operator+=(const String_c &s)		{ return append(s); }
 	DR_MINLINE String_c &		operator+=(const TC *s)			{ return append(s); }
@@ -212,6 +214,7 @@ public:
 
 	static String_c			createNumber(Sint64 number, int base = 10);
 	static String_c			createNumber(Uint64 number, int base = 10);
+	static String_c			createNumber(double number);
 
 public:
 	void				copyS(const String_c &s);

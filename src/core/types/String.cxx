@@ -1402,6 +1402,13 @@ DR_EXPORT_MET String String::createNumber(Uint32 value)
 	return String(s);
 }
 
+DR_EXPORT_MET String String::createNumber(double value)
+{
+	BString s;
+	s.appendNumber(value);
+	return String(s);
+}
+
 DR_EXPORT_MET String &String::operator=(const String &s)
 {
 	i_setDoref(s.d);

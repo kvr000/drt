@@ -349,18 +349,27 @@ protected:
 		WeakRef_g **		weak_iface_refs;
 	};
 	
-	mutable struct ObjectInfo *	core_data;
-
 protected:
 	/**
 	 * reference count
+	 * 0 means one reference, once coming negative, the object is destroyed
 	 */
 	mutable Refcnt			refcnt;
+
+	/**
+	 * runtime information
+	 */
+	mutable struct ObjectInfo *	core_data;
 
 	/**
 	 * constructor
 	 */
 	DR_CONSTRUCT			Object();
+
+	/**
+	 * no initialization constructor
+	 */
+	DR_CONSTRUCT			Object(const None &);
 
 protected:
 	/**

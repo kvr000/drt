@@ -134,6 +134,9 @@ public:
 class DR_PUB String: public Base
 {
 public:
+	typedef StrData			Data;
+
+public:
 	DR_RINLINE			String()				{ d = StrData::zero.ref(); }
 	DR_RINLINE			String(const Null &)			{ d = StrData::null.ref(); }
 	DR_RINLINE			String(const String &s)			{ d = s.refD(); }
@@ -149,10 +152,11 @@ public:
 	static String			createUpperUtf8(const char *utf8, size_t size);
 	static String			createLower(const String &str);
 	static String			createUpper(const String &str);
-	static String			createNumber(Sint64 value);
-	static String			createNumber(Uint64 value);
 	static String			createNumber(Sint32 value);
 	static String			createNumber(Uint32 value);
+	static String			createNumber(Sint64 value);
+	static String			createNumber(Uint64 value);
+	static String			createNumber(double value);
 
 
 public:

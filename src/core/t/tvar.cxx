@@ -33,97 +33,30 @@
  * @license	http://www.gnu.org/licenses/lgpl.txt GNU Lesser General Public License v3
  **/
 
-#include <stdio.h>
-#include <string.h>
-#include <unistd.h>
-#include <signal.h>
-
-#include <dr/BString.hxx>
-#include <dr/WString.hxx>
-#include <dr/String.hxx>
+#include <dr/Ref.hxx>
+#include <dr/Variant.hxx>
 
 #include <dr/testenv/testenv.hxx>
 
 DR_NS_USE
 DR_TESTENV_NS_USE
 
-#define TEST_LOCK
-#define TEST_OP
-#define TEST_GSTR
+#define TEST_VARIANT
 
-#ifdef TEST_LOCK
-TESTNS(lock);
+#ifdef TEST_VARIANT
+TESTNS(variant);
 void test()
 {
-	char *b;
-	BString s("bla");
-	b = s.lock(9);
-	strcpy(b, "diesesehy");
-	s.unlock(6);
-	DR_Assert(s == "dieses");
+	ERef<Variant> var0(new Variant(false));
 }
-TESTNSE(lock);
-#endif
-
-#ifdef TEST_OP
-TESTNS(op);
-void test()
-{
-	BString s;
-	s = "blediese"; s.removeLeft(3); DR_Assert(s == "diese");
-	s = "blediese"; s.removeMid(3); DR_Assert(s == "ble");
-	s = "blediese"; s.removeMid(3, 2); DR_Assert(s == "bleese");
-	s = "    blekeke    "; s.stripSpaces(); DR_Assert(s == "blekeke");
-	s = "        "; s.stripSpaces(); DR_Assert(s == "");
-}
-TESTNSE(op);
-#endif
-
-#ifdef TEST_GSTR
-TESTNS(gstr);
-void test()
-{
-	String s("testfile");
-	s.wide().toStr();
-	s.append(L"bl");
-	s.utf8();
-	s.wide();
-	s.bcmp("bla");
-	String sw("testw");
-	s.utf8();
-	s.wide();
-	s.bcmp("bla");
-}
-TESTNSE(gstr);
-#endif
-
-#ifdef TEST_STR
-TESTNS(str);
-void test()
-{
-	{
-		String sm(".");
-		String ss("..");
-		CHECK(sm.find(ss) < 0);
-		CHECK(ss.find(sm) == 0);
-		CHECK(ss.find(sm, 0) == 0);
-		CHECK(ss.find(sm, 1) == 1);
-	}
-}
-TESTNSE(str);
+TESTNSE(variant);
 #endif
 
 int main()
 {
 	test_init();
-#ifdef TEST_LOCK
-	TESTRUN(lock);
-#endif
-#ifdef TEST_OP
-	TESTRUN(op);
-#endif
-#ifdef TEST_GSTR
-	TESTRUN(gstr);
+#ifdef TEST_VARIANT
+	TESTRUN(variant);
 #endif
 	return 0;
 }

@@ -40,6 +40,7 @@
 
 #include <dr/Object.hxx>
 #include <dr/Blob.hxx>
+#include <dr/Variant.hxx>
 
 #include <dr/sql/Date.hxx>
 
@@ -63,16 +64,18 @@ public:
 	virtual void			bindResult(const String &column, Sint64 *value) = 0;
 	virtual void			bindResult(unsigned column, String *value) = 0;
 	virtual void			bindResult(const String &column, String *value) = 0;
-	virtual void			bindResult(unsigned column, Blob *date) = 0;
+	virtual void			bindResult(unsigned column, Blob *value) = 0;
 	virtual void			bindResult(const String &column, Blob *value) = 0;
-	virtual void			bindResult(unsigned column, Date *date) = 0;
+	virtual void			bindResult(unsigned column, Date *value) = 0;
 	virtual void			bindResult(const String &column, Date *value) = 0;
+	virtual void			bindResult(unsigned column, Variant **value) = 0;
+	virtual void			bindResult(const String &column, Variant **value) = 0;
 
 	virtual bool			fetchRow() = 0;
 
 public:
-	virtual int			getInt(unsigned column) = 0;
-	virtual int			getInt(const String &column) = 0;
+	virtual Sint64			getInt(unsigned column) = 0;
+	virtual Sint64			getInt(const String &column) = 0;
 	virtual double			getDouble(unsigned column) = 0;
 	virtual double			getDouble(const String &column) = 0;
 	virtual Blob			getBlob(unsigned column) = 0;
@@ -81,6 +84,8 @@ public:
 	virtual String			getString(const String &column) = 0;
 	virtual Date			getDate(unsigned column) = 0;
 	virtual Date			getDate(const String &column) = 0;
+	virtual Variant *		getVariant(unsigned column) = 0;
+	virtual Variant *		getVariant(const String &column) = 0;
 };
 
 

@@ -74,9 +74,11 @@ public:
 	virtual void			bindParam(unsigned param_id, Sint16 value);
 	virtual void			bindParam(unsigned param_id, Sint32 value);
 	virtual void			bindParam(unsigned param_id, Sint64 value);
+	virtual void			bindParam(unsigned param_id, double value);
 	virtual void			bindParam(unsigned param_id, const String &value);
-	virtual void			bindParam(unsigned param_id, const Date &date);
-	virtual void			bindParam(unsigned param_id, const Blob &date);
+	virtual void			bindParam(unsigned param_id, const Blob &value);
+	virtual void			bindParam(unsigned param_id, const Date &value);
+	virtual void			bindParam(unsigned param_id, Variant *value);
 
 public:
 	virtual ResultSet *		executeQuery();

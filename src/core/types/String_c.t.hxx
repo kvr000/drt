@@ -437,6 +437,23 @@ String_c<Subtype> &String_c<Subtype>::appendChar(TC c)
 }
 
 template <typename Subtype>
+String_c<Subtype> &String_c<Subtype>::appendAscii(const char *s, size_t slen)
+{
+	if (slen == 0) {
+		// no modification
+	}
+	else {
+		reallocSelf(d->size+slen);
+		for (size_t i = 0; i < slen; i++) {
+			d->str()[d->size+i] = s[i];
+		}
+		d->size += slen;
+		d->str()[d->size] = '\0';
+	}
+	return *this;
+}
+
+template <typename Subtype>
 String_c<Subtype> &String_c<Subtype>::appendReverse(const TC *s, size_t slen)
 {
 	if (slen == 0) {
@@ -519,6 +536,14 @@ String_c<Subtype> &String_c<Subtype>::appendNumber(Uint64 number, int base)
 		number /= base;
 	} while (number != 0);
 	return appendReverse(buf, len);
+}
+
+template <typename Subtype>
+String_c<Subtype> &String_c<Subtype>::appendNumber(double number)
+{
+	char buf[128];
+	size_t len = sprintf(buf, "%g", number);
+	return appendAscii(buf, len);
 }
 
 template <typename Subtype>
@@ -723,6 +748,13 @@ template <typename Subtype>
 DR_EXPORT_MET String_c<Subtype> String_c<Subtype>::createNumber(Uint64 value, int base)
 {
 	String_c r; r.appendNumber(value, base);
+	return r;
+}
+
+template <typename Subtype>
+DR_EXPORT_MET String_c<Subtype> String_c<Subtype>::createNumber(double value)
+{
+	String_c r; r.appendNumber(value);
 	return r;
 }
 

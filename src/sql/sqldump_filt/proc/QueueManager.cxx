@@ -14,6 +14,7 @@ DR_NS_USE;
 DR_OBJECT_DEF(DR_SQL_SQLDUMP_FILT_NS_STR, QueueManager, Object);
 DR_OBJECT_IMPL_SIMPLE(QueueManager);
 
+const Blob QueueManager::NULL_blob(Const::bstring("NULL"));
 
 QueueManager::QueueManager():
 	proc_counter(0),
@@ -314,9 +315,15 @@ Blob QueueManager::processOneData(Sint64 line_no, const Blob &line_data)
 			break;
 		ERef<Evaluator::Arguments::Values> vals(new Evaluator::Arguments::Values());;
 		for (size_t i = 0; i < values.count(); i++) {
-			if (!isdigit(*values[i].toStr()))
-				continue;
-			vals->operator[](i) = strtoll(values[i].toStr(), NULL, 10);
+			if (isdigit(*values[i].toStr())) {
+				vals->operator[](i) = strtoll(values[i].toStr(), NULL, 10);
+			}
+			else if (values[i] == NULL_blob) {
+				vals->operator[](i) = 0;
+			}
+			else {
+				// skip value
+			}
 		}
 		ERef<Evaluator::Arguments> args(new Evaluator::Arguments(&constants, vals));
 		for (RList<Evaluator>::Node *n = tev->iterFirst(); n; n = tev->iterNext(n)) {

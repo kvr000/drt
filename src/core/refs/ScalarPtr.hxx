@@ -47,6 +47,7 @@ DR_NS_BEGIN
 
 class ScalarPtr
 {
+public:
 	enum Type {
 		T_None			= 0,
 		T_Bool,
@@ -58,6 +59,9 @@ class ScalarPtr
 		T_Uint16,
 		T_Uint32,
 		T_Uint64,
+		T_Float,
+		T_Double,
+		T_LongDouble,
 		T_String,
 		T_Blob,
 		T_Object,
@@ -73,9 +77,22 @@ public:
 	DR_CONSTRUCT			ScalarPtr(Uint16 *ptr):			val_type(T_Uint16), val_ptr(ptr) {}
 	DR_CONSTRUCT			ScalarPtr(Uint32 *ptr):			val_type(T_Uint32), val_ptr(ptr) {}
 	DR_CONSTRUCT			ScalarPtr(Uint64 *ptr):			val_type(T_Uint64), val_ptr(ptr) {}
+	DR_CONSTRUCT			ScalarPtr(float *ptr):			val_type(T_Float), val_ptr(ptr) {}
+	DR_CONSTRUCT			ScalarPtr(double *ptr):			val_type(T_Double), val_ptr(ptr) {}
+	DR_CONSTRUCT			ScalarPtr(long double *ptr):		val_type(T_LongDouble), val_ptr(ptr) {}
 	DR_CONSTRUCT			ScalarPtr(String *ptr):			val_type(T_String), val_ptr(ptr) {}
 	DR_CONSTRUCT			ScalarPtr(Blob *ptr):			val_type(T_Blob), val_ptr(ptr) {}
 	DR_CONSTRUCT			ScalarPtr(Object **ptr):		val_type(T_Object), val_ptr(ptr) {}
+
+public:
+	DR_RINLINE Type			getType()				{ return val_type; }
+
+	/**
+	 * Returns the common type that the value handles
+	 * The common types are:
+	 * T_None, T_Bool, T_Sint64, T_Uint64, T_Double, T_String, T_Blob, T_Object
+	 */
+	DR_RINLINE Type			getCommonType()				{ switch (val_type) { case T_None: return T_None; case T_Bool: return T_Bool; case T_Sint8: case T_Sint16: case T_Sint32: case T_Sint64: return T_Sint64; case T_Uint8: case T_Uint16: case T_Uint32: case T_Uint64: return T_Uint64; case T_Float: case T_Double: case T_LongDouble: return T_Double; case T_String: return T_String; case T_Blob: return T_Blob; case T_Object: return T_Object; } }
 
 protected:
 	Type				val_type;

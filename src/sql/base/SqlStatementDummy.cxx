@@ -89,6 +89,10 @@ void SqlStatementDummy::bindParam(unsigned column, Sint64 value)
 {
 }
 
+void SqlStatementDummy::bindParam(unsigned column, double value)
+{
+}
+
 void SqlStatementDummy::bindParam(unsigned column, const String &value)
 {
 }
@@ -98,6 +102,10 @@ void SqlStatementDummy::bindParam(unsigned column, const Date &value)
 }
 
 void SqlStatementDummy::bindParam(unsigned column, const Blob &value)
+{
+}
+
+void SqlStatementDummy::bindParam(unsigned column, Variant *variant)
 {
 }
 

@@ -115,6 +115,16 @@ void ResultSet_mysql5::resConv_String(ResultSet_mysql5 *this_, conversion *conv)
 	*(String *)conv->user_var = this_->getString(conv->column);
 }
 
+void ResultSet_mysql5::resConv_Blob(ResultSet_mysql5 *this_, conversion *conv)
+{
+	*(Blob *)conv->user_var = this_->getBlob(conv->column);
+}
+
+void ResultSet_mysql5::resConv_Variant(ResultSet_mysql5 *this_, conversion *conv)
+{
+	DR_REF_XCHG((Variant **)conv->user_var, this_->getVariant(conv->column));
+}
+
 void ResultSet_mysql5::bindResult(unsigned column, Sint8 *value)
 {
 	MYSQL_BIND *rb = allocResBinding(column);
@@ -177,9 +187,7 @@ void ResultSet_mysql5::bindResult(const String &column, String *value)
 
 void ResultSet_mysql5::bindResult(unsigned column, Blob *value)
 {
-	MYSQL_BIND *rb = allocResBinding(column);
-	rb->buffer_type = MYSQL_TYPE_LONGLONG;
-	rb->buffer = value;
+	addResConversion(&resConv_Blob, column, 0, value);
 }
 
 void ResultSet_mysql5::bindResult(const String &column, Blob *value)
@@ -195,6 +203,16 @@ void ResultSet_mysql5::bindResult(unsigned column, Date *value)
 }
 
 void ResultSet_mysql5::bindResult(const String &column, Date *value)
+{
+	return bindResult(getColumnIdDirect(column), value);
+}
+
+void ResultSet_mysql5::bindResult(unsigned column, Variant **value)
+{
+	addResConversion(&resConv_Variant, column, 0, value);
+}
+
+void ResultSet_mysql5::bindResult(const String &column, Variant **value)
 {
 	return bindResult(getColumnIdDirect(column), value);
 }
@@ -229,14 +247,14 @@ bool ResultSet_mysql5::fetchRow()
 	}
 }
 
-int ResultSet_mysql5::getInt(unsigned column)
+Sint64 ResultSet_mysql5::getInt(unsigned column)
 {
 	int err;
 	my_bool null;
-	Sint32 value;
+	Sint64 value;
 	MYSQL_BIND b;
 	memset(&b, 0, sizeof(b));
-	b.buffer_type = MYSQL_TYPE_LONG;
+	b.buffer_type = MYSQL_TYPE_LONGLONG;
 	b.buffer = &value;
 	b.is_null = &null;
 	switch ((err = mysql_stmt_fetch_column(stmt, &b, column, 0))) {
@@ -248,7 +266,7 @@ int ResultSet_mysql5::getInt(unsigned column)
 	}
 }
 
-int ResultSet_mysql5::getInt(const String &column)
+Sint64 ResultSet_mysql5::getInt(const String &column)
 {
 	return getInt(getColumnIdDirect(column));
 }
@@ -383,6 +401,58 @@ Date ResultSet_mysql5::getDate(unsigned column)
 Date ResultSet_mysql5::getDate(const String &column)
 {
 	return getDate(getColumnIdDirect(column));
+}
+
+Variant *ResultSet_mysql5::getVariant(unsigned column)
+{
+	switch (stmt->fields[column].type) {
+	case MYSQL_TYPE_NULL:
+		return new Variant(Null());
+
+	case MYSQL_TYPE_BIT:
+		return new Variant((bool)getInt(column));
+
+	case MYSQL_TYPE_TINY:
+	case MYSQL_TYPE_SHORT:
+	case MYSQL_TYPE_INT24:
+	case MYSQL_TYPE_LONG:
+	case MYSQL_TYPE_LONGLONG:
+		return new Variant(getInt(column));
+
+	case MYSQL_TYPE_DECIMAL:
+	case MYSQL_TYPE_NEWDECIMAL:
+	case MYSQL_TYPE_FLOAT:
+	case MYSQL_TYPE_DOUBLE:
+		return new Variant(getDouble(column));
+
+	case MYSQL_TYPE_VARCHAR:
+	case MYSQL_TYPE_VAR_STRING:
+	case MYSQL_TYPE_STRING:
+	case MYSQL_TYPE_ENUM:
+	case MYSQL_TYPE_SET:
+		return new Variant(getString(column));
+
+	case MYSQL_TYPE_TINY_BLOB:
+	case MYSQL_TYPE_MEDIUM_BLOB:
+	case MYSQL_TYPE_LONG_BLOB:
+	case MYSQL_TYPE_BLOB:
+		return new Variant(getBlob(column));
+
+	case MYSQL_TYPE_TIMESTAMP:
+	case MYSQL_TYPE_DATE:
+	case MYSQL_TYPE_TIME:
+	case MYSQL_TYPE_DATETIME:
+	case MYSQL_TYPE_YEAR:
+	case MYSQL_TYPE_NEWDATE:
+	case MYSQL_TYPE_GEOMETRY:
+	default:
+		return new Variant(getString(column));
+	}
+}
+
+Variant *ResultSet_mysql5::getVariant(const String &column)
+{
+	return getVariant(getColumnIdDirect(column));
 }
 
 

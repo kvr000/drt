@@ -74,13 +74,15 @@ public:
 	virtual void			bindResult(const String &column, Blob *date);
 	virtual void			bindResult(unsigned column, Date *date);
 	virtual void			bindResult(const String &column, Date *date);
+	virtual void			bindResult(unsigned column, Variant **value);
+	virtual void			bindResult(const String &column, Variant **value);
 
 public:
 	virtual bool			fetchRow();
 
 public:
-	virtual int			getInt(unsigned column);
-	virtual int			getInt(const String &column);
+	virtual Sint64			getInt(unsigned column);
+	virtual Sint64			getInt(const String &column);
 	virtual double			getDouble(unsigned column);
 	virtual double			getDouble(const String &column);
 	virtual Blob			getBlob(unsigned column);
@@ -89,6 +91,8 @@ public:
 	virtual String			getString(const String &column);
 	virtual Date			getDate(unsigned column);
 	virtual Date			getDate(const String &column);
+	virtual Variant *		getVariant(unsigned column);
+	virtual Variant *		getVariant(const String &column);
 
 protected:
 	typedef struct conversion
@@ -121,6 +125,7 @@ protected:
 protected:
 	static void			resConv_String(ResultSet_mysql5 *this_, conversion *conv);
 	static void			resConv_Blob(ResultSet_mysql5 *this_, conversion *conv);
+	static void			resConv_Variant(ResultSet_mysql5 *this_, conversion *conv);
 	static void			resConv_Date(ResultSet_mysql5 *this_, conversion *conv);
 };
 

@@ -43,57 +43,110 @@ struct String_constants
 {
 	struct Node: public Base
 	{
-		String			str;
-		Node *			next;
+		Node *				next;
 
-		/* constructor */	Node(const String &str_, Node *next_): str(str_), next(next_) {}
+		/* constructor */		Node(Node *next_)		: next(next_) {}
 	};
 
-	size_t				hash_size;
-	Node **				hash;
+	struct SNode: public Node
+	{
+		String				str;
+
+		/* constructor */		SNode(SNode *next_, const String &str_): Node(next_), str(str_) {}
+	};
+
+	struct BNode: public Node
+	{
+		BString				bstr;
+		/* constructor */		BNode(BNode *next_, const BString &bstr_): Node(next_), bstr(bstr_) {}
+	};
+
+	size_t				shash_size;
+	SNode **			shash;
+	size_t				bhash_size;
+	BNode **			bhash;
 	Mutex *				wlock;
 } *volatile constants;
 
 static void createConstants()
 {
 	String_constants *lcons = (String_constants *)AllocConst::alloc(sizeof(String_constants));
-	lcons->hash_size = 1024;
-	lcons->hash = (String_constants::Node **)AllocConst::alloc(lcons->hash_size*sizeof(String_constants::Node *));
-	memset(lcons->hash, 0, lcons->hash_size*sizeof(String_constants::Node *));
+	lcons->shash_size = 1024;
+	lcons->shash = (String_constants::SNode **)AllocConst::alloc(lcons->shash_size*sizeof(String_constants::SNode *));
+	memset(lcons->shash, 0, lcons->shash_size*sizeof(String_constants::SNode *));
+	lcons->bhash_size = 1024;
+	lcons->bhash = (String_constants::BNode **)AllocConst::alloc(lcons->bhash_size*sizeof(String_constants::BNode *));
+	memset(lcons->bhash, 0, lcons->bhash_size*sizeof(String_constants::BNode *));
 	lcons->wlock = Mutex::create();
 
 	if (!Atomic::cmpxchg((void **)(void *)&constants, NULL, lcons)) {
-		//Alloc::free(lcons->hash);
 		//lcons->wlock->unref();
+		//Alloc::free(lcons->bhash);
+		//Alloc::free(lcons->shash);
 		//Alloc::free(lcons);
 	}
+}
+
+const BString &Const::bstring(const char *bstr_)
+{
+	BString bstr(bstr_);
+	String_constants::BNode *node;
+
+	if (!constants)
+		createConstants();
+
+	size_t hash = bstr.getHash();
+
+	for (node = (String_constants::BNode *)constants->bhash[hash&(constants->bhash_size-1)]; node; node = (String_constants::BNode *)node->next) {
+		if (bstr.beq(node->bstr))
+			goto out;
+	}
+
+	{
+		constants->wlock->lock();
+		for (node = (String_constants::BNode *)constants->bhash[hash&(constants->bhash_size-1)]; node; node = (String_constants::BNode *)node->next) {
+			if (bstr.beq(node->bstr))
+				goto out_unlock;
+		}
+		node = new String_constants::BNode(constants->bhash[hash&(constants->bhash_size-1)], bstr);
+		constants->bhash[hash&(constants->bhash_size-1)] = node;
+
+out_unlock:
+		constants->wlock->unlock();
+	}
+out:
+	return node->bstr;
 }
 
 const String &Const::string(const char *str_)
 {
 	String str(str_);
-	String_constants::Node *node;
+	String_constants::SNode *node;
 
 	if (!constants)
 		createConstants();
 
 	size_t hash = str.getHash();
 
-	for (node = constants->hash[hash&(constants->hash_size-1)]; node; node = node->next) {
+	for (node = (String_constants::SNode *)constants->shash[hash&(constants->shash_size-1)]; node; node = (String_constants::SNode *)node->next) {
 		if (str.beq(node->str))
 			goto out;
 	}
 
-	constants->wlock->lock();
-	for (node = constants->hash[hash&(constants->hash_size-1)]; node; node = node->next) {
-		if (str.beq(node->str))
-			goto out_unlock;
-	}
-	node = new String_constants::Node(str, constants->hash[hash&(constants->hash_size-1)]);
-	constants->hash[hash&(constants->hash_size-1)] = node;
+	{
+		BString bstr(bstring(str_));
+		str.setUtf8(bstr);
+		constants->wlock->lock();
+		for (node = (String_constants::SNode *)constants->shash[hash&(constants->shash_size-1)]; node; node = (String_constants::SNode *)node->next) {
+			if (str.beq(node->str))
+				goto out_unlock;
+		}
+		node = new String_constants::SNode(constants->shash[hash&(constants->shash_size-1)], str);
+		constants->shash[hash&(constants->shash_size-1)] = node;
 
 out_unlock:
-	constants->wlock->unlock();
+		constants->wlock->unlock();
+	}
 out:
 	return node->str;
 }

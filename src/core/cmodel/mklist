@@ -8,4 +8,5 @@ SOURCES:
 	:${SD_CMODEL}/Iface.cxx:g=s,t;prio=48
 	:${SD_CMODEL}/Object.hxx:g=di,t
 	:${SD_CMODEL}/Object.cxx:g=s,t;prio=49
+	:${SD_CMODEL}/Variant.cxx:g=s,t,gh,di
 

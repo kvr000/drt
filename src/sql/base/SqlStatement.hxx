@@ -40,6 +40,7 @@
 
 #include <dr/Object.hxx>
 #include <dr/Blob.hxx>
+#include <dr/Variant.hxx>
 
 DR_SQL_NS_BEGIN
 
@@ -67,9 +68,11 @@ public:
 	virtual void			bindParam(unsigned param_id, Sint16 value) = 0;
 	virtual void			bindParam(unsigned param_id, Sint32 value) = 0;
 	virtual void			bindParam(unsigned param_id, Sint64 value) = 0;
+	virtual void			bindParam(unsigned param_id, double value) = 0;
 	virtual void			bindParam(unsigned param_id, const String &value) = 0;
-	virtual void			bindParam(unsigned param_id, const Date &date) = 0;
-	virtual void			bindParam(unsigned param_id, const Blob &date) = 0;
+	virtual void			bindParam(unsigned param_id, const Blob &value) = 0;
+	virtual void			bindParam(unsigned param_id, const Date &value) = 0;
+	virtual void			bindParam(unsigned param_id, Variant *value) = 0;
 
 public:
 	virtual ResultSet *		executeQuery() = 0;
