@@ -171,8 +171,9 @@ sub dieContext
 {
 	my $this		= shift;
 	my $msg			= shift;
+	my $cause		= shift;
 
-	dr::Util::doDie("$this->{file_context}: $msg");
+	dr::Util::doDie(defined $cause && $cause =~ m/^\S+:\d+:/ ? "$this->{file_context}: $msg\n$cause" : "$this->{file_context}: $msg");
 }
 
 our %BASE_MAPPER = (
@@ -431,7 +432,8 @@ sub getFinalType
 		return $type;
 	}
 	else {
-		return $this->getSubModel($this->{base})->getFinalType();
+		eval { return $this->getSubModel($this->{base})->getFinalType(); }
+			or $this->dieContext("failed to open final type", $@);
 	}
 }
 
@@ -577,8 +579,9 @@ sub dieContext
 {
 	my $this		= shift;
 	my $msg			= shift;
+	my $cause		= shift;
 
-	dr::Util::doDie("$this->{file_context}: $msg");
+	dr::Util::doDie(defined $cause && $cause =~ m/^\S+:\d+:/ ? "$this->{file_context}: $msg\n$cause" : "$this->{file_context}: $msg");
 }
 
 sub getRole
@@ -704,7 +707,8 @@ sub getFinalType
 		return $type;
 	}
 	else {
-		return $this->{owner}->getSubModel($this->{type})->getFinalType();
+		eval { return $this->{owner}->getSubModel($this->{type})->getFinalType(); }
+			or $this->dieContext("failed to open final type", $@);
 	}
 }
 
@@ -742,7 +746,8 @@ sub getAssocTarget
 {
 	my $this		= shift;
 
-	return $this->{owner}->getSubModel($this->{ref});
+	eval { return $this->{owner}->getSubModel($this->{ref}); }
+		or $this->dieContext("failed to open final type", $@);
 };
 
 sub expandAssocAttrs

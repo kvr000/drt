@@ -174,16 +174,21 @@ sub translateSqlTypeDecl($$)
 }
 
 my $lineno = 0;
-my $errors = 0;
 
 my @models = ();
 
+my $errors = 0;
+
 while (<$list>) {
 	$lineno++;
-	next if (m/^$/);
+	next if (m/^\s*(#.*|)$/);
 	chomp($_);
-	die "$listname:$lineno: invalid format, need \"location classname\"" unless (m/^(\S+)\s+((\w+::)*\w+)$/);
-	push(@models, readModel($1, $2));
+	eval {
+		die "invalid format, need \"location classname\"" unless (m/^(\S+)\s+((\w+::)*\w+)$/);
+		push(@models, readModel($1, $2));
+		1;
+	}
+		or $errors++, STDERR->print($@ =~ m/^\S+:\d+:/ ? $@ : "$listname:$lineno: $@");
 }
 
 my $sql = $file_trans->createTruncated($targname);
@@ -192,25 +197,29 @@ foreach my $model (@models) {
 	$sql->printf("create table %s (\n", $model->{db_table});
 	my $sqlin = dr::SepOutput->new($sql, { sep_in => ",", sep_all => "\n" });
 	foreach my $attr (@{$model->{attr_list}}) {
-		if ($attr->{stype} eq "attr") {
-			$sqlin->printObj("\t".defvalue($attr->checkDrTag("db_name"), $attr->{name}));
-			$sqlin->printAligned(translateSqlTypeDecl($attr, $attr), 40);
-			if ($attr->getRole()->{primary}) {
-				push(@primary, $attr->{name});
+		eval {
+			if ($attr->{stype} eq "attr") {
+				$sqlin->printObj("\t".defvalue($attr->checkDrTag("db_name"), $attr->{name}));
+				$sqlin->printAligned(translateSqlTypeDecl($attr, $attr), 40);
+				if ($attr->getRole()->{primary}) {
+					push(@primary, $attr->{name});
+				}
 			}
-		}
-		elsif ($attr->{stype} eq "assoc" || $attr->{stype} eq "compos") {
-			my @tprimary = $attr->expandAssocAttrs();
-			foreach my $pa (@tprimary) {
-				$sqlin->printObj("\t$pa->{name}");
-				$sqlin->printAligned(translateSqlTypeDecl($attr, $pa->{attr}), 40);
-				$sqlin->printAlignedAdd("-- $attr->{name}: $pa->{attr}->{owner}->{full}.$pa->{attr}->{name}", 72);
-				push(@primary, $pa->{name});
+			elsif ($attr->{stype} eq "assoc" || $attr->{stype} eq "compos") {
+				my @tprimary = $attr->expandAssocAttrs();
+				foreach my $pa (@tprimary) {
+					$sqlin->printObj("\t$pa->{name}");
+					$sqlin->printAligned(translateSqlTypeDecl($attr, $pa->{attr}), 40);
+					$sqlin->printAlignedAdd("-- $attr->{name}: $pa->{attr}->{owner}->{full}.$pa->{attr}->{name}", 72);
+					push(@primary, $pa->{name});
+				}
 			}
+			else {
+				dr::Util::doDie("$attr->{owner}->{filename}:0: invalid stype $attr->{stype}");
+			}
+			1;
 		}
-		else {
-			dr::Util::doDie("$attr->{owner}->{filename}:0: invalid stype $attr->{stype}");
-		}
+			or $errors++, STDERR->print($@);
 	}
 	if (@primary) {
 		$sqlin->printFlushing("\tprimary key (");
@@ -231,6 +240,8 @@ foreach my $model (@models) {
 	undef $sqlin;
 	$sql->printf(");\n\n");
 }
+
+die "Unrecoverable errors occurred" if ($errors);
 
 if ($file_trans->commit()) {
 }
