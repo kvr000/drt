@@ -125,7 +125,7 @@ WorkerPoolThread::WorkMessage *WorkerPoolThread::checkNextWork()
 			goto out;
 		}
 		else {
-			manager->free_workers[this];
+			manager->free_workers[this] = true;
 		}
 	}
 
