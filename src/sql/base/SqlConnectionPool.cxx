@@ -72,7 +72,7 @@ SqlConnectionHold *SqlConnectionPool::getConnection()
 	MutexLocker list_mutex_locker(list_mutex);
 	SqlConnectionHold *conn;
 	for (;;) {
-		if (RList<SqlConnectionHold>::Node *n = connection_list.getFirst()) {
+		if (RList<SqlConnectionHold>::Node *n = connection_list.iterFirst()) {
 			if (max_oldness > 0 && n->v->created+max_oldness < Time::getTime()) {
 				connection_list.remove(n);
 			}

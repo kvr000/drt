@@ -29,6 +29,7 @@ DR_BUILD_CXX_FLAGS= -DDR_HAS_THREAD_LOCAL -DDR_OS_UNIX
 
 all: targ_all
 default: targ_all
+no: nothing
 
 gmake:
 	dr_genmake ../def/bsd.txt $(DIRS)
@@ -44,10 +45,9 @@ ldeltags:
 	rm -f tags
 tags: ldeltags
 	run_p gen_tags .
-deltags:
-	$(MAKE) ldeltags
+deltags_sub_t:
 	$(MAKE) -C t deltags
-
+deltags: ldeltags deltags_sub_t
 
 
 FLAGS_shlib=$(SOLDXXFLAGS)
@@ -97,28 +97,29 @@ lslist:
 	echo $(DIRS_)mklist
 	echo $(DIRS_)Doxyfile
 
-outclean:
-	$(MAKE) loutclean
+outclean_sub_t:
 	$(MAKE) -C t outclean
-
+outclean: loutclean outclean_sub_t
 loutclean:
 	rm -f drapp
 
-clean:
-	$(MAKE) lclean
+clean_sub_t:
 	$(MAKE) -C t clean
-
+clean: lclean clean_sub_t
 lclean: loutclean limmclean
 limmclean:
 	rm -f $(OBJDIR)/ApplicationCache$(OBJ_EXT) $(OBJDIR)/ApplicationCache$(OBJ_EXT).dep
 
-wclean:
-	$(MAKE) lwclean
+wclean_sub_t:
 	$(MAKE) -C t wclean
-
+wclean: lwclean wclean_sub_t
 lwclean: lclean
 	rm -rf $(BUILD)
 
+lnothing:
+nothing_sub_t:
+	$(MAKE) -C t nothing
+nothing: lnothing nothing_sub_t
 sub_t: targ_local 
 	$(MAKE) -C t
 
@@ -130,10 +131,9 @@ $(OBJDIR)/all_deps.mi:
 	echo "include $(OBJDIR)/*.dep" > $@
 include $(OBJDIR)/all_deps.mi
 
-gh:
-	$(MAKE) lgh
+gh_sub_t:
 	$(MAKE) -C t gh
-
+gh: lgh gh_sub_t
 include Make_gh
 
 targ_pre:

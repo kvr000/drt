@@ -16,6 +16,7 @@ SOURCES:
 	:testenv.hxx:g=dite,t
 	:testenv.cxx:f=cxx;g=s,t
 	:TestObject.cxx:f=cxx;g=s,t,gh,dite
+	:TestObjectKV.cxx:f=cxx;g=s,t,gh,dite
 	no:mklist:g=t
 	lshlib:dr:g=s
 

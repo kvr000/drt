@@ -50,6 +50,7 @@
 
 #include <dr/testenv/testenv.hxx>
 #include <dr/testenv/TestObject.hxx>
+#include <dr/testenv/TestObjectKV.hxx>
 
 DR_NS_USE
 DR_TESTENV_NS_USE
@@ -156,6 +157,15 @@ void test()
 		CHECK(TestObject::countLiving() == 3);
 	}
 	CHECK(TestObject::countLiving() == 0);
+
+	{
+		ERef<TestObjectKV>	o0a(new TestObjectKV(0, "a"));
+		ERef<TestObjectKV>	o0b(new TestObjectKV(0, "b"));
+		ERef<TestObjectKV>	o1a(new TestObjectKV(0, "a"));
+		ERef<TestObjectKV>	o1b(new TestObjectKV(0, "b"));
+		ERef<TestObjectKV::Key>	k0(new TestObjectKV::Key(0));
+		ERef<TestObjectKV::Key>	k1(new TestObjectKV::Key(0));
+	}
 }
 TESTNSE(object);
 #endif
@@ -478,7 +488,7 @@ void test()
 	CHECK(si.find("") == -1);
 	CHECK(si.find("none") == -1);
 	SList<String> list;
-	si.appendList(&list);
+	si.appendToList(&list);
 	StringIndex vsi(&ss_bla, 8, &ss_sehy, 11, &ss_kra, 3, NULL);
 	CHECK(vsi.find(ss_bla) == 8);
 	CHECK(vsi.find(ss_sehy) == 11);
@@ -669,7 +679,7 @@ void test()
 		li.insert(tref(new TestObject(3)));
 		CHECK(tref(li.removeFirst())->getId() == 3);
 		CHECK(tref(li.removeFirst())->getId() == 5);
-		RList<TestObject>::Node *n = li.getFirst();
+		RList<TestObject>::Node *n = li.iterFirst();
 		CHECK(n->v->getId() == 8);
 		n->v.getAndNull()->unref();
 		li.remove(n);

@@ -201,7 +201,7 @@ DR_EXPORT_MET StrData *StrData::allocWide(size_t length)
 DR_EXPORT_MET StrData *StrData::addAsciiSpace(size_t add)
 {
 	if (!b_ok())
-		convertAscii();
+		updateByte();
 	StrData *out = allocAscii(length+add);
 	memcpy(out->b_str(), b_str(), length);
 	unref();
@@ -211,7 +211,7 @@ DR_EXPORT_MET StrData *StrData::addAsciiSpace(size_t add)
 DR_EXPORT_MET StrData *StrData::addWideSpace(size_t add)
 {
 	if (!w_ok())
-		convertWide();
+		updateWide();
 	StrData *out = allocWide(length+add);
 	wmemcpy(out->w_str(), w_str(), length);
 	unref();
@@ -221,7 +221,7 @@ DR_EXPORT_MET StrData *StrData::addWideSpace(size_t add)
 DR_EXPORT_MET StrData *StrData::makeAsciiSpace(size_t newlen)
 {
 	if (!b_ok())
-		convertAscii();
+		updateByte();
 	StrData *out = allocAscii(newlen);
 	memcpy(out->b_str(), b_str(), newlen > length ? length : newlen);
 	unref();
@@ -231,7 +231,7 @@ DR_EXPORT_MET StrData *StrData::makeAsciiSpace(size_t newlen)
 DR_EXPORT_MET StrData *StrData::makeWideSpace(size_t newlen)
 {
 	if (!w_ok())
-		convertWide();
+		updateWide();
 	StrData *out = allocWide(newlen);
 	wmemcpy(out->w_str(), w_str(), newlen > length ? length : newlen);
 	unref();
@@ -284,9 +284,9 @@ DR_EXPORT_MET bool StrData::beq(StrData *sd)
 			break;
 		}
 		if (ff&Winv)
-			this->convertWide();
+			this->updateWide();
 		else
-			sd->convertWide();
+			sd->updateWide();
 		ret = wmemcmp(this->w_str(), sd->w_str(), length) == 0;
 		break;
 	default:
@@ -298,7 +298,40 @@ out:
 	return ret;
 }
 
-DR_EXPORT_MET BString::Data *StrData::convertAscii()
+DR_EXPORT_MET bool StrData::bcmp(StrData *sd)
+{
+	int ff, sf;
+	bool ret = false;
+
+	ff = this->getFlags(); sf = sd->getFlags();
+	switch ((ff|sf)&(Binv|Winv)) {
+	case 0:
+	case Winv:
+		ret = memcmp(this->b_str(), sd->b_str(), length) == 0;
+		break;
+	case Binv:
+		ret = wmemcmp(this->w_str(), sd->w_str(), length) == 0;
+		break;
+	case Binv|Winv:
+		if (length == 0) {
+			ret = true;
+			break;
+		}
+		if (ff&Binv)
+			this->updateByte();
+		else
+			sd->updateByte();
+		ret = memcmp(this->b_str(), sd->b_str(), length) == 0;
+		break;
+	default:
+		DR_AssertInvalid();
+		ret = false;
+	}
+
+	return ret;
+}
+
+DR_EXPORT_MET BString::Data *StrData::refByte()
 {
 	BString::Data *ob, *rb, *nb;
 retry:
@@ -331,7 +364,31 @@ retry:
 	return nb;
 }
 
-DR_EXPORT_MET void StrData::convertWide()
+DR_EXPORT_MET void StrData::updateByte()
+{
+	BString::Data *ob, *nb;
+retry:
+	ob = bytes;
+	if (b_ok(ob))
+		return;
+
+	nb = ((BString *)NULL)->allocDg(length+1);
+	nb->size = length;
+
+	unsigned char *cs = (unsigned char *)nb->str();
+	wchar_t *ws = (wchar_t *)w_get()->str();
+	for (size_t i = length; i-- != 0; cs++, ws++)
+		*cs = ((Uint32)*ws > 127) ? '?' : (char)*ws;
+
+	if (!Atomic::cmpxchg((void *volatile *)(void *)&bytes, ob, nb)) {
+		((BString *)NULL)->unrefDg(nb);
+		goto retry;
+	}
+	if (b_real(ob))
+		((BString *)NULL)->unrefDg(b_real(ob));
+}
+
+DR_EXPORT_MET void StrData::updateWide()
 {
 	WString::Data *ow, *nw;
 retry:
@@ -384,9 +441,9 @@ retry:
 	}
 	else {
 		if (ff&Winv)
-			this->convertWide();
+			this->updateWide();
 		if (sf&Winv)
-			sd->convertWide();
+			sd->updateWide();
 		goto retry;
 	}
 
@@ -1363,19 +1420,19 @@ DR_EXPORT_MET String &String::operator=(const wchar_t *widestr)
 
 DR_EXPORT_MET BString String::ascii() const
 {
-	return BString(d->convertAscii());
+	return BString(d->refByte());
 }
 
 DR_EXPORT_MET WString String::wide() const
 {
-	d->convertWide();
+	d->updateWide();
 	return WString(d->wide->ref());
 }
 
 DR_EXPORT_MET BString String::utf8() const
 {
 	/* TODO: this should be fixed, now simple ascii string is returned */
-	return BString(d->convertAscii());
+	return BString(d->refByte());
 }
 
 DR_EXPORT_MET String &String::setNull()
@@ -1632,9 +1689,14 @@ DR_EXPORT_MET bool String::beq(const String &s) const
 	return d->beq(s.d);
 }
 
+DR_EXPORT_MET bool String::bcmp(const String &s) const
+{
+	return d->bcmp(s.d);
+}
+
 DR_EXPORT_MET bool String::eqUtf8(const char *str, size_t size)
 {
-	BString str_utf8(d->convertAscii());
+	BString str_utf8(d->refByte());
 	if (size != str_utf8.getSize())
 		return false;
 	return memcmp(str, str_utf8.toStr(), size) == 0;
@@ -2078,7 +2140,7 @@ DR_EXPORT_MET void *StringIndex::findPtrXchg(const String &s)
 	return NULL;
 }
 
-DR_EXPORT_MET void StringIndex::appendList(SList<String> *list)
+DR_EXPORT_MET void StringIndex::appendToList(SList<String> *list)
 {
 	for (SintPtr hi = hash_mask; hi >= 0; hi--) {
 		for (element *e = hash_list[hi]; e; e = e->next)

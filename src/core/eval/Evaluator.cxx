@@ -160,7 +160,7 @@ void Evaluator::parseExpression()
 		switch (token_type) {
 		case TT_Finish:
 			{
-				while (StackNode *last = parse_stack.getLast()) {
+				while (StackNode *last = parse_stack.iterLast()) {
 					switch (last->v.type) {
 					case ParseElement::PE_OpenParenthesis:
 						xthrownew(InvalidFormatExcept("expression", "missing right parenthesis"));
@@ -212,7 +212,7 @@ void Evaluator::parseExpression()
 
 		case TT_Operator:
 			{
-				while (StackNode *last = parse_stack.getLast()) {
+				while (StackNode *last = parse_stack.iterLast()) {
 					if (last->v.type != ParseElement::PE_Operation)
 						break;
 					if (priority > 0 ? last->v.priority > (unsigned)priority : last->v.priority >= (unsigned)-priority)
@@ -242,7 +242,7 @@ void Evaluator::parseExpression()
 
 		case TT_CloseParenthesis:
 			{
-				while (StackNode *last = parse_stack.getLast()) {
+				while (StackNode *last = parse_stack.iterLast()) {
 					if (last->v.type == ParseElement::PE_OpenParenthesis) {
 						parse_stack.remove(last);
 						break;

@@ -70,8 +70,8 @@ public:
 	void				remove_g(ListNode_c *n);
 
 protected: // alloc and compare interface
-	virtual ListNode_c *		node_create(const void *v) = 0;
-	virtual ListNode_c *		node_new() = 0;
+	virtual ListNode_c *		node_def(const void *v) = 0;
+	virtual ListNode_c *		node_undef() = 0;
 	virtual void			node_destroy(ListNode_c *d) = 0;
 
 	virtual bool			node_eq(ListNode_c *n, const void *v) = 0;
@@ -87,8 +87,6 @@ struct TListNode: public ListNode_c
 	V				v;
 	DR_RINLINE			TListNode(const V &v_)			: v(v_) { }
 	DR_RINLINE			TListNode(const None &)			{}
-	DR_RINLINE TListNode *		prev()					{ return (TListNode *)ListNode_c::prev; }
-	DR_RINLINE TListNode *		next()					{ return (TListNode *)ListNode_c::next; }
 };
 
 /**
@@ -105,40 +103,25 @@ public:
 
 	typedef TListNode<V>		Node;
 
-	struct iterator
-	{
-		Node *			n;
-		DR_RINLINE		iterator(Node *n_)			: n(n_) { }
-		DR_RINLINE V &		operator*()				{ return n->v; }
-		DR_RINLINE const V &	operator*() const			{ return n->v; }
-		DR_RINLINE V *		operator->()				{ return &n->v; }
-		DR_RINLINE V &		operator++()				{ n = n->next(); return n->v; }
-		DR_RINLINE V &		operator++(int)				{ V *o = &n->v; n = n->next(); return *o; }
-		DR_RINLINE V &		operator--()				{ n = n->prev(); return n->v; }
-		DR_RINLINE V &		operator--(int)				{ V *o = &n->v; n = n->prev(); return *o; }
-		DR_RINLINE bool		valid()					{ return n != NULL; }
-	};
-
 public:
 	DR_RINLINE			TList()					: List_c() { }
 	DR_RINLINE			~TList()				{ destroy_g(); }
 
-	DR_MINLINE Node *		getFirst()				{ return (Node *)link.next; }
-	DR_MINLINE Node *		getLast()				{ return (Node *)link.prev; }
+	DR_MINLINE Node *		iterFirst()				{ return (Node *)link.next; }
+	DR_MINLINE Node *		iterLast()				{ return (Node *)link.prev; }
+	DR_MINLINE Node *		iterNext(Node *iter)			{ return (Node *)iter->next; }
+	DR_MINLINE Node *		iterPrev(Node *iter)			{ return (Node *)iter->prev; }
 
 	DR_RINLINE Node *		append(const V &v)			{ return (Node *)append_g(link.prev, &v); }
 	DR_RINLINE Node *		insert(const V &v)			{ return (Node *)insert_g(link.next, &v); }
 	DR_RINLINE void			remove(Node *n)				{ remove_g(n); }
-	DR_RINLINE V			removeFirst()				{ Node *n = getFirst(); V v = n->v; remove_g(n); return v; }
+	DR_RINLINE V			removeFirst()				{ Node *n = iterFirst(); V v = n->v; remove_g(n); return v; }
 	DR_RINLINE V *			accAppendingNew()			{ return &((Node *)appendNew_g(link.prev))->v; }
 	DR_RINLINE V *			accInsertingNew()			{ return &((Node *)insertNew_g(link.prev))->v; }
 
-	DR_MINLINE iterator		begin()					{ return getFirst(); }
-	DR_MINLINE iterator		end()					{ return getLast(); }
-
 protected: // alloc and compare interface
-	virtual ListNode_c *		node_create(const void *v)		{ Node *n = (Node *)allc().allocC(sizeof(Node)); new(n) Node(*(const V *)v); return n; }
-	virtual ListNode_c *		node_new()				{ Node *n = (Node *)allc().allocC(sizeof(Node)); new(n) Node(None()); return n; }
+	virtual ListNode_c *		node_def(const void *v)			{ Node *n = (Node *)allc().allocC(sizeof(Node)); new(n) Node(*(const V *)v); return n; }
+	virtual ListNode_c *		node_undef()				{ Node *n = (Node *)allc().allocC(sizeof(Node)); new(n) Node(None()); return n; }
 	virtual void			node_destroy(ListNode_c *n_)		{ Node *n = (Node *)n_; n->~Node(); allc().freeC(n, sizeof(Node)); }
 	virtual bool			node_eq(ListNode_c *n_, const void *v)	{ Node *n = (Node *)n_; return comp().teq(n->v, *(const V *)v); }
 

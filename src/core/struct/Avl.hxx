@@ -73,10 +73,10 @@ protected:
 	void				destroy_g();				// must be called from child's destructor
 
 protected: // interface to template
-	virtual int			keycmp(Node_c *node, const void *key) const = 0;
-	virtual Node_c *		nodeDef(const void *key, const void *val) = 0;
-	virtual void			nodeUpdateValue(Node_c *node, const void *key) = 0;
-	virtual void			nodeDestroy(Node_c *p) = 0;
+	virtual int			node_cmp(Node_c *node, const void *key) const = 0;
+	virtual Node_c *		node_def(const void *key, const void *val) = 0;
+	virtual void			node_updateValue(Node_c *node, const void *key) = 0;
+	virtual void			node_destroy(Node_c *p) = 0;
 
 protected:
 	Node_c *			find_g(const void *key) const;
@@ -157,10 +157,10 @@ public:
 	typedef typestore<Allocator, 1>	AllocatorBase;
 
 protected:
-	DR_MINLINE virtual int		keycmp(Node_c *pair, const void *key) const	{ return comp().kcmp(((Node *)pair)->k, *(const K *)key); }
-	DR_MINLINE virtual Node_c *	nodeDef(const void *key, const void *val)	{ return allc().alloc2(*(const K *)key, *(const V *)val); }
-	DR_MINLINE virtual void		nodeUpdateValue(Node_c *node, const void *value){ ((Node *)node)->v = *(V *)value; }
-	DR_MINLINE virtual void		nodeDestroy(Node_c *p)				{ allc().freePair((Node *)p); }
+	DR_MINLINE virtual int		node_cmp(Node_c *pair, const void *key) const	{ return comp().kcmp(((Node *)pair)->k, *(const K *)key); }
+	DR_MINLINE virtual Node_c *	node_def(const void *key, const void *val)	{ return allc().alloc2(*(const K *)key, *(const V *)val); }
+	DR_MINLINE virtual void		node_updateValue(Node_c *node, const void *value){ ((Node *)node)->v = *(V *)value; }
+	DR_MINLINE virtual void		node_destroy(Node_c *p)				{ allc().freePair((Node *)p); }
 
 public:
 	DR_MINLINE Compar &		comp() const					{ return *reinterpret_cast<Compar *>((ComparBase *)this); }

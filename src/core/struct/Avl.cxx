@@ -59,7 +59,7 @@ void Avl_c::destroyRecursive_g(Node_c *node)
 Avl_c::Node_c *Avl_c::find_g(const void *key) const
 {
 	for (Node_c *cur = root; cur; ) {
-		Sint8 c = -keycmp(cur, key);
+		Sint8 c = -node_cmp(cur, key);
 		if (c == 0)
 			return cur;
 		cur = cur->refs[1+c];
@@ -142,11 +142,11 @@ bool Avl_c::create_g(const void *key, const void *value)
 {
 	Node_c **cur;
 	int last_step = 0;
-	for (cur = &root; *cur && (last_step = -keycmp(*cur, key)) != 0; cur = &(*cur)->refs[1+last_step]);
+	for (cur = &root; *cur && (last_step = -node_cmp(*cur, key)) != 0; cur = &(*cur)->refs[1+last_step]);
 	if (*cur) {
 		return false;
 	}
-	*cur = nodeDef(key, value);
+	*cur = node_def(key, value);
 	count++;
 	(*cur)->balance = 0;
 	if (((*cur)->direction = last_step) == 0) {
@@ -166,12 +166,12 @@ bool Avl_c::replace_g(const void *key, const void *value)
 {
 	Node_c **cur;
 	int last_step = 0;
-	for (cur = &root; *cur && (last_step = -keycmp(*cur, key)) != 0; cur = &(*cur)->refs[1+last_step]);
+	for (cur = &root; *cur && (last_step = -node_cmp(*cur, key)) != 0; cur = &(*cur)->refs[1+last_step]);
 	if (*cur) {
-		nodeUpdateValue(*cur, value);
+		node_updateValue(*cur, value);
 		return false;
 	}
-	*cur = nodeDef(key, value);
+	*cur = node_def(key, value);
 	count++;
 	(*cur)->balance = 0;
 	if (((*cur)->direction = last_step) == 0) {
@@ -277,7 +277,7 @@ bool Avl_c::remove_g(const void *key)
 		if (node == lowest) {
 			if ((lowest = node->refs[2]) == NULL && (lowest = node->parent) == NULL) {
 				root = NULL;
-				nodeDestroy(node);
+				node_destroy(node);
 				return true;
 			}
 		}
@@ -289,7 +289,7 @@ bool Avl_c::remove_g(const void *key)
 				// previous block
 				node->parent->refs[1+node->direction] = NULL;
 				rebalanceRemoved_g(node->parent, node->direction);
-				nodeDestroy(node);
+				node_destroy(node);
 				return true;
 			}
 			dir = 1;
@@ -325,7 +325,7 @@ bool Avl_c::remove_g(const void *key)
 			root = repl;
 		}
 		rebalanceRemoved_g(parent, dir);
-		nodeDestroy(node);
+		node_destroy(node);
 		return true;
 	}
 	else {

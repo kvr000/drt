@@ -61,14 +61,16 @@ DR_APP_NS_BEGIN
  *
  * at:	ValueHashNode **		timed_pprev;
  * at:	ValueHashNode *			timed_next;
+ * at:	int				key_id;
  * at:	Ref<Object>			key;
  * at:	Ref<Object>			value;
  */
 
 DR_MET(public)
-ApplicationCache::ValueHashNode::ValueHashNode(Object *key_, Object *value_):
+ApplicationCache::ValueHashNode::ValueHashNode(int key_id_, Object *key_, Object *value_):
 	timed_pprev(NULL),
 	timed_next(NULL),
+	key_id(key_id_),
 	key(key_, true),
 	value(value_, true)
 {
@@ -120,7 +122,7 @@ ApplicationCache::TimedTree::~TimedTree()
 }
 
 DR_MET(protected virtual)
-int ApplicationCache::TimedTree::keycmp(Node_c *node, const void *key) const
+int ApplicationCache::TimedTree::node_cmp(Node_c *node, const void *key) const
 {
 	if (((Node *)node)->expires == *(SysTime *)key)
 		return 0;
@@ -128,13 +130,13 @@ int ApplicationCache::TimedTree::keycmp(Node_c *node, const void *key) const
 }
 
 DR_MET(protected virtual)
-Avl_c::Node_c *ApplicationCache::TimedTree::nodeDef(const void *key, const void *value)
+Avl_c::Node_c *ApplicationCache::TimedTree::node_def(const void *key, const void *value)
 {
 	return new Node(*(SysTime *)key, (ValueHashNode *)value);
 }
 
 DR_MET(protected virtual)
-void ApplicationCache::TimedTree::nodeUpdateValue(Node_c *node_, const void *value_)
+void ApplicationCache::TimedTree::node_updateValue(Node_c *node_, const void *value_)
 {
 	Node *node = (Node *)node_;
 	ValueHashNode *value = (ValueHashNode *)value_;
@@ -146,11 +148,11 @@ void ApplicationCache::TimedTree::nodeUpdateValue(Node_c *node_, const void *val
 }
 
 DR_MET(protected virtual)
-void ApplicationCache::TimedTree::nodeDestroy(Node_c *node_)
+void ApplicationCache::TimedTree::node_destroy(Node_c *node_)
 {
 	Node *node = (Node *)node_;
 	while (node->list_first != NULL) {
-		owner->value_hash.remove(node->list_first->key);
+		owner->value_hash.remove(node->list_first->key_id, node->list_first->key);
 	}
 	delete node;
 }
@@ -205,26 +207,30 @@ ApplicationCache::ValueHash::~ValueHash()
 }
 
 DR_MET(protected virtual)
-bool ApplicationCache::ValueHash::keyeq(dr::Hash_c::Node_c *entry, const void *key) const
+bool ApplicationCache::ValueHash::node_eq(dr::Hash_c::Node_c *entry, const void *key) const
 {
-	return ((ValueHashNode *)entry)->key->eq((Iface *)key);
+	int key_id = (int)(SintPtr)((void **)key)[0];
+	Object *key_obj = (Object *)((void **)key)[1];
+	if (((ValueHashNode *)entry)->key_id != key_id)
+		return false;
+	return key_id < 0 ? ((ValueHashNode *)entry)->key->eq(key_obj) : ((ValueHashNode *)entry)->key->keyEq(key_obj, key_id);
 }
 
 DR_MET(protected virtual)
-dr::Hash_c::Node_c *ApplicationCache::ValueHash::pairDef(const void *key, const void *value)
+dr::Hash_c::Node_c *ApplicationCache::ValueHash::node_def(const void *key, const void *value)
 {
-	return new ValueHashNode((Object *)key, (Object *)value);
+	return new ValueHashNode((int)((void **)key)[0], (Object *)((void **)key)[1], (Object *)value);
 }
 
 DR_MET(protected virtual)
-dr::Hash_c::Node_c *ApplicationCache::ValueHash::pairUndef(const void *key)
+dr::Hash_c::Node_c *ApplicationCache::ValueHash::node_undef(const void *key)
 {
-	return new ValueHashNode((Object *)key, NULL);
+	return new ValueHashNode((int)((void **)key)[0], (Object *)((void **)key)[1], NULL);
 	return NULL;
 }
 
 DR_MET(protected virtual)
-void ApplicationCache::ValueHash::pairDestroy(dr::Hash_c::Node_c *entry)
+void ApplicationCache::ValueHash::node_destroy(dr::Hash_c::Node_c *entry)
 {
 	delete (ValueHashNode *)entry;
 }
@@ -242,16 +248,18 @@ void ApplicationCache::ValueHash::freeList()
 }
 
 DR_MET(public)
-void ApplicationCache::ValueHash::remove(Object *key)
+void ApplicationCache::ValueHash::remove(int key_id, Object *key)
 {
-	remove_g(key->hash(), key);
+	void *hash_key[2] = { (void *)key_id, key };
+	remove_g(key_id < 0 ? key->hash() : key->keyHash(key_id), hash_key);
 }
 
 DR_MET(public)
-ApplicationCache::ValueHashNode *ApplicationCache::ValueHash::createRetCreated(Object *key, Object *value)
+ApplicationCache::ValueHashNode *ApplicationCache::ValueHash::createRetCreated(int key_id, Object *key, Object *value)
 {
 	bool created;
-	ValueHashNode *entry = (ValueHashNode *)create_g(key->hash(), key, &created);
+	void *hash_key[2] = { (void *)key_id, key };
+	ValueHashNode *entry = (ValueHashNode *)create_g(key_id < 0 ? key->hash() : key->keyHash(key_id), hash_key, &created);
 	entry->value.setDoref(value);
 	if (!created)
 		return NULL;
@@ -259,9 +267,10 @@ ApplicationCache::ValueHashNode *ApplicationCache::ValueHash::createRetCreated(O
 }
 
 DR_MET(public)
-ApplicationCache::ValueHashNode *ApplicationCache::ValueHash::find(Object *key)
+ApplicationCache::ValueHashNode *ApplicationCache::ValueHash::find(int key_id, Object *key)
 {
-	return (ValueHashNode *)find_g(key->hash(), key);
+	void *hash_key[2] = { (void *)key_id, key };
+	return (ValueHashNode *)find_g(key_id < 0 ? key->hash() : key->keyHash(key_id), hash_key);
 }
 
 
@@ -305,7 +314,7 @@ DR_MET(public virtual)
  */
 Object *ApplicationCache::findResource(Object *key)
 {
-	if (ValueHashNode *entry = value_hash.find(key)) {
+	if (ValueHashNode *entry = value_hash.find(-1, key)) {
 		return entry->value.getDoref();
 	}
 	else {
@@ -328,12 +337,63 @@ void ApplicationCache::addResource(SysTime expires, Object *key, Object *value)
 {
 	MutexLocker locker(access_lock);
 
-	if (ValueHashNode *entry = value_hash.createRetCreated(key, value)) {
+	if (ValueHashNode *entry = value_hash.createRetCreated(-1, key, value)) {
 		xtry {
 			timed_tree.replace(expires, entry);
 		}
 		xcatchany {
-			xsafe(value_hash.remove(key));
+			xsafe(value_hash.remove(-1, key));
+			xrethrowany;
+		}
+		xend;
+	}
+}
+
+DR_MET(public virtual)
+/**
+ * finds a resource in the cache
+ *
+ * @param key_id
+ * 	key_id to be used for comparision
+ * @param key
+ * 	key to be found
+ *
+ * @return NULL
+ * 	if key is not found in the cache
+ * @return object
+ * 	cached object
+ */
+Object *ApplicationCache::findKeyResource(Object *key, int key_id)
+{
+	if (ValueHashNode *entry = value_hash.find(key_id, key)) {
+		return entry->value.getDoref();
+	}
+	else {
+		return NULL;
+	}
+}
+
+DR_MET(public virtual)
+/**
+ * adds a resource to cache
+ *
+ * @param expires
+ * 	specifies the time the resource expires
+ * @param key
+ * 	specifies the key of the object
+ * @param value
+ * 	specifies value of the cached object
+ */
+void ApplicationCache::addKeyResource(SysTime expires, Object *key, int key_id)
+{
+	MutexLocker locker(access_lock);
+
+	if (ValueHashNode *entry = value_hash.createRetCreated(-1, key, key)) {
+		xtry {
+			timed_tree.replace(expires, entry);
+		}
+		xcatchany {
+			xsafe(value_hash.remove(key_id, key));
 			xrethrowany;
 		}
 		xend;

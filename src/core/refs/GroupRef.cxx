@@ -42,7 +42,7 @@ DR_NS_BEGIN
 bool GroupRef::unrefed()
 {
 	TList<Object *>::Node *node;
-	for (node = object_list.getFirst(); node; node = node->next()) {
+	for (node = object_list.iterFirst(); node; node = object_list.iterNext(node)) {
 		node->v->unref();
 	}
 	delete this;

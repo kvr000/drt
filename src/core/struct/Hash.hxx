@@ -66,10 +66,10 @@ protected:
 	void				destroy_g();				// must be called from child's destructor
 
 protected: // interface to template
-	virtual bool			keyeq(Node_c *pair, const void *key) const = 0;
-	virtual Node_c *		pairDef(const void *key, const void *val) = 0;
-	virtual Node_c *		pairUndef(const void *key) = 0;
-	virtual void			pairDestroy(Node_c *p) = 0;
+	virtual bool			node_eq(Node_c *pair, const void *key) const = 0;
+	virtual Node_c *		node_def(const void *key, const void *val) = 0;
+	virtual Node_c *		node_undef(const void *key) = 0;
+	virtual void			node_destroy(Node_c *p) = 0;
 
 	virtual void *			reallocList(size_t nsize) = 0;
 	virtual void			freeList() = 0;
@@ -146,10 +146,10 @@ public:
 	typedef typestore<Allocator, 1>	AllocatorBase;
 
 protected:
-	DR_MINLINE virtual bool		keyeq(Node_c *pair, const void *key) const		{ return comp().keq(((Node *)pair)->k, *(const K *)key); }
-	DR_MINLINE virtual Node_c *	pairDef(const void *key, const void *val)		{ return allc().alloc2(*(const K *)key, *(const V *)val); }
-	DR_MINLINE virtual Node_c *	pairUndef(const void *key)				{ return allc().allocK(*(const K *)key); }
-	DR_MINLINE virtual void		pairDestroy(Node_c *p)					{ allc().freePair((Node *)p); }
+	DR_MINLINE virtual bool		node_eq(Node_c *pair, const void *key) const		{ return comp().keq(((Node *)pair)->k, *(const K *)key); }
+	DR_MINLINE virtual Node_c *	node_def(const void *key, const void *val)		{ return allc().alloc2(*(const K *)key, *(const V *)val); }
+	DR_MINLINE virtual Node_c *	node_undef(const void *key)				{ return allc().allocK(*(const K *)key); }
+	DR_MINLINE virtual void		node_destroy(Node_c *p)					{ allc().freePair((Node *)p); }
 
 	DR_MINLINE virtual void *	reallocList(size_t nsize)				{ return allc().reallocAr(list, nsize, (hashmask+1)*sizeof(Node_c *)); }
 	DR_MINLINE virtual void		freeList()						{ allc().freeAr(list, (hashmask+1)*sizeof(Node_c *)); }

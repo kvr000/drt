@@ -112,13 +112,13 @@ void MsgSync_unix::unregisterSocket(void *os_handle)
 {
 	TList<socket_notif_data>::Node *node;
 
-	for (node = socket_list.getFirst(); node->v.fd != (SintPtr)os_handle; node = node->next());
+	for (node = socket_list.iterFirst(); node->v.fd != (SintPtr)os_handle; node = socket_list.iterNext(node));
 	socket_list.remove(node);
 }
 
 bool MsgSync_unix::threadXchg(MsgSync *new_sync)
 {
-	if (socket_list.getFirst())
+	if (socket_list.iterFirst())
 		return false;
 	return true;
 }
@@ -133,7 +133,7 @@ void MsgSync_unix::threadSleep()
 
 	/* set select sets */
 	FD_ZERO(&rs); FD_ZERO(&ws); FD_ZERO(&es);
-	for (node = socket_list.getFirst(); node; node = node->next()) {
+	for (node = socket_list.iterFirst(); node; node = socket_list.iterNext(node)) {
 		if (!node->v.precheck.isNull()) {
 			WaitMode mode;
 			if ((mode = node->v.precheck()) != 0) {
@@ -213,7 +213,7 @@ void MsgSync_unix::threadSleep()
 		}
 
 		/* check for set nodes */
-		for (node = socket_list.getFirst(); node; node = node->next()) {
+		for (node = socket_list.iterFirst(); node; node = socket_list.iterNext(node)) {
 			WaitMode mode = (WaitMode)0;
 			if (node->v.fd > rhighest)
 				continue;

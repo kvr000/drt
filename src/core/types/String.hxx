@@ -96,8 +96,9 @@ public:
 	DR_RINLINE void			w_setlen(size_t newlen)			{ w_get()->size = newlen; w_str()[newlen] = L'\0'; }
 
 public:
-	BString::Data *			convertAscii();
-	void				convertWide();
+	BString::Data *			refByte();
+	void				updateWide();
+	void				updateByte();
 
 public:
 	StrData *			append(StrData *sd);
@@ -111,6 +112,7 @@ public:
 
 public:
 	bool				beq(StrData *sd);
+	bool				bcmp(StrData *sd);
 
 public:
 	DR_RINLINE StrData *		ref()					{ Atomic::inc(&refcnt); return this; }
@@ -227,6 +229,7 @@ public:
 	bool				isNull() const;
 	bool				isEmpty() const;
 	bool				beq(const String &s) const;
+	bool				bcmp(const String &s) const;
 	bool				eqUtf8(const char *str, size_t size);
 	DR_RINLINE bool			operator==(const String &s) const	{ return beq(s); }
 	DR_RINLINE bool			operator!=(const String &s) const	{ return !beq(s); }
@@ -291,7 +294,7 @@ public:
 	void				reinitArraySizedConst(size_t count, const char *const *list, size_t el_size);
 
 public:
-	void				appendList(SList<String> *list);
+	void				appendToList(SList<String> *list);
 
 protected:
 	void				init(size_t count, const String * const*strs);

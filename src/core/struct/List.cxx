@@ -51,7 +51,7 @@ DR_EXPORT_MET void List_c::destroy_g()
 
 DR_EXPORT_MET ListNode_c *List_c::append_g(ListNode_c *prev, const void *v)
 {
-	ListNode_c *n = node_create(v);
+	ListNode_c *n = node_def(v);
 	if ((n->prev = prev)) {
 		if ((n->next = prev->next))
 			n->next->prev = n;
@@ -72,7 +72,7 @@ DR_EXPORT_MET ListNode_c *List_c::append_g(ListNode_c *prev, const void *v)
 
 DR_EXPORT_MET ListNode_c *List_c::appendNew_g(ListNode_c *prev)
 {
-	ListNode_c *n = node_new();
+	ListNode_c *n = node_undef();
 	if ((n->prev = prev)) {
 		if ((n->next = prev->next))
 			n->next->prev = n;
@@ -93,7 +93,7 @@ DR_EXPORT_MET ListNode_c *List_c::appendNew_g(ListNode_c *prev)
 
 DR_EXPORT_MET ListNode_c *List_c::insert_g(ListNode_c *next, const void *v)
 {
-	ListNode_c *n = node_create(v);
+	ListNode_c *n = node_def(v);
 	if ((n->next = next)) {
 		if ((n->prev = next->prev))
 			n->prev->next = n;
@@ -114,7 +114,7 @@ DR_EXPORT_MET ListNode_c *List_c::insert_g(ListNode_c *next, const void *v)
 
 DR_EXPORT_MET ListNode_c *List_c::insertNew_g(ListNode_c *next)
 {
-	ListNode_c *n = node_new();
+	ListNode_c *n = node_undef();
 	if ((n->next = next)) {
 		if ((n->prev = next->prev))
 			n->prev->next = n;

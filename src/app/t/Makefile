@@ -29,6 +29,7 @@ DR_BUILD_CXX_FLAGS= -DDR_HAS_THREAD_LOCAL -DDR_OS_UNIX
 
 all: targ_all
 default: targ_all
+no: nothing
 
 gmake:
 	dr_genmake ../def/bsd.txt $(DIRS)
@@ -44,9 +45,7 @@ ldeltags:
 	rm -f tags
 tags: ldeltags
 	run_p gen_tags .
-deltags:
-	$(MAKE) ldeltags
-
+deltags: ldeltags
 
 
 FLAGS_cxx=$(CXXINC) $(EXECXXFLAGS) -I. -I..
@@ -87,25 +86,21 @@ lslist:
 	echo $(DIRS_)t0.cxx
 	echo $(DIRS_)mklist
 
-outclean:
-	$(MAKE) loutclean
-
+outclean: loutclean
 loutclean:
 	rm -f tlink_drapp t0
 
-clean:
-	$(MAKE) lclean
-
+clean: lclean
 lclean: loutclean limmclean
 limmclean:
 	rm -f $(OBJDIR)/tlink_drapp$(OBJ_EXT) $(OBJDIR)/tlink_drapp$(OBJ_EXT).dep $(OBJDIR)/t0$(OBJ_EXT) $(OBJDIR)/t0$(OBJ_EXT).dep
 
-wclean:
-	$(MAKE) lwclean
-
+wclean: lwclean
 lwclean: lclean
 	rm -rf $(BUILD)
 
+lnothing:
+nothing: lnothing
 
 $(OBJDIR)/all_deps.mi:
 	mkdir -p $(GEN)
@@ -114,9 +109,7 @@ $(OBJDIR)/all_deps.mi:
 	echo "include $(OBJDIR)/*.dep" > $@
 include $(OBJDIR)/all_deps.mi
 
-gh:
-	$(MAKE) lgh
-
+gh: lgh
 include Make_gh
 
 targ_pre:

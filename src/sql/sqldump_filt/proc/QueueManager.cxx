@@ -77,7 +77,7 @@ Sint64 QueueManager::getNextWork(Blob *data)
 				access_lock->unlock();
 				return -1;
 			}
-			if (SList<Blob>::Node *n = waiting_data.getFirst()) {
+			if (SList<Blob>::Node *n = waiting_data.iterFirst()) {
 				*data = n->v;
 				waiting_data.remove(n);
 				Sint64 new_counter = proc_counter++;
@@ -171,7 +171,7 @@ void QueueManager::destroy()
 	access_lock->lock();
 	access_lock->broadcast();
 	max_workers = 0;
-	while (RList<ThreadSimple>::Node *n = all_workers.getFirst()) {
+	while (RList<ThreadSimple>::Node *n = all_workers.iterFirst()) {
 		access_lock->unlock();
 		n->v->wait();
 		access_lock->lock();
@@ -319,7 +319,7 @@ Blob QueueManager::processOneData(Sint64 line_no, const Blob &line_data)
 			vals->operator[](i) = strtoll(values[i].toStr(), NULL, 10);
 		}
 		ERef<Evaluator::Arguments> args(new Evaluator::Arguments(&constants, vals));
-		for (RList<Evaluator>::Node *n = tev->getFirst(); n; n = n->next()) {
+		for (RList<Evaluator>::Node *n = tev->iterFirst(); n; n = tev->iterNext(n)) {
 			xtry {
 				if (!n->v->evaluate(args))
 					continue;

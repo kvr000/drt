@@ -166,6 +166,7 @@ sub printClass($$)
 
 	my $iname= $cld->{class};
 	for (my $i = 0; $i < $level; $i++) {
+		printIndented($hxx, $level, "public:\n");
 		$iname =~ s/^\w*:://;
 	}
 
@@ -247,14 +248,23 @@ sub printClass($$)
 
 	if (@{$cld->{ats}}) {
 		$hxx->print("\n");
-		if ($cld->{type} eq "struct") {
-			printIndented($hxx, $level, "public:\n");
+		if (0) {
+			if ($cld->{type} eq "struct") {
+				printIndented($hxx, $level, "public:\n");
+			}
+			else {
+				printIndented($hxx, $level, "protected:\n");
+			}
 		}
-		else {
-			printIndented($hxx, $level, "protected:\n");
-		}
+		my $last_access = "";
 		foreach my $at (@{$cld->{ats}}) {
-			printIndented($hxx, $level, sprintf("\t%s\n", $at));
+			die "internal error: content of $at doesn't start with [ +-]" unless ($at =~ m/^([-+ ])(.*)$/);
+			my ($acc, $def) = ($1, $2);
+			if ($acc ne $last_access) {
+				printIndented($hxx, $level, sprintf("%s:\n", $acc eq "+" ? "public" : $acc eq " " ? "protected" : $acc eq "-" ? "private" : ""));
+				$last_access = $acc;
+			}
+			printIndented($hxx, $level, sprintf("\t%s\n", $def));
 		}
 	}
 
@@ -313,34 +323,41 @@ MAIN: while (<$cxx>) {
 				next;
 			}
 			elsif (m/^\s*\*\s*(\w+):\s*(.*?)\s*$/) {
-				if ($1 eq "include") {
-					push(@includes, $2);
+				my ($key, $cont) = ($1, $2);
+				if ($key eq "include") {
+					push(@includes, $cont);
 				}
-				elsif ($1 eq "ns") {
-					$ns = $2;
+				elsif ($key eq "ns") {
+					$ns = $cont;
 				}
-				elsif ($1 eq "use") {
-					push(@ns_use, $2);
+				elsif ($key eq "use") {
+					push(@ns_use, $cont);
 				}
-				elsif ($1 eq "type") {
-					$type = $2;
+				elsif ($key eq "type") {
+					$type = $cont;
 				}
-				elsif ($1 eq "class") {
-					$class = $2;
+				elsif ($key eq "class") {
+					$class = $cont;
 					($class_last = $class) =~ s/.*:://;
 					$defline = $lineno;
 				}
-				elsif ($1 eq "ancestor") {
-					$ancestor = $2;
+				elsif ($key eq "ancestor") {
+					$ancestor = $cont;
 				}
-				elsif ($1 eq "ifaces") {
-					push(@ifaces, split(/s+/, $2));
+				elsif ($key eq "ifaces") {
+					push(@ifaces, split(/s+/, $cont));
 				}
-				elsif ($1 eq "at") {
-					push(@ats, $2);
+				elsif ($key eq "at") {
+					push(@ats, " $cont");
 				}
-				elsif ($1 eq "co") {
-					if ($2 eq "{") {
+				elsif ($key eq "ap") {
+					push(@ats, "+$cont");
+				}
+				elsif ($key eq "am") {
+					push(@ats, "-$cont");
+				}
+				elsif ($key eq "co") {
+					if ($cont eq "{") {
 						eval { $cont .= readContent($cxx, \$lineno, "}co") };
 						die "$cxxname:$lineno: incorrect syntax for co" if ($@);
 					}

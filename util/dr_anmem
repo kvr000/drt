@@ -92,12 +92,12 @@ for (;;) {
 }
 
 foreach my $md (sort({ $a->{order} <=> $b->{order} } values %mem)) {
-	next if ($md->{backtrace} =~ m/\(_ZN2dr5Const/);
-	next if ($md->{backtrace} =~ m/\(_ZN2dr6Static6create/);
-	next if ($md->{backtrace} =~ m/\(_ZN2dr11Thread_impl18postinitMainThread/);
-	next if ($md->{backtrace} =~ m/\(_ZN2dr9Subsystem12getSubsystem/);
-	next if ($md->{backtrace} =~ m/\(_ZN2dr6Thread19createMessageSerial/);
-	next if ($md->{backtrace} =~ m/\(_ZN2dr23createMemExceptInstanceEv/);
+	next if ($md->{backtrace} =~ m/[(<]_ZN2dr5Const/);
+	next if ($md->{backtrace} =~ m/[(<]_ZN2dr6Static6create/);
+	next if ($md->{backtrace} =~ m/[(<]_ZN2dr11Thread_impl18postinitMainThread/);
+	next if ($md->{backtrace} =~ m/[(<]_ZN2dr9Subsystem12getSubsystem/);
+	next if ($md->{backtrace} =~ m/[(<]_ZN2dr6Thread19createMessageSerial/);
+	next if ($md->{backtrace} =~ m/[(<]_ZN2dr23createMemExceptInstanceEv/);
 	next if ($md->{backtrace} =~ m/\(_ZN2dr3net9RpcHelper12StructMapperC1EPKNS_6StringElPFvPNS0_10RpcDecoderEPvES5_z/);
 	print("memory $md->{block} ($md->{length}) seq=$md->{seq} not freed:\n$md->{backtrace}\n");
 }

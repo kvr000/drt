@@ -48,7 +48,7 @@ void Hash_c::destroy_g()
 			struct Node_c *c, *n;
 			for (c = list[i]; c; c = n) {
 				n = c->next;
-				pairDestroy(c);
+				node_destroy(c);
 			}
 		}
 	}
@@ -63,7 +63,7 @@ Hash_c::Node_c *Hash_c::find_g(long hash_value, const void *key) const
 		for (r = list[hash_value&hashmask]; r; r = r->next) {
 			if (r->hash != hash_value)
 				continue;
-			if (!keyeq(r, key))
+			if (!node_eq(r, key))
 				continue;
 			break;
 		}
@@ -111,7 +111,7 @@ Hash_c::Node_c *Hash_c::create_g(long hash_value, const void *key, bool *created
 	else {
 		DR_Assert(list != NULL);
 	}
-	r = pairUndef(key);
+	r = node_undef(key);
 	r->hash = hash_value;
 	r->next = list[hash_value&hashmask];
 	list[hash_value&hashmask] = r;
@@ -130,11 +130,11 @@ bool Hash_c::remove_g(long hash_value, const void *key)
 			r = *s;
 			if (r->hash != hash_value)
 				continue;
-			if (!keyeq(r, key))
+			if (!node_eq(r, key))
 				continue;
 			*s = r->next;
 			item_count--;
-			pairDestroy(r);
+			node_destroy(r);
 			return true;
 		}
 	}
@@ -148,7 +148,7 @@ void Hash_c::clean_g()
 			for (Node_c *n, *r = list[i]; r != NULL; r = n) {
 				n = r->next;
 				item_count--;
-				pairDestroy(r);
+				node_destroy(r);
 			}
 			list[i] = NULL;
 		}
