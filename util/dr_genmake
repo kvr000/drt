@@ -801,7 +801,7 @@ sub printGh
 		$add_targ .= " \$(GEN_)$base.hxx" if ($sd->{mark_header});
 	}
 	else {
-		printBuild($config, $mgh, "\$(GEN_)$base.gen".($sd->{mark_header} ? " \$(GEN_)$base.hxx" : ""), [ $sd->{src}, @group_files ], undef, $this->shellPerl("dr_genheader"), [ $sd->{src}, "\$(GEN_)$base", @group_files ]);
+		printBuild($config, $mgh, "\$(GEN_)$base.gen".($sd->{mark_header} ? " \$(GEN_)$base.hxx" : ""), [ $sd->{src}, @group_files ], undef, $this->shellPerl("dr_genheader").($sd->{mark_header} ? "" : " -i"), [ $sd->{src}, "\$(GEN_)$base", @group_files ]);
 		$add_targ .= " \$(GEN_)$base.hxx" if ($sd->{mark_header});
 	}
 	return $add_targ;
