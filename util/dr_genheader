@@ -45,7 +45,7 @@ use Getopt::Std;
 use File::Basename;
 use lib dirname($0)."/perl";
 use dr::FileTransaction;
-use dr::XmiParser;
+use dr::FileParser;
 use dr::ModelStore;
 use dr::Util qw(tabalign);
 
@@ -96,23 +96,21 @@ sub nsToMacroEnd($)
 	return nsToMacro(shift)."_END";
 }
 
-sub readContent($$$)
+sub readContent($$)
 {
 	my $fd			= shift;
-	my $lineno		= shift;
 	my $fin			= shift;
 
-	my $startline = $$lineno;
+	my $startline = $fd->getContext();
 
 	my $cont = "";
 	my $indent;
 
-	my $line = <$fd>;
+	my $line = $fd->readLine();
 	if ($line =~ m/^(\s*\* ?)(\s+)/) {
 		$indent = $2;
 	}
 	do {
-		$$lineno++;
 		if ($line =~ m/^\s*\*\*\//s) {
 			die "didn't find close $fin block";
 		}
@@ -127,21 +125,19 @@ sub readContent($$$)
 		else {
 			die "unexpected content: $line";
 		}
-	} while (defined ($line = <$fd>));
+	} while (defined ($line = $fd->readLine()));
 	die "didn't find close $fin block starting at $startline";
 }
 
-sub readParagraph($$)
+sub readParagraph($)
 {
 	my $fd			= shift;
-	my $lineno		= shift;
 
-	my $startline = $$lineno;
+	my $startline = $fd->getContext();
 
 	my $cont = "";
 
-	while (defined (my $line = <$fd>)) {
-		$$lineno++;
+	while (defined (my $line = $fd->readLine())) {
 		if ($line =~ m/^\s*\*\s+(\S.*)$/s) {
 			$cont .= $1;
 		}
@@ -177,8 +173,7 @@ our $sql;
 our $all;
 our $model_store = dr::ModelStore->new();
 
-our $cxx = FileHandle->new($cxxname, "<")
-	or die "failed to open $cxxname: $!";
+our $cxx = dr::FileParser->new($cxxname);
 
 our @cl_list;
 
@@ -218,7 +213,7 @@ sub dieCldContext($$)
 	my $cld			= shift;
 	my $msg			= shift;
 
-	STDERR->print("$cxxname:$cld->{lineno}: $msg\n");
+	STDERR->print("$cld->{context}: $msg\n");
 	STDERR->print("$cld->{model}->{filename}:0: more definition here\n") if ($cld->{model});
 	dr::Util::doDie("fatal error generating $cld->{class}");
 }
@@ -242,49 +237,47 @@ sub escapeTagFind($)
 	return $s;
 }
 
-sub addTagClass($$)
+sub addTagClass($)
 {
 	my $cld			= shift;
-	my $cxxname		= shift;
+
 	foreach my $cname (expandClassNames($cld)) {
-		push(@tag_defs, sprintf("%s\t%s\t/^%s\$/;\"\tc\tinherits:%s", $cname, $cxxname, escapeTagFind($cld->{line}), join(",", (defined $cld->{ancestor} ? $cld->{ancestor} : (), @{$cld->{ifaces}}))));
+		push(@tag_defs, sprintf("%s\t%s\t/^%s\$/;\"\tc\tinherits:%s", $cname, $cld->{context}->{file}, escapeTagFind($cld->{context}->{line}), join(",", (defined $cld->{ancestor} ? $cld->{ancestor} : (), @{$cld->{ifaces}}))));
 	}
 }
 
-sub addTagMethod($$$)
+sub addTagMethod($$)
 {
 	my $cld			= shift;
 	my $md			= shift;
-	my $cxxname		= shift;
+
 	foreach my $cname (expandClassNames($cld)) {
-		push(@tag_defs, sprintf("%s\t%s\t/^%s\$/;\"\tf\tclass:%s\tsignature:%s", $md->{decl}, $cxxname, escapeTagFind($md->{line}), $cld->{class}, "()"));
+		push(@tag_defs, sprintf("%s\t%s\t/^%s\$/;\"\tf\tclass:%s\tsignature:%s", $md->{decl}, $md->{context}->{file}, escapeTagFind($md->{context}->{line}), $cld->{class}, "()"));
 	}
 }
 
-sub addTagAttribute($$$)
+sub addTagAttribute($$)
 {
 	my $cld			= shift;
 	my $ad			= shift;
-	my $cxxname		= shift;
 
 	if ($ad->{def} =~ m/^([^\t]*)\t*(\w+);\s*$/) {
 		my $name = $2;
-		push(@tag_defs, sprintf("%s\t%s\t/^%s\$/;\"\tm\tclass:%s\taccess:%s", $name, $cxxname, escapeTagFind($ad->{line}), $cld->{class}, $ad->{access}));
+		push(@tag_defs, sprintf("%s\t%s\t/^%s\$/;\"\tm\tclass:%s\taccess:%s", $name, $ad->{context}->{file}, escapeTagFind($ad->{context}->{line}), $cld->{class}, $ad->{access}));
 		foreach my $cname (expandClassNames($cld)) {
-			push(@tag_defs, sprintf("%s.%s\t%s\t/^%s\$/;\"\tm\tclass:%s\taccess:%s", $cname, $name, $cxxname, escapeTagFind($ad->{line}), $cld->{class}, $ad->{access}));
+			push(@tag_defs, sprintf("%s.%s\t%s\t/^%s\$/;\"\tm\tclass:%s\taccess:%s", $cname, $name, $ad->{context}->{file}, escapeTagFind($ad->{context}->{line}), $cld->{class}, $ad->{access}));
 		}
 	}
 }
 
-sub addTagConst($$$)
+sub addTagConst($$)
 {
 	my $cld			= shift;
 	my $cnd			= shift;
-	my $cxxname		= shift;
 
-	push(@tag_defs, sprintf("%s\t%s\t/^%s\$/;\"\tm\tclass:%s\taccess:%s", $cnd->{name}, $cxxname, escapeTagFind($cnd->{line}), $cld->{class}, $cnd->{access}));
+	push(@tag_defs, sprintf("%s\t%s\t/^%s\$/;\"\tm\tclass:%s\taccess:%s", $cnd->{name}, $cnd->{context}->{file}, escapeTagFind($cnd->{context}->{line}), $cld->{class}, $cnd->{access}));
 	foreach my $cname (expandClassNames($cld)) {
-		push(@tag_defs, sprintf("%s.%s\t%s\t/^%s\$/;\"\tm\tclass:%s\taccess:%s", $cname, $cnd->{name}, $cxxname, escapeTagFind($cnd->{line}), $cld->{class}, $cnd->{access}));
+		push(@tag_defs, sprintf("%s.%s\t%s\t/^%s\$/;\"\tm\tclass:%s\taccess:%s", $cname, $cnd->{name}, $cnd->{context}->{file}, escapeTagFind($cnd->{context}->{line}), $cld->{class}, $cnd->{access}));
 	}
 }
 
@@ -475,7 +468,7 @@ sub printClass($$)
 		$doc = "/**\n$doc */\n";
 		printIndented($hxx, $level, $doc);
 	}
-	addTagClass($cld, $cxxname);
+	addTagClass($cld);
 	my $has_inner = 1;
 	if ($cld->{model} && @{$cld->{model}->{comment}}) {
 		printIndented($hxx, $level, formatMultiComment($cld->{model}->{comment}));
@@ -540,9 +533,9 @@ sub printClass($$)
 		dieCldContext($cld, "found sql but no sql file was opened") unless ($sql);
 		foreach my $sqd (@{$cld->{sqls}}) {
 			push(@{$cld->{methods}}, { specs => { "protected" => 1 }, ret => "void", "decl" => "prep_$sqd->{name}()" });
-			push(@{$cld->{ats}}, { access => "protected", def => "Ref<dr::sql::Statement>\tst_$sqd->{name};", line => $sqd->{line}, lineno => $sqd->{lineno} });
+			push(@{$cld->{ats}}, { access => "protected", def => "Ref<dr::sql::Statement>\tst_$sqd->{name};", context => $sqd->{context} });
 			$sql->printf("\nvoid %s::prep_%s()\n{\n\tst_%s.setNoref(db_connection->prepareStatement(\"%s\"));\n}\n", $cld->{class}, $sqd->{name}, $sqd->{name}, escapeCString($sqd->{query}, 2));
-			addTagMethod($cld, { ret => "void", decl => "prep_$sqd->{name}", line => $sqd->{line}, lineno => $sqd->{lineno} }, $cxxname);
+			addTagMethod($cld, { ret => "void", decl => "prep_$sqd->{name}", context => $sqd->{context} });
 		}
 	}
 
@@ -558,8 +551,8 @@ sub printClass($$)
 				$abstr = " = 0", next if ($spec eq "abstract");
 				if (my $ini = (grep({ $_->{name} eq $spec } @{$cld->{ini}}))[0]) {
 					my $fullname = "$ini->{name}_$met->{name}";
-					push(@{$cld->{consts}}, { access => "public", type => "String", name => $fullname, init => "(\"$met->{specs}->{$spec}\")", line => $met->{line}, lineno => $met->{lineno} });
-					push(@{$ini->{elements}}, { line => $met->{line}, lineno => $met->{lineno}, def => "$fullname\t(UintPtr)MethodConv::methodToFptr(&$cld->{iname}::$met->{name})" });
+					push(@{$cld->{consts}}, { access => "public", type => "String", name => $fullname, init => "(\"$met->{specs}->{$spec}\")", context => $met->{context} });
+					push(@{$ini->{elements}}, { context => $met->{context}, def => "$fullname\t(UintPtr)MethodConv::methodToFptr(&$cld->{iname}::$met->{name})" });
 					next;
 				}
 				dieCldContext($cld, "unknown method modifier $spec");
@@ -595,7 +588,7 @@ sub printClass($$)
 				printIndented($hxx, $level, sprintf("%s:\n", $last_access));
 			}
 			printIndented($hxx, $level, sprintf("\t%s\n", $ad->{def}));
-			addTagAttribute($cld, $ad, $cxxname);
+			addTagAttribute($cld, $ad);
 		}
 	}
 
@@ -610,7 +603,7 @@ sub printClass($$)
 			}
 			printIndented($hxx, $level, sprintf("\t%s;\n", formatMemberDecl("static const $cnd->{type}", $cnd->{name})));
 			$val->printf("const %s %s::%s%s;\n", $cnd->{type}, $cld->{class}, $cnd->{name}, ($cnd->{type} =~ m/^(B|W|)String$/) ? "(Const::".lc($cnd->{type}).$cnd->{init}.")" : $cnd->{init});
-			addTagConst($cld, $cnd, $cxxname);
+			addTagConst($cld, $cnd);
 		}
 	}
 
@@ -672,7 +665,17 @@ sub createModelCld($$)
 	};
 }
 
-my $lineno = 0;
+sub createContext($$)
+{
+	my $reader		= shift;
+	my $line		= shift;
+
+	my $context = $reader->getContext();
+	dr::Util::doDie("expected context in format file:line") unless ($context =~ m/^(.*):(\d+)$/);
+
+	return { context => $context, file => $1, lineno => $2, line => $line };
+}
+
 my $errors = 0;
 
 my $cld;
@@ -682,11 +685,9 @@ my @strings;
 my @wstrings;
 my @bstrings;
 
-for (my $curf = $cxx, my $curname = $cxxname; defined $curf; $curf = @ARGV ? $file_trans->openRead($curname = shift @ARGV) : undef) {
-	$lineno = 0;
-	MAIN: while (<$curf>) {
+for (my $curf = $cxx, my $curname = $cxxname; defined $curf; $curf = @ARGV ? dr::FileParser->new($curname = shift @ARGV) : undef) {
+	MAIN: while (defined (local $_ = $curf->readLine())) {
 		chomp;
-		$lineno++;
 
 		if ($curname eq $cxxname) {
 			if (m/DR_CON\((\w+),\s*([^)]*)\)/) {
@@ -741,9 +742,8 @@ for (my $curf = $cxx, my $curname = $cxxname; defined $curf; $curf = @ARGV ? $fi
 				sqls		=> [],
 				friends		=> [],
 			};
-			while (<$curf>) {
+			while ($_ = $curf->readLine()) {
 				chomp;
-				$lineno++;
 				if (m/^\s*\*\s*$/) {
 					next;
 				}
@@ -753,7 +753,7 @@ for (my $curf = $cxx, my $curname = $cxxname; defined $curf; $curf = @ARGV ? $fi
 						push(@includes, $val);
 					}
 					elsif ($key eq "ns") {
-						STDERR->printf("$curname:$lineno: fatal: ns already defined\n"), exit(1) if (defined $ns);
+						STDERR->printf($curf->getContext().": fatal: ns already defined\n"), exit(1) if (defined $ns);
 						$ns = $val;
 					}
 					elsif ($key eq "gen") {
@@ -768,7 +768,7 @@ for (my $curf = $cxx, my $curname = $cxxname; defined $curf; $curf = @ARGV ? $fi
 					}
 					elsif ($key eq "revert") {
 						if (defined $cld->{ancestor} || $cld->{cont} ne "" || @{$cld->{ifaces}} || @{$cld->{ats}} ||@{$cld->{consts}} || @{$cld->{methods}} || @{$cld->{friends}} || defined $cld->{doc}) {
-							STDERR->print("$curname:$lineno: no class defined while some of the attributes are"), $errors++;
+							STDERR->print($curf->getContext().": no class defined while some of the attributes are"), $errors++;
 						}
 						for (my $i = 0; ; $i++) {
 							if ($i >= @cl_list) {
@@ -776,7 +776,7 @@ for (my $curf = $cxx, my $curname = $cxxname; defined $curf; $curf = @ARGV ? $fi
 									last;
 								}
 								else {
-									STDERR->print("$curname:$lineno: reverted class not yet defined: $val\n"), exit(1);
+									STDERR->print($curf->getContext().": reverted class not yet defined: $val\n"), exit(1);
 								}
 							}
 							$cld = splice(@cl_list, $i, 1), last if ($cl_list[$i]->{class} eq $val);
@@ -792,35 +792,33 @@ for (my $curf = $cxx, my $curname = $cxxname; defined $curf; $curf = @ARGV ? $fi
 						}
 					}
 					elsif ($key eq "class") {
-						STDERR->print("$curname:$lineno: fatal: ns undefined\n"), exit(1) unless (defined $ns);
+						STDERR->print($curf->getContext().": fatal: ns undefined\n"), exit(1) unless (defined $ns);
 						$cld->{class} = $val;
 						($cld->{class_last} = $cld->{class}) =~ s/.*:://;
-						$cld->{lineno} = $lineno;
-						$cld->{line} = $_;
+						$cld->{context} = createContext($curf, $_);
 					}
 					elsif ($key eq "model") {
-						STDERR->print("$curname:$lineno: fatal: ns undefined\n"), exit(1) unless (defined $ns);
-						STDERR->print("$curname:$lineno: fatal: class undefined\n"), exit(1) unless (defined $cld->{class});
-						STDERR->print("$curname:$lineno: only one model allowed\n") if (defined $cld->{model});
+						STDERR->print($curf->getContext().": fatal: ns undefined\n"), exit(1) unless (defined $ns);
+						STDERR->print($curf->getContext().": fatal: class undefined\n"), exit(1) unless (defined $cld->{class});
+						STDERR->print($curf->getContext().": only one model allowed\n") if (defined $cld->{model});
 						$cld->{model_loc} = $val;
 						$cld->{model} = eval {
 							readModel($cld->{model_loc}, $ns, $cld->{class});
 						}
-							or STDERR->print("$curname:$lineno: failed to read model: $@\n"), $errors++;
+							or STDERR->print($curf->getContext().": failed to read model: $@\n"), $errors++;
 					}
 					elsif ($key eq "model_subs") {
-						STDERR->print("$curname:$lineno: fatal: ns undefined\n"), exit(1) unless (defined $ns);
-						STDERR->print("$curname:$lineno: fatal: class undefined\n"), exit(1) unless (defined $cld->{class});
-						STDERR->print("$curname:$lineno: fatal: model location undefined\n") unless (defined $cld->{model_loc});
+						STDERR->print($curf->getContext().": fatal: ns undefined\n"), exit(1) unless (defined $ns);
+						STDERR->print($curf->getContext().": fatal: class undefined\n"), exit(1) unless (defined $cld->{class});
+						STDERR->print($curf->getContext().": fatal: model location undefined\n") unless (defined $cld->{model_loc});
 						foreach my $sub (split(/\s+/, $val)) {
 							eval {
 								my $scld = createModelCld($cld->{model_loc}, "$cld->{class}::$sub");
-								$scld->{lineno} = $lineno;
-								$scld->{line} = $_;
+								$scld->{context} = createContext($curf, $_);
 								push(@cl_list, $scld);
 								1;
 							}
-								or STDERR->print("$curname:$lineno: failed to read model: $@\n"), $errors++;
+								or STDERR->print($curf->getContext().": failed to read model: $@\n"), $errors++;
 						}
 					}
 					elsif ($key eq "ancestor") {
@@ -830,46 +828,46 @@ for (my $curf = $cxx, my $curname = $cxxname; defined $curf; $curf = @ARGV ? $fi
 						push(@{$cld->{ifaces}}, split(/s+/, $val));
 					}
 					elsif ($key eq "at") {
-						push(@{$cld->{ats}}, { access => "protected", def => $val, line => $_, lineno => $lineno });
+						push(@{$cld->{ats}}, { access => "protected", def => $val, context => createContext($curf, $_) });
 					}
 					elsif ($key eq "ap") {
-						push(@{$cld->{ats}}, { access => "public", def => $val, line => $_, lineno => $lineno });
+						push(@{$cld->{ats}}, { access => "public", def => $val, context => createContext($curf, $_) });
 					}
 					elsif ($key eq "am") {
-						push(@{$cld->{ats}}, { access => "private", def => $val, line => $_, lineno => $lineno });
+						push(@{$cld->{ats}}, { access => "private", def => $val, context => createContext($curf, $_) });
 					}
 					elsif ($key eq "ini") {
-						STDERR->print("$curname:$lineno: invalid syntax for ini, require 'type name;': $val"), $errors++, next unless ($val =~ m/^(.*?)\s+(\w+);$/);
-						push(@{$cld->{ini}}, { access => "protected", type => $1, name => $2, def => $val, line => $_, lineno => $lineno, elements => [] });
+						STDERR->print($curf->getContext().": invalid syntax for ini, require 'type name;': $val"), $errors++, next unless ($val =~ m/^(.*?)\s+(\w+);$/);
+						push(@{$cld->{ini}}, { access => "protected", type => $1, name => $2, def => $val, context => createContext($curf, $_), elements => [] });
 					}
 					elsif ($key eq "iniel") {
-						STDERR->print("$curname:$lineno: invalid syntax for iniel, require 'name ini': $val"), $errors++, next unless ($val =~ m/^(\w+)\s+(.+)$/);
+						STDERR->print($curf->getContext().": invalid syntax for iniel, require 'name ini': $val"), $errors++, next unless ($val =~ m/^(\w+)\s+(.+)$/);
 						my $ini = (grep({ $_->{name} eq $1 } @{$cld->{ini}}))[0]
-							or STDERR->print("$curname:$lineno: ini $1 not defined"), $errors++, next;
-						push(@{$ini->{elements}}, { line => $_, lineno => $lineno, def => $2 });
+							or STDERR->print($curf->getContext().": ini $1 not defined"), $errors++, next;
+						push(@{$ini->{elements}}, { context => createContext($curf, $_), def => $2 });
 					}
 					elsif ($key eq "cnp") {
 						eval {
-							push(@{$cld->{consts}}, { access => "public", parseConstDef($val), line => $_, lineno => $lineno });
+							push(@{$cld->{consts}}, { access => "public", parseConstDef($val), context => createContext($curf, $_) });
 						}
-							or STDERR->print("$curname:$lineno: $@\n"), $errors++;
+							or STDERR->print($curf->getContext().": $@\n"), $errors++;
 					}
 					elsif ($key eq "sql") {
 						my ( $name, $query );
 						if ($val =~ m/^(\w+)\s*$/) {
 							$name = $1;
-							eval { $query = readParagraph($curf, \$lineno); };
-							die "$curname:$lineno: incorrect syntax for paragraph: $@" if ($@);
+							eval { $query = readParagraph($curf); };
+							die $curf->getContext().": incorrect syntax for paragraph: $@" if ($@);
 						}
 						elsif ($val =~ m/^(\w+)\s+(\S.*)$/) {
 							$name = $1;
 							$query = $2;
 						}
 						if (!defined $name) {
-							STDERR->print("$curname:$lineno: incorrect syntax for sql\n"), $errors++;
+							STDERR->print($curf->getContext().": incorrect syntax for sql\n"), $errors++;
 						}
 						else {
-							push(@{$cld->{sqls}}, { line => $_, lineno => $lineno, name => $name, query => $query });
+							push(@{$cld->{sqls}}, { context => createContext($curf, $_), name => $name, query => $query });
 						}
 					}
 					elsif ($key eq "friend") {
@@ -877,24 +875,24 @@ for (my $curf = $cxx, my $curname = $cxxname; defined $curf; $curf = @ARGV ? $fi
 					}
 					elsif ($key eq "co") {
 						if ($val =~ m/^(\w*)\s*{$/) {
-							eval { $cld->{cont} .= ($1 ? "$1:\n" : "").addIndent(readContent($curf, \$lineno, "}co")) };
-							die "$curname:$lineno: incorrect syntax for co: $@" if ($@);
+							eval { $cld->{cont} .= ($1 ? "$1:\n" : "").addIndent(readContent($curf, "}co")) };
+							die $curf->getContext().": incorrect syntax for co: $@" if ($@);
 						}
 						else {
-							die "$curname:$lineno: incorrect syntax for co: need co:{";
+							die $curf->getContext().": incorrect syntax for co: need co:{";
 						}
 					}
 					elsif ($key eq "doc") {
 						if ($val eq "{") {
-							eval { $cld->{doc} .= readContent($curf, \$lineno, "}doc") };
-							die "$curname:$lineno: incorrect syntax for doc: $@" if ($@);
+							eval { $cld->{doc} .= readContent($curf, "}doc") };
+							die $curf->getContext().": incorrect syntax for doc: $@" if ($@);
 						}
 						else {
-							die "$curname:$lineno: incorrect syntax for doc: need doc:{";
+							die $curf->getContext().": incorrect syntax for doc: need doc:{";
 						}
 					}
 					else {
-						STDERR->printf("$curname:$lineno: unknown statement\n");
+						STDERR->printf($curf->getContext().": unknown statement\n");
 						$errors++;
 					}
 				}
@@ -902,7 +900,7 @@ for (my $curf = $cxx, my $curname = $cxxname; defined $curf; $curf = @ARGV ? $fi
 					last;
 				}
 				else {
-					STDERR->printf("$curname:$lineno: incorrect syntax\n"), $errors++;
+					STDERR->printf($curf->getContext().": incorrect syntax\n"), $errors++;
 				}
 			}
 		}
@@ -914,21 +912,19 @@ for (my $curf = $cxx, my $curname = $cxxname; defined $curf; $curf = @ARGV ? $fi
 		}
 		elsif (m/^DR_MET\((.*)\)\s*$/) {
 			my $metd = {
-				specs		=> { map({ die "$curname:$lineno: invalid spec: $_" unless (m/^(\w+)(:(\S*))?$/); ( $1 => (defined $3 ? $3 : 1) ) } split(/\s+/, $1)) },
+				specs		=> { map({ die $curf->getContext().": invalid spec: $_" unless (m/^(\w+)(:(\S*))?$/); ( $1 => (defined $3 ? $3 : 1) ) } split(/\s+/, $1)) },
 			};
 			my $abstr = defined $metd->{specs}->{abstract};
 			if (!(defined $cld && defined $cld->{class})) {
-				STDERR->printf("$curname:$lineno: fatal: class undefined\n"), $errors++ if (!$opts{i});
+				STDERR->printf($curf->getContext().": fatal: class undefined\n"), $errors++ if (!$opts{i});
 			}
 			else {
-				FUNC_DECL: while (<$curf>) {
+				FUNC_DECL: while ($_ = $curf->readLine()) {
 					chomp;
-					$lineno++;
 					if (m/^\/\*\*\s*$/) {
 						$metd->{comment} = "$_\n";
-						while (<$curf>) {
+						while ($_ = $curf->readLine()) {
 							chomp;
-							$lineno++;
 							$metd->{comment} .= "$_\n";
 							next FUNC_DECL if (m/^\s*\*\/\s*$/);
 						}
@@ -939,11 +935,11 @@ for (my $curf = $cxx, my $curname = $cxxname; defined $curf; $curf = @ARGV ? $fi
 							$_ = $1;
 						}
 						else {
-							STDERR->printf("$curname:$lineno: abstract declaration must start with //\n");
+							STDERR->printf($curf->getContext().": abstract declaration must start with //\n");
 							$errors++;
 						}
 					}
-					$metd->{line} = $_;
+					$metd->{context} = createContext($curf, $_);
 					if (m/^$cld->{class}::(($cld->{class_last})\(.*\)(\s*const)?)\s*:?\s*$/) {
 						$metd->{ret} = "DR_CONSTRUCT";
 						$metd->{name} = $2;
@@ -970,7 +966,7 @@ for (my $curf = $cxx, my $curname = $cxxname; defined $curf; $curf = @ARGV ? $fi
 						last;
 					}
 					else {
-						STDERR->printf("$curname:$lineno: expected method declaration\n");
+						STDERR->printf($curf->getContext().": expected method declaration\n");
 						$errors++;
 						next MAIN;
 					}
@@ -1119,7 +1115,7 @@ if (@cl_list) {
 		foreach (@cl_list) {
 			$selected = $_, last if ($_->{class} !~ m/::/);
 		}
-		die "$cxxname:$lineno: cannot find any base class in the list: ".Dumper(\@cl_list) unless (defined $selected);
+		die "$cxxname:0: cannot find any base class in the list: ".Dumper(\@cl_list) unless (defined $selected);
 		printClass($selected, 0);
 	}
 }
