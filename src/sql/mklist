@@ -11,7 +11,7 @@
 
 POSTSUBS:
 	t
-	sql_mysql5
+	mysql5
 	sqldump_filt
 
 NEED:

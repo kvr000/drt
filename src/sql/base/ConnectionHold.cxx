@@ -38,67 +38,67 @@
 
 #include <dr/Array.hxx>
 
-#include <dr/sql/SqlConnectionPool.hxx>
+#include <dr/sql/ConnectionPool.hxx>
 
-#include <dr/sql/SqlConnectionHold.hxx>
+#include <dr/sql/ConnectionHold.hxx>
 
 DR_SQL_NS_BEGIN
 
-DR_OBJECT_DEF(DR_SQL_NS_STR, SqlConnectionHold, SqlConnection);
-DR_OBJECT_IMPL_SIMPLE(SqlConnectionHold);
+DR_OBJECT_DEF(DR_SQL_NS_STR, ConnectionHold, Connection);
+DR_OBJECT_IMPL_SIMPLE(ConnectionHold);
 
 
-SqlConnectionHold::SqlConnectionHold(SqlConnection *connection_):
+ConnectionHold::ConnectionHold(Connection *connection_):
 	pool(NULL),
 	connection(connection_, true),
 	created(Time::getTime())
 {
 }
 
-SqlConnectionHold::SqlConnectionHold(SqlConnectionPool *pool_, SqlConnection *connection_):
+ConnectionHold::ConnectionHold(ConnectionPool *pool_, Connection *connection_):
 	pool(pool_),
 	connection(connection_, true),
 	created(Time::getTime())
 {
 }
 
-SqlConnectionHold::~SqlConnectionHold()
+ConnectionHold::~ConnectionHold()
 {
 	if (pool)
 		pool->destroyingConnection(this);
 }
 
-bool SqlConnectionHold::ping()
+bool ConnectionHold::ping()
 {
 	return connection->ping();
 }
 
-void SqlConnectionHold::reconnect()
+void ConnectionHold::reconnect()
 {
 	connection->reconnect();
 }
 
-void SqlConnectionHold::commit()
+void ConnectionHold::commit()
 {
 	return connection->commit();
 }
 
-void SqlConnectionHold::rollback()
+void ConnectionHold::rollback()
 {
 	return connection->rollback();
 }
 
-SqlStatement *SqlConnectionHold::createStatement(const String &sql)
+Statement *ConnectionHold::createStatement(const String &sql)
 {
 	return connection->createStatement(sql);
 }
 
-SqlStatement *SqlConnectionHold::prepareStatement(const String &sql)
+Statement *ConnectionHold::prepareStatement(const String &sql)
 {
 	return connection->prepareStatement(sql);
 }
 
-bool SqlConnectionHold::prepareLockStatements(SqlStatement **lock_mem, SqlStatement **unlock_mem, int lock_type0, const String *lock_table0, ...)
+bool ConnectionHold::prepareLockStatements(Statement **lock_mem, Statement **unlock_mem, int lock_type0, const String *lock_table0, ...)
 {
 	va_list vl;
 	va_start(vl, lock_table0);
@@ -116,27 +116,27 @@ bool SqlConnectionHold::prepareLockStatements(SqlStatement **lock_mem, SqlStatem
 	return connection->prepareLockStatements(lock_mem, unlock_mem, &types[0], &tables[0], types.count());
 }
 
-bool SqlConnectionHold::prepareLockStatements(SqlStatement **lock_mem, SqlStatement **unlock_mem, int *lock_type, const String *lock_table, size_t count)
+bool ConnectionHold::prepareLockStatements(Statement **lock_mem, Statement **unlock_mem, int *lock_type, const String *lock_table, size_t count)
 {
 	return connection->prepareLockStatements(lock_mem, unlock_mem, lock_type, lock_table, count);
 }
 
-Object *SqlConnectionHold::accDbLayer(const String &name)
+Object *ConnectionHold::accDbLayer(const String &name)
 {
 	return db_layers[name].getNoref();
 }
 
-Object *SqlConnectionHold::getDbLayer(const String &name)
+Object *ConnectionHold::getDbLayer(const String &name)
 {
 	return db_layers[name].getDoref();
 }
 
-void SqlConnectionHold::addDbLayer(const String &name, Object *db_layer)
+void ConnectionHold::addDbLayer(const String &name, Object *db_layer)
 {
 	db_layers[name].setDoref(db_layer);
 }
 
-void SqlConnectionHold::addDbLayer(Object *db_layer)
+void ConnectionHold::addDbLayer(Object *db_layer)
 {
 	addDbLayer(db_layer->classname(), db_layer);
 }

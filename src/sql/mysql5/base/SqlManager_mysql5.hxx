@@ -33,14 +33,44 @@
  * @license	http://www.gnu.org/licenses/lgpl.txt GNU Lesser General Public License v3
  **/
 
-#include <dr/Const.hxx>
+#ifndef dr__sql__mysql5__SqlManager_mysql5__hxx__
+# define dr__sql__mysql5__SqlManager_mysql5__hxx__
 
-#include <dr/sql/SqlStatement.hxx>
+#include <dr/Subsystem.hxx>
+#include <dr/Hash.hxx>
 
-DR_SQL_NS_BEGIN
+#include <dr/sql/mysql5/def.hxx>
 
-DR_OBJECT_DEF(DR_SQL_NS_STR, SqlStatement, Object);
-DR_OBJECT_IMPL_SIMPLE(SqlStatement);
+#include <dr/sql/dev/SqlManager.hxx>
+
+DR_SQL_MYSQL5_NS_BEGIN
+
+DR_NS_USE
 
 
-DR_SQL_NS_END
+class SqlManager_mysql5: public SqlManager
+{
+	DR_OBJECT_DECL_SIMPLE(SqlManager, Object);
+
+public:
+	virtual Connection *		openConnection(THash<String, String> *conn_str);
+};
+
+
+class Sql_SS_mysql5: public Subsystem
+{
+public:
+	/**/				Sql_SS_mysql5();
+	virtual				~Sql_SS_mysql5();
+
+public:
+	Object *			create(const String &object);
+	void *				create(const String &object, const String &iface);
+	Object *			create(int object);
+	void *				create(int object, int iface);
+};
+
+
+DR_SQL_MYSQL5_NS_END
+
+#endif

@@ -34,8 +34,8 @@
  **/
 
 /*drt
- * include: 	dr/sql/SqlConnectionHold.hxx
- * include:	dr/sql/SqlStatement.hxx
+ * include: 	dr/sql/ConnectionHold.hxx
+ * include:	dr/sql/Statement.hxx
  * include: 	dr/Ref.hxx
  *
  * ns:		dr::sql
@@ -46,7 +46,7 @@
  * ancestor:	dr::Object
  * ifaces:	
  *
- * at:	Ref<SqlConnection>		db_connection;
+ * at:	Ref<Connection>		db_connection;
  */
 
 #include "_gen/SqlLayer-all.hxx"
@@ -55,7 +55,7 @@ DR_SQL_NS_BEGIN
 
 
 DR_MET(public)
-SqlLayer::SqlLayer(SqlConnectionHold *db_connection_):
+SqlLayer::SqlLayer(ConnectionHold *db_connection_):
 	db_connection(db_connection_->accConnection(), true)
 {
 }

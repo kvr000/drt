@@ -41,17 +41,17 @@
 #include <dr/String.hxx>
 
 #include <dr/sql/dev/SqlManager.hxx>
-#include <dr/sql/SqlConnection.hxx>
+#include <dr/sql/Connection.hxx>
 
 DR_SQL_NS_BEGIN
 
-DR_OBJECT_DEF(DR_SQL_NS_STR, SqlConnection, Object);
-DR_OBJECT_IMPL_SIMPLE(SqlConnection);
+DR_OBJECT_DEF(DR_SQL_NS_STR, Connection, Object);
+DR_OBJECT_IMPL_SIMPLE(Connection);
 
 
-SqlConnection *SqlConnection::openConnection(const String &conn_str, THash<String, String> *pars, SqlManager **manager)
+Connection *Connection::openConnection(const String &conn_str, THash<String, String> *pars, SqlManager **manager)
 {
-	Ref<SqlConnection> conn;
+	Ref<Connection> conn;
 	String driver;
 
 	ssize_t pos = 0;
@@ -82,7 +82,7 @@ SqlConnection *SqlConnection::openConnection(const String &conn_str, THash<Strin
 	return conn.getAndNull();
 }
 
-SqlConnection *SqlConnection::openConnection(const String &connect_str)
+Connection *Connection::openConnection(const String &connect_str)
 {
 	Ref<SqlManager> manager;
 	THash<String, String> pars;

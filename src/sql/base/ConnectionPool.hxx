@@ -33,43 +33,56 @@
  * @license	http://www.gnu.org/licenses/lgpl.txt GNU Lesser General Public License v3
  **/
 
-#ifndef dr__sql__SqlConnection_hxx__
-# define dr__sql__SqlConnection_hxx__
+#ifndef dr__sql__SqlConnectionPool_hxx__
+# define dr__sql__SqlConnectionPool_hxx__
 
-#include <dr/sql/def.hxx>
+#include <dr/List.hxx>
+#include <dr/MutexCond.hxx>
+#include <dr/Time.hxx>
 
-#include <dr/Hash.hxx>
+#include <dr/sql/ConnectionHold.hxx>
+#include <dr/sql/dev/SqlManager.hxx>
 
 DR_SQL_NS_BEGIN
 
 DR_NS_USE
 
 
-class SqlStatement;
-class SqlManager;
-
-
-class SqlConnection: public Object
+class ConnectionPool: public Object
 {
-	DR_OBJECT_DECL_SIMPLE(SqlConnection, Object);
+	DR_OBJECT_DECL_SIMPLE(Connection, Object);
 
 public:
-	virtual bool			ping() = 0;
-	virtual void			reconnect() = 0;
+	DR_CONSTRUCT			ConnectionPool(const String &conn_str, int init_conns = 0);
+
+protected:
+	virtual				~ConnectionPool();
 
 public:
-	virtual void			commit() = 0;
-	virtual void			rollback() = 0;
+	virtual ConnectionHold *	getConnection();
+	virtual ConnectionHold *	getConnectionPing();
+	virtual void			releaseConnection(ConnectionHold *connection);
 
 public:
-	virtual SqlStatement *		createStatement(const String &sql) = 0;
-	virtual SqlStatement *		prepareStatement(const String &sql) = 0;
-	virtual bool			prepareLockStatements(SqlStatement **lock_mem, SqlStatement **unlock_mem, int lock_type0, const String *table0, ...) = 0;
-	virtual bool			prepareLockStatements(SqlStatement **lock_mem, SqlStatement **unlock_mem, int *lock_type, const String *lock_tables, size_t count) = 0;
+	virtual void			setMaxOldness(SysTime oldness);
+	virtual void			setMaxConnections(int num_connections);
+	virtual int			getMaxConnections();
+
+protected:
+	virtual void			destroyingConnection(ConnectionHold *connection);
+
+protected:
+	String				connect_str;
+	THash<String, String>		connect_pars;
+	SysTime				max_oldness;
+	int				max_connections;
+	int				num_connections;
+	Ref<MutexCond>			list_mutex;
+	Ref<SqlManager>			manager;
+	RList<ConnectionHold>	connection_list;
 
 public:
-	static SqlConnection *		openConnection(const String &conn_str);
-	static SqlConnection *		openConnection(const String &conn_str, THash<String, String> *pars, SqlManager **manager);
+	friend class ConnectionHold;
 };
 
 

@@ -40,7 +40,7 @@
 
 #include <dr/Ref.hxx>
 
-#include <dr/sql/SqlStatement.hxx>
+#include <dr/sql/Statement.hxx>
 
 DR_SQL_NS_BEGIN
 
@@ -52,11 +52,11 @@ class SqlAutoRun: public Object
 	DR_OBJECT_DECL_SIMPLE(SqlAutoRun, Object);
 
 public:
-	DR_CONSTRUCT			SqlAutoRun(SqlStatement *enter_st, SqlStatement *leave_st);
+	DR_CONSTRUCT			SqlAutoRun(Statement *enter_st, Statement *leave_st);
 	virtual				~SqlAutoRun();
 
 protected:
-	Ref<SqlStatement>		leave_st;
+	Ref<Statement>		leave_st;
 };
 
 

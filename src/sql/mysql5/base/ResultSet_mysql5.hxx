@@ -42,7 +42,7 @@
 
 #include <mysql/mysql.h>
 
-#include <dr/sql/mysql5/SqlStatement_mysql5.hxx>
+#include <dr/sql/mysql5/Statement_mysql5.hxx>
 #include <dr/sql/ResultSet.hxx>
 
 DR_SQL_MYSQL5_NS_BEGIN
@@ -56,7 +56,7 @@ class ResultSet_mysql5: public ResultSet
 	DR_OBJECT_DECL_SIMPLE(ResultSet_mysql5, ResultSet);
 
 public:
-	/* constructor */		ResultSet_mysql5(SqlStatement_mysql5 *conn);
+	/* constructor */		ResultSet_mysql5(Statement_mysql5 *conn);
 	virtual				~ResultSet_mysql5();
 
 public:
@@ -121,7 +121,7 @@ protected:
 	conversion *			addResConversion(void (*conv_func)(ResultSet_mysql5 *this_, conversion *conv), int column, size_t bufsize, void *user_var);
 
 protected:
-	Ref<SqlStatement_mysql5>	statement;
+	Ref<Statement_mysql5>	statement;
 	MYSQL_STMT *			stmt;
 	StringIndex			col_names;
 	SArray<MYSQL_BIND, ComparInv<MYSQL_BIND> > res_bindings;

@@ -33,42 +33,44 @@
  * @license	http://www.gnu.org/licenses/lgpl.txt GNU Lesser General Public License v3
  **/
 
-#ifndef dr__sql__mysql5__SqlStatement_mysql5_direct__hxx__
-# define dr__sql__mysql5__SqlStatement_mysql5_direct__hxx__
+#include <dr/x_kw.hxx>
+#include <dr/Const.hxx>
 
-#include <dr/Array.hxx>
+#include <dr/sql/SqlException.hxx>
+#include <dr/sql/SqlParseException.hxx>
 
-#include <dr/sql/mysql5/def.hxx>
+#include <dr/sql/mysql5/Connection_mysql5.hxx>
+
+#include <dr/sql/mysql5/Statement_mysql5_direct.hxx>
 
 #include <mysql/mysql.h>
 
-#include <dr/sql/SqlStatementDummy.hxx>
-
 DR_SQL_MYSQL5_NS_BEGIN
 
-DR_NS_USE
-DR_SQL_NS_USE
+DR_OBJECT_DEF(DR_SQL_MYSQL5_NS_STR, Statement_mysql5_direct, StatementDummy);
+DR_OBJECT_IMPL_SIMPLE(Statement_mysql5_direct);
 
-class SqlConnection_mysql5;
-
-
-class SqlStatement_mysql5_direct: public SqlStatementDummy
+Statement_mysql5_direct::Statement_mysql5_direct(Connection_mysql5 *conn_, const String &stmt_str_):
+	conn(conn_, true),
+	stmt_str(stmt_str_)
 {
-	DR_OBJECT_DECL_SIMPLE(SqlStatement_mysql5_direct, SqlStatementDummy);
+}
 
-public:
-	/* constructor */		SqlStatement_mysql5_direct(SqlConnection_mysql5 *conn, const String &stmt_str);
-	virtual				~SqlStatement_mysql5_direct();
+Statement_mysql5_direct::~Statement_mysql5_direct()
+{
+}
 
-public:
-	virtual void			executeUpdate();
-
-protected:
-	Ref<SqlConnection_mysql5>	conn;
-	String				stmt_str;
-};
+void Statement_mysql5_direct::executeUpdate()
+{
+	BString stmt_utf8(stmt_str.utf8());
+	if (mysql_real_query(conn->mysql_handle, stmt_utf8.toStr(), stmt_utf8.getSize()) != 0) {
+		Connection_mysql5::throwSqlExcept(mysql_sqlstate(conn->mysql_handle), mysql_error(conn->mysql_handle));
+	}
+	if (MYSQL_RES *res = mysql_store_result(conn->mysql_handle)) {
+		mysql_free_result(res);
+	}
+	mysql_affected_rows(conn->mysql_handle);
+}
 
 
 DR_SQL_MYSQL5_NS_END
-
-#endif

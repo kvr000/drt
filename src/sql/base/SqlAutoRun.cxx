@@ -45,7 +45,7 @@ DR_OBJECT_DEF(DR_SQL_NS_STR, SqlAutoRun, Object);
 DR_OBJECT_IMPL_SIMPLE(SqlAutoRun);
 
 
-SqlAutoRun::SqlAutoRun(SqlStatement *enter_st, SqlStatement *leave_st_)
+SqlAutoRun::SqlAutoRun(Statement *enter_st, Statement *leave_st_)
 {
 	if (enter_st) {
 		enter_st->executeUpdate();

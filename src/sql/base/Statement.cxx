@@ -33,54 +33,14 @@
  * @license	http://www.gnu.org/licenses/lgpl.txt GNU Lesser General Public License v3
  **/
 
-#include <stdio.h>
-
-#include <dr/x_kw.hxx>
 #include <dr/Const.hxx>
-#include <dr/Exception.hxx>
 
-#include <dr/sql/SqlConnection.hxx>
-#include <dr/sql/SqlStatement.hxx>
-#include <dr/sql/ResultSet.hxx>
+#include <dr/sql/Statement.hxx>
 
-DR_SQL_NS_USE
+DR_SQL_NS_BEGIN
+
+DR_OBJECT_DEF(DR_SQL_NS_STR, Statement, Object);
+DR_OBJECT_IMPL_SIMPLE(Statement);
 
 
-String i_str(Const::string("i"));
-String s_str(Const::string("s"));
-
-int main(void)
-{
-	ERef<SqlConnection> conn(SqlConnection::openConnection("driver=drSql_mysql5;host=localhost;port=3306;db=dr_test;user=dr_test;pass=dr_test"));
-	ERef<SqlStatement> sql(conn->createStatement("select i, s from sample0 where i between ? and ? order by i"));
-	for (int i = 0; ; i++) {
-		//sql->setOffsetLimit(i*10, 10);
-		sql->prepare();
-		sql->bindParam(0, 1);
-		sql->bindParam(1, 40);
-		ERef<ResultSet> rs(sql->executeQuery());
-		Sint32 vi = -999;
-		String vs;
-		rs->bindResult(i_str, &vi);
-		rs->bindResult(s_str, &vs);
-		if (rs->fetchRow()) {
-			do {
-				printf("b=%4d i=%4d s=%s z=%s\n", vi, (int)rs->getInt(i_str), rs->getString(s_str).utf8().toStr(), vs.utf8().toStr());
-			} while (rs->fetchRow());
-			break;
-		}
-		else {
-			break;
-		}
-	}
-
-	xtry {
-		tref(conn->prepareStatement("insert into sample0 (i, s) values(4, 'he')"))->executeUpdate();
-	}
-	xcatch (Exception, ex) {
-		printf("caught exception: %s\n", ex->stringify().utf8().toStr());
-	}
-	xend;
-
-	return 0;
-}
+DR_SQL_NS_END

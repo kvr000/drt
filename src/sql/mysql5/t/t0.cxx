@@ -33,44 +33,54 @@
  * @license	http://www.gnu.org/licenses/lgpl.txt GNU Lesser General Public License v3
  **/
 
+#include <stdio.h>
+
 #include <dr/x_kw.hxx>
 #include <dr/Const.hxx>
+#include <dr/Exception.hxx>
 
-#include <dr/sql/SqlException.hxx>
-#include <dr/sql/SqlParseException.hxx>
+#include <dr/sql/Connection.hxx>
+#include <dr/sql/Statement.hxx>
+#include <dr/sql/ResultSet.hxx>
 
-#include <dr/sql/mysql5/SqlConnection_mysql5.hxx>
+DR_SQL_NS_USE
 
-#include <dr/sql/mysql5/SqlStatement_mysql5_direct.hxx>
 
-#include <mysql/mysql.h>
+String i_str(Const::string("i"));
+String s_str(Const::string("s"));
 
-DR_SQL_MYSQL5_NS_BEGIN
-
-DR_OBJECT_DEF(DR_SQL_MYSQL5_NS_STR, SqlStatement_mysql5_direct, SqlStatementDummy);
-DR_OBJECT_IMPL_SIMPLE(SqlStatement_mysql5_direct);
-
-SqlStatement_mysql5_direct::SqlStatement_mysql5_direct(SqlConnection_mysql5 *conn_, const String &stmt_str_):
-	conn(conn_, true),
-	stmt_str(stmt_str_)
+int main(void)
 {
-}
-
-SqlStatement_mysql5_direct::~SqlStatement_mysql5_direct()
-{
-}
-
-void SqlStatement_mysql5_direct::executeUpdate()
-{
-	BString stmt_utf8(stmt_str.utf8());
-	if (mysql_real_query(conn->mysql_handle, stmt_utf8.toStr(), stmt_utf8.getSize()) != 0) {
-		SqlConnection_mysql5::throwSqlExcept(mysql_sqlstate(conn->mysql_handle), mysql_error(conn->mysql_handle));
+	ERef<Connection> conn(Connection::openConnection("driver=drSql_mysql5;host=localhost;port=3306;db=dr_test;user=dr_test;pass=dr_test"));
+	ERef<Statement> sql(conn->createStatement("select i, s from sample0 where i between ? and ? order by i"));
+	for (int i = 0; ; i++) {
+		//sql->setOffsetLimit(i*10, 10);
+		sql->prepare();
+		sql->bindParam(0, 1);
+		sql->bindParam(1, 40);
+		ERef<ResultSet> rs(sql->executeQuery());
+		Sint32 vi = -999;
+		String vs;
+		rs->bindResult(i_str, &vi);
+		rs->bindResult(s_str, &vs);
+		if (rs->fetchRow()) {
+			do {
+				printf("b=%4d i=%4d s=%s z=%s\n", vi, (int)rs->getInt(i_str), rs->getString(s_str).utf8().toStr(), vs.utf8().toStr());
+			} while (rs->fetchRow());
+			break;
+		}
+		else {
+			break;
+		}
 	}
-	if (MYSQL_RES *res = mysql_store_result(conn->mysql_handle)) {
-		mysql_free_result(res);
+
+	xtry {
+		tref(conn->prepareStatement("insert into sample0 (i, s) values(4, 'he')"))->executeUpdate();
 	}
-	mysql_affected_rows(conn->mysql_handle);
+	xcatch (Exception, ex) {
+		printf("caught exception: %s\n", ex->stringify().utf8().toStr());
+	}
+	xend;
+
+	return 0;
 }
-
-
-DR_SQL_MYSQL5_NS_END

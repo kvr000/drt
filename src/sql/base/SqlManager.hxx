@@ -47,7 +47,7 @@ DR_SQL_NS_BEGIN
 DR_NS_USE
 
 
-class SqlConnection;
+class Connection;
 
 
 class SqlManager: public Object
@@ -55,7 +55,7 @@ class SqlManager: public Object
 	DR_OBJECT_DECL_SIMPLE(SqlManager, Object);
 
 public:
-	virtual SqlConnection *		openConnection(THash<String, String> *conn_str) = 0;
+	virtual Connection *		openConnection(THash<String, String> *conn_str) = 0;
 };
 
 

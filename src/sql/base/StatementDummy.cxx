@@ -39,104 +39,104 @@
 #include <dr/UnsupportedException.hxx>
 #include <dr/sql/SqlException.hxx>
 
-#include <dr/sql/SqlStatementDummy.hxx>
+#include <dr/sql/StatementDummy.hxx>
 
 #include <mysql/mysql.h>
 
 DR_SQL_NS_BEGIN
 
-DR_OBJECT_DEF(DR_SQL_NS_STR, SqlStatementDummy, SqlStatement);
-DR_OBJECT_IMPL_SIMPLE(SqlStatementDummy);
+DR_OBJECT_DEF(DR_SQL_NS_STR, StatementDummy, Statement);
+DR_OBJECT_IMPL_SIMPLE(StatementDummy);
 
 
-SqlStatementDummy::~SqlStatementDummy()
+StatementDummy::~StatementDummy()
 {
 }
 
-void SqlStatementDummy::setLimit(long limit_)
+void StatementDummy::setLimit(long limit_)
 {
 }
 
-void SqlStatementDummy::setOffset(long offset_)
+void StatementDummy::setOffset(long offset_)
 {
 }
 
-void SqlStatementDummy::setOffsetLimit(long offset_, long limit_)
+void StatementDummy::setOffsetLimit(long offset_, long limit_)
 {
 }
 
-void SqlStatementDummy::prepare()
+void StatementDummy::prepare()
 {
 }
 
-void SqlStatementDummy::bindParamNull(unsigned column)
+void StatementDummy::bindParamNull(unsigned column)
 {
 }
 
-void SqlStatementDummy::bindParam(unsigned column, Sint8 value)
+void StatementDummy::bindParam(unsigned column, Sint8 value)
 {
 }
 
-void SqlStatementDummy::bindParam(unsigned column, Sint16 value)
+void StatementDummy::bindParam(unsigned column, Sint16 value)
 {
 }
 
-void SqlStatementDummy::bindParam(unsigned column, Sint32 value)
+void StatementDummy::bindParam(unsigned column, Sint32 value)
 {
 }
 
-void SqlStatementDummy::bindParam(unsigned column, Sint64 value)
+void StatementDummy::bindParam(unsigned column, Sint64 value)
 {
 }
 
-void SqlStatementDummy::bindParam(unsigned column, double value)
+void StatementDummy::bindParam(unsigned column, double value)
 {
 }
 
-void SqlStatementDummy::bindParam(unsigned column, const String &value)
+void StatementDummy::bindParam(unsigned column, const String &value)
 {
 }
 
-void SqlStatementDummy::bindParam(unsigned column, const Date &value)
+void StatementDummy::bindParam(unsigned column, const Date &value)
 {
 }
 
-void SqlStatementDummy::bindParam(unsigned column, const Blob &value)
+void StatementDummy::bindParam(unsigned column, const Blob &value)
 {
 }
 
-void SqlStatementDummy::bindParam(unsigned column, Variant *variant)
+void StatementDummy::bindParam(unsigned column, Variant *variant)
 {
 }
 
-void SqlStatementDummy::bindParams(Variant **values, size_t values_count)
+void StatementDummy::bindParams(Variant **values, size_t values_count)
 {
 	while (values_count--) {
 		bindParam(values_count, values[values_count]);
 	}
 }
 
-bool SqlStatementDummy::isBusy()
+bool StatementDummy::isBusy()
 {
 	return false;
 }
 
-void SqlStatementDummy::executeUpdate()
+void StatementDummy::executeUpdate()
 {
 }
 
-ResultSet *SqlStatementDummy::executeQuery()
+ResultSet *StatementDummy::executeQuery()
 {
 	xthrownew(UnsupportedException(this, "sql", "executeQuery", ""));
 	return NULL;
 }
 
-Uint64 SqlStatementDummy::getAffectedRows()
+Uint64 StatementDummy::getAffectedRows()
 {
 	return 0;
 }
 
-Uint64 SqlStatementDummy::getInsertId()
+Uint64 StatementDummy::getInsertId()
 {
 	xthrownew(UnsupportedException(this, "sql", "getInsertId", ""));
 	return 0;

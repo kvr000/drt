@@ -50,9 +50,9 @@ class Date;
 class ResultSet;
 
 
-class SqlStatement: public Object
+class Statement: public Object
 {
-	DR_OBJECT_DECL_SIMPLE(SqlStatement, Object);
+	DR_OBJECT_DECL_SIMPLE(Statement, Object);
 
 public:
 	virtual void			setLimit(long limit) = 0;

@@ -41,8 +41,8 @@
 
 #include <dr/sql/SqlException.hxx>
 
-#include <dr/sql/mysql5/SqlConnection_mysql5.hxx>
-#include <dr/sql/mysql5/SqlStatement_mysql5.hxx>
+#include <dr/sql/mysql5/Connection_mysql5.hxx>
+#include <dr/sql/mysql5/Statement_mysql5.hxx>
 
 #include <dr/sql/mysql5/SqlManager_mysql5.hxx>
 
@@ -52,7 +52,7 @@ DR_OBJECT_DEF(DR_SQL_MYSQL5_NS_STR, SqlManager_mysql5, SqlManager);
 DR_OBJECT_IMPL_SIMPLE(SqlManager_mysql5);
 
 
-SqlConnection *SqlManager_mysql5::openConnection(THash<String, String> *args)
+Connection *SqlManager_mysql5::openConnection(THash<String, String> *args)
 {
 	BString host((*args)["host"].utf8());
 	BString port((*args)["port"].utf8());
@@ -74,9 +74,9 @@ SqlConnection *SqlManager_mysql5::openConnection(THash<String, String> *args)
 			xtry {
 				String charset((*args)["charset"]);
 				if (!charset.isNullEmpty() && mysql_set_character_set(handle, charset.utf8()) != 0) {
-					SqlConnection_mysql5::throwSqlExcept(mysql_sqlstate(handle), mysql_error(handle));
+					Connection_mysql5::throwSqlExcept(mysql_sqlstate(handle), mysql_error(handle));
 				}
-				SqlConnection_mysql5 *c = new dr::sql::mysql5::SqlConnection_mysql5(handle);
+				Connection_mysql5 *c = new dr::sql::mysql5::Connection_mysql5(handle);
 				c->auto_reconnect = reconnect;
 				c->use_locks = locks;
 				return c;
@@ -89,7 +89,7 @@ SqlConnection *SqlManager_mysql5::openConnection(THash<String, String> *args)
 		}
 		else {
 			xtry {
-				SqlConnection_mysql5::throwSqlExcept(mysql_sqlstate(handle), mysql_error(handle));
+				Connection_mysql5::throwSqlExcept(mysql_sqlstate(handle), mysql_error(handle));
 			}
 			xcatchany {
 				mysql_close(handle);

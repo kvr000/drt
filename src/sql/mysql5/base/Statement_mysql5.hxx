@@ -33,28 +33,32 @@
  * @license	http://www.gnu.org/licenses/lgpl.txt GNU Lesser General Public License v3
  **/
 
-#ifndef dr__sql__SqlStatementDummy__hxx__
-# define dr__sql__SqlStatementDummy__hxx__
+#ifndef dr__sql__mysql5__SqlStatement_mysql5__hxx__
+# define dr__sql__mysql5__SqlStatement_mysql5__hxx__
 
-#include <dr/sql/def.hxx>
+#include <dr/Array.hxx>
 
-#include <dr/sql/Date.hxx>
-#include <dr/sql/SqlStatement.hxx>
+#include <dr/sql/mysql5/def.hxx>
 
-DR_SQL_NS_BEGIN
+#include <mysql/mysql.h>
+
+#include <dr/sql/Statement.hxx>
+
+DR_SQL_MYSQL5_NS_BEGIN
 
 DR_NS_USE
+DR_SQL_NS_USE
 
-class Date;
-class ResultSet;
+class Connection_mysql5;
 
 
-class SqlStatementDummy: public SqlStatement
+class Statement_mysql5: public Statement
 {
-	DR_OBJECT_DECL_SIMPLE(SqlStatementDummy, SqlStatement);
+	DR_OBJECT_DECL_SIMPLE(Statement_mysql5, Statement);
 
-protected:
-	virtual				~SqlStatementDummy();
+public:
+	/* constructor */		Statement_mysql5(Connection_mysql5 *conn, MYSQL_STMT *stmt, String stmt_str);
+	virtual				~Statement_mysql5();
 
 public:
 	virtual void			setLimit(long limit);
@@ -87,9 +91,27 @@ public:
 public:
 	virtual Uint64			getAffectedRows();
 	virtual Uint64			getInsertId();
+
+protected:
+	void				recreateStmt();
+	MYSQL_BIND *			allocParBinding(unsigned idx);
+
+protected:
+	Ref<Connection_mysql5>	conn;
+	String				stmt_str;
+	long				limit;
+	long				offset;
+	MYSQL_STMT *			stmt;
+	SArray<MYSQL_BIND, ComparInv<MYSQL_BIND> > par_bindings;
+
+	bool				has_limit:1;
+	bool				has_offset:1;
+	bool				is_busy:1;
+
+	friend class ResultSet_mysql5;
 };
 
 
-DR_SQL_NS_END
+DR_SQL_MYSQL5_NS_END
 
 #endif

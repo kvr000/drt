@@ -40,30 +40,30 @@
 #include <dr/Hash.hxx>
 #include <dr/Time.hxx>
 
-#include <dr/sql/SqlConnection.hxx>
+#include <dr/sql/Connection.hxx>
 
 DR_SQL_NS_BEGIN
 
 DR_NS_USE
 
-class SqlConnectionPool;
+class ConnectionPool;
 
 
-class SqlConnectionHold: public SqlConnection
+class ConnectionHold: public Connection
 {
-	DR_OBJECT_DECL_SIMPLE(SqlConnectionHold, SqlConnection);
+	DR_OBJECT_DECL_SIMPLE(ConnectionHold, Connection);
 
 public:
-	DR_CONSTRUCT			SqlConnectionHold(SqlConnection *connection);
-	DR_CONSTRUCT			SqlConnectionHold(SqlConnectionPool *pool, SqlConnection *connection);
+	DR_CONSTRUCT			ConnectionHold(Connection *connection);
+	DR_CONSTRUCT			ConnectionHold(ConnectionPool *pool, Connection *connection);
 
 protected:
-	virtual				~SqlConnectionHold();
+	virtual				~ConnectionHold();
 
 public:
-	DR_RINLINE SqlConnection *	getConnection()				{ return connection.getDoref(); }
-	DR_RINLINE SqlConnection *	accConnection()				{ return connection.getNoref(); }
-	DR_RINLINE void			setConnection(SqlConnection *c)		{ connection.setDoref(c); }
+	DR_RINLINE Connection *	getConnection()				{ return connection.getDoref(); }
+	DR_RINLINE Connection *	accConnection()				{ return connection.getNoref(); }
+	DR_RINLINE void			setConnection(Connection *c)		{ connection.setDoref(c); }
 
 public:
 	virtual bool			ping();
@@ -72,10 +72,10 @@ public:
 	virtual void			rollback();
 
 public:
-	virtual SqlStatement *		createStatement(const String &sql);
-	virtual SqlStatement *		prepareStatement(const String &sql);
-	virtual bool			prepareLockStatements(SqlStatement **lock_mem, SqlStatement **unlock_mem, int lock_type0, const String *lock_table0, ...);
-	virtual bool			prepareLockStatements(SqlStatement **lock_mem, SqlStatement **unlock_mem, int *lock_type, const String *lock_tables, size_t count);
+	virtual Statement *		createStatement(const String &sql);
+	virtual Statement *		prepareStatement(const String &sql);
+	virtual bool			prepareLockStatements(Statement **lock_mem, Statement **unlock_mem, int lock_type0, const String *lock_table0, ...);
+	virtual bool			prepareLockStatements(Statement **lock_mem, Statement **unlock_mem, int *lock_type, const String *lock_tables, size_t count);
 
 public:
 	/**
@@ -121,13 +121,13 @@ public:
 	virtual void			addDbLayer(const String &name, Object *db_layer);
 
 protected:
-	SqlConnectionPool *		pool;
-	Ref<SqlConnection>		connection;
+	ConnectionPool *		pool;
+	Ref<Connection>		connection;
 	SysTime				created;
 	THash<String, Ref<Object> >	db_layers;
 
 protected:
-	friend class SqlConnectionPool;
+	friend class ConnectionPool;
 };
 
 

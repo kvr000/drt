@@ -446,14 +446,14 @@ sub printClass($$)
 	if ($cld->{type} eq "sqllayer") {
 		$cld->{ancestor} = "dr::sql::SqlLayer" unless (defined $cld->{ancestor});
 		dieCldContext($cld, "sqllayer type used but no sql file opened") unless ($sql);
-		unshift(@{$cld->{methods}}, { specs => [ "protected" ], ret => "DR_CONSTRUCT", "decl" => "$cld->{class}(dr::sql::SqlConnectionHold *db_connection)" });
+		unshift(@{$cld->{methods}}, { specs => [ "protected" ], ret => "DR_CONSTRUCT", "decl" => "$cld->{class}(dr::sql::ConnectionHold *db_connection)" });
 		if ($cld->{typeflag}->{noreg}) {
-			$sql->printf("DR_MET(protected)\n%s::%s(dr::sql::SqlConnectionHold *db_connection_):\n\t%s(db_connection_)\n{\n}\n\n", $cld->{class}, $cld->{class}, $cld->{ancestor});
+			$sql->printf("DR_MET(protected)\n%s::%s(dr::sql::ConnectionHold *db_connection_):\n\t%s(db_connection_)\n{\n}\n\n", $cld->{class}, $cld->{class}, $cld->{ancestor});
 		}
 		else {
-			push(@{$cld->{methods}}, { specs => [ "static", "public" ], ret => "$cld->{class} *", "decl" => "accCached(dr::sql::SqlConnectionHold *db_connection)" });
-			$sql->printf("DR_MET(protected)\n%s::%s(dr::sql::SqlConnectionHold *db_connection_):\n\t%s(db_connection_)\n{\n\tdb_connection_->addDbLayer(this);\n}\n\n", $cld->{class}, $cld->{class}, $cld->{ancestor});
-			$sql->printf("DR_MET(static public)\n%s *%s::accCached(dr::sql::SqlConnectionHold *holder)\n{\n\tif (%s *this_ = (%s *)holder->accDbLayer(comp_name))\n\t\treturn this_;\n\treturn tref(new %s(holder));\n}\n", $cld->{class}, $cld->{class}, $cld->{class}, $cld->{class}, $cld->{class});
+			push(@{$cld->{methods}}, { specs => [ "static", "public" ], ret => "$cld->{class} *", "decl" => "accCached(dr::sql::ConnectionHold *db_connection)" });
+			$sql->printf("DR_MET(protected)\n%s::%s(dr::sql::ConnectionHold *db_connection_):\n\t%s(db_connection_)\n{\n\tdb_connection_->addDbLayer(this);\n}\n\n", $cld->{class}, $cld->{class}, $cld->{ancestor});
+			$sql->printf("DR_MET(static public)\n%s *%s::accCached(dr::sql::ConnectionHold *holder)\n{\n\tif (%s *this_ = (%s *)holder->accDbLayer(comp_name))\n\t\treturn this_;\n\treturn tref(new %s(holder));\n}\n", $cld->{class}, $cld->{class}, $cld->{class}, $cld->{class}, $cld->{class});
 		}
 	}
 
@@ -534,7 +534,7 @@ sub printClass($$)
 		dieCldContext($cld, "found sql but no sql file was opened") unless ($sql);
 		foreach my $sqd (@{$cld->{sqls}}) {
 			push(@{$cld->{methods}}, { specs => [ "protected" ], ret => "void", "decl" => "prep_$sqd->{name}()" });
-			push(@{$cld->{ats}}, { access => "protected", def => "Ref<dr::sql::SqlStatement>\tst_$sqd->{name};", line => $sqd->{line}, lineno => $sqd->{lineno} });
+			push(@{$cld->{ats}}, { access => "protected", def => "Ref<dr::sql::Statement>\tst_$sqd->{name};", line => $sqd->{line}, lineno => $sqd->{lineno} });
 			$sql->printf("\nvoid %s::prep_%s()\n{\n\tst_%s.setNoref(db_connection->prepareStatement(\"%s\"));\n}\n", $cld->{class}, $sqd->{name}, $sqd->{name}, escapeCString($sqd->{query}, 2));
 			addTagMethod($cld, { ret => "void", decl => "prep_$sqd->{name}", line => $sqd->{line}, lineno => $sqd->{lineno} }, $cxxname);
 		}

@@ -44,7 +44,7 @@
 #include <dr/sql/SqlParseException.hxx>
 
 #include <dr/sql/Date.hxx>
-#include <dr/sql/mysql5/SqlConnection_mysql5.hxx>
+#include <dr/sql/mysql5/Connection_mysql5.hxx>
 
 #include <dr/sql/mysql5/ResultSet_mysql5.hxx>
 
@@ -55,7 +55,7 @@ DR_SQL_MYSQL5_NS_BEGIN
 DR_OBJECT_DEF(DR_SQL_MYSQL5_NS_STR, ResultSet_mysql5, ResultSet);
 DR_OBJECT_IMPL_SIMPLE(ResultSet_mysql5);
 
-ResultSet_mysql5::ResultSet_mysql5(SqlStatement_mysql5 *statement_):
+ResultSet_mysql5::ResultSet_mysql5(Statement_mysql5 *statement_):
 	statement(statement_, true),
 	stmt(statement_->stmt),
 	col_names((size_t)0, (const String *)NULL),
@@ -276,7 +276,7 @@ bool ResultSet_mysql5::fetchRow()
 				res_bindings[i].is_null = &res_bindings[i].is_null_value;
 		}
 		if (mysql_stmt_bind_result(stmt, &res_bindings[0]) != 0) {
-			SqlConnection_mysql5::throwSqlExcept(mysql_stmt_sqlstate(stmt), mysql_stmt_error(stmt));
+			Connection_mysql5::throwSqlExcept(mysql_stmt_sqlstate(stmt), mysql_stmt_error(stmt));
 			return false;
 		}
 		res_binding_done = true;
@@ -318,7 +318,7 @@ bool ResultSet_mysql5::fetchRow()
 		return false;
 
 	default:
-		SqlConnection_mysql5::throwSqlExcept(mysql_stmt_sqlstate(stmt), mysql_stmt_error(stmt));
+		Connection_mysql5::throwSqlExcept(mysql_stmt_sqlstate(stmt), mysql_stmt_error(stmt));
 		return false;
 	}
 }
@@ -329,7 +329,7 @@ void ResultSet_mysql5::store()
 		return;
 	stored = true;
 	if (mysql_stmt_store_result(stmt) != 0) {
-		SqlConnection_mysql5::throwSqlExcept(mysql_stmt_sqlstate(stmt), mysql_stmt_error(stmt));
+		Connection_mysql5::throwSqlExcept(mysql_stmt_sqlstate(stmt), mysql_stmt_error(stmt));
 	}
 }
 
@@ -357,7 +357,7 @@ Sint64 ResultSet_mysql5::getInt(unsigned column)
 	case 0:
 		return value;
 	default:
-		SqlConnection_mysql5::throwSqlExcept(mysql_stmt_sqlstate(stmt), mysql_stmt_error(stmt));
+		Connection_mysql5::throwSqlExcept(mysql_stmt_sqlstate(stmt), mysql_stmt_error(stmt));
 		return 0;
 	}
 }
@@ -381,7 +381,7 @@ double ResultSet_mysql5::getDouble(unsigned column)
 	case 0:
 		return value;
 	default:
-		SqlConnection_mysql5::throwSqlExcept(mysql_stmt_sqlstate(stmt), mysql_stmt_error(stmt));
+		Connection_mysql5::throwSqlExcept(mysql_stmt_sqlstate(stmt), mysql_stmt_error(stmt));
 		return 0;
 	}
 }
@@ -423,7 +423,7 @@ retry:
 
 	default:
 		value.unlock(length);
-		SqlConnection_mysql5::throwSqlExcept(mysql_stmt_sqlstate(stmt), mysql_stmt_error(stmt));
+		Connection_mysql5::throwSqlExcept(mysql_stmt_sqlstate(stmt), mysql_stmt_error(stmt));
 	}
 	value.unlock(length);
 	return value;
@@ -466,7 +466,7 @@ retry:
 
 	default:
 		value.unlock(length);
-		SqlConnection_mysql5::throwSqlExcept(mysql_stmt_sqlstate(stmt), mysql_stmt_error(stmt));
+		Connection_mysql5::throwSqlExcept(mysql_stmt_sqlstate(stmt), mysql_stmt_error(stmt));
 	}
 	value.unlock(length);
 	return value;
@@ -494,7 +494,7 @@ Date ResultSet_mysql5::getDate(unsigned column)
 		break;
 
 	default:
-		SqlConnection_mysql5::throwSqlExcept(mysql_stmt_sqlstate(stmt), mysql_stmt_error(stmt));
+		Connection_mysql5::throwSqlExcept(mysql_stmt_sqlstate(stmt), mysql_stmt_error(stmt));
 	}
 	return native_value;
 }

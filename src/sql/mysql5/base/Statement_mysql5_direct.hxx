@@ -33,60 +33,40 @@
  * @license	http://www.gnu.org/licenses/lgpl.txt GNU Lesser General Public License v3
  **/
 
-#ifndef dr__sql__mysql5__SqlConnection_mysql5__hxx__
-# define dr__sql__mysql5__SqlConnection_mysql5__hxx__
+#ifndef dr__sql__mysql5__SqlStatement_mysql5_direct__hxx__
+# define dr__sql__mysql5__SqlStatement_mysql5_direct__hxx__
 
-#include <mysql/mysql.h>
+#include <dr/Array.hxx>
 
 #include <dr/sql/mysql5/def.hxx>
 
-#include <dr/sql/SqlConnection.hxx>
+#include <mysql/mysql.h>
+
+#include <dr/sql/StatementDummy.hxx>
 
 DR_SQL_MYSQL5_NS_BEGIN
 
 DR_NS_USE
 DR_SQL_NS_USE
 
+class Connection_mysql5;
 
-class SqlConnection_mysql5: public SqlConnection
+
+class Statement_mysql5_direct: public StatementDummy
 {
-	DR_OBJECT_DECL_SIMPLE(SqlConnection_mysql5, SqlConnection);
+	DR_OBJECT_DECL_SIMPLE(Statement_mysql5_direct, StatementDummy);
 
 public:
-	/* constructor */		SqlConnection_mysql5(MYSQL *handle);
+	/* constructor */		Statement_mysql5_direct(Connection_mysql5 *conn, const String &stmt_str);
+	virtual				~Statement_mysql5_direct();
+
+public:
+	virtual void			executeUpdate();
 
 protected:
-	virtual				~SqlConnection_mysql5();
-
-public:
-	virtual bool			ping();
-	virtual void			reconnect();
-	
-public:
-	virtual void			commit();
-	virtual void			rollback();
-
-public:
-	virtual SqlStatement *		createStatement(const String &sql);
-	virtual SqlStatement *		prepareStatement(const String &sql);
-	virtual bool			prepareLockStatements(SqlStatement **lock_mem, SqlStatement **unlock_mem, int lock_type0, const String *table0, ...);
-	virtual bool			prepareLockStatements(SqlStatement **lock_mem, SqlStatement **unlock_mem, int *lock_type, const String *lock_tables, size_t count);
-
-public: // within mysql5 implementation
-	static void			throwSqlExcept(const char *code, const char *error_desc);
-	static int			parseSqlCode(const char *code);
-
-public:
-	MYSQL *				mysql_handle;
-	bool				auto_reconnect;
-	bool				use_locks;
-
-public:
-	friend class SqlManager_mysql5;
+	Ref<Connection_mysql5>	conn;
+	String				stmt_str;
 };
-
-
-SqlConnection *openConnection(const char *host, const char *user, const char *pass);
 
 
 DR_SQL_MYSQL5_NS_END

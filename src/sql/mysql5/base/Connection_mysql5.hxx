@@ -33,42 +33,60 @@
  * @license	http://www.gnu.org/licenses/lgpl.txt GNU Lesser General Public License v3
  **/
 
-#ifndef dr__sql__mysql5__SqlManager_mysql5__hxx__
-# define dr__sql__mysql5__SqlManager_mysql5__hxx__
+#ifndef dr__sql__mysql5__SqlConnection_mysql5__hxx__
+# define dr__sql__mysql5__SqlConnection_mysql5__hxx__
 
-#include <dr/Subsystem.hxx>
-#include <dr/Hash.hxx>
+#include <mysql/mysql.h>
 
 #include <dr/sql/mysql5/def.hxx>
 
-#include <dr/sql/dev/SqlManager.hxx>
+#include <dr/sql/Connection.hxx>
 
 DR_SQL_MYSQL5_NS_BEGIN
 
 DR_NS_USE
+DR_SQL_NS_USE
 
 
-class SqlManager_mysql5: public SqlManager
+class Connection_mysql5: public Connection
 {
-	DR_OBJECT_DECL_SIMPLE(SqlManager, Object);
+	DR_OBJECT_DECL_SIMPLE(Connection_mysql5, Connection);
 
 public:
-	virtual SqlConnection *		openConnection(THash<String, String> *conn_str);
+	/* constructor */		Connection_mysql5(MYSQL *handle);
+
+protected:
+	virtual				~Connection_mysql5();
+
+public:
+	virtual bool			ping();
+	virtual void			reconnect();
+	
+public:
+	virtual void			commit();
+	virtual void			rollback();
+
+public:
+	virtual Statement *		createStatement(const String &sql);
+	virtual Statement *		prepareStatement(const String &sql);
+	virtual bool			prepareLockStatements(Statement **lock_mem, Statement **unlock_mem, int lock_type0, const String *table0, ...);
+	virtual bool			prepareLockStatements(Statement **lock_mem, Statement **unlock_mem, int *lock_type, const String *lock_tables, size_t count);
+
+public: // within mysql5 implementation
+	static void			throwSqlExcept(const char *code, const char *error_desc);
+	static int			parseSqlCode(const char *code);
+
+public:
+	MYSQL *				mysql_handle;
+	bool				auto_reconnect;
+	bool				use_locks;
+
+public:
+	friend class SqlManager_mysql5;
 };
 
 
-class Sql_SS_mysql5: public Subsystem
-{
-public:
-	/**/				Sql_SS_mysql5();
-	virtual				~Sql_SS_mysql5();
-
-public:
-	Object *			create(const String &object);
-	void *				create(const String &object, const String &iface);
-	Object *			create(int object);
-	void *				create(int object, int iface);
-};
+Connection *openConnection(const char *host, const char *user, const char *pass);
 
 
 DR_SQL_MYSQL5_NS_END

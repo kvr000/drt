@@ -42,29 +42,29 @@
 #include <dr/sql/SqlException.hxx>
 #include <dr/sql/SqlUniqueConstraintException.hxx>
 
-#include <dr/sql/mysql5/SqlStatement_mysql5.hxx>
-#include <dr/sql/mysql5/SqlStatement_mysql5_direct.hxx>
+#include <dr/sql/mysql5/Statement_mysql5.hxx>
+#include <dr/sql/mysql5/Statement_mysql5_direct.hxx>
 
-#include <dr/sql/mysql5/SqlConnection_mysql5.hxx>
+#include <dr/sql/mysql5/Connection_mysql5.hxx>
 
 DR_SQL_MYSQL5_NS_BEGIN
 
-DR_OBJECT_DEF(DR_SQL_MYSQL5_NS_STR, SqlConnection_mysql5, SqlConnection);
-DR_OBJECT_IMPL_SIMPLE(SqlConnection_mysql5);
+DR_OBJECT_DEF(DR_SQL_MYSQL5_NS_STR, Connection_mysql5, Connection);
+DR_OBJECT_IMPL_SIMPLE(Connection_mysql5);
 
-SqlConnection_mysql5::SqlConnection_mysql5(MYSQL *handle_):
+Connection_mysql5::Connection_mysql5(MYSQL *handle_):
 	mysql_handle(handle_),
 	auto_reconnect(false),
 	use_locks(false)
 {
 }
 
-SqlConnection_mysql5::~SqlConnection_mysql5()
+Connection_mysql5::~Connection_mysql5()
 {
 	mysql_close(mysql_handle);
 }
 
-bool SqlConnection_mysql5::ping()
+bool Connection_mysql5::ping()
 {
 	int err = mysql_ping(mysql_handle);
 	if (err != 0) {
@@ -73,23 +73,23 @@ bool SqlConnection_mysql5::ping()
 	return true;
 }
 
-void SqlConnection_mysql5::reconnect()
+void Connection_mysql5::reconnect()
 {
 }
 
-void SqlConnection_mysql5::commit()
+void Connection_mysql5::commit()
 {
 }
 
-void SqlConnection_mysql5::rollback()
+void Connection_mysql5::rollback()
 {
 }
 
-SqlStatement *SqlConnection_mysql5::createStatement(const String &sql)
+Statement *Connection_mysql5::createStatement(const String &sql)
 {
 	if (MYSQL_STMT *stmt = mysql_stmt_init(mysql_handle)) {
 		DR_TRY {
-			return new SqlStatement_mysql5(this, stmt, sql);
+			return new Statement_mysql5(this, stmt, sql);
 		}
 		DR_CATCHANY {
 			mysql_stmt_close(stmt);
@@ -100,14 +100,14 @@ SqlStatement *SqlConnection_mysql5::createStatement(const String &sql)
 	return NULL;
 }
 
-SqlStatement *SqlConnection_mysql5::prepareStatement(const String &sql)
+Statement *Connection_mysql5::prepareStatement(const String &sql)
 {
-	ERef<SqlStatement> s(createStatement(sql));
+	ERef<Statement> s(createStatement(sql));
 	s->prepare();
 	return s.getAndNull();
 }
 
-bool SqlConnection_mysql5::prepareLockStatements(SqlStatement **lock_mem, SqlStatement **unlock_mem, int lock_type0, const String *table0, ...)
+bool Connection_mysql5::prepareLockStatements(Statement **lock_mem, Statement **unlock_mem, int lock_type0, const String *table0, ...)
 {
 	bool exists = false;
 	va_list vl;
@@ -138,13 +138,13 @@ bool SqlConnection_mysql5::prepareLockStatements(SqlStatement **lock_mem, SqlSta
 	if (exists) {
 		lock_str.append(";");
 		unlock_str.append(";");
-		DR_REF_XCHG(lock_mem, (SqlStatement *)new SqlStatement_mysql5_direct(this, lock_str));
-		DR_REF_XCHG(unlock_mem, (SqlStatement *)new SqlStatement_mysql5_direct(this, unlock_str));
+		DR_REF_XCHG(lock_mem, (Statement *)new Statement_mysql5_direct(this, lock_str));
+		DR_REF_XCHG(unlock_mem, (Statement *)new Statement_mysql5_direct(this, unlock_str));
 	}
 	return exists;
 }
 
-bool SqlConnection_mysql5::prepareLockStatements(SqlStatement **lock_mem, SqlStatement **unlock_mem, int *types, const String *tables, size_t count)
+bool Connection_mysql5::prepareLockStatements(Statement **lock_mem, Statement **unlock_mem, int *types, const String *tables, size_t count)
 {
 	bool exists = false;
 	String lock_str("LOCK TABLES ");
@@ -164,13 +164,13 @@ bool SqlConnection_mysql5::prepareLockStatements(SqlStatement **lock_mem, SqlSta
 	if (exists) {
 		lock_str.append(";");
 		unlock_str.append(";");
-		DR_REF_XCHG(lock_mem, (SqlStatement *)new SqlStatement_mysql5_direct(this, lock_str));
-		DR_REF_XCHG(unlock_mem, (SqlStatement *)new SqlStatement_mysql5_direct(this, unlock_str));
+		DR_REF_XCHG(lock_mem, (Statement *)new Statement_mysql5_direct(this, lock_str));
+		DR_REF_XCHG(unlock_mem, (Statement *)new Statement_mysql5_direct(this, unlock_str));
 	}
 	return exists;
 }
 
-int SqlConnection_mysql5::parseSqlCode(const char *code_str)
+int Connection_mysql5::parseSqlCode(const char *code_str)
 {
 	int code = 0;
 	for (; *code_str; code_str++) {
@@ -183,7 +183,7 @@ int SqlConnection_mysql5::parseSqlCode(const char *code_str)
 	return code;
 }
 
-void SqlConnection_mysql5::throwSqlExcept(const char *code_str, const char *error_desc)
+void Connection_mysql5::throwSqlExcept(const char *code_str, const char *error_desc)
 {
 	int code = parseSqlCode(code_str);
 	SqlException *ex;
