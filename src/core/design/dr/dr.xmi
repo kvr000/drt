@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xmi:XMI xmi:version="2.1" xmlns:uml="http://schema.omg.org/spec/UML/2.1" xmlns:xmi="http://schema.omg.org/spec/XMI/2.1">
+	<xmi:Documentation exporter="Bouml" exporterVersion="1.10.2"/>
+	<uml:Model xmi:type="uml:Model" xmi:id="themodel" name="dr">
+		<packagedElement xmi:type="uml:Package" xmi:id="BOUML_0x81_22" name ="dr">
+			<xmi:Extension extender="Bouml">
+				<taggedValue tag="gxmi gen extensions" value="yes"/>
+				<taggedValue tag="gxmi comment exporter" value="no"/>
+				<taggedValue tag="gxmi uml2.0" value="no"/>
+				<taggedValue tag="gxmi primitive type" value="no"/>
+				<taggedValue tag="gxmi gen eclipse" value="no"/>
+				<taggedValue tag="gxmi path" value="dr/dr.xmi"/>
+				<taggedValue tag="gxmi vis prefix" value="no"/>
+				<taggedValue tag="gxmi linefeed" value="no"/>
+				<taggedValue tag="gxmi gen views" value="no"/>
+				<taggedValue tag="gxmi pk prefix" value="no"/>
+				<taggedValue tag="gxmi encoding" value="UTF-8"/>
+			</xmi:Extension>
+			<packagedElement xmi:type="uml:Package" xmi:id="BOUML_0x20287_22" name ="dr">
+				<packagedElement xmi:type="uml:Package" xmi:id="BOUML_0x20b87_22" name ="dr::business">
+					<packagedElement xmi:type="uml:Class" name="GenericTypes" xmi:id="BOUML_0x23907_4" visibility="package" isAbstract="false" >
+						<xmi:Extension extender="Bouml">
+							<stereotype name="utility"/>
+						</xmi:Extension>
+						<nestedClassifier xmi:type="uml:Class" name="Email" xmi:id="BOUML_0x23987_4" visibility="protected" isAbstract="false" >
+							<xmi:Extension extender="Bouml">
+								<stereotype name="typedef"/>
+								<taggedValue tag="dr-logical" value="dr::logical::Email"/>
+								<taggedValue tag="dr-display" value="text(160px)"/>
+							</xmi:Extension>
+							<xmi:Extension extender="Bouml">
+								<typedef>
+									<base xmi:type="uml:Class" xmi:idref="BOUML_datatype_0"/>
+								</typedef>
+							</xmi:Extension>
+						</nestedClassifier>
+						<nestedClassifier xmi:type="uml:Class" name="PhoneNumber" xmi:id="BOUML_0x23887_4" visibility="protected" isAbstract="false" >
+							<xmi:Extension extender="Bouml">
+								<stereotype name="typedef"/>
+								<taggedValue tag="dr-logical" value="dr::logical::Phone"/>
+								<taggedValue tag="dr-display" value="text(160px)"/>
+							</xmi:Extension>
+							<xmi:Extension extender="Bouml">
+								<typedef>
+									<base xmi:type="uml:Class" xmi:idref="BOUML_datatype_0"/>
+								</typedef>
+							</xmi:Extension>
+						</nestedClassifier>
+						<nestedClassifier xmi:type="uml:Class" name="Login" xmi:id="BOUML_0x23a87_4" visibility="package" isAbstract="false" >
+							<xmi:Extension extender="Bouml">
+								<stereotype name="typedef"/>
+								<taggedValue tag="dr-logical" value="dr::logical::Trim"/>
+								<taggedValue tag="dr-display" value="text(160px)"/>
+							</xmi:Extension>
+							<xmi:Extension extender="Bouml">
+								<typedef>
+									<base xmi:type="uml:Class" xmi:idref="BOUML_datatype_0"/>
+								</typedef>
+							</xmi:Extension>
+						</nestedClassifier>
+						<nestedClassifier xmi:type="uml:Class" name="Password" xmi:id="BOUML_0x23b07_4" visibility="package" isAbstract="false" >
+							<xmi:Extension extender="Bouml">
+								<stereotype name="typedef"/>
+								<taggedValue tag="dr-logical" value="dr::logical::Password"/>
+								<taggedValue tag="dr-display" value="password(160px)"/>
+							</xmi:Extension>
+							<xmi:Extension extender="Bouml">
+								<typedef>
+									<base xmi:type="uml:Class" xmi:idref="BOUML_datatype_0"/>
+								</typedef>
+							</xmi:Extension>
+						</nestedClassifier>
+						<nestedClassifier xmi:type="uml:Class" name="FullName" xmi:id="BOUML_0x23c07_4" visibility="package" isAbstract="false" >
+							<xmi:Extension extender="Bouml">
+								<stereotype name="typedef"/>
+								<taggedValue tag="dr-logical" value="dr::logical::Trim"/>
+								<taggedValue tag="dr-display" value="text(160px)"/>
+							</xmi:Extension>
+							<xmi:Extension extender="Bouml">
+								<typedef>
+									<base xmi:type="uml:Class" xmi:idref="BOUML_datatype_0"/>
+								</typedef>
+							</xmi:Extension>
+						</nestedClassifier>
+						<nestedClassifier xmi:type="uml:Class" name="Date" xmi:id="BOUML_0x24087_4" visibility="package" isAbstract="false" >
+							<xmi:Extension extender="Bouml">
+								<stereotype name="typedef"/>
+								<taggedValue tag="dr-logical" value="dr::logical::Date"/>
+								<taggedValue tag="dr-display" value="text(160px)"/>
+							</xmi:Extension>
+							<xmi:Extension extender="Bouml">
+								<typedef>
+									<base xmi:type="uml:Class" xmi:idref="BOUML_0x20f07_4"/>
+								</typedef>
+							</xmi:Extension>
+						</nestedClassifier>
+						<nestedClassifier xmi:type="uml:Class" name="DateTime" xmi:id="BOUML_0x24107_4" visibility="package" isAbstract="false" >
+							<xmi:Extension extender="Bouml">
+								<stereotype name="typedef"/>
+								<taggedValue tag="dr-logical" value="dr::logical::DateTime"/>
+								<taggedValue tag="dr-display" value="text(160px)"/>
+							</xmi:Extension>
+							<xmi:Extension extender="Bouml">
+								<typedef>
+									<base xmi:type="uml:Class" xmi:idref="BOUML_0x20f07_4"/>
+								</typedef>
+							</xmi:Extension>
+						</nestedClassifier>
+					</packagedElement>
+				</packagedElement>
+				<packagedElement xmi:type="uml:Class" name="Time" xmi:id="BOUML_0x20e87_4" visibility="public" isAbstract="false" >
+					<xmi:Extension extender="Bouml">
+						<stereotype name="utility"/>
+					</xmi:Extension>
+					<nestedClassifier xmi:type="uml:Class" name="SysTime" xmi:id="BOUML_0x20f07_4" visibility="package" isAbstract="false" >
+						<xmi:Extension extender="Bouml">
+							<stereotype name="typedef"/>
+						</xmi:Extension>
+						<xmi:Extension extender="Bouml">
+							<typedef>
+								<base xmi:type="uml:PrimitiveType" href="http://schema.omg.org/spec/UML/2.1/uml.xml#UnlimitedNatural"/>
+							</typedef>
+						</xmi:Extension>
+					</nestedClassifier>
+				</packagedElement>
+			</packagedElement>
+		</packagedElement>
+		<packagedElement xmi:type="uml:DataType" xmi:id="BOUML_datatype_0" name="string(64)"/>
+	</uml:Model>
+</xmi:XMI>
