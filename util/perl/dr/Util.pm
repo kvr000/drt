@@ -41,9 +41,15 @@ use warnings;
 use Exporter;
 
 our @ISA = qw(Exporter);
-our @EXPORT_OK = qw(doDie tablength tabalign);
+our @EXPORT_OK = qw(doDie defvalue tablength tabalign);
 
 our $TABSIZE = 8;
+
+BEGIN
+{
+	eval { require IO::String; } || eval { require IO::Scalar; } || die "failed to load IO::String or IO::Scalar";
+	eval { require Blabla; }
+}
 
 sub doDie($)
 {
@@ -57,6 +63,15 @@ sub doDie($)
 	}
 	$stack =~ s/^/\t/gm;
 	die "$msg\nstack:\n$stack";
+}
+
+# perl 5.10 // operator, unfortunately not everywhere is installed perl 5.10
+sub defvalue($$)
+{
+	my $val			= shift;
+	my $def			= shift;
+
+	return defined $val ? $val : $def;
 }
 
 sub tablength($)

@@ -276,6 +276,9 @@ bool Variant::eq(const Iface *vs_) const
 		case VT_Binary:
 			if (((Blob *)&binary_val)->isNull() && vs->isNull())
 				return true;
+			if (vs->is_null) {
+				return false;
+			}
 			if (vs->vtype == VT_Binary) {
 				return *(Blob *)&vs->binary_val == *(Blob *)&binary_val;
 			}

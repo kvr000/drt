@@ -41,14 +41,14 @@ use warnings;
 use FileHandle;
 use Data::Dumper;
 use Getopt::Std;
-
 use File::Basename;
+
 use lib dirname($0)."/perl";
 use dr::FileTransaction;
 use dr::SepOutput;
 use dr::XmiParser;
 use dr::ModelStore;
-use dr::Util qw(tabalign);
+use dr::Util qw(defvalue tabalign);
 
 sub fixModelInfo($)
 {
@@ -100,6 +100,8 @@ our %SQL_UML_TYPES_PRIM = (
 	Integer			=> "int",
 	Long			=> "bigint",
 	long			=> "bigint",
+	int			=> "int",
+	Integer			=> "int",
 );
 
 our %SQL_UML_TYPES_VAR = (
@@ -141,7 +143,7 @@ sub translateSqlType($)
 			return "int";
 		}
 		else {
-			die "unknown stype $type->{stype}";
+			die "unknown stype $type->{stype} for class $type->{full}";
 		}
 	}
 		or dieAttrContext($attr, $@);
@@ -191,7 +193,7 @@ foreach my $model (@models) {
 	my $sqlin = dr::SepOutput->new($sql, { sep_in => ",", sep_all => "\n" });
 	foreach my $attr (@{$model->{attr_list}}) {
 		if ($attr->{stype} eq "attr") {
-			$sqlin->printObj("\t$attr->{name}");
+			$sqlin->printObj("\t".defvalue($attr->checkDrTag("db_name"), $attr->{name}));
 			$sqlin->printAligned(translateSqlTypeDecl($attr, $attr), 40);
 			if ($attr->getRole()->{primary}) {
 				push(@primary, $attr->{name});

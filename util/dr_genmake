@@ -44,6 +44,10 @@ use IO::Handle;
 use Scalar::Util;
 use FileHandle;
 use Getopt::Long;
+use File::Basename;
+
+use lib dirname($0)."/perl";
+use dr::Util;
 
 
 package dr::build;
@@ -220,11 +224,6 @@ package dr::build;
 
 use strict;
 use warnings;
-
-BEGIN
-{
-	eval { require IO::String; } || eval { require IO::Scalar; } || die "failed to load IO::String or IO::Scalar";
-}
 
 sub addConfig($$$)
 {

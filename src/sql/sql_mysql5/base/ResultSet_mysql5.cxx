@@ -371,10 +371,10 @@ double ResultSet_mysql5::getDouble(unsigned column)
 {
 	int err;
 	my_bool null;
-	Sint32 value = 0;
+	double value = 0;
 	MYSQL_BIND b;
 	memset(&b, 0, sizeof(b));
-	b.buffer_type = MYSQL_TYPE_LONG;
+	b.buffer_type = MYSQL_TYPE_DOUBLE;
 	b.buffer = &value;
 	b.is_null = &null;
 	switch ((err = mysql_stmt_fetch_column(stmt, &b, column, 0))) {
@@ -393,6 +393,8 @@ double ResultSet_mysql5::getDouble(const String &column)
 
 Blob ResultSet_mysql5::getBlob(unsigned column)
 {
+	if (*res_bindings[column].is_null)
+		return Null();
 	unsigned long length;
 	Blob value;
 	MYSQL_BIND b;
@@ -434,6 +436,8 @@ Blob ResultSet_mysql5::getBlob(const String &column)
 
 String ResultSet_mysql5::getString(unsigned column)
 {
+	if (*res_bindings[column].is_null)
+		return Null();
 	unsigned long length;
 	String value;
 	MYSQL_BIND b;

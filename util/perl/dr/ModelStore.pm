@@ -119,7 +119,8 @@ sub checkTag
 	my $this		= shift;
 	my $tag			= shift;
 
-	return $this->{drtag_hash}->{$tag};
+	return $this->{drtag_hash}->{$tag}->{value} if (defined $this->{drtag_hash}->{$tag});
+	return;
 }
 
 sub getSpec
@@ -586,8 +587,8 @@ sub getRole
 
 	if (!defined $this->{role}) {
 		$this->{role} = {};
-		if (defined (my $com = $this->checkDrTag("role"))) {
-			foreach my $r (split(/\s+/, $com->{value})) {
+		if (defined (my $tag = $this->checkDrTag("role"))) {
+			foreach my $r (split(/\s+/, $tag)) {
 				$this->{role}->{$r} = 1;
 			}
 		}
