@@ -1,0 +1,31 @@
+NEED:
+	cxx
+
+DEPS:
+
+FLAGS:
+	cxx=$(CXXINC) $(EXECXXFLAGS) -I. -I..
+	exec=$(EXELDXXFLAGS)
+
+OUTPUT:
+	exec:zerofile:f=exec;s=s
+
+SOURCES:
+	:zerofile.cxx:f=cxx;g=s,t
+	no:mklist:g=t
+	lshlib:dr:g=s
+	lshlib:drio:g=s
+
+META:
+
+FCHECK:
+	*.cxx::s=t
+	*.hxx::s=t
+	mklist::s=t
+
+DIST_INC:
+
+LOC_INC:
+
+LOC_LIB:
+

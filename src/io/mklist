@@ -13,6 +13,7 @@
 
 POSTSUBS:
 	t
+	zerofile
 
 NEED:
 	cxx

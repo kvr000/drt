@@ -124,14 +124,14 @@ DR_MET(public)
 Variant::Variant(const Blob &binary_val_):
 	vtype(VT_Binary)
 {
-	*(Blob *)&binary_val = binary_val_;
+	new (&binary_val) Blob(binary_val_);
 }
 
 DR_MET(public)
 Variant::Variant(const String &string_val_):
 	vtype(VT_String)
 {
-	*(String *)&string_val = string_val_;
+	new (&string_val) String(string_val_);
 }
 
 DR_MET(public)
