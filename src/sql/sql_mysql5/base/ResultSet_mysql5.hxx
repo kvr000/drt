@@ -80,6 +80,8 @@ public:
 	virtual void			bindResult(const String &column, Date *date);
 	virtual void			bindResult(unsigned column, Variant **value);
 	virtual void			bindResult(const String &column, Variant **value);
+	virtual void			bindNullHandler(unsigned column, void (*handler)(void *value));
+	virtual void			bindNullHandler(const String &column, void (*handler)(void *value));
 
 public:
 	virtual bool			fetchRow();
@@ -133,6 +135,7 @@ protected:
 	static void			resConv_Blob(ResultSet_mysql5 *this_, conversion *conv);
 	static void			resConv_Variant(ResultSet_mysql5 *this_, conversion *conv);
 	static void			resConv_Date(ResultSet_mysql5 *this_, conversion *conv);
+	static void			resConv_nullHandler(ResultSet_mysql5 *this_, conversion *conv);
 };
 
 

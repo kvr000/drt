@@ -129,6 +129,13 @@ void ResultSet_mysql5::resConv_Variant(ResultSet_mysql5 *this_, conversion *conv
 	DR_REF_XCHG((Variant **)conv->user_var, this_->getVariant(conv->column));
 }
 
+void ResultSet_mysql5::resConv_nullHandler(ResultSet_mysql5 *this_, conversion *conv)
+{
+	if (*this_->res_bindings[conv->column].is_null) {
+		((void (*)(void *))conv->user_var)(this_->res_bindings[conv->column].buffer);
+	}
+}
+
 void ResultSet_mysql5::bindResult(unsigned column, Sint8 *value)
 {
 	MYSQL_BIND *rb = allocResBinding(column);
@@ -231,6 +238,19 @@ void ResultSet_mysql5::bindResult(unsigned column, Variant **value)
 void ResultSet_mysql5::bindResult(const String &column, Variant **value)
 {
 	return bindResult(getColumnIdDirect(column), value);
+}
+
+void ResultSet_mysql5::bindNullHandler(unsigned column, void (*handler)(void *value))
+{
+	if (res_bindings[column].buffer == NULL) {
+		xthrownew(SqlExcept(-1, "null handler allowed only on basic scalar types"));
+	}
+	addResConversion(&resConv_nullHandler, column, 0, (void *)handler);
+}
+
+void ResultSet_mysql5::bindNullHandler(const String &column, void (*handler)(void *value))
+{
+	return bindNullHandler(getColumnIdDirect(column), handler);
 }
 
 bool ResultSet_mysql5::fetchRow()

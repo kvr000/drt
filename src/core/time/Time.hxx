@@ -56,6 +56,9 @@ public:
 	static SysTime			getTime();
 
 public:
+	static void			setInvalid(SysTime *time);
+
+public:
 	static SysTime			convertUTime(int year, int mon, int day, int hour, int min, int sec, int timezone_min);
 	static void			timeToUtcCalendar(SysTime tvalue, int *year, int *mon, int *day, int *hour, int *min, int *sec);
 };

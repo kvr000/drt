@@ -49,6 +49,11 @@ SysTime Time::getTime()
 	return time(NULL);
 }
 
+void Time::setInvalid(SysTime *time)
+{
+	*time = INVALID_SYSTIME;
+}
+
 SysTime Time::convertUTime(int year, int mon, int day, int hour, int min, int sec, int timezone_min)
 {
 	struct tm t;

@@ -72,6 +72,8 @@ public:
 	virtual void			bindResult(const String &column, Date *value) = 0;
 	virtual void			bindResult(unsigned column, Variant **value) = 0;
 	virtual void			bindResult(const String &column, Variant **value) = 0;
+	virtual void			bindNullHandler(unsigned column, void (*handler)(void *value)) = 0;
+	virtual void			bindNullHandler(const String &column, void (*handler)(void *value)) = 0;
 
 public:
 	virtual bool			fetchRow() = 0;
