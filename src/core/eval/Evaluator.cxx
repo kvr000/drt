@@ -55,6 +55,10 @@ DR_OBJECT_DEF(DR_NS_STR, Evaluator::Arguments, Object);
 DR_OBJECT_IMPL_SIMPLE(Evaluator::Arguments);
 
 
+DR_OBJECT_DEF(DR_NS_STR, Evaluator::ArgumentsHash, Evaluator::Arguments);
+DR_OBJECT_IMPL_SIMPLE(Evaluator::ArgumentsHash);
+
+
 DR_OBJECT_DEF(DR_NS_STR, Evaluator::Expression, Object);
 DR_OBJECT_IMPL_SIMPLE(Evaluator::Expression);
 

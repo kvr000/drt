@@ -74,14 +74,27 @@ public:
 		DR_OBJECT_DECL_SIMPLE(Arguments, Object);
 
 	public:
+		virtual Sint64			getConstant(const String &name) = 0;
+		virtual Sint64			getValue(unsigned idx) = 0;
+	};
+
+	class DR_PUB ArgumentsHash: public Arguments
+	{
+	public:
+		DR_OBJECT_DECL_SIMPLE(ArgumentsHash, Arguments);
+
+	public:
 		typedef THash<String, Sint64>	Constants;
 		typedef THash<unsigned, Sint64>	Values;
 
 	public:
-		DR_CONSTRUCT			Arguments(Constants *constants_, Values *values_): constants(constants_, true), values(values_, true) {}
-		DR_CONSTRUCT			Arguments(Constants *constants_): constants(constants_, true), values(new Values(), false) {}
-		DR_CONSTRUCT			Arguments(Values *values_)	: constants(new Constants(), false), values(values_, true) {}
-		DR_CONSTRUCT			Arguments()			: constants(new Constants(), false), values(new Values(), false) {}
+		DR_CONSTRUCT			ArgumentsHash(Constants *constants_, Values *values_): constants(constants_, true), values(values_, true) {}
+		DR_CONSTRUCT			ArgumentsHash(Constants *constants_): constants(constants_, true), values(new Values(), false) {}
+		DR_CONSTRUCT			ArgumentsHash(Values *values_)	: constants(new Constants(), false), values(values_, true) {}
+		DR_CONSTRUCT			ArgumentsHash()			: constants(new Constants(), false), values(new Values(), false) {}
+
+		virtual Sint64			getConstant(const String &name)	{ if (Sint64 *v = constants->accValue(name)) { return *v; } xthrownew(DataNotFoundException("constant", name)); return 0; }
+		virtual Sint64			getValue(unsigned idx)		{ if (Sint64 *v = values->accValue(idx)) { return *v; } xthrownew(DataNotFoundException("value", String::createNumber(idx))); return 0; }
 
 		Ref<Constants>			constants;
 		Ref<Values>			values;
@@ -144,7 +157,7 @@ protected:
 		DR_CONSTRUCT			VariableExpression(const String &var_name_): var_name(var_name_) {}
 
 	public:
-		virtual Sint64			evaluate(Arguments *args)	{ if (Sint64 *v = args->constants->accValue(var_name)) { return *v; } xthrownew(DataNotFoundException("constant", var_name)); return 0; }
+		virtual Sint64			evaluate(Arguments *args)	{ return args->getConstant(var_name); }
 
 	protected:
 		String				var_name;
@@ -157,7 +170,7 @@ protected:
 		DR_CONSTRUCT			ValueExpression(unsigned column_id_): column_id(column_id_) {}
 
 	public:
-		virtual Sint64			evaluate(Arguments *args)	{ if (Sint64 *v = args->values->accValue(column_id)) { return *v; } xthrownew(DataNotFoundException("value", String::createNumber(column_id))); return 0;}
+		virtual Sint64			evaluate(Arguments *args)	{ return args->getValue(column_id); }
 
 	protected:
 		unsigned			column_id;

@@ -56,16 +56,16 @@ void test()
 {
 	Ref<Evaluator> evaluator;
 	evaluator.setNoref(new IntEvaluator("4+5*7"));
-	CHECK(evaluator->evaluate(tref(new Evaluator::Arguments())) == 39);
+	CHECK(evaluator->evaluate(tref(new Evaluator::ArgumentsHash())) == 39);
 
 	evaluator.setNoref(new IntEvaluator("4*5+7"));
-	CHECK(evaluator->evaluate(tref(new Evaluator::Arguments())) == 27);
+	CHECK(evaluator->evaluate(tref(new Evaluator::ArgumentsHash())) == 27);
 
 	evaluator.setNoref(new IntEvaluator("-4*(5+8*7)+-4*(6/2)"));
-	CHECK(evaluator->evaluate(tref(new Evaluator::Arguments())) == -256);
+	CHECK(evaluator->evaluate(tref(new Evaluator::ArgumentsHash())) == -256);
 
-	ERef<Evaluator::Arguments::Constants> constants(new Evaluator::Arguments::Constants);
-	ERef<Evaluator::Arguments::Values> values(new Evaluator::Arguments::Values);
+	ERef<Evaluator::ArgumentsHash::Constants> constants(new Evaluator::ArgumentsHash::Constants);
+	ERef<Evaluator::ArgumentsHash::Values> values(new Evaluator::ArgumentsHash::Values);
 	(**constants)["a"] = 0;
 	(**constants)["b"] = 1;
 	(**constants)["c"] = 2;
@@ -75,7 +75,7 @@ void test()
 	(**constants)["seven"] = 7;
 	values->operator[](0) = 3;
 	values->operator[](1) = 9;
-	ERef<Evaluator::Arguments> arguments(new Evaluator::Arguments(constants, values));
+	ERef<Evaluator::ArgumentsHash> arguments(new Evaluator::ArgumentsHash(constants, values));
 	evaluator.setNoref(new IntEvaluator("a*c+e/c-f"));
 	CHECK(evaluator->evaluate(arguments) == -3);
 
