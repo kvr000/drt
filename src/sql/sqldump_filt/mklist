@@ -14,8 +14,8 @@ NEED:
 DEPS:
 
 FLAGS:
-	cxx=$(CXXINC) $(EXECXXFLAGS) -I. -I..
-	exec=$(EXELDXXFLAGS)
+	cxx=$(CXXINC) $(EXECCXXFLAGS) -I. -I..
+	exec=$(EXECLDXXFLAGS)
 
 OUTPUT:
 	exec:sqldump_filt:f=exec;s=s

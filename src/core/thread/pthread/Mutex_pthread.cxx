@@ -46,22 +46,22 @@ DR_NS_BEGIN
 class DR_PUB Mutex_pthread: public Mutex
 {
 public:
-	virtual void lock();
-	virtual void unlock();
+	virtual void			lock();
+	virtual void			unlock();
 
-	pthread_mutex_t	m;
+	pthread_mutex_t			m;
 
-	DR_DINLINE Mutex_pthread();
-	DR_DINLINE ~Mutex_pthread();
+	DR_DINLINE			Mutex_pthread();
+	DR_DINLINE			~Mutex_pthread();
 
 	class DR_PUB Man
 	{
 	public:
-		pthread_mutexattr_t attr;
-		DR_DINLINE Man() { pthread_mutexattr_init(&attr); pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE); }
-		DR_DINLINE ~Man() { pthread_mutexattr_destroy(&attr); }
+		pthread_mutexattr_t		attr;
+		DR_DINLINE			Man()				{ pthread_mutexattr_init(&attr); pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE); }
+		DR_DINLINE			~Man()				{ pthread_mutexattr_destroy(&attr); }
 	};
-	static Man man;
+	static Man			man;
 };
 
 Mutex_pthread::Man Mutex_pthread::man;

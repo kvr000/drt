@@ -35,79 +35,17 @@
 ## @license	http://www.gnu.org/licenses/lgpl.txt GNU Lesser General Public License v3
 ###
 
-package dr::GenHeader::FileTransaction;
-
-use strict;
-use warnings;
-
-sub new
-{
-	my $class = shift; $class = ref($class) || $class;
-
-	return bless { opers => [], umask => eval { my $u = umask(0); umask($u); $u } }, $class;
-}
-
-sub commit
-{
-	my $this		= shift;
-
-	foreach my $op (@{$this->{opers}}) {
-		if ($op->{fd}) {
-			$op->{fd}->flush();
-			if ($op->{fd}->error()) {
-				die "failed to write to $op->{fname}: ".$op->{fd}->error();
-			}
-			chmod((stat($op->{fd}))[2]&07555, $op->{fd}) if (defined $this->{umask});
-			close($op->{fd});
-			undef $op->{fd};
-		}
-	}
-
-	$this->{opers} = [];
-}
-
-sub createTruncated
-{
-	my $this		= shift;
-	my $fname		= shift;
-
-	if (my @st = stat($fname)) {
-		chmod(($st[2]&07777)|(0222&~$this->{umask}), $fname);
-	}
-	my $fd = FileHandle->new($fname, ">")
-		or die "failed to open file $fname: $!";
-	binmode($fd);
-	push(@{$this->{opers}}, { op => "rm", fname => $fname, fd => $fd });
-	return $fd;
-}
-
-sub DESTROY
-{
-	my $this		= shift;
-
-	foreach my $op (@{$this->{opers}}) {
-		if ($op->{fd}) {
-			close($op->{fd});
-			undef $op->{fd};
-		}
-		if ($op->{op} eq "rm") {
-			unlink($op->{fname});
-		}
-		else {
-			die "unsupported operation: $op->{op}";
-		}
-	}
-}
-
-
-package main;
-
 use strict;
 use warnings;
 
 use FileHandle;
 use Data::Dumper;
 use Getopt::Std;
+
+use File::Basename;
+use lib dirname($0)."/perl";
+use dr::FileTransaction;
+use dr::XmiParser;
 
 sub fileToName($$)
 {

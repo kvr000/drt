@@ -4,8 +4,8 @@ NEED:
 DEPS:
 
 FLAGS:
-	cxx=$(CXXINC) $(EXECXXFLAGS) -I. -I..
-	exec=$(EXELDXXFLAGS)
+	cxx=$(CXXINC) $(EXECCXXFLAGS) -I. -I..
+	exec=$(EXECLDXXFLAGS)
 
 OUTPUT:
 	exec:tlink_drsql_mysql5:f=exec;s=tlink_drsql_mysql5,common;C=!c.no_sqlmysql5

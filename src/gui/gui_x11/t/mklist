@@ -4,8 +4,8 @@ NEED:
 DEPS:
 
 FLAGS:
-	cxx=$(CXXINC) -I. $(EXECXXFLAGS)
-	exec=$(EXELDXXFLAGS)
+	cxx=$(CXXINC) -I. $(EXECCXXFLAGS)
+	exec=$(EXECLDXXFLAGS)
 
 OUTPUT:
 	exec:trylink:f=exec;s=trylink,common,x11;C=!c.no_x11
