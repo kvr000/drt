@@ -73,9 +73,9 @@ ssize_t MemBase64::encodeBase64(char *dst, const void *src, size_t size)
 
 static void decodeBlock(unsigned char out[3], unsigned char in[4])
 {   
-	out[0] = in[0] << 2 | in[1] >> 4;
-	out[1] = in[1] << 4 | in[2] >> 2;
-	out[2] = ((in[2] << 6) & 0xc0) | in[3];
+	out[0] = (unsigned char)(in[0] << 2 | in[1] >> 4);
+	out[1] = (unsigned char)(in[1] << 4 | in[2] >> 2);
+	out[2] = (unsigned char)(((in[2] << 6) & 0xc0) | in[3]);
 }
 
 ssize_t MemBase64::decodeBase64(void *dst, const char *src, size_t size)

@@ -50,12 +50,16 @@ DR_OBJECT_IMPL_SIMPLE(SqlConnectionPool);
 SqlConnectionPool::SqlConnectionPool(const String &connect_str_, int init_conns):
 	connect_str(connect_str_),
 	max_oldness(0),
-	list_mutex(Mutex::create(), false)
+	max_connections(1023),
+	num_connections(0),
+	list_mutex(MutexCond::create(), false)
 {
 	if (init_conns == 0)
 		init_conns = 1;
 	while (init_conns--)
-		releaseConnection(tref(new SqlConnectionHold(tref(SqlConnection::openConnection(connect_str, manager.mem())))));
+		releaseConnection(tref(new SqlConnectionHold(tref(SqlConnection::openConnection(connect_str, &connect_pars, manager.mem())))));
+	if (String *v = connect_pars.accValue("max"))
+		max_connections = atoi(v->utf8());
 }
 
 SqlConnectionPool::~SqlConnectionPool()
@@ -67,9 +71,14 @@ void SqlConnectionPool::setMaxOldness(long max_oldness_)
 	max_oldness = max_oldness_;
 }
 
+void SqlConnectionPool::setMaxConnections(int max_connections_)
+{
+	max_connections = max_connections_;
+}
+
 SqlConnectionHold *SqlConnectionPool::getConnection()
 {
-	MutexLocker list_mutex_locker(list_mutex);
+	MutexCondLocker list_mutex_locker(list_mutex);
 	SqlConnectionHold *conn;
 	for (;;) {
 		if (RList<SqlConnectionHold>::Node *n = connection_list.iterFirst()) {
@@ -82,8 +91,12 @@ SqlConnectionHold *SqlConnectionPool::getConnection()
 				break;
 			}
 		}
+		else if (num_connections >= max_connections) {
+			list_mutex->wait();
+		}
 		else {
-			conn = new SqlConnectionHold(tref(SqlConnection::openConnection(connect_str, manager.mem())));
+			conn = new SqlConnectionHold(this, tref(SqlConnection::openConnection(connect_str, &connect_pars, manager.mem())));
+			num_connections++;
 			break;
 		}
 	}
@@ -92,7 +105,6 @@ SqlConnectionHold *SqlConnectionPool::getConnection()
 
 SqlConnectionHold *SqlConnectionPool::getConnectionPing()
 {
-	MutexLocker list_mutex_locker(list_mutex);
 	for (;;) {
 		SqlConnectionHold *conn = getConnection();
 		xtry {
@@ -108,8 +120,17 @@ SqlConnectionHold *SqlConnectionPool::getConnectionPing()
 
 void SqlConnectionPool::releaseConnection(SqlConnectionHold *connection)
 {
-	MutexLocker list_mutex_locker(list_mutex);
+	MutexCondLocker list_mutex_locker(list_mutex);
 	connection_list.append(IRef<SqlConnectionHold>(connection));
+	list_mutex->signal();
+}
+
+void SqlConnectionPool::destroyingConnection(SqlConnectionHold *connection)
+{
+	MutexCondLocker list_mutex_locker(list_mutex);
+
+	num_connections--;
+	list_mutex->signal();
 }
 
 

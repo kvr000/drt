@@ -59,7 +59,7 @@ void Avl_c::destroyRecursive_g(Node_c *node)
 Avl_c::Node_c *Avl_c::find_g(const void *key) const
 {
 	for (Node_c *cur = root; cur; ) {
-		Sint8 c = -node_cmp(cur, key);
+		int c = -node_cmp(cur, key);
 		if (c == 0)
 			return cur;
 		cur = cur->refs[1+c];
@@ -187,7 +187,7 @@ bool Avl_c::replace_g(const void *key, const void *value)
 	return true;
 }
 
-void Avl_c::rebalanceRemoved_g(Node_c *node, int direction)
+void Avl_c::rebalanceRemoved_g(Node_c *node, BalanceType direction)
 {
 next:
 	if (node->balance == 0) {

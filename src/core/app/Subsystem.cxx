@@ -99,7 +99,7 @@ Subsystem *Subsystem::getSubsystem(const String &name, Subsystem *(*create_func)
 			if ((unsigned)snprintf(libfile, sizeof(libfile), "lib%s.so", name.utf8().toStr()) >= sizeof(libfile))
 				xthrownew(BadSubsysExcept(name, "too long name"));
 			for (int ic = 0; libfile[ic] != '\0'; ic++)
-				libfile[ic] = tolower(libfile[ic]);
+				libfile[ic] = (char)tolower(libfile[ic]);
 			if ((dl = dlopen(libfile, RTLD_NOW|RTLD_GLOBAL)) == NULL)
 				xthrownew(BadSubsysExcept(name, String("unable to load library ").append(libfile).append(": ").append(dlerror())));
 			if ((unsigned)snprintf(libfile, sizeof(libfile), "createSS_%s", name.utf8().toStr()) >= sizeof(libfile))

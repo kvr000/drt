@@ -38,7 +38,7 @@
 
 #include <dr/sql/def.hxx>
 
-#include <dr/Object.hxx>
+#include <dr/Hash.hxx>
 
 DR_SQL_NS_BEGIN
 
@@ -69,7 +69,7 @@ public:
 
 public:
 	static SqlConnection *		openConnection(const String &conn_str);
-	static SqlConnection *		openConnection(const String &conn_str, SqlManager **manager);
+	static SqlConnection *		openConnection(const String &conn_str, THash<String, String> *pars, SqlManager **manager);
 };
 
 

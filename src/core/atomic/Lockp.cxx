@@ -112,7 +112,7 @@ retry:
 	}
 
 	if ((val&1) == 0) {
-		if (!Atomic::cmpxchg(ptr, (void *)val, (void *)(val&~3|(cond?1:3))))
+		if (!Atomic::cmpxchg(ptr, (void *)val, (void *)((val&~3)|(cond?1:3))))
 			goto retry;
 	}
 	else {

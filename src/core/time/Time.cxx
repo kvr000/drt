@@ -75,7 +75,7 @@ SysTime Time::convertUTime(int year, int mon, int day, int hour, int min, int se
 
 void Time::timeToUtcCalendar(SysTime tvalue, int *year, int *mon, int *day, int *hour, int *min, int *sec)
 {
-	time_t tt = tvalue;
+	time_t tt = (time_t)tvalue;
 	struct tm t;
 	if (
 #ifdef DR_LIBC_VC

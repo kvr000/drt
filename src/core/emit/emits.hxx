@@ -1,38 +1,3 @@
-/**
- * drt library
- *
- * drt multiplatform development toolkit
- *
- * ----------------------------------------------------------------------------------
- *
- * Copyright (C) 2004-2008 Zbyněk Vyškovský
- *
- * ----------------------------------------------------------------------------------
- *
- * LICENSE:
- *
- * This file is part of drt
- *
- * drt is free software; you can redistribute it and/or modify it under the
- * terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 3 of the License, or (at your option)
- * any later version.
- *
- * drt is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for
- * more details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with drt; if not, write to the Free Software Foundation, Inc., 51
- * Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
- *
- * @copyright	2004-2008 Zbyněk Vyškovský
- * @link	mailto:kvr@matfyz.cz
- * @link	http://kvr.matfyz.cz/drt/
- * @license	http://www.gnu.org/licenses/lgpl.txt GNU Lesser General Public License v3
- **/
-
 /* This file is generated from ./emit/genemits.pl... */
 #ifndef __emits__hxx__
 # define __emits__hxx__
@@ -407,7 +372,7 @@ public:
 	template <bool logtype>
 	DR_RINLINE			Eslot0(const EmitterBase0<R, logtype> *em): Eslot0_g(new EimplE_g((bool (*)())&cE<logtype>::callme, em)) {}
 
-	DR_MINLINE typename typeref<R>::nvret operator()() const { typename typeref<R>::nvtyp r; typename typeref<R>::ptr pr(&r); ((bool (*)(void *me, void *r))impl->caller)(impl, pr); return *(typename typeref<R>::nvtyp *)pr; }
+	DR_MINLINE typename typeref<R>::nvret operator()() const { typename typeref<R>::nvtyp r; typename typeref<R>::ptr pr(&r); ((bool (*)(void *me, void *r_))impl->caller)(impl, pr); return *(typename typeref<R>::nvtyp *)pr; }
 	template <typename AI>
 	DR_RINLINE Eslot1<R, AI> aAdd() const { return *reinterpret_cast<const Eslot1<R, AI> *>(this); } /* simply retype, suppose classic C calling conventions */
 	template <typename NR>
@@ -520,7 +485,7 @@ public:
 	template <bool logtype>
 	DR_RINLINE			Eslot1(const EmitterBase1<R, A1, logtype> *em): Eslot1_g(new EimplE_g((bool (*)())&cE<logtype>::callme, em)) {}
 
-	DR_MINLINE typename typeref<R>::nvret operator()(typename typeref<A1>::aref a1) const { typename typeref<R>::nvtyp r; typename typeref<R>::ptr pr(&r); ((bool (*)(void *me, void *r, typename typeref<A1>::aref a1))impl->caller)(impl, pr, a1); return *(typename typeref<R>::nvtyp *)pr; }
+	DR_MINLINE typename typeref<R>::nvret operator()(typename typeref<A1>::aref a1) const { typename typeref<R>::nvtyp r; typename typeref<R>::ptr pr(&r); ((bool (*)(void *me, void *r_, typename typeref<A1>::aref a1))impl->caller)(impl, pr, a1); return *(typename typeref<R>::nvtyp *)pr; }
 	template <typename AS>
 	DR_RINLINE Eslot0<R> a1Set(AS as) const { return new EimplSC_g<AS>((bool (*)())&cAS<AS>::callme1, *this, as); }
 	template <typename AI>
@@ -634,7 +599,7 @@ public:
 	template <bool logtype>
 	DR_RINLINE			Eslot2(const EmitterBase2<R, A1, A2, logtype> *em): Eslot2_g(new EimplE_g((bool (*)())&cE<logtype>::callme, em)) {}
 
-	DR_MINLINE typename typeref<R>::nvret operator()(typename typeref<A1>::aref a1, typename typeref<A2>::aref a2) const { typename typeref<R>::nvtyp r; typename typeref<R>::ptr pr(&r); ((bool (*)(void *me, void *r, typename typeref<A1>::aref a1, typename typeref<A2>::aref a2))impl->caller)(impl, pr, a1, a2); return *(typename typeref<R>::nvtyp *)pr; }
+	DR_MINLINE typename typeref<R>::nvret operator()(typename typeref<A1>::aref a1, typename typeref<A2>::aref a2) const { typename typeref<R>::nvtyp r; typename typeref<R>::ptr pr(&r); ((bool (*)(void *me, void *r_, typename typeref<A1>::aref a1, typename typeref<A2>::aref a2))impl->caller)(impl, pr, a1, a2); return *(typename typeref<R>::nvtyp *)pr; }
 	template <typename AS>
 	DR_RINLINE Eslot1<R, A2> a1Set(AS as) const { return new EimplSC_g<AS>((bool (*)())&cAS<AS>::callme1, *this, as); }
 	template <typename AS>
@@ -749,7 +714,7 @@ public:
 	template <bool logtype>
 	DR_RINLINE			Eslot3(const EmitterBase3<R, A1, A2, A3, logtype> *em): Eslot3_g(new EimplE_g((bool (*)())&cE<logtype>::callme, em)) {}
 
-	DR_MINLINE typename typeref<R>::nvret operator()(typename typeref<A1>::aref a1, typename typeref<A2>::aref a2, typename typeref<A3>::aref a3) const { typename typeref<R>::nvtyp r; typename typeref<R>::ptr pr(&r); ((bool (*)(void *me, void *r, typename typeref<A1>::aref a1, typename typeref<A2>::aref a2, typename typeref<A3>::aref a3))impl->caller)(impl, pr, a1, a2, a3); return *(typename typeref<R>::nvtyp *)pr; }
+	DR_MINLINE typename typeref<R>::nvret operator()(typename typeref<A1>::aref a1, typename typeref<A2>::aref a2, typename typeref<A3>::aref a3) const { typename typeref<R>::nvtyp r; typename typeref<R>::ptr pr(&r); ((bool (*)(void *me, void *r_, typename typeref<A1>::aref a1, typename typeref<A2>::aref a2, typename typeref<A3>::aref a3))impl->caller)(impl, pr, a1, a2, a3); return *(typename typeref<R>::nvtyp *)pr; }
 	template <typename AS>
 	DR_RINLINE Eslot2<R, A2, A3> a1Set(AS as) const { return new EimplSC_g<AS>((bool (*)())&cAS<AS>::callme1, *this, as); }
 	template <typename AS>
@@ -865,7 +830,7 @@ public:
 	template <bool logtype>
 	DR_RINLINE			Eslot4(const EmitterBase4<R, A1, A2, A3, A4, logtype> *em): Eslot4_g(new EimplE_g((bool (*)())&cE<logtype>::callme, em)) {}
 
-	DR_MINLINE typename typeref<R>::nvret operator()(typename typeref<A1>::aref a1, typename typeref<A2>::aref a2, typename typeref<A3>::aref a3, typename typeref<A4>::aref a4) const { typename typeref<R>::nvtyp r; typename typeref<R>::ptr pr(&r); ((bool (*)(void *me, void *r, typename typeref<A1>::aref a1, typename typeref<A2>::aref a2, typename typeref<A3>::aref a3, typename typeref<A4>::aref a4))impl->caller)(impl, pr, a1, a2, a3, a4); return *(typename typeref<R>::nvtyp *)pr; }
+	DR_MINLINE typename typeref<R>::nvret operator()(typename typeref<A1>::aref a1, typename typeref<A2>::aref a2, typename typeref<A3>::aref a3, typename typeref<A4>::aref a4) const { typename typeref<R>::nvtyp r; typename typeref<R>::ptr pr(&r); ((bool (*)(void *me, void *r_, typename typeref<A1>::aref a1, typename typeref<A2>::aref a2, typename typeref<A3>::aref a3, typename typeref<A4>::aref a4))impl->caller)(impl, pr, a1, a2, a3, a4); return *(typename typeref<R>::nvtyp *)pr; }
 	template <typename AS>
 	DR_RINLINE Eslot3<R, A2, A3, A4> a1Set(AS as) const { return new EimplSC_g<AS>((bool (*)())&cAS<AS>::callme1, *this, as); }
 	template <typename AS>
@@ -982,7 +947,7 @@ public:
 	template <bool logtype>
 	DR_RINLINE			Eslot5(const EmitterBase5<R, A1, A2, A3, A4, A5, logtype> *em): Eslot5_g(new EimplE_g((bool (*)())&cE<logtype>::callme, em)) {}
 
-	DR_MINLINE typename typeref<R>::nvret operator()(typename typeref<A1>::aref a1, typename typeref<A2>::aref a2, typename typeref<A3>::aref a3, typename typeref<A4>::aref a4, typename typeref<A5>::aref a5) const { typename typeref<R>::nvtyp r; typename typeref<R>::ptr pr(&r); ((bool (*)(void *me, void *r, typename typeref<A1>::aref a1, typename typeref<A2>::aref a2, typename typeref<A3>::aref a3, typename typeref<A4>::aref a4, typename typeref<A5>::aref a5))impl->caller)(impl, pr, a1, a2, a3, a4, a5); return *(typename typeref<R>::nvtyp *)pr; }
+	DR_MINLINE typename typeref<R>::nvret operator()(typename typeref<A1>::aref a1, typename typeref<A2>::aref a2, typename typeref<A3>::aref a3, typename typeref<A4>::aref a4, typename typeref<A5>::aref a5) const { typename typeref<R>::nvtyp r; typename typeref<R>::ptr pr(&r); ((bool (*)(void *me, void *r_, typename typeref<A1>::aref a1, typename typeref<A2>::aref a2, typename typeref<A3>::aref a3, typename typeref<A4>::aref a4, typename typeref<A5>::aref a5))impl->caller)(impl, pr, a1, a2, a3, a4, a5); return *(typename typeref<R>::nvtyp *)pr; }
 	template <typename AS>
 	DR_RINLINE Eslot4<R, A2, A3, A4, A5> a1Set(AS as) const { return new EimplSC_g<AS>((bool (*)())&cAS<AS>::callme1, *this, as); }
 	template <typename AS>
@@ -1100,7 +1065,7 @@ public:
 	template <bool logtype>
 	DR_RINLINE			Eslot6(const EmitterBase6<R, A1, A2, A3, A4, A5, A6, logtype> *em): Eslot6_g(new EimplE_g((bool (*)())&cE<logtype>::callme, em)) {}
 
-	DR_MINLINE typename typeref<R>::nvret operator()(typename typeref<A1>::aref a1, typename typeref<A2>::aref a2, typename typeref<A3>::aref a3, typename typeref<A4>::aref a4, typename typeref<A5>::aref a5, typename typeref<A6>::aref a6) const { typename typeref<R>::nvtyp r; typename typeref<R>::ptr pr(&r); ((bool (*)(void *me, void *r, typename typeref<A1>::aref a1, typename typeref<A2>::aref a2, typename typeref<A3>::aref a3, typename typeref<A4>::aref a4, typename typeref<A5>::aref a5, typename typeref<A6>::aref a6))impl->caller)(impl, pr, a1, a2, a3, a4, a5, a6); return *(typename typeref<R>::nvtyp *)pr; }
+	DR_MINLINE typename typeref<R>::nvret operator()(typename typeref<A1>::aref a1, typename typeref<A2>::aref a2, typename typeref<A3>::aref a3, typename typeref<A4>::aref a4, typename typeref<A5>::aref a5, typename typeref<A6>::aref a6) const { typename typeref<R>::nvtyp r; typename typeref<R>::ptr pr(&r); ((bool (*)(void *me, void *r_, typename typeref<A1>::aref a1, typename typeref<A2>::aref a2, typename typeref<A3>::aref a3, typename typeref<A4>::aref a4, typename typeref<A5>::aref a5, typename typeref<A6>::aref a6))impl->caller)(impl, pr, a1, a2, a3, a4, a5, a6); return *(typename typeref<R>::nvtyp *)pr; }
 	template <typename AS>
 	DR_RINLINE Eslot5<R, A2, A3, A4, A5, A6> a1Set(AS as) const { return new EimplSC_g<AS>((bool (*)())&cAS<AS>::callme1, *this, as); }
 	template <typename AS>
@@ -1219,7 +1184,7 @@ public:
 	template <bool logtype>
 	DR_RINLINE			Eslot7(const EmitterBase7<R, A1, A2, A3, A4, A5, A6, A7, logtype> *em): Eslot7_g(new EimplE_g((bool (*)())&cE<logtype>::callme, em)) {}
 
-	DR_MINLINE typename typeref<R>::nvret operator()(typename typeref<A1>::aref a1, typename typeref<A2>::aref a2, typename typeref<A3>::aref a3, typename typeref<A4>::aref a4, typename typeref<A5>::aref a5, typename typeref<A6>::aref a6, typename typeref<A7>::aref a7) const { typename typeref<R>::nvtyp r; typename typeref<R>::ptr pr(&r); ((bool (*)(void *me, void *r, typename typeref<A1>::aref a1, typename typeref<A2>::aref a2, typename typeref<A3>::aref a3, typename typeref<A4>::aref a4, typename typeref<A5>::aref a5, typename typeref<A6>::aref a6, typename typeref<A7>::aref a7))impl->caller)(impl, pr, a1, a2, a3, a4, a5, a6, a7); return *(typename typeref<R>::nvtyp *)pr; }
+	DR_MINLINE typename typeref<R>::nvret operator()(typename typeref<A1>::aref a1, typename typeref<A2>::aref a2, typename typeref<A3>::aref a3, typename typeref<A4>::aref a4, typename typeref<A5>::aref a5, typename typeref<A6>::aref a6, typename typeref<A7>::aref a7) const { typename typeref<R>::nvtyp r; typename typeref<R>::ptr pr(&r); ((bool (*)(void *me, void *r_, typename typeref<A1>::aref a1, typename typeref<A2>::aref a2, typename typeref<A3>::aref a3, typename typeref<A4>::aref a4, typename typeref<A5>::aref a5, typename typeref<A6>::aref a6, typename typeref<A7>::aref a7))impl->caller)(impl, pr, a1, a2, a3, a4, a5, a6, a7); return *(typename typeref<R>::nvtyp *)pr; }
 	template <typename AS>
 	DR_RINLINE Eslot6<R, A2, A3, A4, A5, A6, A7> a1Set(AS as) const { return new EimplSC_g<AS>((bool (*)())&cAS<AS>::callme1, *this, as); }
 	template <typename AS>
@@ -1339,7 +1304,7 @@ public:
 	template <bool logtype>
 	DR_RINLINE			Eslot8(const EmitterBase8<R, A1, A2, A3, A4, A5, A6, A7, A8, logtype> *em): Eslot8_g(new EimplE_g((bool (*)())&cE<logtype>::callme, em)) {}
 
-	DR_MINLINE typename typeref<R>::nvret operator()(typename typeref<A1>::aref a1, typename typeref<A2>::aref a2, typename typeref<A3>::aref a3, typename typeref<A4>::aref a4, typename typeref<A5>::aref a5, typename typeref<A6>::aref a6, typename typeref<A7>::aref a7, typename typeref<A8>::aref a8) const { typename typeref<R>::nvtyp r; typename typeref<R>::ptr pr(&r); ((bool (*)(void *me, void *r, typename typeref<A1>::aref a1, typename typeref<A2>::aref a2, typename typeref<A3>::aref a3, typename typeref<A4>::aref a4, typename typeref<A5>::aref a5, typename typeref<A6>::aref a6, typename typeref<A7>::aref a7, typename typeref<A8>::aref a8))impl->caller)(impl, pr, a1, a2, a3, a4, a5, a6, a7, a8); return *(typename typeref<R>::nvtyp *)pr; }
+	DR_MINLINE typename typeref<R>::nvret operator()(typename typeref<A1>::aref a1, typename typeref<A2>::aref a2, typename typeref<A3>::aref a3, typename typeref<A4>::aref a4, typename typeref<A5>::aref a5, typename typeref<A6>::aref a6, typename typeref<A7>::aref a7, typename typeref<A8>::aref a8) const { typename typeref<R>::nvtyp r; typename typeref<R>::ptr pr(&r); ((bool (*)(void *me, void *r_, typename typeref<A1>::aref a1, typename typeref<A2>::aref a2, typename typeref<A3>::aref a3, typename typeref<A4>::aref a4, typename typeref<A5>::aref a5, typename typeref<A6>::aref a6, typename typeref<A7>::aref a7, typename typeref<A8>::aref a8))impl->caller)(impl, pr, a1, a2, a3, a4, a5, a6, a7, a8); return *(typename typeref<R>::nvtyp *)pr; }
 	template <typename AS>
 	DR_RINLINE Eslot7<R, A2, A3, A4, A5, A6, A7, A8> a1Set(AS as) const { return new EimplSC_g<AS>((bool (*)())&cAS<AS>::callme1, *this, as); }
 	template <typename AS>

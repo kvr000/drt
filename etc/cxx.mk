@@ -14,7 +14,9 @@ EXEC_EXT=
 SHLIB_EXT=.so
 SHLIB_PREF=lib
 
-CXXFLAGS=-fmessage-length=0 $(T_CXXFLAGS) $(U_CXXFLAGS) -Wall -W -Wconversion -Wno-unused-parameter -Wdisabled-optimization -Woverloaded-virtual -Wshadow -Wunused -Wno-unused-parameter -fpermissive \
+# unfortunately, -Wconversion option became quite useless in gcc 4.3 and newer
+# use older gcc for detecting this kind of warnings
+CXXFLAGS=-fmessage-length=0 $(T_CXXFLAGS) $(U_CXXFLAGS) -Wall -W -Wconversion -Wno-unused-parameter -Wdisabled-optimization -Woverloaded-virtual -Wshadow -Wunused -Wno-unused-parameter -fpermissive -Wno-conversion \
 # -Wno-inline
 
 CXXINC=-I$(BUILD) -I$(INCDIR) -I$(INCDIR)/arch-$(DR_ARCH) -I$(INCDIR)/os-$(DR_OSTYPE)

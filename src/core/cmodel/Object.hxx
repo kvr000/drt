@@ -427,7 +427,7 @@ protected:
 	virtual				~Object();
 
 protected:	/* generic support functions */
-	static const Static *		createObjectStatic(const String &comp_name, const Static **output, const Static *parent, ...);
+	static const Static *		createObjectStatic(const String &comp_name_, const Static **output, const Static *parent, ...);
 
 protected:
 	static ObjectInfo		default_oi;

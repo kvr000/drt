@@ -51,6 +51,7 @@ DR_NS_BEGIN
 class DR_PUB Avl_c: public Object
 {
 public:
+	typedef Sint8			BalanceType;
 	struct Node_c
 	{
 		union {
@@ -61,8 +62,8 @@ public:
 				Node_c *			rchild;
 			};
 		};
-		Sint8				balance;			// -1 left heavier, 0 balanced, 1 right heavier
-		Sint8				direction;			// direction relative to its parent, root has 0
+		BalanceType			balance;			// -1 left heavier, 0 balanced, 1 right heavier
+		BalanceType			direction;			// direction relative to its parent, root has 0
 
 		DR_CONSTRUCT			Node_c()				{ refs[0] = refs[1] = refs[2] = NULL; }
 	};
@@ -75,7 +76,7 @@ protected:
 protected:
 	void				destroyRecursive_g(Node_c *node);
 	void				rebalanceAdded_g(Node_c *added);
-	void				rebalanceRemoved_g(Node_c *parent, int direction);
+	void				rebalanceRemoved_g(Node_c *parent, BalanceType direction);
 
 protected: // interface to template
 	virtual int			node_cmp(Node_c *node, const void *key) const = 0;

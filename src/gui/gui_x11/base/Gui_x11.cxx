@@ -89,7 +89,7 @@ Gui_x11::~Gui_x11()
 
 void Gui_x11::open(Gui *gui_)
 {
-	Eslot1<void, MsgSync_Socket::WaitMode> islot(Eslot1<void, WeakRef<Gui_x11> *>(&socket_notify).a1Set<IRef<WeakRef<Gui_x11> > >(weak_ref).aAdd<MsgSync_Socket::WaitMode>());
+	Eslot1<void, MsgSync_Socket::WaitMode> islot(Eslot1<void, WeakRef<Gui_x11> *>(&Gui_x11::socket_notify).a1Set<IRef<WeakRef<Gui_x11> > >(weak_ref).aAdd<MsgSync_Socket::WaitMode>());
 	Eslot0<MsgSync_Socket::WaitMode> cslot(this, &Gui_x11::socket_precheck);
 
 	// HACK: for now...

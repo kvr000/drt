@@ -46,6 +46,8 @@ DR_SQL_NS_BEGIN
 
 DR_NS_USE
 
+class SqlConnectionPool;
+
 
 class SqlConnectionHold: public SqlConnection
 {
@@ -53,6 +55,7 @@ class SqlConnectionHold: public SqlConnection
 
 public:
 	DR_CONSTRUCT			SqlConnectionHold(SqlConnection *connection);
+	DR_CONSTRUCT			SqlConnectionHold(SqlConnectionPool *pool, SqlConnection *connection);
 
 protected:
 	virtual				~SqlConnectionHold();
@@ -118,6 +121,7 @@ public:
 	virtual void			addDbLayer(const String &name, Object *db_layer);
 
 protected:
+	SqlConnectionPool *		pool;
 	Ref<SqlConnection>		connection;
 	SysTime				created;
 	THash<String, Ref<Object> >	db_layers;

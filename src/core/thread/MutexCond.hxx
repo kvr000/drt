@@ -66,6 +66,21 @@ private:
 };
 
 
+/**
+ * MutexCond locker
+ *
+ * The class locks the mutex in the constructor and unlocks it in destructor.
+ */
+class DR_PUB MutexCondLocker
+{
+protected:
+	MutexCond *			mutexcond;
+
+public:
+	DR_RINLINE			MutexCondLocker(MutexCond *mutexcond_)	: mutexcond(mutexcond_) { mutexcond->lock(); }
+	DR_RINLINE			~MutexCondLocker()			{ mutexcond->unlock(); }
+};
+
 DR_NS_END
 
 #endif

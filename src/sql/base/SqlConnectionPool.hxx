@@ -37,7 +37,7 @@
 # define dr__sql__SqlConnectionPool_hxx__
 
 #include <dr/List.hxx>
-#include <dr/Mutex.hxx>
+#include <dr/MutexCond.hxx>
 #include <dr/Time.hxx>
 
 #include <dr/sql/SqlConnectionHold.hxx>
@@ -65,13 +65,23 @@ public:
 
 public:
 	virtual void			setMaxOldness(long oldness);
+	virtual void			setMaxConnections(int num_connections);
+
+protected:
+	virtual void			destroyingConnection(SqlConnectionHold *connection);
 
 protected:
 	String				connect_str;
+	THash<String, String>		connect_pars;
 	long				max_oldness;
+	int				max_connections;
+	int				num_connections;
 	RList<SqlConnectionHold>	connection_list;
-	Ref<Mutex>			list_mutex;
+	Ref<MutexCond>			list_mutex;
 	Ref<SqlManager>			manager;
+
+public:
+	friend class SqlConnectionHold;
 };
 
 

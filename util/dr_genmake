@@ -1938,6 +1938,9 @@ sub generateDir
 					$sd->{prog} = $sd->{suff};
 					$sd->{prog} = "no" if ($sd->{prog} eq "h" || $sd->{prog} eq "hxx");
 				}
+				elsif ($sd->{prog} eq "gen") {
+					$sd->{out_used} = 1;
+				}
 
 				$by_prog{$sd->{prog}} = [] unless ($by_prog{$sd->{prog}});
 				push(@{$by_prog{$sd->{prog}}}, $sd);

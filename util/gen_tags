@@ -70,7 +70,10 @@ find({ no_chdir => 1, wanted => sub {
 for (;;) {
 	my $best;
 	foreach my $ft (@files) {
-		next if (!defined $ft->{pending} && !defined ($ft->{pending} = $ft->{fd}->getline()));
+		if (!defined $ft->{pending}) {
+			next if (!defined $ft->{fd});
+			undef $ft->{fd}, next if (!defined ($ft->{pending} = $ft->{fd}->getline()));
+		}
 		$best = $ft if (!defined $best || $ft->{pending} lt $best->{pending});
 	}
 	last unless ($best);

@@ -37,6 +37,7 @@
 
 DR_NS_USE
 
+volatile int unknown_zero = 0;
 
 struct S0: public Base
 {
@@ -47,7 +48,7 @@ struct S0: public Base
 int main(void)
 {
 	S0 *s = new S0;
-	s->arr[-2] = 6;
+	s->arr[unknown_zero-2] = 6;
 	delete s;
 	return 0;
 }

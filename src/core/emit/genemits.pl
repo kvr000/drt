@@ -423,7 +423,7 @@ public:
 	template <bool logtype>
 	DR_RINLINE			Eslot$xid(const EmitterBase$xid<R$tlAlist, logtype> *em): Eslot$xid_g(new EimplE_g((bool (*)())&cE<logtype>::callme, em)) {}
 
-	DR_MINLINE typename typeref<R>::nvret operator()($calajoin) const { typename typeref<R>::nvtyp r; typename typeref<R>::ptr pr(&r); ((bool (*)(void *me, void *r$calalist))impl->caller)(impl, pr$alist); return *(typename typeref<R>::nvtyp *)pr; }
+	DR_MINLINE typename typeref<R>::nvret operator()($calajoin) const { typename typeref<R>::nvtyp r; typename typeref<R>::ptr pr(&r); ((bool (*)(void *me, void *r_$calalist))impl->caller)(impl, pr$alist); return *(typename typeref<R>::nvtyp *)pr; }
 L_
 	$l_callers .= <<L_;
 	template <typename AS>

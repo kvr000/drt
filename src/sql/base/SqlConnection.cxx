@@ -49,10 +49,9 @@ DR_OBJECT_DEF(DR_SQL_NS_STR, SqlConnection, Object);
 DR_OBJECT_IMPL_SIMPLE(SqlConnection);
 
 
-SqlConnection *SqlConnection::openConnection(const String &conn_str, SqlManager **manager)
+SqlConnection *SqlConnection::openConnection(const String &conn_str, THash<String, String> *pars, SqlManager **manager)
 {
 	Ref<SqlConnection> conn;
-	THash<String, String> pars;
 	String driver;
 
 	ssize_t pos = 0;
@@ -62,9 +61,9 @@ SqlConnection *SqlConnection::openConnection(const String &conn_str, SqlManager 
 			newpos = conn_str.getLength();
 		if ((eq = conn_str.find("=", pos)) < 0)
 			xthrownew(UnsupportedExcept(NULL, "", conn_str.mid(pos, newpos-1), ""));
-		pars[conn_str.mid(pos, eq-pos)] = conn_str.mid(eq+1, newpos-eq-1);
+		(*pars)[conn_str.mid(pos, eq-pos)] = conn_str.mid(eq+1, newpos-eq-1);
 	}
-	if ((driver = pars["driver"]).isEmpty())
+	if ((driver = (*pars)["driver"]).isEmpty())
 		xthrownew(UnsupportedExcept(NULL, "", "driver", "not specified"));
 
 	Subsystem *sys = Subsystem::getSubsystem(driver, NULL);
@@ -72,7 +71,7 @@ SqlConnection *SqlConnection::openConnection(const String &conn_str, SqlManager 
 		if (!*manager) {
 			*manager = (SqlManager *)sys->create(String(Null()), SqlManager::comp_name);
 		}
-		conn.setNoref((*manager)->openConnection(&pars));
+		conn.setNoref((*manager)->openConnection(pars));
 		sys->releaseSubsystem();
 	}
 	xcatchany {
@@ -86,7 +85,8 @@ SqlConnection *SqlConnection::openConnection(const String &conn_str, SqlManager 
 SqlConnection *SqlConnection::openConnection(const String &connect_str)
 {
 	Ref<SqlManager> manager;
-	return openConnection(connect_str, manager.mem());
+	THash<String, String> pars;
+	return openConnection(connect_str, &pars, manager.mem());
 }
 
 

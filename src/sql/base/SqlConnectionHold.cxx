@@ -38,6 +38,8 @@
 
 #include <dr/Array.hxx>
 
+#include <dr/sql/SqlConnectionPool.hxx>
+
 #include <dr/sql/SqlConnectionHold.hxx>
 
 DR_SQL_NS_BEGIN
@@ -47,6 +49,14 @@ DR_OBJECT_IMPL_SIMPLE(SqlConnectionHold);
 
 
 SqlConnectionHold::SqlConnectionHold(SqlConnection *connection_):
+	pool(NULL),
+	connection(connection_, true),
+	created(Time::getTime())
+{
+}
+
+SqlConnectionHold::SqlConnectionHold(SqlConnectionPool *pool_, SqlConnection *connection_):
+	pool(pool_),
 	connection(connection_, true),
 	created(Time::getTime())
 {
@@ -54,6 +64,8 @@ SqlConnectionHold::SqlConnectionHold(SqlConnection *connection_):
 
 SqlConnectionHold::~SqlConnectionHold()
 {
+	if (pool)
+		pool->destroyingConnection(this);
 }
 
 bool SqlConnectionHold::ping()

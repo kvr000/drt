@@ -1343,7 +1343,7 @@ DR_EXPORT_MET String String::createLowerUtf8(const char *utf8, size_t size)
 	else {
 		nd = StrData::allocAscii(size);
 		while (size--)
-			nd->b_str()[size] = tolower(utf8[size]);
+			nd->b_str()[size] = (char)tolower(utf8[size]);
 	}
 	return nd;
 }
@@ -1357,7 +1357,7 @@ DR_EXPORT_MET String String::createUpperUtf8(const char *utf8, size_t size)
 	else {
 		nd = StrData::allocAscii(size);
 		while (size--)
-			nd->b_str()[size] = toupper(utf8[size]);
+			nd->b_str()[size] = (char)toupper(utf8[size]);
 	}
 	return nd;
 }
