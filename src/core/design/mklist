@@ -1,0 +1,21 @@
+SOURCES:
+	no:mklist:g=t
+	no:dr/dr.prj:g=t
+	gen:dr/dr.xmi:c=dr_splitxmi;o=split.gen;a=rmu/rmu.xmi split;g=g,t,C
+	no:dr/generation_settings:g=t
+	no:dr/stereotypes:g=t
+	no:dr/tools:g=t
+	no:dr/131719:g=t
+	no:dr/134023:g=t
+	no:dr/cpp_includes:g=nofc
+	no:dr/idl_includes:g=nofc
+	no:dr/java_imports:g=nofc
+	no:dr/python_imports:g=nofc
+
+
+OUTPUT:
+	no:split.gen:
+
+FCHECK:
+	dr/*::s=t,nofc
+
