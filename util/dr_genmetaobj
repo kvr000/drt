@@ -199,7 +199,7 @@ foreach my $model (@models) {
 		}
 		1;
 	}
-		or STDERR->print("failed to process $model->{full}: $@"), $errors++;
+		or STDERR->print("failed to process $model->{full}:\n$@"), $errors++;
 	foreach my $action (@{$model->{view_list}}) {
 		eval {
 			$form->print(tabalign("view", 16).$action->{name}."\n");
@@ -210,7 +210,7 @@ foreach my $model (@models) {
 			}
 			1;
 		}
-			or STDERR->print("failed to process $model->{full}.$action->{name}: $@"), $errors++;
+			or STDERR->print("failed to process $model->{full}.$action->{name}:\n$@"), $errors++;
 	}
 	foreach my $attr (@{$model->{attr_list}}) {
 		eval {
@@ -278,7 +278,7 @@ foreach my $model (@models) {
 			}
 			1;
 		}
-			or STDERR->print("failed to process $model->{full}.$attr->{name}: $@"), $errors++;
+			or STDERR->print("failed to process $model->{full}.$attr->{name}:\n$@"), $errors++;
 	}
 	foreach my $assoc_display (values %{$model->getDrSpecs("assoc_display")}) {
 		eval {
@@ -289,7 +289,7 @@ foreach my $model (@models) {
 			$form->print(tabalign("\tcolumns", 24).$dcols."\n");
 			1;
 		}
-			or STDERR->print("failed to process $model->{full}.$assoc_display->{name}: $@"), $errors++;
+			or STDERR->print("failed to process $model->{full}.$assoc_display->{name}:\n$@"), $errors++;
 	}
 	foreach my $action (@{$model->{action_list}}) {
 		eval {
@@ -313,14 +313,14 @@ foreach my $model (@models) {
 			}
 			1;
 		}
-			or STDERR->print("failed to process $model->{full}.$action->{name}: $@"), $errors++;
+			or STDERR->print("failed to process $model->{full}.$action->{name}:\n$@"), $errors++;
 	}
 	foreach my $accfilter (sort({ $a->{order} <=> $b->{order} } values %{$model->getDrSpecs("accfilter")})) {
 		eval {
 			$form->print(tabalign("accfilter", 16).$accfilter->{spec}."\n");
 			$form->print(tabalign("\tcontent", 24).$accfilter->{value}."\n");
 		}
-			or STDERR->print("failed to process $model->{full}.$accfilter->{name}: $@"), $errors++;
+			or STDERR->print("failed to process $model->{full}.$accfilter->{name}:\n$@"), $errors++;
 	}
 	$file_trans->closeFile($form);
 }
