@@ -1552,6 +1552,12 @@ sub createOutput
 			$out_suffix = "";
 			$out_dir = "";
 		}
+		elsif ($od->{prog} eq "no") {
+			$config_type = "-";
+			$config_defs = "";
+			$out_suffix = "";
+			$out_dir = "";
+		}
 		else {
 			die "unknown output type $od->{prog} for $od->{out}";
 		}
@@ -1662,13 +1668,14 @@ EOT
 			<Tool
 				Name="VCPostBuildEventTool"
 			/>
-			<DebugSettings
-				Environment="PATH=\$(TargetPath)/$rdir/lib" />
 EOT
-				foreach my $add_tool (@{$platform_def->{add_tool}}) {
-					my $def = $ADD_TOOLS{$add_tool};
-					$def =~ s/^/\t\t\t/gm;
-					$pf->print("$def\n");
+				if (0) {
+					"<DebugSettings Environment=\"PATH=\$(TargetPath)/$rdir/lib\" />";
+						foreach my $add_tool (@{$platform_def->{add_tool}}) {
+							my $def = $ADD_TOOLS{$add_tool};
+							$def =~ s/^/\t\t\t/gm;
+							$pf->print("$def\n");
+						}
 				}
 				$pf->print("\t\t</Configuration>\n");
 			}

@@ -60,6 +60,11 @@ typedef unsigned DR_INT64 uintmax_t;
 #include <stdint.h>
 #endif
 
+#ifdef DR_LIBC_VC
+# include <float.h>
+# define isfinite _finite
+#endif
+
 DR_NS_BEGIN
 
 

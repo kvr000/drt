@@ -26,7 +26,7 @@ DeniedException::DeniedException(const String &failed_check_):
 }
 
 DR_MET(public virtual)
-DR_EXPORT_MET String DeniedException::stringify() const
+String DeniedException::stringify() const
 {
 	return String("permission denied, failed for ").append(failed_check);
 }

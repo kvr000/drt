@@ -1,3 +1,10 @@
+.def SD_META		meta
+
+.def SUBDIRS		${SD_META}
+.def ESUBDIRS		{${SUBDIRS}}
+
+.include ${ESUBDIRS}/mklist
+
 SOURCES:
 	no:mklist:g=t
 	no:dr/dr.prj:g=t
@@ -14,7 +21,7 @@ SOURCES:
 
 
 OUTPUT:
-	no:split.gen:
+	no:split.gen:s=s
 
 FCHECK:
 	dr/*::s=t,nofc

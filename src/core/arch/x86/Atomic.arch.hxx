@@ -146,11 +146,78 @@ DR_RINLINE bool Atomic::cmpxchg(void *volatile *val, void *cmpval, void *newval)
 		mov	eax, cmpval;
 		mov	edx, newval;
 		mov	ecx, val;
-		cmpxchg	[ecx], edx;
-		sete	al;
-		mov	e, al;
+		lock cmpxchg	[ecx], edx;
+		sete	cl;
+		mov	e, cl;
 	};
 	return e;
+}
+
+DR_RINLINE void *Atomic::xchg(void *volatile *val, void *newval)
+{
+	__asm {
+		mov	ecx, val;
+		mov	edx, newval;
+		lock xchg	[ecx], edx;
+		mov	newval, edx;
+	};
+	return newval;
+}
+
+DR_RINLINE bool Atomic::incr(volatile SintPtr *val)
+{
+	char nz;
+	__asm {
+		mov	ecx, val;
+		lock inc	dword ptr [ecx];
+		setnz	cl;
+		mov	nz, cl;
+	};
+	return nz;
+}
+
+DR_RINLINE bool Atomic::decr(volatile SintPtr *val)
+{
+	char ns;
+	__asm {
+		mov	ecx, val;
+		lock dec	dword ptr [ecx];
+		setns	cl;
+		mov	ns, cl;
+	};
+	return ns;
+}
+
+DR_RINLINE void Atomic::inc(volatile SintPtr *val)
+{
+	__asm {
+		mov	ecx, val;
+		lock inc	dword ptr [ecx];
+	};
+}
+
+DR_RINLINE void Atomic::dec(volatile SintPtr *val)
+{
+	__asm {
+		mov	ecx, val;
+		lock dec	dword ptr [ecx];
+	};
+}
+
+DR_RINLINE bool Atomic::incdecr(volatile SintPtr *valInc, volatile SintPtr *valDec)
+{
+	char ns;
+	__asm {
+		mov	ecx, valInc;
+		lock inc	dword ptr [ecx];
+	};
+	__asm {
+		mov	ecx, valDec;
+		lock dec	dword ptr [ecx];
+		setns	cl;
+		mov	ns, cl;
+	};
+	return ns;
 }
 
 #else

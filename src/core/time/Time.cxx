@@ -34,13 +34,28 @@
  **/
 
 #include <time.h>
+#ifdef DR_LIBC_VC
+# include <windows.h>
+#else
 #include <sys/time.h>
+#endif
 
 #include <dr/x_kw.hxx>
 #include <dr/Const.hxx>
 #include <dr/Exception.hxx>
 
 #include <dr/Time.hxx>
+
+#ifdef DR_LIBC_VC
+static void gettimeofday(struct timeval *tv, struct timeval *unused)
+{
+	FILETIME ft;
+	GetSystemTimeAsFileTime(&ft);
+	dr::Uint64 epoch_time = ((((dr::Uint64)ft.dwHighDateTime<<32)|ft.dwLowDateTime)-116444736000000000ULL)/10;
+	tv->tv_sec = epoch_time/1000000;
+	tv->tv_usec = epoch_time%1000000;
+}
+#endif
 
 DR_NS_BEGIN
 
@@ -150,26 +165,41 @@ void Time::timeToUtcCalendarMsec(SysTime tvalue, int *year, int *mon, int *day, 
 
 bool Time::sleepTime(Time::SysTime sleep_time)
 {
+#ifdef DR_LIBC_VC
+	Sleep(Time::interToMsecondsUp(sleep_time));
+	return true;
+#else
 	struct timespec ts;
 	ts.tv_sec = Time::interToSeconds(sleep_time);
 	ts.tv_nsec = Time::interToNsecondsUp(sleep_time)%1000000000;
 	return nanosleep(&ts, NULL) == 0;
+#endif
 }
 
 bool Time::sleepSec(Sint64 secs)
 {
+#ifdef DR_LIBC_VC
+	Sleep(secs*1000);
+	return true;
+#else
 	struct timespec ts;
 	ts.tv_sec = secs;
 	ts.tv_nsec = 0;
 	return nanosleep(&ts, NULL) == 0;
+#endif
 }
 
 bool Time::sleepNSec(Sint64 nsecs)
 {
+#ifdef DR_LIBC_VC
+	Sleep((nsecs+999999)/1000000);
+	return true;
+#else
 	struct timespec ts;
 	ts.tv_sec = nsecs/1000000000;
 	ts.tv_nsec = nsecs%1000000000;
 	return nanosleep(&ts, NULL) == 0;
+#endif
 }
 
 

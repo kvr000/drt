@@ -143,6 +143,7 @@ int MsgSync_wnt::threadSleep(Sint64 timeout_ns)
 	else {
 		LeaveCriticalSection(&sync_mutex);
 	}
+	return 0;
 }
 
 void MsgSync_wnt::threadWake()
