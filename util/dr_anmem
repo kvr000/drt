@@ -130,7 +130,7 @@ if ($opts{l}) {
 		$leak_stat{$md->{backtrace}} = 0 unless (defined $leak_stat{$md->{backtrace}});
 		$leak_stat{$md->{backtrace}}++;
 	}
-	printf("Leak statistics (%d):\n\n", scalar %leak_stat/2);
+	printf("Leak statistics (%d):\n\n", (scalar keys %leak_stat)/2);
 	foreach my $b (sort({ $leak_stat{$b} <=> $leak_stat{$a} } keys %leak_stat)) {
 		my $indb = $b;
 		$indb =~ s/^/\t/mg;
@@ -139,7 +139,7 @@ if ($opts{l}) {
 }
 
 if ($opts{s}) {
-	printf("Allocation statistics (%d):\n\n", scalar %frequent/2);
+	printf("Allocation statistics (%d):\n\n", (scalar keys %frequent)/2);
 	foreach my $b (sort({ $frequent{$b} <=> $frequent{$a} } keys %frequent)) {
 		my $indb = $b;
 		$indb =~ s/^/\t/mg;
