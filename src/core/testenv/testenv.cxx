@@ -37,6 +37,7 @@
 #include <signal.h>
 #include <sys/resource.h>
 #include <unistd.h>
+#include <sys/time.h>
 #endif
 #ifdef DR_OS_SYMBIAN
 #include <unistd.h>
@@ -68,6 +69,7 @@ void test_handle_req(int n)
 
 void test_init()
 {
+	srand(time(NULL));
 #if (defined DR_OS_WCE)
 	Fatal::behavOutput(CreateFileW(L"test.txt", GENERIC_WRITE, FILE_SHARE_READ, NULL, CREATE_ALWAYS, 0, NULL));
 #endif
