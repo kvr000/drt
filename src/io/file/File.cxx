@@ -107,6 +107,11 @@ DR_EXPORT_MET void File::unlockFull(int type)
 	File_sysiface::unlockFull(this, type);
 }
 
+DR_EXPORT_MET void File::updateTime(Sint64 time)
+{
+	File_sysiface::updateTime(this, time);
+}
+
 DR_EXPORT_MET File::HandleType File::getType(const String &filename_)
 {
 	return File_sysiface::getType(filename_);

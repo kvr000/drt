@@ -44,6 +44,7 @@
 
 #include <dr/io/File.hxx>
 #include <dr/io/dev/File_sysiface.hxx>
+#include <dr/Time.hxx>
 
 #include <dr/io/FileFailedExcept.hxx>
 
@@ -81,6 +82,8 @@ public:
 
 	static void			lockFull(File *handle, int type);
 	static void			unlockFull(File *handle, int type);
+
+	static void			updateTime(File *handle, Sint64 time);
 
 	static File::HandleType		getType(const String &file);
 	static void			unlink(const String &file);
@@ -207,6 +210,17 @@ DR_RINLINE void File_sysiface_posix::lockFull(File *handle, int type)
 DR_RINLINE void File_sysiface_posix::unlockFull(File *handle, int type)
 {
 	if (::flock(getOsHandle(handle), LOCK_UN) < 0)
+		throwSysException(handle, Handle::lock_string);
+}
+
+DR_RINLINE void File_sysiface_posix::updateTime(File *handle, Sint64 time)
+{
+	struct timeval tv[2];
+	tv[0].tv_sec = time;
+	tv[0].tv_usec = 0;
+	tv[1].tv_sec = time;
+	tv[1].tv_usec = 0;
+	if (::futimes(getOsHandle(handle), time == INVALID_SYSTIME ? NULL : tv) < 0)
 		throwSysException(handle, Handle::lock_string);
 }
 
