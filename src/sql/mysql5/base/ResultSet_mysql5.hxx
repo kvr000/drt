@@ -83,7 +83,7 @@ public:
 	virtual void			bindNullHandler(const String &column, void (*handler)(void *value));
 
 public:
-	virtual bool			fetchNext();
+	virtual bool			next();
 	virtual void			store();
 
 public:

@@ -267,7 +267,7 @@ void ResultSet_mysql5::bindNullHandler(const String &column, void (*handler)(voi
 	return bindNullHandler(getColumnIdDirect(column), handler);
 }
 
-bool ResultSet_mysql5::fetchNext()
+bool ResultSet_mysql5::next()
 {
 	if (!res_binding_done) {
 		allocResBinding(mysql_stmt_field_count(stmt)-1);
