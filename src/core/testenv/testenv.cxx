@@ -37,7 +37,7 @@
 #include <signal.h>
 #include <sys/resource.h>
 #include <unistd.h>
-#include <sys/time.h>
+#include <time.h>
 #endif
 #ifdef DR_OS_SYMBIAN
 #include <unistd.h>

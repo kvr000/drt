@@ -40,6 +40,7 @@
 #include <dr/cmp.hxx>
 #include <dr/emits.hxx>
 #include <dr/Alloc.hxx>
+#include <dr/Object.hxx>
 
 DR_NS_BEGIN
 
@@ -47,7 +48,7 @@ DR_NS_BEGIN
 /**
  * ancestor for Avl trees
  */
-class DR_PUB Avl_c
+class DR_PUB Avl_c: public Object
 {
 public:
 	struct Node_c

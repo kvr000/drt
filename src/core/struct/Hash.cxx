@@ -45,7 +45,7 @@ void Hash_c::destroy_g()
 	if (list) {
 		int i;
 		for (i = 0; i <= hashmask; i++) {
-			struct kvpair_g *c, *n;
+			struct Entry_c *c, *n;
 			for (c = list[i]; c; c = n) {
 				n = c->next;
 				pairDestroy(c);
@@ -56,9 +56,9 @@ void Hash_c::destroy_g()
 	list = NULL;
 }
 
-Hash_c::kvpair_g *Hash_c::find_g(long hash_value, const void *key) const
+Hash_c::Entry_c *Hash_c::find_g(long hash_value, const void *key) const
 {
-	kvpair_g *r = NULL;
+	Entry_c *r = NULL;
 	if (list) {
 		for (r = list[hash_value&hashmask]; r; r = r->next) {
 			if (r->hash != hash_value)
@@ -71,9 +71,9 @@ Hash_c::kvpair_g *Hash_c::find_g(long hash_value, const void *key) const
 	return r;
 }
 
-Hash_c::kvpair_g *Hash_c::create_g(long hash_value, const void *key, bool *created)
+Hash_c::Entry_c *Hash_c::create_g(long hash_value, const void *key, bool *created)
 {
-	kvpair_g *r = find_g(hash_value, key);
+	Entry_c *r = find_g(hash_value, key);
 	if (r) {
 		if (created)
 			*created = false;
@@ -83,11 +83,11 @@ Hash_c::kvpair_g *Hash_c::create_g(long hash_value, const void *key, bool *creat
 		unsigned olim = hashmask+1;
 		unsigned i;
 		if (list) {
-			list = (kvpair_g **)reallocList((hashmask+1)*2*sizeof(kvpair_g *));
+			list = (Entry_c **)reallocList((hashmask+1)*2*sizeof(Entry_c *));
 			hashmask = 2*hashmask+1;
 		}
 		else {
-			list = (kvpair_g **)reallocList(4*sizeof(kvpair_g *));
+			list = (Entry_c **)reallocList(4*sizeof(Entry_c *));
 			hashmask = 3;
 		}
 
@@ -95,7 +95,7 @@ Hash_c::kvpair_g *Hash_c::create_g(long hash_value, const void *key, bool *creat
 			list[i] = NULL;
 
 		for (i = 0; i < olim; i++) {
-			kvpair_g **p;
+			Entry_c **p;
 			for (p = &list[i]; *p; ) {
 				if ((unsigned)((*p)->hash&hashmask) != i) {
 					r = *p;
@@ -124,8 +124,8 @@ Hash_c::kvpair_g *Hash_c::create_g(long hash_value, const void *key, bool *creat
 bool Hash_c::remove_g(long hash_value, const void *key)
 {
 	if (list) {
-		kvpair_g *r;
-		kvpair_g **s;
+		Entry_c *r;
+		Entry_c **s;
 		for (s = &list[hash_value&hashmask]; *s; s = &r->next) {
 			r = *s;
 			if (r->hash != hash_value)
@@ -145,7 +145,7 @@ void Hash_c::clean_g()
 {
 	if (list) {
 		for (ssize_t i = 0; i <= hashmask; i++) {
-			for (kvpair_g *n, *r = list[i]; r != NULL; r = n) {
+			for (Entry_c *n, *r = list[i]; r != NULL; r = n) {
 				n = r->next;
 				count--;
 				pairDestroy(r);
@@ -155,7 +155,7 @@ void Hash_c::clean_g()
 	}
 }
 
-Hash_c::kvpair_g *Hash_c::iterFirst_g() const
+Hash_c::Entry_c *Hash_c::iterFirst_g() const
 {
 	long i;
 
@@ -166,7 +166,7 @@ Hash_c::kvpair_g *Hash_c::iterFirst_g() const
 	return NULL;
 }
 
-Hash_c::kvpair_g *Hash_c::iterNext_g(kvpair_g *c) const
+Hash_c::Entry_c *Hash_c::iterNext_g(Entry_c *c) const
 {
 	long i;
 

@@ -43,6 +43,8 @@ DR_NS_BEGIN
 
 typedef Sint64 SysTime;
 
+#define INVALID_SYSTIME ((-1)<<(sizeof(SysTime)-1))
+
 /**
  * Time functions
  * 

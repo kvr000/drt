@@ -52,10 +52,10 @@ DR_NS_BEGIN
 class DR_PUB Hash_c: public Object
 {
 public:
-	struct kvpair_g
+	struct Entry_c
 	{
 		long			hash;
-		kvpair_g *		next;
+		Entry_c *		next;
 	};
 protected:
 	DR_MINLINE			Hash_c()				: hashmask(-1), list(NULL), count(0) {}
@@ -63,23 +63,23 @@ protected:
 	void				destroy_g();				// must be called from child's destructor
 
 protected: // interface to template
-	virtual bool			keyeq(kvpair_g *pair, const void *key) const = 0;
-	virtual kvpair_g *		pairDef(const void *key, const void *val) = 0;
-	virtual kvpair_g *		pairUndef(const void *key) = 0;
-	virtual void			pairDestroy(kvpair_g *p) = 0;
+	virtual bool			keyeq(Entry_c *pair, const void *key) const = 0;
+	virtual Entry_c *		pairDef(const void *key, const void *val) = 0;
+	virtual Entry_c *		pairUndef(const void *key) = 0;
+	virtual void			pairDestroy(Entry_c *p) = 0;
 
 	virtual void *			reallocList(size_t nsize) = 0;
 	virtual void			freeList() = 0;
 
 protected:
-	kvpair_g *			find_g(long hash, const void *key) const;
-	kvpair_g *			create_g(long hash, const void *key, bool *created);
+	Entry_c *			find_g(long hash, const void *key) const;
+	Entry_c *			create_g(long hash, const void *key, bool *created);
 	bool				remove_g(long hash, const void *key);
 	void				clean_g();
 
 protected:
-	kvpair_g *			iterFirst_g() const;
-	kvpair_g *			iterNext_g(kvpair_g *cur) const;
+	Entry_c *			iterFirst_g() const;
+	Entry_c *			iterNext_g(Entry_c *cur) const;
 
 private:
 	/* disallowed */		Hash_c(const Hash_c &);
@@ -87,7 +87,7 @@ private:
 
 protected:
 	ssize_t				hashmask;
-	kvpair_g **			list;
+	Entry_c **			list;
 	unsigned			count;
 };
 
@@ -105,7 +105,7 @@ public:
 };
 
 template <typename K, typename V>
-class HashPair: public Hash_c::kvpair_g
+class HashPair: public Hash_c::Entry_c
 {
 public:
 	K				k;
@@ -143,13 +143,13 @@ public:
 	typedef typestore<Allocator, 1> AllocatorBase;
 
 protected:
-	DR_MINLINE virtual bool		keyeq(kvpair_g *pair, const void *key) const		{ return comp().keq(((kvpair *)pair)->k, *(const K *)key); }
-	DR_MINLINE virtual kvpair_g *	pairDef(const void *key, const void *val)		{ return allc().alloc2(*(const K *)key, *(const V *)val); }
-	DR_MINLINE virtual kvpair_g *	pairUndef(const void *key)				{ return allc().allocK(*(const K *)key); }
-	DR_MINLINE virtual void		pairDestroy(kvpair_g *p)				{ allc().freePair((kvpair *)p); }
+	DR_MINLINE virtual bool		keyeq(Entry_c *pair, const void *key) const		{ return comp().keq(((kvpair *)pair)->k, *(const K *)key); }
+	DR_MINLINE virtual Entry_c *	pairDef(const void *key, const void *val)		{ return allc().alloc2(*(const K *)key, *(const V *)val); }
+	DR_MINLINE virtual Entry_c *	pairUndef(const void *key)				{ return allc().allocK(*(const K *)key); }
+	DR_MINLINE virtual void		pairDestroy(Entry_c *p)				{ allc().freePair((kvpair *)p); }
 
-	DR_MINLINE virtual void *	reallocList(size_t nsize)				{ return allc().reallocAr(list, nsize, (hashmask+1)*sizeof(kvpair_g *)); }
-	DR_MINLINE virtual void		freeList()						{ allc().freeAr(list, (hashmask+1)*sizeof(kvpair_g *)); }
+	DR_MINLINE virtual void *	reallocList(size_t nsize)				{ return allc().reallocAr(list, nsize, (hashmask+1)*sizeof(Entry_c *)); }
+	DR_MINLINE virtual void		freeList()						{ allc().freeAr(list, (hashmask+1)*sizeof(Entry_c *)); }
 
 public:
 	DR_MINLINE Compar &		comp() const						{ return *reinterpret_cast<Compar *>((ComparBase *)this); }
