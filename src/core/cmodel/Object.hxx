@@ -108,6 +108,9 @@ private: \
 public: \
 	DR_SUPER_REDIR1C(void *, getIface, const DR_NSP(String) &); \
 	DR_SUPER_REDIR1C(void *, getIfaceUnref, const DR_NSP(String) &); \
+	DR_SUPER_REDIR1C(void *, getCheckIface, const DR_NSP(String) &); \
+	DR_SUPER_REDIR1C(Object *, getCheckFinal, const DR_NSP(String) &); \
+	DR_SUPER_REDIR1C(Object *, accCheckFinal, const DR_NSP(String) &); \
 	virtual const DR_NSP(String) &	classname() const			{ return comp_name; } \
 	virtual const DR_NSP(Static) *	getObjectStatic() const; \
  \
@@ -120,6 +123,7 @@ private: \
 #define DR_OBJECT_DECL(objname, ancestor) \
 	DR_OBJECT_DECL_SIMPLE(objname, ancestor); \
 public: \
+	DR_SUPER_REDIR0C(DR_NSP(Object) *, acc); \
 	DR_SUPER_REDIR0C(DR_NSP(Object) *, ref); \
 	DR_SUPER_REDIR0C(bool, unref); \
 	DR_SUPER_REDIR0C(DR_NSP(Object) *, refLiving); \
@@ -217,6 +221,11 @@ class DR_PUB Object: public Iface
 {
 public:		/* basic */
 	/**
+	 * @see Iface::acc
+	 */
+	virtual Object *		acc() const				{ return const_cast<Object *>(this); }
+
+	/**
 	 * @see Iface::ref
 	 */
 	virtual Object *		ref() const				{ DR_LOG4(("%s: referencing %p, new refcnt %d+1\n", DR_FUNCTION, this, refcnt+1)); if (!Atomic::incr(&refcnt)) { const_cast<Object *>(this)->rerefed(); } return const_cast<Object *>(this); }
@@ -235,6 +244,21 @@ public:		/* basic */
 	 * @see Iface::getIfaceUnref
 	 */
 	virtual void *			getIfaceUnref(const String &iface) const;
+
+	/**
+	 * @see Iface::getCheckIface
+	 */
+	virtual void *			getCheckIface(const String &iface) const;
+
+	/**
+	 * @see Iface::accCheckFinal
+	 */
+	virtual Object *		accCheckFinal(const String &name) const;
+
+	/**
+	 * @see Iface::getCheckFinal
+	 */
+	virtual Object *		getCheckFinal(const String &name) const;
 
 	/**
 	 * @see Iface::refLiving()
@@ -277,13 +301,15 @@ public:		/* basic */
 	virtual void			unserializeFrom(SerializeDecoder *stream);
 
 private: /* implementation static data */
-	virtual void			dummy_func_static();
-	virtual void			dummy_func_second();
-	virtual void			dummy_func_third();
+	virtual void			object_reserved_static();
+	virtual void			object_reserved_1();
+	virtual void			object_reserved_2();
+	virtual void			object_reserved_3();
 	enum {
-		OVD_IFACE_DEF = 16,
+		OVD_IFACE_DEF = 18,
 		OVD_SECOND,
 		OVD_THIRD,
+		OVD_FOURTH,
 	};
 
 public:

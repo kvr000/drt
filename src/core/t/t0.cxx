@@ -46,6 +46,7 @@
 #include <dr/CastExcept.hxx>
 #include <dr/Ref.hxx>
 #include <dr/Throw.hxx>
+#include <dr/DummyObject.hxx>
 
 #include <dr/testenv/testenv.hxx>
 #include <dr/testenv/TestObject.hxx>
@@ -56,6 +57,7 @@ DR_TESTENV_NS_USE
 
 SintPtr global_counter0;
 
+#define	TEST_OBJECT
 #define TEST_ATOMIC
 #define TEST_REF
 #define TEST_THROW_THROW
@@ -120,6 +122,44 @@ int T0Obj0::alive = 0;
 
 DR_OBJECT_DEF("", T0Obj0, Object);
 DR_OBJECT_IMPL_IFACE2(T0Obj0, T0If0, T0IfD);
+
+
+#ifdef TEST_OBJECT
+TESTNS(object);
+void test()
+{
+	CHECK(TestObject::countLiving() == 0);
+	{
+		ERef<TestObject> zer(new TestObject(0));
+		ERef<TestObject> one(new TestObject(1));
+		ERef<TestObject> sec(new TestObject(1));
+		CHECK(TestObject::countLiving() == 3);
+		{
+			ERef<Iface> a((Iface *)zer->getIface(Object::comp_name));
+			ERef<Iface> b(zer->ref());
+			ERef<Iface> c((Iface *)zer->getCheckIface(DummyObject::comp_name)); CHECK(*c == NULL);
+			ERef<Iface> d(zer->getCheckFinal(DummyObject::comp_name)); CHECK(*d == NULL);
+			ERef<Iface> e(zer->getCheckFinal(Object::comp_name)); CHECK(*e == NULL);
+			ERef<Iface> f(zer->getCheckFinal(TestObject::comp_name)); CHECK(*f == zer);
+			CHECK(zer->accCheckFinal(Object::comp_name) == NULL);
+			CHECK(zer->accCheckFinal(DummyObject::comp_name) == NULL);
+			CHECK(zer->accCheckFinal(TestObject::comp_name) != NULL);
+		}
+		CHECK(TestObject::countLiving() == 3);
+		{
+			CHECK(zer->eq(one) == false);
+			CHECK(one->eq(sec) == true);
+			CHECK(zer->cmp(sec) < 0);
+			CHECK(one->cmp(sec) == 0);
+			CHECK(one->cmp(zer) > 0);
+		}
+		CHECK(TestObject::countLiving() == 3);
+	}
+	CHECK(TestObject::countLiving() == 0);
+}
+TESTNSE(object);
+#endif
+
 
 #ifdef TEST_ATOMIC
 TESTNS(atomic);
@@ -729,6 +769,9 @@ TESTNSE(iface);
 DR_TESTENV_MAIN()
 {
 	test_init();
+#ifdef TEST_OBJECT
+	TESTRUN(object);
+#endif
 #ifdef TEST_ATOMIC
 	TESTRUN(atomic);
 #endif

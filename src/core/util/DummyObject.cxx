@@ -34,96 +34,48 @@
  **/
 
 /*drt
- * include:	dr/testenv/def_testenv.hxx
  * include: 	dr/Object.hxx
- * ns:		dr::testenv
- * class:	TestObject
+ * ns:		dr
+ * class:	DummyObject
  * ancestor:	dr::Object
  * ifaces:	
- * at:	int				id;
- * at:	String				value;
- * at:	static Refcnt			living_count;
- *
- * use:		dr
+ * at:	static DummyObject *		instance;
  */
 
 #include <dr/Const.hxx>
 #include <dr/Ref.hxx>
 
-#include <dr/testenv/TestObject.hxx>
+#include <dr/DummyObject.hxx>
 
-#include "_gen/TestObject-def.hxx"
+#include "_gen/DummyObject-def.hxx"
 
-DR_TESTENV_NS_BEGIN
+DR_NS_BEGIN
 
 
-Refcnt TestObject::living_count = 0;
-
-DR_MET(public)
-TestObject::TestObject(int id_):
-	id(id_)
-{
-	living_count++;
-}
+DummyObject *DummyObject::instance = NULL;
 
 DR_MET(public)
-TestObject::TestObject(const String &value_):
-	value(value_)
+DummyObject::DummyObject()
 {
-	living_count++;
-}
-
-DR_MET(virtual protected)
-TestObject::~TestObject()
-{
-	living_count--;
-}
-
-DR_MET(public virtual)
-int TestObject::getId()
-{
-	return id;
-}
-
-DR_MET(public virtual)
-String TestObject::getValue()
-{
-	return value;
 }
 
 DR_MET(public static)
-int TestObject::countLiving()
+DummyObject *DummyObject::accInstance()
 {
-	return living_count;
+	if (!instance) {
+		DummyObject *new_inst = new DummyObject();
+		if (!Atomic::cmpxchg((void **)&instance, NULL, new_inst)) {
+			new_inst->unref();
+		}
+	}
+	return instance;
 }
 
-DR_MET(public virtual)
-int TestObject::cmp(const Iface *second) const
+DR_MET(public static)
+DummyObject *DummyObject::getInstance()
 {
-	if (TestObject *seco = (TestObject *)second->accCheckFinal(comp_name)) {
-		return id == seco->id ? 0 : id < seco->id ? -1 : 1;
-	}
-	else {
-		return 0;
-	}
-}
-
-DR_MET(public virtual)
-bool TestObject::eq(const Iface *second) const
-{
-	if (TestObject *seco = (TestObject *)second->accCheckFinal(comp_name)) {
-		return id == seco->id;
-	}
-	else {
-		return false;
-	}
-}
-
-DR_MET(public virtual)
-long TestObject::hash() const
-{
-	return id;
+	return (DummyObject *)accInstance()->ref();
 }
 
 
-DR_TESTENV_NS_END
+DR_NS_END

@@ -43,6 +43,10 @@
 DR_NS_BEGIN
 
 
+DR_EXPORT_MET void Iface::iface_reserved_func()
+{
+}
+
 DR_EXPORT_MTS const Static *Iface::createIfaceStatic(const String &iface_name, const Static **out, ...)
 {
 	size_t count;

@@ -233,6 +233,87 @@ found:
 	}
 }
 
+void *Object::getCheckIface(const String &iface) const
+{
+	StrData *ifd = iface.d;
+	long ihash = ifd->hash >= 0 ? ifd->hash : ifd->updateHash();
+	const Static *objst;
+	Static::IfaceNode *node;
+
+#ifndef DR_NO_ALIGNED_FUNC
+	if (!((UintPtr)(objst = (*(const Static ***)this)[OVD_IFACE_DEF])&1)) {
+		objst = getObjectStatic();
+#ifndef DR_RO_VTABLE
+		(*(const Static ***)this)[OVD_IFACE_DEF] = (const Static *)((UintPtr)objst+1);
+#elif 1
+		sys::makeMemWritable(&(*(const Static ***)this)[OVD_IFACE_DEF], sizeof(void *));
+		(*(const Static ***)this)[OVD_IFACE_DEF] = (const Static *)((UintPtr)objst+1);
+#endif
+	}
+	else {
+		objst = (Static *)((UintPtr)objst-1);
+	}
+#else
+	{
+		objst = getObjectStatic();
+	}
+#endif
+	for (node = objst->ifaces[ihash%(sizeof(objst->ifaces)/sizeof(objst->ifaces[0]))]; node; node = node->next) {
+		if (node->name.d == ifd)
+			goto found;
+	}
+	for (node = objst->ifaces[ihash%(sizeof(objst->ifaces)/sizeof(objst->ifaces[0]))]; node; node = node->next) {
+		if (node->name.d->hash != ifd->hash)
+			continue;
+		if (node->name.d->beq(ifd))
+			goto found;
+	}
+	return NULL;
+
+found:
+	SintPtr offs = node->offs;
+	if (offs >= 0) {
+		return (char *)(UintPtr)this+offs;
+	}
+	else {
+		DR_TRY {
+			if (void *ret = node->create_func(const_cast<Object *>(this), offs)) {
+				DR_TRY {
+					unref();
+				}
+				DR_CATCHANY {
+					((Iface *)ret)->unref();
+					DR_RETHROWANY;
+				}
+				DR_ENDTRY;
+				return ret;
+			}
+			else {
+				return NULL;
+			}
+		}
+		DR_CATCHANY {
+			unref();
+			DR_RETHROWANY;
+		}
+		DR_ENDTRY;
+	}
+}
+
+Object *Object::getCheckFinal(const String &name) const
+{
+	if (name != classname())
+		return NULL;
+	return ref();
+}
+
+Object *Object::accCheckFinal(const String &name) const
+{
+	if (name != classname())
+		return NULL;
+	return const_cast<Object *>(this);
+}
+
 String Object::stringify() const
 {
 	String desc;
@@ -267,15 +348,19 @@ void Object::unserializeFrom(SerializeDecoder *serializer)
 	xthrownew(UnsupportedExcept(this, classname(), "unserialize", Null()));
 }
 
-void Object::dummy_func_static()
+void Object::object_reserved_static()
 {
 }
 
-void Object::dummy_func_second()
+void Object::object_reserved_1()
 {
 }
 
-void Object::dummy_func_third()
+void Object::object_reserved_2()
+{
+}
+
+void Object::object_reserved_3()
 {
 }
 

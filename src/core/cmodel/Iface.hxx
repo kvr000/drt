@@ -124,14 +124,14 @@ public: \
  * for binary compatibility */
 #if (defined DR_CXX_GCC)
 # if __GNUC__ >= 3 && __GNUC__ < 5
-#  define DRIF_PAD_VIRT 2
+#  define DRIF_PAD_VIRT 1
 # elif (defined __GCCE__)
-#  define DRIF_PAD_VIRT 2
+#  define DRIF_PAD_VIRT 1
 # else
 #  error unknown GCC version __GCCE__
 # endif
 #elif (defined DR_CXX_VC)
-# define DRIF_PAD_VIRT 2
+# define DRIF_PAD_VIRT 1
 #else
 # error unknown compiler
 #endif
@@ -157,9 +157,18 @@ protected:
 
 public:
 	/**
+	 * return the pointer to object, not referencing
+	 *
+	 * @return object(unref)
+	 * 	the pointer to object
+	 */
+	virtual Object *		acc() const = 0;
+
+	/**
 	 * increases references to object
 	 *
-	 * @return			reference to the object
+	 * @return
+	 * 	reference to the object
 	 */
 	virtual Object *		ref() const = 0;
 
@@ -172,6 +181,14 @@ public:
 	 * 	false if the object was destroyed
 	 */
 	virtual bool			unref() const = 0;
+
+	/**
+	 * get the class name
+	 *
+	 * @return
+	 * 	class name
+	 */
+	virtual const String &		classname() const = 0;
 
 	/**
 	 * gets an interface
@@ -197,30 +214,43 @@ public:
 	virtual void *			getIfaceUnref(const String &iface) const = 0;
 
 	/**
-	 * returns state of the object
+	 * accesses an interface
 	 *
-	 * @return true
-	 * 	if the object is currently destroyed
-	 * @return false
-	 * 	if the object is not destroyed
+	 * @param iface
+	 * 	the requested interface
+	 *
+	 * @return NULL
+	 * 	if the interface cannot be found
+	 * @return interface(unref)
+	 * 	otherwise
 	 */
-	virtual Object *		refLiving() const = 0;
+	virtual void *			getCheckIface(const String &iface) const = 0;
 
 	/**
-	 * get the class name
+	 * return address of the object if it's final instance of requested type
 	 *
-	 * @return
-	 * 	class name
+	 * @param name
+	 * 	the requested object
+	 *
+	 * @return NULL
+	 * 	if the object is not directly the name instance
+	 * @return object(unref)
+	 * 	otherwise
 	 */
-	virtual const String &		classname() const = 0;
+	virtual Object *		accCheckFinal(const String &name) const = 0;
 
 	/**
-	 * get the string describing the object
+	 * return address of the object if it's final instance of requested type
 	 *
-	 * @return
-	 * 	string describing the object
+	 * @param name
+	 * 	the requested object
+	 *
+	 * @return NULL
+	 * 	if the object is not directly the name instance
+	 * @return object
+	 * 	otherwise
 	 */
-	virtual String			stringify() const = 0;
+	virtual Object *		getCheckFinal(const String &name) const = 0;
 
 	/**
 	 * get the object hash
@@ -251,6 +281,24 @@ public:
 	virtual int			cmp(const Iface *obj2) const = 0;
 
 	/**
+	 * returns state of the object
+	 *
+	 * @return true
+	 * 	if the object is currently destroyed
+	 * @return false
+	 * 	if the object is not destroyed
+	 */
+	virtual Object *		refLiving() const = 0;
+
+	/**
+	 * get the string describing the object
+	 *
+	 * @return
+	 * 	string describing the object
+	 */
+	virtual String			stringify() const = 0;
+
+	/**
 	 * stores object into stream
 	 *
 	 * @param stream
@@ -265,6 +313,11 @@ public:
 	 * 	stream to load the data from
 	 */
 	virtual void			unserializeFrom(SerializeDecoder *stream) = 0;
+
+	/**
+	 * reserved function
+	 */
+	virtual void			iface_reserved_func();
 
 protected:
 	/**
