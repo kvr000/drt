@@ -166,7 +166,12 @@ foreach my $model (@models) {
 	}
 	foreach my $action (sort({ $a->{order} <=> $b->{order} } values %{$model->getDrSpecs("action")})) {
 		$form->print(tabalign("action", 16).$action->{spec}."\n");
-		$form->print(tabalign("\ttext", 24).$action->{value}."\n");
+		my $ats = dr::Util::splitAttributes($action->{value});
+		$form->print(tabalign("\ttext", 24).defvalue($ats->{text}, $action->{spec})."\n");
+		if (defined $ats->{form_actioner}) {
+			my $a = $ats->{form_actioner} eq "_" ? "$model->{full}_$action->{spec}" : index($ats->{form_actioner}, "_") == 0 ? "$model->{full}$ats->{form_actioner}" : $ats->{form_actioner};
+			$form->print(tabalign("\tform_actioner", 24).$a."\n");
+		}
 	}
 	$file_trans->closeFile($form);
 }

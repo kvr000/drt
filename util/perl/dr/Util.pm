@@ -108,5 +108,63 @@ sub tabalign($$)
 	return $str;
 }
 
+sub splitString($)
+{
+	my $s			= shift;
+
+	my $o = "";
+	for (;;) {
+		if ($s !~ m/^(.*?)(['" \t\n])(.*)$/s) {
+			$o .= $s;
+			return ( $o, "" );
+		}
+		if ($2 eq "\"" || $2 eq "\'") {
+			my $q = $2;
+			$o .= "$1$q";
+			$s = $3;
+			for (;;) {
+				my $b = index($s, "\\");
+				my $e = index($s, $q);
+				dr::Util::doDie("cannot find end quote $q in $s") if ($e < 0);
+				if ($b < 0 || $e < $b) {
+					$o .= substr($s, 0, $e+1);
+					$s = substr($s, $e+1);
+					last;
+				}
+				else {
+					$o .= substr($s, 0, $b+2);
+					$s = substr($s, $b+2);
+				}
+			}
+		}
+		else {
+			$o .= $1;
+			return ( $o, $3 );
+		}
+	}
+}
+
+sub splitAttributes($)
+{
+	my $content		= shift;
+
+	my %ats;
+
+	for (;;) {
+		$content =~ s/^\s+//;
+		last if ($content eq "");
+		my $eq = index($content, "=");
+		dr::Util::doDie("splitAttributes: missing equals in $content") if ($eq < 0);
+		my $key = substr($content, 0, $eq);
+		$key =~ s/^(\s*)(.*?)(\s*)$/$2/;
+		dr::Util::doDie("splitAttributes: key is empty in $content") if ($key eq "");
+		my $value;
+		( $value, $content ) = dr::Util::splitString(substr($content, $eq+1));
+		$ats{$key} = $value;
+	}
+
+	return \%ats;
+}
+
 
 1;
