@@ -192,7 +192,7 @@ foreach my $model (@models) {
 	foreach my $attr (@{$model->{attr_list}}) {
 		eval {
 			$form->print(tabalign($attr->{stype}, 16).$attr->{name}."\n");
-			foreach (qw(db_name db_conversion)) {
+			foreach (qw(db_name)) {
 				if (defined (my $v = $attr->checkDrTagValue($_))) {
 					$form->print(tabalign("\t$_", 24).$v."\n");
 				}
@@ -213,6 +213,11 @@ foreach my $model (@models) {
 			$form->print(tabalign("\trole", 24).$roles."\n");
 			if ($attr->{stype} eq "attr") {
 				my ( $type, $tagger ) = $attr->getFinalTypeWithTagger();
+				foreach (qw(db_conversion)) {
+					if (defined (my $val = $tagger->checkTagValue($_))) {
+						$form->print(tabalign("\t$_", 24).$val."\n");
+					}
+				}
 				$form->print(tabalign("\ttext", 24).defvalue($tagger->checkTagValue("text"), $attr->{name})."\n");
 				$form->print(tabalign("\ttype", 24).translateFormType($attr)."\n");
 				$form->print(tabalign("\tlogical", 24).$tagger->getTag("logical")->{value}."\n");
