@@ -64,7 +64,7 @@ DummyObject *DummyObject::accInstance()
 {
 	if (!instance) {
 		DummyObject *new_inst = new DummyObject();
-		if (!Atomic::cmpxchg((void **)&instance, NULL, new_inst)) {
+		if (!Atomic::cmpxchg((void *volatile *)(void *)&instance, NULL, new_inst)) {
 			new_inst->unref();
 		}
 	}

@@ -563,13 +563,41 @@ sub genRecursiveAction($$@) # recursive-action pre-list this-action post-list
 			$o .= "\t\$(MAKE) -C $_->{name} $ract\n";
 		}
 	}
-	$o .= "\t\$(MAKE) $action\n";
+	$o .= "\t\$(MAKE) $action\n" if (defined $action);
 	if (defined ($post)) {
 		foreach (@$post) {
 			$o .= "\t\$(MAKE) -C $_->{name} $ract\n";
 		}
 	}
 	return $o;
+}
+
+sub genParallelAction($$@)
+{
+	my $ract	= shift;
+	my $action	= shift;
+	my $vars	= shift;
+
+	my $pre		= $vars->{PRESUBS};
+	my $post	= $vars->{POSTSUBS};
+	my $o;
+	my $cont = "";
+
+	$o = "$ract:";
+	if (defined ($pre)) {
+		foreach (@$pre) {
+			$cont .= "${ract}_sub_$_->{name}:\n\t\$(MAKE) -C $_->{name} $ract\n";
+			$o .= " ${ract}_sub_$_->{name}"
+		}
+	}
+	$o .= " $action";
+	if (defined ($post)) {
+		foreach (@$post) {
+			$cont .= "${ract}_sub_$_->{name}:\n\t\$(MAKE) -C $_->{name} $ract\n";
+			$o .= " ${ract}_sub_$_->{name}"
+		}
+	}
+	return $cont.$o;
 }
 
 sub createOutput
@@ -634,7 +662,7 @@ sub createOutput
 	$mf->print("DR_BUILD_CXX_FLAGS=", map({ " -D$_" } keys %{$config->{define}}), "\n");
 	$mf->print("\n");
 
-	$mf->print("all: targ_all\ndefault: targ_all\n\ngmake:\n\t$vars->{genmake} $config->{fnames} \$(DIRS)\n\ninclude \$(ETCDIR_)main.mk\n\n");
+	$mf->print("all: targ_all\ndefault: targ_all\nno: nothing\n\ngmake:\n\t$vars->{genmake} $config->{fnames} \$(DIRS)\n\ninclude \$(ETCDIR_)main.mk\n\n");
 	$mf->print("lgh:\n\t\$(MAKE) -f Make_gh\n\n");
 
 	$mgh->printf("BUILD=%s\n", "_build");
@@ -653,7 +681,7 @@ sub createOutput
 	# tags generating
 	{
 		$mf->print("ldeltags:\n\trm -f tags\ntags: ldeltags\n\trun_p gen_tags .\n");
-		$mf->print(genRecursiveAction("deltags", "ldeltags", $vars)."\n");
+		$mf->print(genParallelAction("deltags", "ldeltags", $vars)."\n");
 	}
 
 	if (defined (my $deps = $vars->{DEPS})) {
@@ -871,7 +899,7 @@ sub createOutput
 	{
 		my @l;
 		@l = ();
-		$mf->print(genRecursiveAction("outclean", "loutclean", $vars)."\n");
+		$mf->print(genParallelAction("outclean", "loutclean", $vars)."\n");
 		$mf->print("loutclean:\n");
 		foreach (@{$vars->{OUTPUT}}) {
 			push(@l, $_->{out}) if (defined $_->{out} && dr::build::findArray("C", $_->{groups}) < 0 && !defined $_->{extern});
@@ -879,7 +907,7 @@ sub createOutput
 		$mf->print("\trm -f ".join(" ", @l)."\n") if ($#l >= 0);
 		$mf->print("\n");
 		@l = ();
-		$mf->print(genRecursiveAction("clean", "lclean", $vars)."\n");
+		$mf->print(genParallelAction("clean", "lclean", $vars)."\n");
 		$mf->print("lclean: loutclean limmclean\n");
 		$mf->print("limmclean:\n");
 		foreach (@{$vars->{SOURCES}->{list}}) {
@@ -887,9 +915,15 @@ sub createOutput
 		}
 		$mf->print("\trm -f ".join(" ", @l)."\n") if ($#l >= 0);
 		$mf->print("\n");
-		$mf->print(genRecursiveAction("wclean", "lwclean", $vars)."\n");
+		$mf->print(genParallelAction("wclean", "lwclean", $vars)."\n");
 		$mf->print("lwclean: lclean\n\trm -rf \$(BUILD)\n");
 		$mf->print("\n");
+	}
+
+	# nothing
+	{
+		$mf->print("lnothing:\n");
+		$mf->print(genParallelAction("nothing", "lnothing", $vars)."\n");
 	}
 
 	if (defined (my $postsubs = $vars->{POSTSUBS})) {
@@ -921,7 +955,7 @@ sub createOutput
 	}
 
 	# automatic header generation
-	$mf->print(genRecursiveAction("gh", "lgh", $vars)."\n");
+	$mf->print(genParallelAction("gh", "lgh", $vars)."\n");
 	if (!$config->{make}->{noautogh}) {
 		$mf->print("include Make_gh\n\n");
 	}
