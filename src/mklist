@@ -1,5 +1,6 @@
 PRESUBS:
 	core
+	app: core
 	io: core
 	config: core io
 	net: core io
