@@ -190,6 +190,7 @@ XmlElement *XmlDoc_lxml2::findPathElement(const String &path)
 		xthrownew(XmlExcept(String("xpath empty: ")+path));
 	}
 	xmlNodePtr n = pobj->nodesetval->nodeTab[0];
+	xmlXPathFreeObject(pobj);
 	if (n->type != XML_ELEMENT_NODE) {
 		xthrownew(XmlExcept(String("xpath not element: ")+path));
 	}
@@ -208,12 +209,20 @@ size_t XmlDoc_lxml2::execPathElements(const String &path, const Eslot1<void, Xml
 		xthrownew(XmlExcept(String("xpath not nodeset: ")+path));
 	}
 	for (i = 0; i < (size_t)pobj->nodesetval->nodeNr; i++) {
-		xmlNodePtr n = pobj->nodesetval->nodeTab[i];
-		if (n->type != XML_ELEMENT_NODE)
-			continue;
-		ERef<XmlElement_lxml2> el(new XmlElement_lxml2(this, (xmlElementPtr)n));
-		exec(el);
+		xtry {
+			xmlNodePtr n = pobj->nodesetval->nodeTab[i];
+			if (n->type != XML_ELEMENT_NODE)
+				continue;
+			ERef<XmlElement_lxml2> el(new XmlElement_lxml2(this, (xmlElementPtr)n));
+			exec(el);
+		}
+		xcatchany {
+			xmlXPathFreeObject(pobj);
+			xrethrowany;
+		}
+		xend;
 	}
+	xmlXPathFreeObject(pobj);
 	return i;
 }
 
