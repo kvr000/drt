@@ -180,7 +180,7 @@ while (defined (my $line = $list->readLine())) {
 
 foreach my $model (@models) {
 	my $file = $model->{full}; $file =~ s/::/\//g;
-	my $form = $file_trans->createTruncated("$root/$file.metadb");
+	my $form = $file_trans->createTruncated("$root/$file.metaobj");
 	eval {
 		$form->print(tabalign("db_table", 16).$model->{db_table}."\n");
 		foreach (qw(req_get req_set req_new req_del)) {
@@ -271,7 +271,7 @@ foreach my $model (@models) {
 	foreach my $action (@{$model->{view_list}}) {
 		eval {
 			$form->print(tabalign("view", 16).$action->{name}."\n");
-			foreach (qw(supplier renderer)) {
+			foreach (qw(supplier renderer compos_mand)) {
 				if (defined (my $v = $action->checkDrTagValue($_))) {
 					$form->print(tabalign("\t$_", 24).$v."\n")
 				}

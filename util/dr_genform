@@ -177,6 +177,11 @@ while (defined (my $line = $list->readLine())) {
 foreach my $model (@models) {
 	my $file = $model->{full}; $file =~ s/::/\//g;
 	my $form = $file_trans->createTruncated("$root/$file.form");
+	foreach my $global (qw(req_get req_set)) {
+		if (defined (my $value = $model->checkDrTagValue($global))) {
+			$form->print(tabalign($global, 16).$value."\n");
+		}
+	}
 	foreach my $attr (@{$model->{attr_list}}) {
 		my ( $type, $tagger ) = $attr->getFinalTypeWithTagger();
 		eval {

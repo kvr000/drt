@@ -38,6 +38,7 @@ package dr::FileParser;
 use strict;
 use warnings;
 
+use FileHandle;
 use dr::Util;
 
 sub new

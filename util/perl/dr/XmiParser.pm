@@ -48,6 +48,10 @@ use warnings;
 
 use dr::Util;
 use XML::LibXML::Reader;
+#BEGIN
+#{
+#	eval { require XML::LibXML::Reader; 1; } || eval { use XML::LibXML::Common qw(:libxml); 1; } || die "failed to load XML::LibXML::Reader or XML::LibXML::Common: $@";
+#}
 
 sub new
 {
