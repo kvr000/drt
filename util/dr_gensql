@@ -1,0 +1,201 @@
+#!/usr/bin/perl
+
+###
+## drt library
+##
+## drt multiplatform development toolkit
+##
+## ----------------------------------------------------------------------------------
+##
+## Copyright (C) 2004-2008 Zbyněk Vyškovský
+##
+## ----------------------------------------------------------------------------------
+##
+## LICENSE:
+##
+## This file is part of drt
+##
+## drt is free software; you can redistribute it and/or modify it under the
+## terms of the GNU Lesser General Public License as published by the Free
+## Software Foundation; either version 3 of the License, or (at your option)
+## any later version.
+##
+## drt is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+## FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for
+## more details.
+##
+## You should have received a copy of the GNU Lesser General Public License
+## along with drt; if not, write to the Free Software Foundation, Inc., 51
+## Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+##
+## @copyright	2004-2008 Zbyněk Vyškovský
+## @link	mailto:kvr@matfyz.cz
+## @link	http://kvr.matfyz.cz/drt/
+## @license	http://www.gnu.org/licenses/lgpl.txt GNU Lesser General Public License v3
+###
+
+use strict;
+use warnings;
+
+use FileHandle;
+use Data::Dumper;
+use Getopt::Std;
+
+use File::Basename;
+use lib dirname($0)."/perl";
+use dr::FileTransaction;
+use dr::SepOutput;
+use dr::XmiParser;
+use dr::ModelStore;
+use dr::Util qw(tabalign);
+
+sub fixModelInfo($)
+{
+	my $model		= shift;
+
+	if (defined $model->{db_table}) {
+		# ok
+	}
+	elsif (defined $model->{drcom_hash}->{db_table}) {
+		$model->{db_table} = $model->{drcom_hash}->{db_table}->{value};
+	}
+	else {
+		($model->{db_table} = $model->{name}) =~ s/([[:lower:]])([[:upper:]])/$1_$2/g;
+		$model->{db_table} = lc($model->{db_table});
+	}
+}
+
+our %opts;
+getopts('', \%opts);
+
+die "Usage: $0 [-i] list_file target_file" unless (@ARGV == 2);
+my $listname = shift(@ARGV);
+my $targname = shift(@ARGV);
+die "passed file does not end with suffix .list" unless ($listname =~ m/(.*)\.list$/);
+
+our $file_trans = dr::FileTransaction->new();
+
+our $model_store = dr::ModelStore->new();
+$model_store->registerFixier(\&fixModelInfo);
+
+our $list = FileHandle->new($listname, "<")
+	or die "failed to open $listname: $!";
+
+
+sub readModel($$)
+{
+	my $location		= shift;
+	my $name		= shift;
+
+	my $model = $model_store->loadModel($location, $name);
+
+	fixModelInfo($model);
+
+	return $model;
+}
+
+our %SQL_UML_TYPES_PRIM = (
+	Boolean			=> "bool",
+	Integer			=> "int",
+	Long			=> "bigint",
+	long			=> "bigint",
+);
+
+our %SQL_UML_TYPES_VAR = (
+	string			=> "varchar",
+	binary			=> "varbinary",
+);
+
+sub dieAttrContext($$)
+{
+	my $attr		= shift;
+	my $msg			= shift;
+
+	dr::Util::doDie("$attr->{owner}->{filename}:0: $attr->{owner}->{full}.$attr->{name}: $msg");
+}
+
+sub translateSqlType($)
+{
+	my $attr		= shift;
+
+	eval {
+		my $type = $attr->getFinalType();
+
+		if ($type->{stype} eq "primitive") {
+			my $ptype = $type->{type};
+			if ($ptype =~ m/^(\w+)\((\d+)\)$/) {
+				if (my $sqlt = $SQL_UML_TYPES_VAR{$1}) {
+					return "$sqlt($2)";
+				}
+				die "cannot map $ptype";
+			}
+			else {
+				if (my $sqlt = $SQL_UML_TYPES_PRIM{$ptype}) {
+					return $sqlt;
+				}
+				die "cannot map $ptype";
+			}
+		}
+		elsif ($type->{stype} eq "enum") {
+			return "int";
+		}
+		else {
+			die "unknown stype $type->{stype}";
+		}
+	}
+		or die "$attr->{owner}->{filename}:0: $attr->{owner}->{full}.$attr->{name}: $@";
+}
+
+my $lineno = 0;
+my $errors = 0;
+
+my @models = ();
+
+while (<$list>) {
+	$lineno++;
+	next if (m/^$/);
+	chomp($_);
+	die "$listname:$lineno: invalid format, need \"location classname\"" unless (m/^(\S+)\s+((\w+::)*\w+)$/);
+	push(@models, readModel($1, $2));
+}
+
+my $sql = $file_trans->createTruncated($targname);
+foreach my $model (@models) {
+	my @primary;
+	$sql->printf("create table %s (\n", $model->{db_table});
+	my $sqlin = dr::SepOutput->new($sql, { sep_in => ",", sep_all => "\n" });
+	foreach my $attr (@{$model->{attr_list}}) {
+		if ($attr->{stype} eq "attr") {
+			$sqlin->printObj(tabalign("\t$attr->{name}", 40).translateSqlType($attr).($attr->getCom("serial") ? " auto_increment" : ""));
+			if ($attr->getRole()->{primary}) {
+				push(@primary, $attr->{name});
+			}
+		}
+		elsif ($attr->{stype} eq "assoc" || $attr->{stype} eq "compos") {
+			my @tprimary = $attr->expandAssocAttrs();
+			foreach my $pa (@tprimary) {
+				$sqlin->printObj(tabalign("\t$pa->{name}", 40).translateSqlType($pa->{attr}));
+				$sqlin->printAdd("\t\t-- $attr->{name}: $pa->{attr}->{owner}->{full}.$pa->{attr}->{name}");
+				push(@primary, $pa->{name});
+			}
+		}
+		else {
+			dr::Util::doDie("$attr->{owner}->{filename}:0: invalid stype $attr->{stype}");
+		}
+	}
+	if (@primary) {
+		$sqlin->printObj("\tprimary key (");
+		my $sqlprim = dr::SepOutput->new($sql, { sep_in => ", ", sep_all => "" });
+		foreach (@primary) {
+			$sqlprim->printObj($_);
+		}
+		undef $sqlprim;
+		$sqlin->print(")");
+	}
+	undef $sqlin;
+	$sql->printf(");\n\n");
+}
+
+if ($file_trans->commit()) {
+}

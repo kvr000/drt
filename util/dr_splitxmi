@@ -47,6 +47,7 @@ use File::Basename;
 use lib dirname($0)."/perl";
 use dr::XmiParser;
 use dr::FileTransaction;
+use dr::Util qw(tabalign);
 
 our %opts;
 our $xmi_fname;
@@ -70,13 +71,7 @@ sub formatPair($$)
 	my $p0			= shift;
 	my $p1			= shift;
 
-	if (length($p0) < 32) {
-		$p0 .= "\t" x ((39-length($p0))/8);
-	}
-	else {
-		$p0 .= " ";
-	}
-	return "$p0$p1\n";
+	return tabalign($p0, 32).$p1."\n";
 }
 
 sub formatTriplet($$$)
@@ -85,24 +80,7 @@ sub formatTriplet($$$)
 	my $p1			= shift;
 	my $p2			= shift;
 
-	my $tot;
-	if (length($p0) < 32) {
-		$p0 .= "\t" x ((39-length($p0))/8);
-		$tot = 40;
-	}
-	else {
-		$p0 .= " ";
-		$tot = length($p0)+1;
-	}
-	if ($tot+length($p1) < 64) {
-		$p1 .= "\t" x ((71-length($p1)-$tot)/8);
-		$tot = 64;
-	}
-	else {
-		$p1 .= " ";
-		$tot += length($p0)+1;
-	}
-	return "$p0$p1$p2\n";
+	return tabalign(tabalign($p0, 32).$p1, 64).$p2."\n";
 }
 
 sub formatComment($$)
@@ -156,12 +134,12 @@ sub genClass
 			}
 			elsif ($attr->{aggregation} eq "composite") {
 				$fd->print(formatPair("compos", $attr->{name}));
-				$fd->print(formatPair("\tref", $xmi->formatDatatype($class->getAttrType($attr))));
+				$fd->print("\t".formatPair("ref", $xmi->formatDatatype($class->getAttrType($attr))));
 				$fd->print(formatComment(1, $attr->{comment}));
 			}
 			elsif ($attr->{aggregation} eq "none") {
 				$fd->print(formatPair("assoc", $attr->{name}));
-				$fd->print(formatPair("\tref", $xmi->formatDatatype($class->getAttrType($attr))));
+				$fd->print("\t".formatPair("ref", $xmi->formatDatatype($class->getAttrType($attr))));
 				$fd->print(formatComment(1, $attr->{comment}));
 			}
 			else {

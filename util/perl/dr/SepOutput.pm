@@ -33,58 +33,73 @@
 ## @license	http://www.gnu.org/licenses/lgpl.txt GNU Lesser General Public License v3
 ###
 
-package dr::Util;
+package dr::SepOutput;
 
 use strict;
 use warnings;
 
-use Exporter;
-
-our @ISA = qw(Exporter);
-our @EXPORT_OK = qw(doDie tablength tabalign);
-
-our $TABSIZE = 8;
-
-sub doDie($)
+sub new
 {
-	my $msg			= shift;
+	my $class = shift; $class = ref($class) || $class;
+	my $fd			= shift;
+	my $options		= shift;
 
-	my $stack = "";
-	for (my $i = 0; ; $i++) {
-		my ($pack, $fn, $ln, $sub) = caller($i)
-			or last;
-		$stack .= "$sub ($fn:$ln)\n";
-	}
-	$stack =~ s/^/\t/gm;
-	die "$msg\nstack:\n$stack";
+	my $this = bless {
+		fd			=> $fd,
+		sep_in			=> $options->{sep_in},
+		sep_all			=> $options->{sep_all},
+		state			=> 0,
+	}, $class;
+
+	return $this;
 }
 
-sub tablength($)
+sub print
 {
-	my $str			= shift;
+	my $this		= shift;
 
-	my $pos = 0;
-	while ($str =~ m/^(.*?)\t(\t*)(.*)$/) {
-		$pos += length($1)+$TABSIZE+length($2)*$TABSIZE;
-		$pos -= $pos%$TABSIZE;
-		$str = $3;
-	}
-	$pos += length($str);
-	return $pos;
+	$this->{fd}->print(@_);
 }
 
-sub tabalign($$)
+sub printObj
 {
+	my $this		= shift;
 	my $str			= shift;
-	my $align		= shift;
 
-	if ((my $l = tablength($str)) < $align) {
-		$str .= "\t" x (($align-$l+$TABSIZE-1)/$TABSIZE);
+	if ($this->{state} == 0) {
+		$this->{state} = 1;
 	}
 	else {
-		$str .= " ";
+		$this->{fd}->print($this->{sep_in});
+		if (defined $this->{add}) {
+			$this->{fd}->print($this->{add});
+			undef $this->{add};
+		}
+		$this->{fd}->print($this->{sep_all});
 	}
-	return $str;
+
+	$this->{fd}->print($str);
+}
+
+sub printAdd
+{
+	my $this		= shift;
+	my $str			= shift;
+
+	$this->{add} = $str;
+}
+
+sub DESTROY
+{
+	my $this		= shift;
+
+	if (defined $this->{add}) {
+		$this->{fd}->print($this->{add});
+		undef $this->{add};
+	}
+	if ($this->{state} != 0) {
+		$this->{fd}->print($this->{sep_all});
+	}
 }
 
 
