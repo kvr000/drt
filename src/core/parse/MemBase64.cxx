@@ -33,20 +33,33 @@
  * @license	http://www.gnu.org/licenses/lgpl.txt GNU Lesser General Public License v3
  **/
 
+/*drt
+ * include: 	dr/Object.hxx
+ * include: 	dr/Blob.hxx
+ * include: 	dr/String.hxx
+ * ns:		dr
+ */
+
 #include <dr/x_kw.hxx>
 #include <dr/Const.hxx>
 
 #include <dr/InvalidFormatException.hxx>
 
-#include <dr/MemBase64.hxx>
+#include "_gen/MemBase64-all.hxx"
 
 DR_NS_BEGIN
 
 
-DR_OBJECT_IMPL_SIMPLE(MemBase64);
-DR_OBJECT_DEF(DR_NS_STR, MemBase64, Object);
+/*drt
+ * class:	MemBase64
+ * ancestor:	dr::Object
+ *
+ * doc:{
+ * 	The class is intended for base64 conversions
+ * }doc
+ */
 
-
+DR_MET(public virtual)
 MemBase64::~MemBase64()
 {
 }
@@ -60,6 +73,7 @@ static void encodeB64Block(const unsigned char in[3], unsigned char out[4], int 
 	out[3] = (unsigned char) (len > 2 ? cb64[ in[2] & 0x3f ] : '=');
 }
 
+DR_MET(public static)
 ssize_t MemBase64::encodeBase64(char *dst, const void *src, size_t size)
 {
 	size_t outsize = 0;
@@ -78,6 +92,7 @@ static void decodeBlock(unsigned char out[3], unsigned char in[4])
 	out[2] = (unsigned char)(((in[2] << 6) & 0xc0) | in[3]);
 }
 
+DR_MET(public static)
 ssize_t MemBase64::decodeBase64(void *dst, const char *src, size_t size)
 {
 	static const char cd64[] = "\xff\xff\xff\xff\xff\xff\xff\xff\xff\xfd\xfd\xff\xff\xfd\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xfd\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\x3e\xff\xff\xff\x3f\x34\x35\x36\x37\x38\x39\x3a\x3b\x3c\x3d\xff\xff\xff\xfe\xff\xff\xff\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\xff\xff\xff\xff\xff\xff\x1a\x1b\x1c\x1d\x1e\x1f\x20\x21\x22\x23\x24\x25\x26\x27\x28\x29\x2a\x2b\x2c\x2d\x2e\x2f\x30\x31\x32\x33";
@@ -120,6 +135,7 @@ retry_char:
 	return dstc-(unsigned char *)dst;
 }
 
+DR_MET(public static)
 BString MemBase64::encodeBase64(const Blob &data)
 {
 	BString out;
@@ -127,6 +143,7 @@ BString MemBase64::encodeBase64(const Blob &data)
 	return out;
 }
 
+DR_MET(public static)
 Blob MemBase64::decodeBase64(const BString &data)
 {
 	Blob out;

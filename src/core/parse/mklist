@@ -2,10 +2,10 @@
 
 SOURCES:
 	no:${SD_PARSE}/mklist:g=t
-	:${SD_PARSE}/BinaryMemReader.hxx:g=di,t
-	:${SD_PARSE}/BinaryMemReader.cxx:g=s,t
-	:${SD_PARSE}/BinaryMemWriter.hxx:g=di,t
-	:${SD_PARSE}/BinaryMemWriter.cxx:g=s,t
-	:${SD_PARSE}/MemBase64.hxx:g=di,t
-	:${SD_PARSE}/MemBase64.cxx:g=s,t
+	:${SD_PARSE}/BinaryReader.cxx:g=s,t,gh,diparse
+	:${SD_PARSE}/BinaryWriter.cxx:g=s,t,gh,diparse
+	:${SD_PARSE}/BinaryMemReader.cxx:g=s,t,gh,diparse
+	:${SD_PARSE}/BinaryMemWriter.cxx:g=s,t,gh,diparse
+	:${SD_PARSE}/BinaryBlobWriter.cxx:g=s,t,gh,diparse
+	:${SD_PARSE}/MemBase64.cxx:g=s,t,gh,diparse
 

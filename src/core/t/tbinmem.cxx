@@ -39,6 +39,7 @@
 #include <dr/x_kw.hxx>
 #include <dr/Mem.hxx>
 #include <dr/BinaryMemReader.hxx>
+#include <dr/BinaryMemWriter.hxx>
 #include <dr/EndOfDataException.hxx>
 
 #include <dr/testenv/testenv.hxx>
@@ -48,6 +49,7 @@ DR_TESTENV_NS_USE
 
 
 #define TEST_READER
+#define TEST_WRITER
 #define TEST_LEBE
 
 #ifdef TEST_LEBE
@@ -113,11 +115,62 @@ void test()
 TESTNSE(reader);
 #endif
 
+
+#ifdef TEST_WRITER
+TESTNS(writer);
+void test()
+{
+	bool excepted;
+	BString parse_data(
+			"\x01\x02\x03\x04\x05\x06\x07\x08"
+			"\x01\x02\x03\x04"
+			"\x01\x02"
+			"\x01"
+			"\x01\x02\x03\x04\x05\x06\x07\x08"
+			"\x01\x02\x03\x04"
+			"\x01\x02"
+			"\x01"
+			"\x88\x83\xc1\xc0\xd0\xa0\x8c\x84\x01"
+			"kra"
+			);
+	BString dataw;
+	dataw.lock(parse_data.getSize());
+	BinaryMemWriter mw(&dataw);
+
+	mw.writeLe64(0x0807060504030201ULL, Null());
+	mw.writeLe32(0x04030201UL, Null());
+	mw.writeLe16(0x0201UL, Null());
+	mw.writeLe8(0x01UL, Null());
+	mw.writeBe64(0x0102030405060708ULL, Null());
+	mw.writeBe32(0x001020304UL, Null());
+	mw.writeBe16(0x0102UL, Null());
+	mw.writeBe8(0x01UL, Null());
+	mw.writeVarint64(0x0807060504030201ULL, Null());
+	mw.writeBytes(Blob("kra"), Null());
+	excepted = false;
+	xtry {
+		mw.writeLe8(0, "except");
+	}
+	xcatch (Exception, ex) {
+		printf("ok except: %s\n", ex->stringify().utf8().toStr());
+		excepted = true;
+	}
+	xend;
+	CHECK(excepted);
+	CHECK(dataw == parse_data);
+}
+TESTNSE(writer);
+#endif
+
+
 DR_TESTENV_MAIN()
 {
 	test_init();
 #ifdef TEST_READER
 	TESTRUN(reader);
+#endif
+#ifdef TEST_WRITER
+	TESTRUN(writer);
 #endif
 #ifdef TEST_LEBE
 	TESTRUN(lebe);

@@ -63,5 +63,6 @@ FCHECK:
 
 DIST_INC:
 	di:dr
+	diparse:dr
 	didev:dr/dev
 

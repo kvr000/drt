@@ -484,10 +484,12 @@ sub printClass($$)
 			my $access;
 			my $mods = "";
 			my $abstr = "";
+			my $content = ";";
 			foreach my $spec (keys %{$met->{specs}}) {
 				$access = $spec, next if ($spec eq "public" || $spec eq "protected" || $spec eq "private");
 				$mods .= "$spec ", next if ($spec eq "virtual" || $spec eq "static");
-				$abstr = " = 0", next if ($spec eq "abstract");
+				$mods .= "virtual ", $abstr = " = 0", next if ($spec eq "abstract");
+				$mods .= "inline ", $content = $met->{content}, next if ($spec eq "inline");
 				if (my $ini = (grep({ $_->{name} eq $spec } @{$cld->{ini}}))[0]) {
 					my $fullname = "$ini->{name}_$met->{name}";
 					push(@{$cld->{consts}}, { access => "public", type => "String", name => $fullname, init => "(\"$met->{specs}->{$spec}\")", context => $met->{context} });
@@ -514,7 +516,7 @@ sub printClass($$)
 					printIndented($hxx, $level, sprintf("%s", $c));
 				}
 			}
-			printIndented($hxx, $level, sprintf("\t%s;\n", formatMethodDecl("$mods$met->{ret}", "$met->{decl}$abstr")));
+			printIndented($hxx, $level, sprintf("\t%s%s\n", formatMethodDecl("$mods$met->{ret}", "$met->{decl}$abstr"), $content));
 		}
 	}
 
@@ -853,7 +855,8 @@ for (my $curf = $cxx, my $curname = $cxxname; defined $curf; $curf = @ARGV ? dr:
 			my $metd = {
 				specs		=> { map({ die $curf->getContext().": invalid spec: $_" unless (m/^(\w+)(:(\S*))?$/); ( $1 => (defined $3 ? $3 : 1) ) } split(/\s+/, $1)) },
 			};
-			my $abstr = defined $metd->{specs}->{abstract};
+			my $is_abstr = defined $metd->{specs}->{abstract};
+			my $is_inline = defined $metd->{specs}->{inline};
 			if (!(defined $cld && defined $cld->{class})) {
 				STDERR->printf($curf->getContext().": fatal: class undefined\n"), $errors++ if (!$opts{i});
 			}
@@ -869,12 +872,39 @@ for (my $curf = $cxx, my $curname = $cxxname; defined $curf; $curf = @ARGV ? dr:
 						}
 						die "unable to find end of comment";
 					}
-					if ($abstr) {
+					if ($is_abstr) {
 						if (m/^\/\/\s?(.*)$/s) {
 							$_ = $1;
 						}
 						else {
 							STDERR->printf($curf->getContext().": abstract declaration must start with //\n");
+							$errors++;
+						}
+					}
+					if ($is_inline) {
+						if (m/^\/\/\s?(.*)$/s) {
+							my $use_decl = $1;
+							$metd->{content} = "";
+							while ($_ = $curf->readLine()) {
+								chomp;
+								last if ($_ =~ m/^\s*$/);
+								if ($_ !~ m/^\/\/(.*)$/) {
+									STDERR->printf($curf->getContext().": inline definition must end with empty line\n");
+								}
+								$metd->{content} .= "$1\n";
+							}
+							if ($metd->{content} =~ m/.*\n.*\n/s) {
+								$metd->{content} = " $metd->{content}";
+							}
+							else {
+								$metd->{content} =~ s/^/\t/gm;
+								$metd->{content} = "\n$metd->{content}";
+							}
+							chomp($metd->{content});
+							$_ = $use_decl;
+						}
+						else {
+							STDERR->printf($curf->getContext().": inline declaration must start with // and include {}\n");
 							$errors++;
 						}
 					}
