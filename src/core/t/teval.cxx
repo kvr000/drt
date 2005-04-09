@@ -67,6 +67,21 @@ void test()
 	evaluator.setNoref(new IntEvaluator("!defined x && !defined \\1 && !defined a"));
 	CHECK(evaluator->evaluate(tref(new Evaluator::ArgumentsHash())) == 1);
 
+	evaluator.setNoref(new IntEvaluator("1024<<30"));
+	CHECK(evaluator->evaluate(tref(new Evaluator::ArgumentsHash())) == ((Sint64)1024)<<30);
+
+	evaluator.setNoref(new IntEvaluator("1024*1024>>18"));
+	CHECK(evaluator->evaluate(tref(new Evaluator::ArgumentsHash())) == ((Sint64)1024*1024)>>18);
+
+	evaluator.setNoref(new IntEvaluator("0x1234>><<16"));
+	CHECK(evaluator->evaluate(tref(new Evaluator::ArgumentsHash())) == 0x3412);
+
+	evaluator.setNoref(new IntEvaluator("0x12345678>><<32>><<4"));
+	CHECK(evaluator->evaluate(tref(new Evaluator::ArgumentsHash())) == 0x87654321);
+
+	evaluator.setNoref(new IntEvaluator("0x123456789abcdef0>><<64"));
+	CHECK(evaluator->evaluate(tref(new Evaluator::ArgumentsHash())) == (Sint64)0xf0debc9a78563412ULL);
+
 	{
 		ERef<Evaluator::ArgumentsHash::Constants> constants(new Evaluator::ArgumentsHash::Constants);
 		ERef<Evaluator::ArgumentsHash::Values> values(new Evaluator::ArgumentsHash::Values);
