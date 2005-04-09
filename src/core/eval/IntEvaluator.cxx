@@ -110,7 +110,7 @@ Sint64 IntEvaluator::IntBinaryExpression::evaluate(Arguments *args)
 			Sint64 l = operands[0]->evaluate(args), r = operands[1]->evaluate(args);
 			switch (r) {
 			case 1:
-				l = ((l>>1)&0x5555555555555555ULL)|((l<<2)&0xaaaaaaaaaaaaaaaaULL);
+				l = ((l>>1)&0x5555555555555555ULL)|((l<<1)&0xaaaaaaaaaaaaaaaaULL);
 				break;
 			case 2:
 				l = ((l>>2)&0x3333333333333333ULL)|((l<<2)&0xccccccccccccccccULL);
