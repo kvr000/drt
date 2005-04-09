@@ -80,71 +80,71 @@ Sint64 IntEvaluator::IntUnaryExpression::evaluate(Arguments *args)
 
 Sint64 IntEvaluator::IntBinaryExpression::evaluate(Arguments *args)
 {
+	Sint64 l = operands[0]->evaluate(args), r = operands[1]->evaluate(args);
 	switch (operation_id) {
 	case IntEvaluator::OP_BinPlus:
-		return operands[0]->evaluate(args)+operands[1]->evaluate(args);
+		return l+r;
 	case IntEvaluator::OP_BinMinus:
-		return operands[0]->evaluate(args)-operands[1]->evaluate(args);
+		return l-r;
 	case IntEvaluator::OP_BinMul:
-		return operands[0]->evaluate(args)*operands[1]->evaluate(args);
+		return l*r;
 	case IntEvaluator::OP_BinDiv:
-		return operands[0]->evaluate(args)/operands[1]->evaluate(args);
+		return l/r;
 	case IntEvaluator::OP_BinEqual:
-		return operands[0]->evaluate(args) == operands[1]->evaluate(args);
+		return l == r;
 	case IntEvaluator::OP_BinNonEq:
-		return operands[0]->evaluate(args) != operands[1]->evaluate(args);
+		return l != r;
 	case IntEvaluator::OP_BinLower:
-		return operands[0]->evaluate(args) < operands[1]->evaluate(args);
+		return l < r;
 	case IntEvaluator::OP_BinGreater:
-		return operands[0]->evaluate(args) > operands[1]->evaluate(args);
+		return l > r;
 	case IntEvaluator::OP_BinLowerEq:
-		return operands[0]->evaluate(args) <= operands[1]->evaluate(args);
+		return l <= r;
 	case IntEvaluator::OP_BinGreaterEq:
-		return operands[0]->evaluate(args) >= operands[1]->evaluate(args);
+		return l >= r;
 	case IntEvaluator::OP_BinLShift:
-		return operands[0]->evaluate(args) << operands[1]->evaluate(args);
+		return l<<r;
 	case IntEvaluator::OP_BinRShift:
-		return operands[0]->evaluate(args) >> operands[1]->evaluate(args);
+		return l>>r;
 	case IntEvaluator::OP_BinByteSwap:
-		{
-			Sint64 l = operands[0]->evaluate(args), r = operands[1]->evaluate(args);
-			switch (r) {
-			case 1:
-				l = ((l>>1)&0x5555555555555555ULL)|((l<<1)&0xaaaaaaaaaaaaaaaaULL);
-				break;
-			case 2:
-				l = ((l>>2)&0x3333333333333333ULL)|((l<<2)&0xccccccccccccccccULL);
-				break;
-			case 4:
-				l = ((l>>4)&0x0f0f0f0f0f0f0f0fULL)|((l<<4)&0xf0f0f0f0f0f0f0f0ULL);
-				break;
-			case 16:
-				l = ((l>>8)&0x00ff)|((l<<8)&0xff00);
-				break;
-			case 32:
-				l = ((l>>8)&0x00ff00ffUL)|((l<<8)&0xff00ff00UL);
-				l = ((l>>16)&0x0000ffffUL)|((l<<16)&0xffff0000UL);
-				break;
-			case 64:
-				l = ((l>>8)&0x00ff00ff00ff00ffULL)|((l<<8)&0xff00ff00ff00ff00ULL);
-				l = ((l>>16)&0x0000ffff0000ffffULL)|((l<<16)&0xffff0000ffff0000ULL);
-				l = ((l>>32)&0x00000000ffffffffULL)|((l<<32)&0xffffffff00000000ULL);
-				break;
-			default:
-				xthrownew(InvalidFormatException("right operand for binary swap", String::createNumber(r)));
-			}
-			return l;
+		switch (r) {
+		case 1:
+			l = ((l>>1)&0x5555555555555555ULL)|((l<<1)&0xaaaaaaaaaaaaaaaaULL);
+			break;
+		case 2:
+			l = ((l>>2)&0x3333333333333333ULL)|((l<<2)&0xccccccccccccccccULL);
+			break;
+		case 4:
+			l = ((l>>4)&0x0f0f0f0f0f0f0f0fULL)|((l<<4)&0xf0f0f0f0f0f0f0f0ULL);
+			break;
+		case 16:
+			l = ((l>>8)&0x00ff)|((l<<8)&0xff00);
+			break;
+		case 32:
+			l = ((l>>8)&0x00ff00ffUL)|((l<<8)&0xff00ff00UL);
+			l = ((l>>16)&0x0000ffffUL)|((l<<16)&0xffff0000UL);
+			break;
+		case 64:
+			l = ((l>>8)&0x00ff00ff00ff00ffULL)|((l<<8)&0xff00ff00ff00ff00ULL);
+			l = ((l>>16)&0x0000ffff0000ffffULL)|((l<<16)&0xffff0000ffff0000ULL);
+			l = ((l>>32)&0x00000000ffffffffULL)|((l<<32)&0xffffffff00000000ULL);
+			break;
+		default:
+			xthrownew(InvalidFormatException("right operand for binary swap", String::createNumber(r)));
 		}
+		return l;
 	case IntEvaluator::OP_BinBitAnd:
-		return operands[0]->evaluate(args) & operands[1]->evaluate(args);
+		return l&r;
 	case IntEvaluator::OP_BinBitOr:
-		return operands[0]->evaluate(args) | operands[1]->evaluate(args);
+		return l|r;
+	case IntEvaluator::OP_BinBitXor:
+		return l^r;
 	case IntEvaluator::OP_BinAnd:
-		return operands[0]->evaluate(args) && operands[1]->evaluate(args);
+		return l && r;
 	case IntEvaluator::OP_BinOr:
-		return operands[0]->evaluate(args) || operands[1]->evaluate(args);
+		return l || r;
 	case IntEvaluator::OP_BinXor:
-		return !operands[0]->evaluate(args) ^ !operands[1]->evaluate(args);
+		return !l ^ !r;
 	default:
 		xthrownew(InvalidFormatException("binary operand", String::createNumber(operation_id)));
 	}
@@ -174,7 +174,8 @@ unsigned char IntEvaluator::priorities[OP_OperatorCount] = {
 	70,	//OP_BinByteSwap,
 	80,	//OP_BinBitAnd,
 	80,	//OP_BinBitOr,
-	80,	//OP_BinAnd,
+	80,	//OP_BinBitXor,
+	90,	//OP_BinAnd,
 	90,	//OP_BinOr,
 	90,	//OP_BinXor,
 	5,	//OP_Parenthesis,
@@ -484,11 +485,19 @@ Evaluator::TokenType IntEvaluator::parseNextToken(const char **expr, ParserState
 				return TT_Operator;
 			}
 			else {
-				xthrownew(InvalidFormatException("operator &&", "missing operator"));
+				xthrownew(InvalidFormatException("operator ^^", "missing operator"));
 			}
 		}
 		else {
-			xthrownew(InvalidFormatException("token", String(*expr)));
+			if (state == PS_BinOperator) {
+				DR_REF_XCHG(ret_expression, (Expression *)new IntBinaryExpression(OP_BinBitXor));
+				*num_args = 2;
+				*prio = priorities[OP_BinBitXor];
+				return TT_Operator;
+			}
+			else {
+				xthrownew(InvalidFormatException("operator ^", "missing operator"));
+			}
 		}
 
 	case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9':

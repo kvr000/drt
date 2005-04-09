@@ -71,6 +71,7 @@ public:
 		OP_BinByteSwap,
 		OP_BinBitAnd,
 		OP_BinBitOr,
+		OP_BinBitXor,
 		OP_BinAnd,
 		OP_BinOr,
 		OP_BinXor,
