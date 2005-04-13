@@ -110,6 +110,8 @@ ConnectionPool::ConnectionPool(const String &connect_str_, int init_conns):
 	}
 	if (String *v = connect_pars.accValue("max"))
 		max_connections = atoi(v->utf8());
+	if (String *v = connect_pars.accValue("oldness"))
+		setMaxOldness(Time::interFromSecondsUp(atoi(v->utf8())));
 }
 
 DR_MET(protected virtual)
