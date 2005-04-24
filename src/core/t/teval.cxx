@@ -55,6 +55,10 @@ TESTNS(eval);
 void test()
 {
 	Ref<Evaluator> evaluator;
+
+	CHECK_EXCEPTION(evaluator.setNoref(new IntEvaluator(")(")); evaluator->evaluate(tref(new Evaluator::ArgumentsHash())), dr::Exception);
+	CHECK_EXCEPTION(evaluator.setNoref(new IntEvaluator(")(")); evaluator->evaluate(tref(new Evaluator::ArgumentsHash())), dr::Exception);
+
 	evaluator.setNoref(new IntEvaluator("4+5*7"));
 	CHECK(evaluator->evaluate(tref(new Evaluator::ArgumentsHash())) == 39);
 
@@ -66,6 +70,9 @@ void test()
 
 	evaluator.setNoref(new IntEvaluator("!defined x && !defined \\1 && !defined a"));
 	CHECK(evaluator->evaluate(tref(new Evaluator::ArgumentsHash())) == 1);
+
+	evaluator.setNoref(new IntEvaluator("5&1|8"));
+	CHECK(evaluator->evaluate(tref(new Evaluator::ArgumentsHash())) == 9);
 
 	evaluator.setNoref(new IntEvaluator("1024<<30"));
 	CHECK(evaluator->evaluate(tref(new Evaluator::ArgumentsHash())) == ((Sint64)1024)<<30);

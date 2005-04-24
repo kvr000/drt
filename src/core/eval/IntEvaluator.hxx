@@ -90,12 +90,23 @@ public:
 		virtual Sint64			evaluate(Arguments *args);
 	};
 
-	class DR_PUB IntBinaryExpression: public BinaryExpression
+	class DR_PUB IntBinaryFullExpression: public BinaryExpression
 	{
-		DR_OBJECT_DECL_SIMPLE(IntBinaryExpression, BinaryExpression);
+		DR_OBJECT_DECL_SIMPLE(IntBinaryFullExpression, BinaryExpression);
 
 	public:
-		DR_CONSTRUCT			IntBinaryExpression(int operation_id_): BinaryExpression(operation_id_) {}
+		DR_CONSTRUCT			IntBinaryFullExpression(int operation_id_): BinaryExpression(operation_id_) {}
+
+	public:
+		virtual Sint64			evaluate(Arguments *args);
+	};
+
+	class DR_PUB IntBinaryPartExpression: public BinaryExpression
+	{
+		DR_OBJECT_DECL_SIMPLE(IntBinaryPartExpression, BinaryExpression);
+
+	public:
+		DR_CONSTRUCT			IntBinaryPartExpression(int operation_id_): BinaryExpression(operation_id_) {}
 
 	public:
 		virtual Sint64			evaluate(Arguments *args);

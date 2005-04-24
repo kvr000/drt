@@ -61,6 +61,7 @@ DR_TESTENV_NS_BEGIN
 #define TESTRUN(s) do { dr::Fatal::plog(#s ": start\n"); nt_##s::test(); dr::Fatal::plog(#s ": end\n"); } while (0)
 
 #define CHECK(x) do { if (!(x)) { dr::Fatal::plog("%s:%d: %s failed\n", __FILE__, __LINE__, #x); DR_TESTENV_NS test_abort(); } } while (0)
+#define CHECK_EXCEPTION(statement, exception) do { int drcheck_got_ex = 0; DR_TRY { statement; } DR_CATCH(exception, drcheck_ex) { drcheck_got_ex = 1; } DR_ENDTRY; CHECK(drcheck_got_ex); } while (0)
 #define CHECK_SIGN(x, y) do { int CHECK_x = x, CHECK_y = y; if ((CHECK_x < 0) != (CHECK_y < 0) || (CHECK_x == 0) != (CHECK_y == 0) || (CHECK_x > 0) != (CHECK_y > 0)) { dr::Fatal::plog("%s:%d: %s failed\n", __FILE__, __LINE__, #x); DR_TESTENV_NS test_abort(); } } while (0)
 #define CHECK_RESET(ok) do { if (!(ok)) { dr::Fatal::plog("%s:%d: %s failed\n", __FILE__, __LINE__, #ok); DR_TESTENV_NS test_abort(); } } while (0)
 

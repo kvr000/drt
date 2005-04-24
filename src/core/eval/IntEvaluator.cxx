@@ -57,8 +57,12 @@ DR_OBJECT_DEF(DR_NS_STR, IntEvaluator::IntUnaryExpression, Object);
 DR_OBJECT_IMPL_SIMPLE(IntEvaluator::IntUnaryExpression);
 
 
-DR_OBJECT_DEF(DR_NS_STR, IntEvaluator::IntBinaryExpression, Object);
-DR_OBJECT_IMPL_SIMPLE(IntEvaluator::IntBinaryExpression);
+DR_OBJECT_DEF(DR_NS_STR, IntEvaluator::IntBinaryFullExpression, Object);
+DR_OBJECT_IMPL_SIMPLE(IntEvaluator::IntBinaryFullExpression);
+
+
+DR_OBJECT_DEF(DR_NS_STR, IntEvaluator::IntBinaryPartExpression, Object);
+DR_OBJECT_IMPL_SIMPLE(IntEvaluator::IntBinaryPartExpression);
 
 
 Sint64 IntEvaluator::IntUnaryExpression::evaluate(Arguments *args)
@@ -78,7 +82,7 @@ Sint64 IntEvaluator::IntUnaryExpression::evaluate(Arguments *args)
 	return 0;
 }
 
-Sint64 IntEvaluator::IntBinaryExpression::evaluate(Arguments *args)
+Sint64 IntEvaluator::IntBinaryFullExpression::evaluate(Arguments *args)
 {
 	Sint64 l = operands[0]->evaluate(args), r = operands[1]->evaluate(args);
 	switch (operation_id) {
@@ -103,9 +107,9 @@ Sint64 IntEvaluator::IntBinaryExpression::evaluate(Arguments *args)
 	case IntEvaluator::OP_BinGreaterEq:
 		return l >= r;
 	case IntEvaluator::OP_BinLShift:
-		return l<<r;
+		return l << r;
 	case IntEvaluator::OP_BinRShift:
-		return l>>r;
+		return l >> r;
 	case IntEvaluator::OP_BinByteSwap:
 		switch (r) {
 		case 1:
@@ -139,10 +143,6 @@ Sint64 IntEvaluator::IntBinaryExpression::evaluate(Arguments *args)
 		return l|r;
 	case IntEvaluator::OP_BinBitXor:
 		return l^r;
-	case IntEvaluator::OP_BinAnd:
-		return l && r;
-	case IntEvaluator::OP_BinOr:
-		return l || r;
 	case IntEvaluator::OP_BinXor:
 		return !l ^ !r;
 	default:
@@ -151,6 +151,20 @@ Sint64 IntEvaluator::IntBinaryExpression::evaluate(Arguments *args)
 	return 0;
 }
 
+
+Sint64 IntEvaluator::IntBinaryPartExpression::evaluate(Arguments *args)
+{
+	Sint64 l = operands[0]->evaluate(args);
+	switch (operation_id) {
+	case IntEvaluator::OP_BinAnd:
+		return l && operands[1]->evaluate(args);
+	case IntEvaluator::OP_BinOr:
+		return l || operands[1]->evaluate(args);
+	default:
+		xthrownew(InvalidFormatException("binary operand", String::createNumber(operation_id)));
+	}
+	return 0;
+}
 
 unsigned char IntEvaluator::priorities[OP_OperatorCount] = {
 	255,	//OP_Unknown,
@@ -201,7 +215,7 @@ Evaluator::TokenType IntEvaluator::parseNextToken(const char **expr, ParserState
 	case '+':
 		++*expr;
 		if (state == PS_BinOperator) {
-			DR_REF_XCHG(ret_expression, (Expression *)new IntBinaryExpression(OP_BinPlus));
+			DR_REF_XCHG(ret_expression, (Expression *)new IntBinaryFullExpression(OP_BinPlus));
 			*num_args = 2;
 			*prio = priorities[OP_BinPlus];
 			return TT_Operator;
@@ -222,7 +236,7 @@ Evaluator::TokenType IntEvaluator::parseNextToken(const char **expr, ParserState
 	case '-':
 		++*expr;
 		if (state == PS_BinOperator) {
-			DR_REF_XCHG(ret_expression, (Expression *)new IntBinaryExpression(OP_BinMinus));
+			DR_REF_XCHG(ret_expression, (Expression *)new IntBinaryFullExpression(OP_BinMinus));
 			*num_args = 2;
 			*prio = priorities[OP_BinMinus];
 			return TT_Operator;
@@ -245,7 +259,7 @@ Evaluator::TokenType IntEvaluator::parseNextToken(const char **expr, ParserState
 		if (**expr == '=') {
 			++*expr;
 			if (state == PS_BinOperator) {
-				DR_REF_XCHG(ret_expression, (Expression *)new IntBinaryExpression(OP_BinEqual));
+				DR_REF_XCHG(ret_expression, (Expression *)new IntBinaryFullExpression(OP_BinEqual));
 				*num_args = 2;
 				*prio = priorities[OP_BinEqual];
 				return TT_Operator;
@@ -265,7 +279,7 @@ Evaluator::TokenType IntEvaluator::parseNextToken(const char **expr, ParserState
 		case '=':
 			++*expr;
 			if (state == PS_BinOperator) {
-				DR_REF_XCHG(ret_expression, (Expression *)new IntBinaryExpression(OP_BinNonEq));
+				DR_REF_XCHG(ret_expression, (Expression *)new IntBinaryFullExpression(OP_BinNonEq));
 				*num_args = 2;
 				*prio = priorities[OP_BinNonEq];
 				return TT_Operator;
@@ -292,7 +306,7 @@ Evaluator::TokenType IntEvaluator::parseNextToken(const char **expr, ParserState
 	case '/':
 		++*expr;
 		if (state == PS_BinOperator) {
-			DR_REF_XCHG(ret_expression, (Expression *)new IntBinaryExpression(OP_BinDiv));
+			DR_REF_XCHG(ret_expression, (Expression *)new IntBinaryFullExpression(OP_BinDiv));
 			*num_args = 2;
 			*prio = priorities[OP_BinDiv];
 			return TT_Operator;
@@ -305,7 +319,7 @@ Evaluator::TokenType IntEvaluator::parseNextToken(const char **expr, ParserState
 	case '*':
 		++*expr;
 		if (state == PS_BinOperator) {
-			DR_REF_XCHG(ret_expression, (Expression *)new IntBinaryExpression(OP_BinMul));
+			DR_REF_XCHG(ret_expression, (Expression *)new IntBinaryFullExpression(OP_BinMul));
 			*num_args = 2;
 			*prio = priorities[OP_BinMul];
 			return TT_Operator;
@@ -321,7 +335,7 @@ Evaluator::TokenType IntEvaluator::parseNextToken(const char **expr, ParserState
 		case '=':
 			++*expr;
 			if (state == PS_BinOperator) {
-				DR_REF_XCHG(ret_expression, (Expression *)new IntBinaryExpression(OP_BinLowerEq));
+				DR_REF_XCHG(ret_expression, (Expression *)new IntBinaryFullExpression(OP_BinLowerEq));
 				*num_args = 2;
 				*prio = priorities[OP_BinLowerEq];
 				return TT_Operator;
@@ -334,7 +348,7 @@ Evaluator::TokenType IntEvaluator::parseNextToken(const char **expr, ParserState
 		case '<':
 			++*expr;
 			if (state == PS_BinOperator) {
-				DR_REF_XCHG(ret_expression, (Expression *)new IntBinaryExpression(OP_BinLShift));
+				DR_REF_XCHG(ret_expression, (Expression *)new IntBinaryFullExpression(OP_BinLShift));
 				*num_args = 2;
 				*prio = priorities[OP_BinLShift];
 				return TT_Operator;
@@ -346,7 +360,7 @@ Evaluator::TokenType IntEvaluator::parseNextToken(const char **expr, ParserState
 
 		default:
 			if (state == PS_BinOperator) {
-				DR_REF_XCHG(ret_expression, (Expression *)new IntBinaryExpression(OP_BinLower));
+				DR_REF_XCHG(ret_expression, (Expression *)new IntBinaryFullExpression(OP_BinLower));
 				*num_args = 2;
 				*prio = priorities[OP_BinLower];
 				return TT_Operator;
@@ -364,7 +378,7 @@ Evaluator::TokenType IntEvaluator::parseNextToken(const char **expr, ParserState
 		case '=':
 			++*expr;
 			if (state == PS_BinOperator) {
-				DR_REF_XCHG(ret_expression, (Expression *)new IntBinaryExpression(OP_BinGreaterEq));
+				DR_REF_XCHG(ret_expression, (Expression *)new IntBinaryFullExpression(OP_BinGreaterEq));
 				*num_args = 2;
 				*prio = priorities[OP_BinGreaterEq];
 				return TT_Operator;
@@ -382,7 +396,7 @@ Evaluator::TokenType IntEvaluator::parseNextToken(const char **expr, ParserState
 				case '<':
 					*expr += 2;
 					if (state == PS_BinOperator) {
-						DR_REF_XCHG(ret_expression, (Expression *)new IntBinaryExpression(OP_BinByteSwap));
+						DR_REF_XCHG(ret_expression, (Expression *)new IntBinaryFullExpression(OP_BinByteSwap));
 						*num_args = 2;
 						*prio = priorities[OP_BinByteSwap];
 						return TT_Operator;
@@ -397,7 +411,7 @@ Evaluator::TokenType IntEvaluator::parseNextToken(const char **expr, ParserState
 				// ignore whole rest, continue to basic >>
 			default:
 				if (state == PS_BinOperator) {
-					DR_REF_XCHG(ret_expression, (Expression *)new IntBinaryExpression(OP_BinRShift));
+					DR_REF_XCHG(ret_expression, (Expression *)new IntBinaryFullExpression(OP_BinRShift));
 					*num_args = 2;
 					*prio = priorities[OP_BinRShift];
 					return TT_Operator;
@@ -410,7 +424,7 @@ Evaluator::TokenType IntEvaluator::parseNextToken(const char **expr, ParserState
 
 		default:
 			if (state == PS_BinOperator) {
-				DR_REF_XCHG(ret_expression, (Expression *)new IntBinaryExpression(OP_BinGreater));
+				DR_REF_XCHG(ret_expression, (Expression *)new IntBinaryFullExpression(OP_BinGreater));
 				*num_args = 2;
 				*prio = priorities[OP_BinGreater];
 				return TT_Operator;
@@ -427,7 +441,7 @@ Evaluator::TokenType IntEvaluator::parseNextToken(const char **expr, ParserState
 		if (**expr == '&') {
 			++*expr;
 			if (state == PS_BinOperator) {
-				DR_REF_XCHG(ret_expression, (Expression *)new IntBinaryExpression(OP_BinAnd));
+				DR_REF_XCHG(ret_expression, (Expression *)new IntBinaryPartExpression(OP_BinAnd));
 				*num_args = 2;
 				*prio = priorities[OP_BinAnd];
 				return TT_Operator;
@@ -438,7 +452,7 @@ Evaluator::TokenType IntEvaluator::parseNextToken(const char **expr, ParserState
 		}
 		else {
 			if (state == PS_BinOperator) {
-				DR_REF_XCHG(ret_expression, (Expression *)new IntBinaryExpression(OP_BinBitAnd));
+				DR_REF_XCHG(ret_expression, (Expression *)new IntBinaryFullExpression(OP_BinBitAnd));
 				*num_args = 2;
 				*prio = priorities[OP_BinBitAnd];
 				return TT_Operator;
@@ -453,7 +467,7 @@ Evaluator::TokenType IntEvaluator::parseNextToken(const char **expr, ParserState
 		if (**expr == '|') {
 			++*expr;
 			if (state == PS_BinOperator) {
-				DR_REF_XCHG(ret_expression, (Expression *)new IntBinaryExpression(OP_BinOr));
+				DR_REF_XCHG(ret_expression, (Expression *)new IntBinaryPartExpression(OP_BinOr));
 				*num_args = 2;
 				*prio = priorities[OP_BinOr];
 				return TT_Operator;
@@ -464,7 +478,7 @@ Evaluator::TokenType IntEvaluator::parseNextToken(const char **expr, ParserState
 		}
 		else {
 			if (state == PS_BinOperator) {
-				DR_REF_XCHG(ret_expression, (Expression *)new IntBinaryExpression(OP_BinBitOr));
+				DR_REF_XCHG(ret_expression, (Expression *)new IntBinaryFullExpression(OP_BinBitOr));
 				*num_args = 2;
 				*prio = priorities[OP_BinBitOr];
 				return TT_Operator;
@@ -479,7 +493,7 @@ Evaluator::TokenType IntEvaluator::parseNextToken(const char **expr, ParserState
 		if (**expr == '^') {
 			++*expr;
 			if (state == PS_BinOperator) {
-				DR_REF_XCHG(ret_expression, (Expression *)new IntBinaryExpression(OP_BinXor));
+				DR_REF_XCHG(ret_expression, (Expression *)new IntBinaryFullExpression(OP_BinXor));
 				*num_args = 2;
 				*prio = priorities[OP_BinXor];
 				return TT_Operator;
@@ -490,7 +504,7 @@ Evaluator::TokenType IntEvaluator::parseNextToken(const char **expr, ParserState
 		}
 		else {
 			if (state == PS_BinOperator) {
-				DR_REF_XCHG(ret_expression, (Expression *)new IntBinaryExpression(OP_BinBitXor));
+				DR_REF_XCHG(ret_expression, (Expression *)new IntBinaryFullExpression(OP_BinBitXor));
 				*num_args = 2;
 				*prio = priorities[OP_BinBitXor];
 				return TT_Operator;
