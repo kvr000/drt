@@ -57,7 +57,6 @@ void test()
 	Ref<Evaluator> evaluator;
 
 	CHECK_EXCEPTION(evaluator.setNoref(new IntEvaluator(")(")); evaluator->evaluate(tref(new Evaluator::ArgumentsHash())), dr::Exception);
-	CHECK_EXCEPTION(evaluator.setNoref(new IntEvaluator(")(")); evaluator->evaluate(tref(new Evaluator::ArgumentsHash())), dr::Exception);
 
 	evaluator.setNoref(new IntEvaluator("4+5*7"));
 	CHECK(evaluator->evaluate(tref(new Evaluator::ArgumentsHash())) == 39);
