@@ -77,10 +77,11 @@ void run_atomic()
 
 void test()
 {
-	atomic_int = 0;
-	printf("nocheck_noatomic: %g (%ld)\n", test_parbench(-1, &run_noatomic, 1)/1000000.0, (long)atomic_int);
-	atomic_int = 0;
-	printf("nocheck_atomic: %g (%ld)\n", test_parbench(-1, &run_atomic, 1)/1000000.0, (long)atomic_int);
+	double tm;
+	atomic_int = 0; tm = test_parbench(-1, &run_noatomic, 1);
+	printf("nocheck_noatomic: %g (%ld)\n", tm/1000000.0, (long)atomic_int);
+	atomic_int = 0; tm = test_parbench(-1, &run_atomic, 1);
+	printf("nocheck_atomic: %g (%ld)\n", tm/1000000.0, (long)atomic_int);
 }
 
 TESTNSE(atomic_nocheck);
@@ -111,10 +112,11 @@ void run_atomic()
 
 void test()
 {
-	atomic_int = 0;
-	printf("check_noatomic: %g (%ld)\n", test_parbench(-1, &run_noatomic, 1)/1000000.0, (long)atomic_int);
-	atomic_int = 0;
-	printf("check_atomic: %g (%ld)\n", test_parbench(-1, &run_atomic, 1)/1000000.0, (long)atomic_int);
+	double tm;
+	atomic_int = 0; tm = test_parbench(-1, &run_noatomic, 1);
+	printf("nocheck_noatomic: %g (%ld)\n", tm/1000000.0, (long)atomic_int);
+	atomic_int = 0; tm = test_parbench(-1, &run_atomic, 1);
+	printf("nocheck_atomic: %g (%ld)\n", tm/1000000.0, (long)atomic_int);
 }
 
 TESTNSE(atomic_check);
