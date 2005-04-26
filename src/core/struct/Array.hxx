@@ -174,6 +174,7 @@ public:
 	DR_NINLINE void			shrinkEnd(unsigned nsize)		{ p_trunc(count()-nsize); }
 	DR_RINLINE void			appendDoref(V *i);
 	DR_RINLINE void			appendNoref(V *i);
+	DR_RINLINE void			append(const Ref<V> &i);
 
 	DR_MINLINE void			moveFrom(RArray *source)		{ moveFrom_g(source); }
 
@@ -365,6 +366,12 @@ template <typename V>
 DR_RINLINE void RArray<V>::appendDoref(V *iv)
 {
 	resizeInit(len/sizeof(SV)+1, iv);
+}
+
+template <typename V>
+DR_RINLINE void RArray<V>::append(const Ref<V> &iv)
+{
+	appendDoref(*iv);
 }
 
 

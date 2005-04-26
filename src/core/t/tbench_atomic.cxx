@@ -51,7 +51,7 @@ DR_TESTENV_NS_USE
 #define TEST_ATOMIC_NOCHECK
 #define TEST_ATOMIC_CHECK
 
-#define TEST_ATOMIC_CNT (1024*1024*64)
+#define TEST_ATOMIC_CNT (1024*1024*8)
 
 static volatile SintPtr atomic_int = 0;
 static volatile int count_check = 0;
@@ -77,8 +77,10 @@ void run_atomic()
 
 void test()
 {
-	printf("nocheck_noatomic: %g\n", test_bench(&run_noatomic, 1)/1000000.0);
-	printf("nocheck_atomic: %g\n", test_bench(&run_atomic, 1)/1000000.0);
+	atomic_int = 0;
+	printf("nocheck_noatomic: %g (%ld)\n", test_parbench(-1, &run_noatomic, 1)/1000000.0, (long)atomic_int);
+	atomic_int = 0;
+	printf("nocheck_atomic: %g (%ld)\n", test_parbench(-1, &run_atomic, 1)/1000000.0, (long)atomic_int);
 }
 
 TESTNSE(atomic_nocheck);
@@ -109,8 +111,10 @@ void run_atomic()
 
 void test()
 {
-	printf("check_noatomic: %g\n", test_bench(&run_noatomic, 1)/1000000.0);
-	printf("check_atomic: %g\n", test_bench(&run_atomic, 1)/1000000.0);
+	atomic_int = 0;
+	printf("check_noatomic: %g (%ld)\n", test_parbench(-1, &run_noatomic, 1)/1000000.0, (long)atomic_int);
+	atomic_int = 0;
+	printf("check_atomic: %g (%ld)\n", test_parbench(-1, &run_atomic, 1)/1000000.0, (long)atomic_int);
 }
 
 TESTNSE(atomic_check);

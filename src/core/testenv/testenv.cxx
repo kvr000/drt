@@ -52,6 +52,8 @@
 
 #include <dr/types.hxx>
 #include <dr/Assert.hxx>
+#include <dr/Array.hxx>
+#include <dr/ThreadSimple.hxx>
 
 #include <dr/testenv/testenv.hxx>
 
@@ -93,6 +95,47 @@ long test_bench(const Eslot0<void> &run, long count)
 #endif
 	for (i = 0; i < count; i++)
 		run();
+#if (defined DR_OS_UNIX) && (!defined DR_OS_WNT)
+	getrusage(RUSAGE_SELF, &ru1);
+	return (ru1.ru_utime.tv_sec-ru0.ru_utime.tv_sec)*1000000+(int)(ru1.ru_utime.tv_usec-ru0.ru_utime.tv_usec)+(ru1.ru_stime.tv_sec-ru0.ru_stime.tv_sec)*1000000+(int)(ru1.ru_stime.tv_usec-ru0.ru_stime.tv_usec);
+#elif (defined DR_OS_WNT)
+	t1 = GetTickCount();
+	return (long)(t1-t0)*1000;
+#else
+	return 0;
+#endif
+}
+
+static void test_parbench_performer(const Eslot0<void> run, long count)
+{
+	for (long i = 0; i < count; i++)
+		run();
+}
+
+long test_parbench(int num_threads, const Eslot0<void> &run, long count)
+{
+	int ti;
+	RArray<ThreadSimple> threads;
+
+#if (defined DR_OS_UNIX) && (!defined DR_OS_WNT)
+	struct rusage ru0, ru1;
+	getrusage(RUSAGE_SELF, &ru0);
+#elif (defined DR_OS_WNT)
+	DWORD t0, t1;
+	t0 = GetTickCount();
+#else
+#endif
+
+	if (num_threads < 0)
+		num_threads = 8;
+	Eslot2<void, Eslot0<void>, long> performer(&test_parbench_performer);
+	for (ti = 0; ti < num_threads; ti++) {
+		threads.append(tref(ThreadSimple::go(performer.a1Set(run).a1Set(count))));
+	}
+	for (ti = 0; ti < num_threads; ti++) {
+		threads[ti]->wait();
+	}
+
 #if (defined DR_OS_UNIX) && (!defined DR_OS_WNT)
 	getrusage(RUSAGE_SELF, &ru1);
 	return (ru1.ru_utime.tv_sec-ru0.ru_utime.tv_sec)*1000000+(int)(ru1.ru_utime.tv_usec-ru0.ru_utime.tv_usec)+(ru1.ru_stime.tv_sec-ru0.ru_stime.tv_sec)*1000000+(int)(ru1.ru_stime.tv_usec-ru0.ru_stime.tv_usec);

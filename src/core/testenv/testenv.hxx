@@ -69,6 +69,7 @@ DR_TESTENV_PUB void test_sleep(long time);
 DR_TESTENV_PUB void test_abort();
 DR_TESTENV_PUB void test_init();
 DR_TESTENV_PUB long test_bench(const Eslot0<void> &func, long count);
+DR_TESTENV_PUB long test_parbench(int num_threads, const Eslot0<void> &func, long count);
 
 
 DR_TESTENV_NS_END
