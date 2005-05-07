@@ -85,8 +85,11 @@ void test()
 	evaluator.setNoref(new IntEvaluator("0x12345678>><<32>><<4"));
 	CHECK(evaluator->evaluate(tref(new Evaluator::ArgumentsHash())) == 0x87654321);
 
-	evaluator.setNoref(new IntEvaluator("0x123456789abcdef0>><<64"));
-	CHECK(evaluator->evaluate(tref(new Evaluator::ArgumentsHash())) == (Sint64)0xf0debc9a78563412ULL);
+	evaluator.setNoref(new IntEvaluator("0x0123456789abcdef>><<64"));
+	CHECK(evaluator->evaluate(tref(new Evaluator::ArgumentsHash())) == (Sint64)0xefcdab8967452301ULL);
+
+	evaluator.setNoref(new IntEvaluator("((0xf<<60)+0xedcba9876543210)>><<64"));
+	CHECK(evaluator->evaluate(tref(new Evaluator::ArgumentsHash())) == (Sint64)0x1032547698badcfeULL);
 
 	{
 		ERef<Evaluator::ArgumentsHash::Constants> constants(new Evaluator::ArgumentsHash::Constants);
