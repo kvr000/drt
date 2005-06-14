@@ -965,7 +965,7 @@ sub read_processOwnedAttribute
 		$this->{read_attr}->{mandatory} = 1;
 	}
 
-	$this->read_doDie("type unspecified for $name") unless (defined $this->{read_attr}->{type_type});
+	$this->read_doDie("type unspecified for $this->{read_context}->{name}.$name") unless (defined $this->{read_attr}->{type_type});
 
 	$this->{read_context}->addAttribute($this->{read_attr});
 

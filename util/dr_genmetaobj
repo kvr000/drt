@@ -184,8 +184,10 @@ foreach my $model (@models) {
 	my $form = $file_trans->createTruncated("$root/$file.metaobj");
 	eval {
 		$form->print(tabalign("db_table", 16).$model->{db_table}."\n");
-		foreach (qw(req_get req_set req_new req_del)) {
-			$form->print(tabalign("$_", 16).$model->getDrTagValue($_)."\n");
+		if (!$model->checkDrTagValue("virtual")) {
+			foreach (qw(req_get req_set req_new req_del)) {
+				$form->print(tabalign("$_", 16).$model->getDrTagValue($_)."\n");
+			}
 		}
 		foreach (qw(trigger_set trigger_new trigger_del)) {
 			if (defined (my $v = $model->checkDrTagValue($_))) {
