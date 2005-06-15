@@ -59,7 +59,8 @@ ResultSet_mysql5::ResultSet_mysql5(Statement_mysql5 *statement_):
 	col_names((size_t)0, (const String *)NULL),
 	res_conversions(NULL),
 	res_binding_done(false),
-	stored(false)
+	stored(false),
+	current_row(0)
 {
 }
 
@@ -277,9 +278,15 @@ void ResultSet_mysql5::bindNullHandler(const String &column, void (*handler)(voi
 	return bindNullHandler(getColumnIdDirect(column), handler);
 }
 
+Sint64 ResultSet_mysql5::tell()
+{
+	return current_row;
+}
+
 void ResultSet_mysql5::seek(Sint64 row)
 {
 	mysql_stmt_data_seek(stmt, row);
+	current_row = row;
 }
 
 bool ResultSet_mysql5::next()
@@ -301,6 +308,7 @@ bool ResultSet_mysql5::next()
 #ifdef MYSQL_DATA_TRUNCATED
 	case MYSQL_DATA_TRUNCATED:
 #endif
+		current_row++;
 		for (size_t i = res_bindings.count(); i-- > 0; ) {
 			if (*res_bindings[i].is_null) {
 				switch (res_bindings[i].buffer_type) {
@@ -330,6 +338,7 @@ bool ResultSet_mysql5::next()
 		return true;
 
 	case MYSQL_NO_DATA:
+		current_row++;
 		return false;
 
 	default:

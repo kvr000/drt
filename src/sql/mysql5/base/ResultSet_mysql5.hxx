@@ -85,6 +85,7 @@ public:
 	virtual void			bindNullHandler(const String &column, void (*handler)(void *value));
 
 public:
+	virtual Sint64			tell();
 	virtual void			seek(Sint64 row);
 	virtual bool			next();
 	virtual void			store();
@@ -133,6 +134,8 @@ protected:
 
 	bool				res_binding_done:1;
 	bool				stored:1;
+
+	Sint64				current_row;
 
 protected:
 	static void			resConv_String(ResultSet_mysql5 *this_, conversion *conv);
