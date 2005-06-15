@@ -38,21 +38,21 @@
 
 #include <dr/ThreadSimple.hxx>
 
-#include <dr/testenv/testenv.hxx>
+#include <dr/tenv/tenv.hxx>
 
 DR_NS_USE
-DR_TESTENV_NS_USE
+DR_TENV_NS_USE
 
 
 #define TEST_SERIAL
 
 #ifdef TEST_SERIAL
-TESTNS(serial);
+TENV_NS(serial);
 
 void sender_thread(Thread *orig, int serial)
 {
 	printf("sender_thread: %p\n", Thread::current());
-	test_sleep(2);
+	tenv_sleep(2);
 	printf("sending serial %d\n", serial);
 	orig->addAnswer(serial);
 }
@@ -68,7 +68,7 @@ void test()
 
 	sender = ThreadSimple::go(Eslot(&sender_thread).a2Set(serial).a1Set<IRef<Thread> >(Thread::current()));
 
-	test_sleep(1);
+	tenv_sleep(1);
 
 	Thread::processMessages(serial);
 
@@ -76,14 +76,14 @@ void test()
 
 	printf("done\n");
 }
-TESTNSE(serial);
+TENV_NSE(serial);
 #endif
 
 int main()
 {
-	test_init();
+	tenv_init();
 #ifdef TEST_SERIAL
-	TESTRUN(serial);
+	TENV_RUN(serial);
 #endif
 	return 0;
 }

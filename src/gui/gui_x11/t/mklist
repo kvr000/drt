@@ -16,6 +16,7 @@ SOURCES:
 	:tss.cxx:f=cxx;g=tss,t
 	no:mklist:g=t
 	lshlib:dr:g=common
+	lshlib:drtenv:g=common
 	lshlib:drgui:g=common
 	lshlib:drgui_x11:g=x11
 

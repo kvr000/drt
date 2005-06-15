@@ -43,11 +43,11 @@
 #include <dr/Hash.hxx>
 #include <dr/Avl.hxx>
 
-#include <dr/testenv/testenv.hxx>
-#include <dr/testenv/TestObject.hxx>
+#include <dr/tenv/tenv.hxx>
+#include <dr/tenv/TestIdObject.hxx>
 
 DR_NS_USE
-DR_TESTENV_NS_USE
+DR_TENV_NS_USE
 
 #define TEST_ARRAY
 #define TEST_LIST
@@ -55,48 +55,48 @@ DR_TESTENV_NS_USE
 #define TEST_AVL
 
 #ifdef TEST_ARRAY
-TESTNS(array);
+TENV_NS(array);
 void test()
 {
 	{
-		RArray<TestObject> ar;
+		RArray<TestIdObject> ar;
 
-		ar.appendNoref(new TestObject(4));
-		ar.appendDoref(tref(new TestObject(9)));
-		ar.appendDoref(tref(new TestObject(7)));
+		ar.appendNoref(new TestIdObject(4));
+		ar.appendDoref(tref(new TestIdObject(9)));
+		ar.appendDoref(tref(new TestIdObject(7)));
 		ar.shrinkEnd(2);
 	}
-	CHECK(TestObject::countLiving() == 0);
+	TENV_CHECK(TestIdObject::countLiving() == 0);
 }
-TESTNSE(array);
+TENV_NSE(array);
 #endif
 
 #ifdef TEST_LIST
-TESTNS(list);
+TENV_NS(list);
 void test()
 {
 	{
-		RList<TestObject> list;
-		list.accAppendingNew()->setNoref(new TestObject(3));
-		list.append(tref(new TestObject(5)));
+		RList<TestIdObject> list;
+		list.accAppendingNew()->setNoref(new TestIdObject(3));
+		list.append(tref(new TestIdObject(5)));
 	}
-	CHECK(TestObject::countLiving() == 0);
+	TENV_CHECK(TestIdObject::countLiving() == 0);
 }
-TESTNSE(list);
+TENV_NSE(list);
 #endif
 
 #ifdef TEST_HASH
-TESTNS(hash);
+TENV_NS(hash);
 void test()
 {
 	{
-		RHash<String, TestObject> hash;
-		hash["bla"].setNoref(new TestObject(3));
-		hash["sehy"].setDoref(tref(new TestObject(4)));
+		RHash<String, TestIdObject> hash;
+		hash["bla"].setNoref(new TestIdObject(3));
+		hash["sehy"].setDoref(tref(new TestIdObject(4)));
 	}
-	CHECK(TestObject::countLiving() == 0);
+	TENV_CHECK(TestIdObject::countLiving() == 0);
 }
-TESTNSE(hash);
+TENV_NSE(hash);
 #endif
 
 #ifdef TEST_AVL
@@ -104,7 +104,7 @@ typedef SArray<int>		TestList;
 typedef TAvl<int, int>		TestTree;
 typedef TAvl<int, int>::Node	TestNode;
 
-TESTNS(avl)
+TENV_NS(avl)
 
 static bool dumpLevel(TestNode *node, unsigned level, unsigned req_level, int *pos)
 {
@@ -140,23 +140,23 @@ static int checkSubtree(TestNode *node)
 {
 	int lh, rh;
 	if ((node->refs[0]) != NULL) {
-		CHECK(node->refs[0]->parent == node);
-		CHECK(node->refs[0]->direction == -1);
+		TENV_CHECK(node->refs[0]->parent == node);
+		TENV_CHECK(node->refs[0]->direction == -1);
 		lh = checkSubtree((TestNode *)node->refs[0]);
 	}
 	else {
 		lh = 0;
 	}
 	if ((node->refs[2]) != NULL) {
-		CHECK(node->refs[2]->parent == node);
-		CHECK(node->refs[2]->direction == 1);
+		TENV_CHECK(node->refs[2]->parent == node);
+		TENV_CHECK(node->refs[2]->direction == 1);
 		rh = checkSubtree((TestNode *)node->refs[2]);
 	}
 	else {
 		rh = 0;
 	}
-	CHECK(node->balance >= -1 && node->balance <= 1);
-	CHECK(node->balance == rh-lh);
+	TENV_CHECK(node->balance >= -1 && node->balance <= 1);
+	TENV_CHECK(node->balance == rh-lh);
 	return (lh > rh ? lh : rh)+1;
 }
 
@@ -165,7 +165,7 @@ static void checkTree(TestTree *tree)
 	size_t cnti = 0;
 	for (TestTree::Node *i = tree->iterFirst(); i != NULL; i = tree->iterNext(i))
 		cnti++;
-	CHECK(cnti == tree->count());
+	TENV_CHECK(cnti == tree->count());
 	if (tree->iterTop())
 		checkSubtree(tree->iterTop());
 }
@@ -173,7 +173,7 @@ static void checkTree(TestTree *tree)
 static void addValue(TestList *list, TestTree *tree, int value)
 {
 	list->append(value);
-	CHECK(tree->create(value, value));
+	TENV_CHECK(tree->create(value, value));
 	checkTree(tree);
 }
 
@@ -181,7 +181,7 @@ static void remValue(TestList *list, TestTree *tree, size_t idx)
 {
 	int value = list->operator[](idx);
 	list->remove(idx);
-	CHECK(tree->remove(value));
+	TENV_CHECK(tree->remove(value));
 	checkTree(tree);
 }
 
@@ -216,21 +216,23 @@ void test()
 		}
 	}
 }
-TESTNSE(avl)
+TENV_NSE(avl)
 #endif
 
-int main() { test_init();
+int main()
+{
+	tenv_init();
 #ifdef TEST_ARRAY
-	TESTRUN(array);
+	TENV_RUN(array);
 #endif
 #ifdef TEST_LIST
-	TESTRUN(list);
+	TENV_RUN(list);
 #endif
 #ifdef TEST_HASH
-	TESTRUN(hash);
+	TENV_RUN(hash);
 #endif
 #ifdef TEST_AVL
-	TESTRUN(avl);
+	TENV_RUN(avl);
 #endif
 	return 0;
 }

@@ -42,10 +42,10 @@
 #include <dr/ThreadSimple.hxx>
 #include <dr/Atomic.hxx>
 
-#include <dr/testenv/testenv.hxx>
+#include <dr/tenv/tenv.hxx>
 
 DR_NS_USE
-DR_TESTENV_NS_USE
+DR_TENV_NS_USE
 
 
 #define TEST_ATOMIC_NOCHECK
@@ -57,7 +57,7 @@ static volatile SintPtr atomic_int = 0;
 static volatile int count_check = 0;
 
 #ifdef TEST_ATOMIC_NOCHECK
-TESTNS(atomic_nocheck);
+TENV_NS(atomic_nocheck);
 
 void run_noatomic()
 {
@@ -78,17 +78,17 @@ void run_atomic()
 void test()
 {
 	double tm;
-	atomic_int = 0; tm = test_parbench(-1, &run_noatomic, 1);
+	atomic_int = 0; tm = tenv_parbench(-1, &run_noatomic, 1);
 	printf("nocheck_noatomic: %g (%ld)\n", tm/1000000.0, (long)atomic_int);
-	atomic_int = 0; tm = test_parbench(-1, &run_atomic, 1);
+	atomic_int = 0; tm = tenv_parbench(-1, &run_atomic, 1);
 	printf("nocheck_atomic: %g (%ld)\n", tm/1000000.0, (long)atomic_int);
 }
 
-TESTNSE(atomic_nocheck);
+TENV_NSE(atomic_nocheck);
 #endif
 
 #ifdef TEST_ATOMIC_CHECK
-TESTNS(atomic_check);
+TENV_NS(atomic_check);
 
 void run_noatomic()
 {
@@ -113,23 +113,23 @@ void run_atomic()
 void test()
 {
 	double tm;
-	atomic_int = 0; tm = test_parbench(-1, &run_noatomic, 1);
+	atomic_int = 0; tm = tenv_parbench(-1, &run_noatomic, 1);
 	printf("nocheck_noatomic: %g (%ld)\n", tm/1000000.0, (long)atomic_int);
-	atomic_int = 0; tm = test_parbench(-1, &run_atomic, 1);
+	atomic_int = 0; tm = tenv_parbench(-1, &run_atomic, 1);
 	printf("nocheck_atomic: %g (%ld)\n", tm/1000000.0, (long)atomic_int);
 }
 
-TESTNSE(atomic_check);
+TENV_NSE(atomic_check);
 #endif
 
 int main()
 {
-	test_init();
+	tenv_init();
 #ifdef TEST_ATOMIC_NOCHECK
-	TESTRUN(atomic_nocheck);
+	TENV_RUN(atomic_nocheck);
 #endif
 #ifdef TEST_ATOMIC_CHECK
-	TESTRUN(atomic_check);
+	TENV_RUN(atomic_check);
 #endif
 	return 0;
 }

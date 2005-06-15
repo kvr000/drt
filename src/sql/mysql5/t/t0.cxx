@@ -38,49 +38,34 @@
 #include <dr/x_kw.hxx>
 #include <dr/Const.hxx>
 #include <dr/Exception.hxx>
+#include <dr/tenv/tenv.hxx>
 
-#include <dr/sql/Connection.hxx>
-#include <dr/sql/Statement.hxx>
-#include <dr/sql/ResultSet.hxx>
+#include <dr/sql/tenv/CommonTest.hxx>
 
 DR_SQL_NS_USE
 
+static Ref<dr::sql::ConnectionPool> db_conn_pool;
 
-String i_str(Const::string("i"));
-String s_str(Const::string("s"));
+
+TENV_NS(init);
+void test()
+{
+	db_conn_pool.setNoref(new ConnectionPool("driver=dr::sql::mysql5;host=localhost;port=3306;db=dr_test;user=dr_test;pass=dr_test", 1));
+}
+TENV_NSE(init)
+
+TENV_NS(common);
+void test()
+{
+	tref(new dr::sql::tenv::CommonTest(db_conn_pool))->test();
+}
+TENV_NSE(common);
 
 int main(void)
 {
-	ERef<Connection> conn(Connection::openConnection("driver=dr::sql::mysql5;host=localhost;port=3306;db=dr_test;user=dr_test;pass=dr_test"));
-	ERef<Statement> sql(conn->createStatement("select i, s from sample0 where i between ? and ? order by i"));
-	for (int i = 0; ; i++) {
-		//sql->setOffsetLimit(i*10, 10);
-		sql->prepare();
-		sql->bindParam(0, 1);
-		sql->bindParam(1, 40);
-		ERef<ResultSet> rs(sql->executeQuery());
-		Sint32 vi = -999;
-		String vs;
-		rs->bindResult(i_str, &vi);
-		rs->bindResult(s_str, &vs);
-		if (rs->next()) {
-			do {
-				printf("b=%4d i=%4d s=%s z=%s\n", vi, (int)rs->getInt(i_str), rs->getString(s_str).utf8().toStr(), vs.utf8().toStr());
-			} while (rs->next());
-			break;
-		}
-		else {
-			break;
-		}
-	}
-
-	xtry {
-		tref(conn->prepareStatement("insert into sample0 (i, s) values(4, 'he')"))->executeUpdate();
-	}
-	xcatch (Exception, ex) {
-		printf("caught exception: %s\n", ex->stringify().utf8().toStr());
-	}
-	xend;
+	TENV_RUN(init);
+	TENV_RUN(common);
+	db_conn_pool.setNull();
 
 	return 0;
 }

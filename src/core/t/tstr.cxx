@@ -42,17 +42,17 @@
 #include <dr/WString.hxx>
 #include <dr/String.hxx>
 
-#include <dr/testenv/testenv.hxx>
+#include <dr/tenv/tenv.hxx>
 
 DR_NS_USE
-DR_TESTENV_NS_USE
+DR_TENV_NS_USE
 
 #define TEST_LOCK
 #define TEST_OP
 #define TEST_GSTR
 
 #ifdef TEST_LOCK
-TESTNS(lock);
+TENV_NS(lock);
 void test()
 {
 	char *b;
@@ -62,11 +62,11 @@ void test()
 	s.unlock(6);
 	DR_Assert(s == "dieses");
 }
-TESTNSE(lock);
+TENV_NSE(lock);
 #endif
 
 #ifdef TEST_OP
-TESTNS(op);
+TENV_NS(op);
 void test()
 {
 	BString s;
@@ -76,11 +76,11 @@ void test()
 	s = "    blekeke    "; s.trimSpaces(); DR_Assert(s == "blekeke");
 	s = "        "; s.trimSpaces(); DR_Assert(s == "");
 }
-TESTNSE(op);
+TENV_NSE(op);
 #endif
 
 #ifdef TEST_GSTR
-TESTNS(gstr);
+TENV_NS(gstr);
 void test()
 {
 	String s("testfile");
@@ -94,36 +94,36 @@ void test()
 	s.wide();
 	s.bcmp("bla");
 }
-TESTNSE(gstr);
+TENV_NSE(gstr);
 #endif
 
 #ifdef TEST_STR
-TESTNS(str);
+TENV_NS(str);
 void test()
 {
 	{
 		String sm(".");
 		String ss("..");
-		CHECK(sm.find(ss) < 0);
-		CHECK(ss.find(sm) == 0);
-		CHECK(ss.find(sm, 0) == 0);
-		CHECK(ss.find(sm, 1) == 1);
+		TENV_CHECK(sm.find(ss) < 0);
+		TENV_CHECK(ss.find(sm) == 0);
+		TENV_CHECK(ss.find(sm, 0) == 0);
+		TENV_CHECK(ss.find(sm, 1) == 1);
 	}
 }
-TESTNSE(str);
+TENV_NSE(str);
 #endif
 
 int main()
 {
-	test_init();
+	tenv_init();
 #ifdef TEST_LOCK
-	TESTRUN(lock);
+	TENV_RUN(lock);
 #endif
 #ifdef TEST_OP
-	TESTRUN(op);
+	TENV_RUN(op);
 #endif
 #ifdef TEST_GSTR
-	TESTRUN(gstr);
+	TENV_RUN(gstr);
 #endif
 	return 0;
 }

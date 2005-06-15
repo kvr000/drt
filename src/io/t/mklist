@@ -17,7 +17,7 @@ SOURCES:
 	no:mklist:g=t
 	lshlib:dr:g=common
 	lshlib:drio:g=common
-	lshlib:drtestenv:g=common
+	lshlib:drtenv:g=common
 
 META:
 	vsid:{00ACC08A-E525-49b1-9A77-A58E28BB8055}:g=tlink_drio

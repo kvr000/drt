@@ -48,12 +48,12 @@
 #include <dr/Throw.hxx>
 #include <dr/DummyObject.hxx>
 
-#include <dr/testenv/testenv.hxx>
-#include <dr/testenv/TestObject.hxx>
-#include <dr/testenv/TestObjectKV.hxx>
+#include <dr/tenv/tenv.hxx>
+#include <dr/tenv/TestIdObject.hxx>
+#include <dr/tenv/TestIdObjectKV.hxx>
 
 DR_NS_USE
-DR_TESTENV_NS_USE
+DR_TENV_NS_USE
 
 
 SintPtr global_counter0;
@@ -126,53 +126,53 @@ DR_OBJECT_IMPL_IFACE2(T0Obj0, T0If0, T0IfD);
 
 
 #ifdef TEST_OBJECT
-TESTNS(object);
+TENV_NS(object);
 void test()
 {
-	CHECK(TestObject::countLiving() == 0);
+	TENV_CHECK(TestIdObject::countLiving() == 0);
 	{
-		ERef<TestObject> zer(new TestObject(0));
-		ERef<TestObject> one(new TestObject(1));
-		ERef<TestObject> sec(new TestObject(1));
-		CHECK(TestObject::countLiving() == 3);
+		ERef<TestIdObject> zer(new TestIdObject(0));
+		ERef<TestIdObject> one(new TestIdObject(1));
+		ERef<TestIdObject> sec(new TestIdObject(1));
+		TENV_CHECK(TestIdObject::countLiving() == 3);
 		{
 			ERef<Iface> a((Iface *)zer->getIface(Object::comp_name));
 			ERef<Iface> b(zer->ref());
-			ERef<Iface> c((Iface *)zer->getCheckIface(DummyObject::comp_name)); CHECK(*c == NULL);
-			ERef<Iface> d(zer->getCheckFinal(DummyObject::comp_name)); CHECK(*d == NULL);
-			ERef<Iface> e(zer->getCheckFinal(Object::comp_name)); CHECK(*e == NULL);
-			ERef<Iface> f(zer->getCheckFinal(TestObject::comp_name)); CHECK(*f == zer);
-			CHECK(zer->accCheckFinal(Object::comp_name) == NULL);
-			CHECK(zer->accCheckFinal(DummyObject::comp_name) == NULL);
-			CHECK(zer->accCheckFinal(TestObject::comp_name) != NULL);
+			ERef<Iface> c((Iface *)zer->getCheckIface(DummyObject::comp_name)); TENV_CHECK(*c == NULL);
+			ERef<Iface> d(zer->getCheckFinal(DummyObject::comp_name)); TENV_CHECK(*d == NULL);
+			ERef<Iface> e(zer->getCheckFinal(Object::comp_name)); TENV_CHECK(*e == NULL);
+			ERef<Iface> f(zer->getCheckFinal(TestIdObject::comp_name)); TENV_CHECK(*f == zer);
+			TENV_CHECK(zer->accCheckFinal(Object::comp_name) == NULL);
+			TENV_CHECK(zer->accCheckFinal(DummyObject::comp_name) == NULL);
+			TENV_CHECK(zer->accCheckFinal(TestIdObject::comp_name) != NULL);
 		}
-		CHECK(TestObject::countLiving() == 3);
+		TENV_CHECK(TestIdObject::countLiving() == 3);
 		{
-			CHECK(zer->eq(one) == false);
-			CHECK(one->eq(sec) == true);
-			CHECK(zer->cmp(sec) < 0);
-			CHECK(one->cmp(sec) == 0);
-			CHECK(one->cmp(zer) > 0);
+			TENV_CHECK(zer->eq(one) == false);
+			TENV_CHECK(one->eq(sec) == true);
+			TENV_CHECK(zer->cmp(sec) < 0);
+			TENV_CHECK(one->cmp(sec) == 0);
+			TENV_CHECK(one->cmp(zer) > 0);
 		}
-		CHECK(TestObject::countLiving() == 3);
+		TENV_CHECK(TestIdObject::countLiving() == 3);
 	}
-	CHECK(TestObject::countLiving() == 0);
+	TENV_CHECK(TestIdObject::countLiving() == 0);
 
 	{
-		ERef<TestObjectKV>	o0a(new TestObjectKV(0, "a"));
-		ERef<TestObjectKV>	o0b(new TestObjectKV(0, "b"));
-		ERef<TestObjectKV>	o1a(new TestObjectKV(0, "a"));
-		ERef<TestObjectKV>	o1b(new TestObjectKV(0, "b"));
-		ERef<TestObjectKV::Key>	k0(new TestObjectKV::Key(0));
-		ERef<TestObjectKV::Key>	k1(new TestObjectKV::Key(0));
+		ERef<TestIdObjectKV>	o0a(new TestIdObjectKV(0, "a"));
+		ERef<TestIdObjectKV>	o0b(new TestIdObjectKV(0, "b"));
+		ERef<TestIdObjectKV>	o1a(new TestIdObjectKV(0, "a"));
+		ERef<TestIdObjectKV>	o1b(new TestIdObjectKV(0, "b"));
+		ERef<TestIdObjectKV::Key>	k0(new TestIdObjectKV::Key(0));
+		ERef<TestIdObjectKV::Key>	k1(new TestIdObjectKV::Key(0));
 	}
 }
-TESTNSE(object);
+TENV_NSE(object);
 #endif
 
 
 #ifdef TEST_ATOMIC
-TESTNS(atomic);
+TENV_NS(atomic);
 SintPtr ga = -1;
 void *glob;
 void test()
@@ -181,50 +181,50 @@ void test()
 
 	ga = -1;
 	Atomic::inc(&ga);
-	CHECK(ga == 0);
+	TENV_CHECK(ga == 0);
 	Atomic::dec(&ga);
-	CHECK(ga == -1);
-	CHECK(!Atomic::incr(&ga));
-	CHECK(ga == 0);
-	CHECK(!Atomic::decr(&ga));
-	CHECK(ga == -1);
+	TENV_CHECK(ga == -1);
+	TENV_CHECK(!Atomic::incr(&ga));
+	TENV_CHECK(ga == 0);
+	TENV_CHECK(!Atomic::decr(&ga));
+	TENV_CHECK(ga == -1);
 	ga = 0;
-	CHECK(Atomic::incr(&ga));
-	CHECK(ga == 1);
-	CHECK(Atomic::decr(&ga));
-	CHECK(ga == 0);
+	TENV_CHECK(Atomic::incr(&ga));
+	TENV_CHECK(ga == 1);
+	TENV_CHECK(Atomic::decr(&ga));
+	TENV_CHECK(ga == 0);
 
 	glob = (void *)16; oval = (void *)20; nval = (void *)60;
-	CHECK(!Atomic::cmpxchg(&glob, oval, nval));
-	CHECK(glob == (void *)16);
+	TENV_CHECK(!Atomic::cmpxchg(&glob, oval, nval));
+	TENV_CHECK(glob == (void *)16);
 
 	glob = (void *)16; oval = (void *)16; nval = (void *)60;
-	CHECK(Atomic::cmpxchg(&glob, oval, nval));
-	CHECK(glob == nval);
+	TENV_CHECK(Atomic::cmpxchg(&glob, oval, nval));
+	TENV_CHECK(glob == nval);
 
 	glob = (void *)16; oval = (void *)24; nval = (void *)60;
-	CHECK(Lockp::lock(&glob) == (void *)16);
-	CHECK(glob > (void *)16 && glob < (void *)20);
+	TENV_CHECK(Lockp::lock(&glob) == (void *)16);
+	TENV_CHECK(glob > (void *)16 && glob < (void *)20);
 
 	Lockp::unlock(&glob, nval);
-	CHECK(glob == nval);
+	TENV_CHECK(glob == nval);
 }
-TESTNSE(atomic);
+TENV_NSE(atomic);
 #endif
 
 
 #ifdef TEST_REF
-TESTNS(ref);
+TENV_NS(ref);
 
-void func(Ref<TestObject> t)
+void func(Ref<TestIdObject> t)
 {
 }
 
-void ifunc(IRef<TestObject> t)
+void ifunc(IRef<TestIdObject> t)
 {
 }
 
-void efunc(ERef<TestObject> t)
+void efunc(ERef<TestIdObject> t)
 {
 }
 
@@ -232,93 +232,93 @@ int global_x = 0;
 void testUsed()
 {
 	{
-		ERef<TestObject> hold(TestObject::createInstance());
-		CHECK(TestObject::countLiving() == 1);
-		CHECK(hold.checkSingleRef());
+		ERef<TestIdObject> hold(TestIdObject::createInstance());
+		TENV_CHECK(TestIdObject::countLiving() == 1);
+		TENV_CHECK(hold.checkSingleRef());
 		{
-			Ref<TestObject> hold2(hold);
-			CHECK(!hold.checkSingleRef());
+			Ref<TestIdObject> hold2(hold);
+			TENV_CHECK(!hold.checkSingleRef());
 		}
-			CHECK(hold.checkSingleRef());
+			TENV_CHECK(hold.checkSingleRef());
 		{
-			Ref<TestObject> hold2(hold);
-			CHECK(!hold.checkSingleRef());
-			hold.setNoref(TestObject::createInstance());
-			CHECK(hold.checkSingleRef());
+			Ref<TestIdObject> hold2(hold);
+			TENV_CHECK(!hold.checkSingleRef());
+			hold.setNoref(TestIdObject::createInstance());
+			TENV_CHECK(hold.checkSingleRef());
 		}
-		CHECK(TestObject::countLiving() == 0);
+		TENV_CHECK(TestIdObject::countLiving() == 0);
 		hold.setNull();
-		CHECK(!hold.checkSingleRef());
-		CHECK(TestObject::countLiving() == 1);
+		TENV_CHECK(!hold.checkSingleRef());
+		TENV_CHECK(TestIdObject::countLiving() == 1);
 	}
-	CHECK(TestObject::countLiving() == 0);
+	TENV_CHECK(TestIdObject::countLiving() == 0);
 }
 
 void test()
 {
-	CHECK(TestObject::countLiving() == 0);
+	TENV_CHECK(TestIdObject::countLiving() == 0);
 
 	{
-		Ref<TestObject> hold(TestObject::createInstance(), false);
-		CHECK(TestObject::countLiving() == 1);
+		Ref<TestIdObject> hold(TestIdObject::createInstance(), false);
+		TENV_CHECK(TestIdObject::countLiving() == 1);
 		func(hold);
 		ifunc(hold);
 		efunc(hold);
 	}
-	CHECK(TestObject::countLiving() == 0);
+	TENV_CHECK(TestIdObject::countLiving() == 0);
 
 	{
-		ERef<TestObject> hold(TestObject::createInstance());
-		CHECK(TestObject::countLiving() == 1);
-		ERef<TestObject> hold2(hold);
+		ERef<TestIdObject> hold(TestIdObject::createInstance());
+		TENV_CHECK(TestIdObject::countLiving() == 1);
+		ERef<TestIdObject> hold2(hold);
 		func(hold);
 		ifunc(hold);
 		efunc(hold);
 	}
-	CHECK(TestObject::countLiving() == 0);
+	TENV_CHECK(TestIdObject::countLiving() == 0);
 
 	{
-		ERef<TestObject> hold(TestObject::createInstance());
-		CHECK(TestObject::countLiving() == 1);
-		IRef<TestObject> hold2(hold);
+		ERef<TestIdObject> hold(TestIdObject::createInstance());
+		TENV_CHECK(TestIdObject::countLiving() == 1);
+		IRef<TestIdObject> hold2(hold);
 		func(hold);
 		ifunc(hold);
 		efunc(hold);
 	}
-	CHECK(TestObject::countLiving() == 0);
+	TENV_CHECK(TestIdObject::countLiving() == 0);
 
 	{
-		IRef<TestObject> hold(TestObject::createInstance(), Noref());
-		CHECK(TestObject::countLiving() == 1);
-		ERef<TestObject> hold2(hold);
+		IRef<TestIdObject> hold(TestIdObject::createInstance(), Noref());
+		TENV_CHECK(TestIdObject::countLiving() == 1);
+		ERef<TestIdObject> hold2(hold);
 		func(hold);
 		ifunc(hold);
 		efunc(hold);
 	}
-	CHECK(TestObject::countLiving() == 0);
+	TENV_CHECK(TestIdObject::countLiving() == 0);
 
 	{
-		IRef<TestObject> hold(TestObject::createInstance(), Noref());
-		CHECK(TestObject::countLiving() == 1);
-		IRef<TestObject> hold2(hold);
+		IRef<TestIdObject> hold(TestIdObject::createInstance(), Noref());
+		TENV_CHECK(TestIdObject::countLiving() == 1);
+		IRef<TestIdObject> hold2(hold);
 		func(hold);
 		ifunc(hold);
 		efunc(hold);
 	}
-	CHECK(TestObject::countLiving() == 0);
+	TENV_CHECK(TestIdObject::countLiving() == 0);
 
 	{
-		tref(TestObject::createInstance());
+		tref(TestIdObject::createInstance());
 	}
-	CHECK(TestObject::countLiving() == 0);
+	TENV_CHECK(TestIdObject::countLiving() == 0);
 }
 
-TESTNSE(ref);
+TENV_NSE(ref);
 #endif
 
 
 #ifdef TEST_THROW_THROW
-TESTNS(throw_throw);
+TENV_NS(throw_throw);
 
 class DR_EXPORT_CLS T0: public Object
 {
@@ -349,11 +349,11 @@ void test()
 
 }
 
-TESTNSE(throw_throw);
+TENV_NSE(throw_throw);
 #endif
 
 #ifdef TEST_EMIT
-TESTNS(emit);
+TENV_NS(emit);
 
 int rfsig()
 {
@@ -426,31 +426,31 @@ void test()
 	return;
 }
 
-TESTNSE(emit)
+TENV_NSE(emit)
 #endif
 
 #ifdef TEST_BSTRING
-TESTNS(bstring);
+TENV_NS(bstring);
 void test()
 {
 	const char *s1 = "blasehy", *s2 = "diese";
-	CHECK_SIGN(strcmp(s1, s2), BString(s1).bcmp(BString(s2)));
+	TENV_CHECK_SIGN(strcmp(s1, s2), BString(s1).bcmp(BString(s2)));
 }
-TESTNSE(bstring)
+TENV_NSE(bstring)
 #endif
 
 #ifdef TEST_WSTRING
-TESTNS(wstring);
+TENV_NS(wstring);
 void test()
 {
 	const wchar_t *s1 = L"zlasehy", *s2 = L"diese";
-	CHECK_SIGN(wcscmp(s1, s2), WString(s1).bcmp(WString(s2)));
+	TENV_CHECK_SIGN(wcscmp(s1, s2), WString(s1).bcmp(WString(s2)));
 }
-TESTNSE(wstring)
+TENV_NSE(wstring)
 #endif
 
 #ifdef TEST_STRING_CB
-TESTNS(string_cb);
+TENV_NS(string_cb);
 String sn;
 typedef String Str;
 struct sss {
@@ -470,49 +470,49 @@ void test()
 	sss c;
 	f(&c);
 }
-TESTNSE(string_cb);
+TENV_NSE(string_cb);
 #endif
 
 #ifdef TEST_STRING_OP
-TESTNS(string_op);
+TENV_NS(string_op);
 void test()
 {
 	String s;
-	CHECK(String("bla").find("la") == 1);
-	CHECK(String("bla").mid(1, 1) == String("l"));
+	TENV_CHECK(String("bla").find("la") == 1);
+	TENV_CHECK(String("bla").mid(1, 1) == String("l"));
 	s = "krakra";
 	s.replace("ra", "raa");
-	CHECK(s == "kraakraa");
+	TENV_CHECK(s == "kraakraa");
 }
-TESTNSE(string_op);
+TENV_NSE(string_op);
 #endif
 
 #ifdef TEST_STRING_INDEX
-TESTNS(string_index);
+TENV_NS(string_index);
 void test()
 {
 	String ss_bla("bla");
 	String ss_sehy("sehy");
 	String ss_kra("kra");
 	StringIndex si(&ss_bla, &ss_sehy, &ss_kra, NULL);
-	CHECK(si.find(ss_bla) == 0);
-	CHECK(si.find("bla") == 0);
-	CHECK(si.find("sehy") == 1);
-	CHECK(si.find("kra") == 2);
-	CHECK(si.find("") == -1);
-	CHECK(si.find("none") == -1);
+	TENV_CHECK(si.find(ss_bla) == 0);
+	TENV_CHECK(si.find("bla") == 0);
+	TENV_CHECK(si.find("sehy") == 1);
+	TENV_CHECK(si.find("kra") == 2);
+	TENV_CHECK(si.find("") == -1);
+	TENV_CHECK(si.find("none") == -1);
 	SList<String> list;
 	si.appendToList(&list);
 	StringIndex vsi(&ss_bla, 8, &ss_sehy, 11, &ss_kra, 3, NULL);
-	CHECK(vsi.find(ss_bla) == 8);
-	CHECK(vsi.find(ss_sehy) == 11);
-	CHECK(vsi.find(ss_kra) == 3);
+	TENV_CHECK(vsi.find(ss_bla) == 8);
+	TENV_CHECK(vsi.find(ss_sehy) == 11);
+	TENV_CHECK(vsi.find(ss_kra) == 3);
 }
-TESTNSE(string_op);
+TENV_NSE(string_op);
 #endif
 
 #ifdef TEST_STRING_THS
-TESTNS(string_ths);
+TENV_NS(string_ths);
 
 struct strings
 {
@@ -602,13 +602,13 @@ void test()
 	Fatal::plog("c0: %s\nc1: %s\nc2: %s\n", s.c0.toStr(), s.c1.toStr(), s.c2.toStr());
 	Fatal::plog("%ld\n", (long)global_counter0);
 }
-TESTNSE(string_ths);
+TENV_NSE(string_ths);
 #endif
 
 #ifdef TEST_HASH
 inline long hash(int i) { return i; }
 inline long hash(const BString &s) { return s.getHash(); }
-TESTNS(hash);
+TENV_NS(hash);
 void test()
 {
 	Hash<int, int> hi;
@@ -618,15 +618,15 @@ void test()
 	hi[5] = 9;
 	hi[7] = 11;
 
-	CHECK(hi[5] == 9);
-	CHECK(hi[7] == 11);
-	//CHECK(hs["bla"] == 6);
+	TENV_CHECK(hi[5] == 9);
+	TENV_CHECK(hi[7] == 11);
+	//TENV_CHECK(hs["bla"] == 6);
 }
-TESTNSE(hash);
+TENV_NSE(hash);
 #endif
 
 #ifdef TEST_ARRAY
-TESTNS(array);
+TENV_NS(array);
 
 void test()
 {
@@ -636,14 +636,14 @@ void test()
 		a.resizeInit(8, 891);
 		a[0] = 6; a[1] = 11; a[2] = 1; a[3] = 89; a[4] = 1110; a[5] = 3; a[6] = 2; a[7] = 2;
 		a.rsort();
-		CHECK(a[7] == 1);
-		CHECK(a[6] == 2);
-		CHECK(a[5] == 2);
-		CHECK(a[4] == 3);
-		CHECK(a[3] == 6);
-		CHECK(a[2] == 11);
-		CHECK(a[1] == 89);
-		CHECK(a[0] == 1110);
+		TENV_CHECK(a[7] == 1);
+		TENV_CHECK(a[6] == 2);
+		TENV_CHECK(a[5] == 2);
+		TENV_CHECK(a[4] == 3);
+		TENV_CHECK(a[3] == 6);
+		TENV_CHECK(a[2] == 11);
+		TENV_CHECK(a[1] == 89);
+		TENV_CHECK(a[0] == 1110);
 	}
 	{
 		SArray<BString> s;
@@ -653,27 +653,27 @@ void test()
 		s[1] = "diese";
 		s[0] = "blar";
 		s.sort();
-		CHECK(s[0] == "blar");
-		CHECK(s[1] == "blasehy");
-		CHECK(s[2] == "diese");
-		CHECK(s[3] == "glasehy");
+		TENV_CHECK(s[0] == "blar");
+		TENV_CHECK(s[1] == "blasehy");
+		TENV_CHECK(s[2] == "diese");
+		TENV_CHECK(s[3] == "glasehy");
 	}
 
-	CHECK(TestObject::countLiving() == 0);
+	TENV_CHECK(TestIdObject::countLiving() == 0);
 	{
-		RArray<TestObject> ra;
-		ra.appendNoref(new TestObject(0));
-		ra.appendNoref(new TestObject(1));
-		ra.appendNoref(new TestObject(2));
-		ra.appendDoref(tref(new TestObject(3)));
+		RArray<TestIdObject> ra;
+		ra.appendNoref(new TestIdObject(0));
+		ra.appendNoref(new TestIdObject(1));
+		ra.appendNoref(new TestIdObject(2));
+		ra.appendDoref(tref(new TestIdObject(3)));
 	}
-	CHECK(TestObject::countLiving() == 0);
+	TENV_CHECK(TestIdObject::countLiving() == 0);
 }
-TESTNSE(array);
+TENV_NSE(array);
 #endif
 
 #ifdef TEST_LIST
-TESTNS(list);
+TENV_NS(list);
 void test()
 {
 	{
@@ -681,41 +681,41 @@ void test()
 		li.append(5);
 		li.append(8);
 		li.insert(3);
-		CHECK(li.removeFirst() == 3);
-		CHECK(li.removeFirst() == 5);
+		TENV_CHECK(li.removeFirst() == 3);
+		TENV_CHECK(li.removeFirst() == 5);
 	}
-	CHECK(TestObject::countLiving() == 0);
+	TENV_CHECK(TestIdObject::countLiving() == 0);
 	{
-		RList<TestObject> li;
-		li.append(tref(new TestObject(5)));
-		li.append(tref(new TestObject(8)));
-		li.append(tref(new TestObject(4)));
-		li.insert(tref(new TestObject(3)));
-		CHECK(tref(li.removeFirst())->getId() == 3);
-		CHECK(tref(li.removeFirst())->getId() == 5);
-		RList<TestObject>::Node *n = li.iterFirst();
-		CHECK(n->v->getId() == 8);
+		RList<TestIdObject> li;
+		li.append(tref(new TestIdObject(5)));
+		li.append(tref(new TestIdObject(8)));
+		li.append(tref(new TestIdObject(4)));
+		li.insert(tref(new TestIdObject(3)));
+		TENV_CHECK(tref(li.removeFirst())->getId() == 3);
+		TENV_CHECK(tref(li.removeFirst())->getId() == 5);
+		RList<TestIdObject>::Node *n = li.iterFirst();
+		TENV_CHECK(n->v->getId() == 8);
 		n->v.getAndNull()->unref();
 		li.remove(n);
 
 	}
-	CHECK(TestObject::countLiving() == 0);
+	TENV_CHECK(TestIdObject::countLiving() == 0);
 }
-TESTNSE(list);
+TENV_NSE(list);
 #endif
 
 #ifdef TEST_THREAD
-TESTNS(thread);
+TENV_NS(thread);
 void *t0func(void *arg)
 {
-	test_sleep(1);
+	tenv_sleep(1);
 	Fatal::plog("t0: %d\n", (int)(SintPtr)arg);
 	return (void *)6;
 }
 void *t1func(void *arg)
 {
 	Thread *t = (Thread *)arg;
-	test_sleep(1);
+	tenv_sleep(1);
 	arg = t->waitUnref();
 	Fatal::plog("%p exited with %p\n", t, arg);
 	return NULL;
@@ -729,11 +729,11 @@ void test()
 	t0->waitUnref();
 	Fatal::plog("waited...\n");
 }
-TESTNSE(thread);
+TENV_NSE(thread);
 #endif
 
 #ifdef TEST_IFACE
-TESTNS(iface);
+TENV_NS(iface);
 void test()
 {
 	bool ok = false;
@@ -771,7 +771,7 @@ void test()
 			ok = true;
 		}
 		DR_ENDTRY;
-		CHECK_RESET(ok);
+		TENV_CHECK_RESET(ok);
 		Fatal::plog("getting non-existing interface with unref\n");
 		DR_TRY {
 			t0->getIfaceUnref("non-existing");
@@ -781,65 +781,65 @@ void test()
 			ok = true;
 		}
 		DR_ENDTRY;
-		CHECK_RESET(ok);
+		TENV_CHECK_RESET(ok);
 	}
 
 	t0->unref();
-	CHECK(T0Obj0::alive == 0);
+	TENV_CHECK(T0Obj0::alive == 0);
 }
-TESTNSE(iface);
+TENV_NSE(iface);
 #endif
 
-DR_TESTENV_MAIN()
+DR_TENV_MAIN()
 {
-	test_init();
+	tenv_init();
 #ifdef TEST_OBJECT
-	TESTRUN(object);
+	TENV_RUN(object);
 #endif
 #ifdef TEST_ATOMIC
-	TESTRUN(atomic);
+	TENV_RUN(atomic);
 #endif
 #ifdef TEST_REF
-	TESTRUN(ref);
+	TENV_RUN(ref);
 #endif
 #ifdef TEST_THROW_THROW
-	TESTRUN(throw_throw);
+	TENV_RUN(throw_throw);
 #endif
 #ifdef TEST_EMIT
-	TESTRUN(emit);
+	TENV_RUN(emit);
 #endif
 #ifdef TEST_BSTRING
-	TESTRUN(bstring);
+	TENV_RUN(bstring);
 #endif
 #ifdef TEST_WSTRING
-	TESTRUN(wstring);
+	TENV_RUN(wstring);
 #endif
 #ifdef TEST_STRING_CB
-	TESTRUN(string_cb);
+	TENV_RUN(string_cb);
 #endif
 #ifdef TEST_STRING_OP
-	TESTRUN(string_op);
+	TENV_RUN(string_op);
 #endif
 #ifdef TEST_STRING_INDEX
-	TESTRUN(string_index);
+	TENV_RUN(string_index);
 #endif
 #ifdef TEST_STRING_THS
-	TESTRUN(string_ths);
+	TENV_RUN(string_ths);
 #endif
 #ifdef TEST_HASH
-	TESTRUN(hash);
+	TENV_RUN(hash);
 #endif
 #ifdef TEST_ARRAY
-	TESTRUN(array);
+	TENV_RUN(array);
 #endif
 #ifdef TEST_LIST
-	TESTRUN(list);
+	TENV_RUN(list);
 #endif
 #ifdef TEST_THREAD
-	TESTRUN(thread);
+	TENV_RUN(thread);
 #endif
 #ifdef TEST_IFACE
-	TESTRUN(iface);
+	TENV_RUN(iface);
 #endif
 	return 0;
 }

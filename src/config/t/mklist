@@ -19,7 +19,7 @@ SOURCES:
 	no:testconf.ini:g=t
 	lshlib:dr:g=common
 	lshlib:drconfig:g=common
-	lshlib:drtestenv:g=common
+	lshlib:drtenv:g=common
 
 META:
 	vsid:{1D406DDD-1581-4e9a-AE2B-6A0179FD9B64}:g=tlink_drconfig

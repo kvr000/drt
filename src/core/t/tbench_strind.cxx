@@ -38,13 +38,13 @@
 #include <dr/Const.hxx>
 #include <dr/String.hxx>
 
-#include <dr/testenv/testenv.hxx>
+#include <dr/tenv/tenv.hxx>
 
 DR_NS_USE
-DR_TESTENV_NS_USE
+DR_TENV_NS_USE
 
 
-TESTNS(strind);
+TENV_NS(strind);
 
 void run_find()
 {
@@ -68,15 +68,15 @@ void run_findXchg()
 
 void test()
 {
-	printf("findXchg: %g\n", test_bench(&run_findXchg, 1)/1000000.0);
-	printf("find: %g\n", test_bench(&run_find, 1)/1000000.0);
+	printf("findXchg: %g\n", tenv_bench(&run_findXchg, 1)/1000000.0);
+	printf("find: %g\n", tenv_bench(&run_find, 1)/1000000.0);
 }
 
-TESTNSE(iface_dyncast);
+TENV_NSE(iface_dyncast);
 
 int main()
 {
-	test_init();
-	TESTRUN(strind);
+	tenv_init();
+	TENV_RUN(strind);
 	return 0;
 }

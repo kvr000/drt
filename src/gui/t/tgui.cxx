@@ -48,10 +48,10 @@
 #include <dr/gui/CheckBox.hxx>
 #include <dr/gui/TextEdit.hxx>
 
-#include <dr/testenv/testenv.hxx>
+#include <dr/tenv/tenv.hxx>
 
 DR_GUI_NS_USE;
-DR_TESTENV_NS_USE
+DR_TENV_NS_USE
 
 
 #define TEST_INIT
@@ -112,7 +112,7 @@ TestWidget *main_widget = NULL;
 
 
 #ifdef TEST_INIT
-TESTNS(init);
+TENV_NS(init);
 void test()
 {
 	Fatal::plog("initializing\n");
@@ -128,11 +128,11 @@ void test()
 	xend;
 	Fatal::plog("initialization done\n");
 }
-TESTNSE(init);
+TENV_NSE(init);
 #endif
 
 #ifdef TEST_WINDOW
-TESTNS(window);
+TENV_NS(window);
 void test()
 {
 	if (guio) {
@@ -169,11 +169,11 @@ void test()
 		Fatal::plog("window created...\n");
 	}
 }
-TESTNSE(window);
+TENV_NSE(window);
 #endif
 
 #ifdef TEST_RUNLOOP
-TESTNS(runloop);
+TENV_NS(runloop);
 void quiter_thread()
 {
 	Fatal::plog("quiting gui\n");
@@ -188,11 +188,11 @@ void test()
 		Fatal::plog("gui returned\n");
 	}
 }
-TESTNSE(runloop);
+TENV_NSE(runloop);
 #endif
 
 #ifdef TEST_CLOSE
-TESTNS(close);
+TENV_NS(close);
 void test()
 {
 	Fatal::plog("closing gui\n");
@@ -202,23 +202,23 @@ void test()
 	}
 	Fatal::plog("gui closed\n");
 }
-TESTNSE(close);
+TENV_NSE(close);
 #endif
 
-DR_TESTENV_MAIN()
+DR_TENV_MAIN()
 {
-	test_init();
+	tenv_init();
 #ifdef TEST_INIT
-	TESTRUN(init);
+	TENV_RUN(init);
 #endif
 #ifdef TEST_WINDOW
-	TESTRUN(window);
+	TENV_RUN(window);
 #endif
 #ifdef TEST_RUNLOOP
-	TESTRUN(runloop);
+	TENV_RUN(runloop);
 #endif
 #ifdef TEST_CLOSE
-	TESTRUN(close);
+	TENV_RUN(close);
 #endif
 	return 0;
 }

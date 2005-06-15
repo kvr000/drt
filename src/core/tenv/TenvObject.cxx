@@ -33,44 +33,39 @@
  * @license	http://www.gnu.org/licenses/lgpl.txt GNU Lesser General Public License v3
  **/
 
-#ifndef dr__def_testenv_hxx__
-# define dr__def_testenv_hxx__
+/*drt
+ * include:	dr/tenv/def.hxx
+ * include: 	dr/Object.hxx
+ *
+ * ns:		dr::tenv
+ */
+
+#include <dr/Const.hxx>
+#include <dr/Ref.hxx>
+
+#include "_gen/TenvObject-all.hxx"
+
+DR_TENV_NS_BEGIN
 
 
-#include <dr/def.hxx>
+/*drt
+ * class:	TenvObject
+ * ancestor:	dr::Object
+ * ifaces:	
+ */
 
-#ifdef COMPILING_drtestenv
-# define DR_TESTENV_PUB	DR_EXPORT_CLS
-# define DR_TESTENV_FUN	DR_EXPORT_FUN
-# define DR_TESTENV_MET	DR_EXPORT_MET
-# define DR_TESTENV_MTS	DR_EXPORT_MTS
-# define DR_TESTENV_DAT	DR_EXPORT_DAT
-# define DR_TESTENV_DTC	DR_EXPORT_DTC
-# define DR_TESTENV_CLS	DR_EXPORT_CLS
-#else
-# define DR_TESTENV_PUB	DR_IMPORT_CLS
-# define DR_TESTENV_FUN	DR_IMPORT_FUN
-# define DR_TESTENV_MET	DR_IMPORT_MET
-# define DR_TESTENV_MTS	DR_IMPORT_MTS
-# define DR_TESTENV_DAT	DR_IMPORT_DAT
-# define DR_TESTENV_DTC	DR_IMPORT_DTC
-# define DR_TESTENV_CLS	DR_IMPORT_CLS
-#endif
+DR_MET(public)
+TenvObject::TenvObject()
+{
+}
 
-#define DR_TESTENV_NS_USE using namespace dr; using namespace dr::testenv;
-#define DR_TESTENV_NS dr::testenv::
-#define DR_TESTENV_NSP(rest) dr::testenv::rest
-#define DR_TESTENV_NS_STR "dr::testenv::"
-#define DR_TESTENV_NS_STRP(rest) "dr::testenv::"rest
-#define DR_TESTENV_NS_BEGIN namespace dr \
-{ \
-	namespace testenv \
-	{
-#define DR_TESTENV_NS_END }; };
+DR_MET(protected virtual)
+TenvObject::~TenvObject()
+{
+}
+
+DR_MET(public virtual abstract)
+//void TenvObject::test()
 
 
-DR_TESTENV_NS_BEGIN
-DR_TESTENV_NS_END
-
-
-#endif
+DR_TENV_NS_END

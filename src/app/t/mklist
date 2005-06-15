@@ -21,7 +21,7 @@ SOURCES:
 	no:mklist:g=t
 	lshlib:dr:g=common
 	lshlib:drapp:g=common
-	lshlib:drtestenv:g=common
+	lshlib:drtenv:g=common
 
 META:
 	vsid:{4D7927D7-6878-42af-ACB6-D20CE49D82BE}:g=tlink_drapp

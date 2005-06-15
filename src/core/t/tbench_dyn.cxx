@@ -39,10 +39,10 @@
 #include <dr/String.hxx>
 #include <dr/ThreadSimple.hxx>
 
-#include <dr/testenv/testenv.hxx>
+#include <dr/tenv/tenv.hxx>
 
 DR_NS_USE
-DR_TESTENV_NS_USE
+DR_TENV_NS_USE
 
 
 #define TEST_IFACE_STRING
@@ -101,7 +101,7 @@ DR_OBJECT_IMPL_SIMPLE(TestObjTop);
 void check_res(void *);
 
 #ifdef TEST_IFACE_STRING
-TESTNS(iface_string);
+TENV_NS(iface_string);
 
 void run_ref()
 {
@@ -126,15 +126,15 @@ void run_unref()
 
 void test()
 {
-	printf("iface_string_ref: %g\n", test_bench(&run_ref, 1)/1000000.0);
-	printf("iface_string_unref: %g\n", test_bench(&run_unref, 1)/1000000.0);
+	printf("iface_string_ref: %g\n", tenv_bench(&run_ref, 1)/1000000.0);
+	printf("iface_string_unref: %g\n", tenv_bench(&run_unref, 1)/1000000.0);
 }
 
-TESTNSE(iface_string);
+TENV_NSE(iface_string);
 #endif
 
 #ifdef TEST_IFACE_DYNCAST
-TESTNS(iface_dyncast);
+TENV_NS(iface_dyncast);
 
 void run_ifup()
 {
@@ -178,13 +178,13 @@ void run_complex()
 
 void test()
 {
-	printf("iface_dyncast_ifup: %g\n", test_bench(&run_ifup, 1)/1000000.0);
-	printf("iface_dyncast_objtop: %g\n", test_bench(&run_objtop, 1)/1000000.0);
-	printf("iface_dyncast_objone: %g\n", test_bench(&run_objone, 1)/1000000.0);
-	printf("iface_dyncast_complex: %g\n", test_bench(&run_complex, 1)/1000000.0);
+	printf("iface_dyncast_ifup: %g\n", tenv_bench(&run_ifup, 1)/1000000.0);
+	printf("iface_dyncast_objtop: %g\n", tenv_bench(&run_objtop, 1)/1000000.0);
+	printf("iface_dyncast_objone: %g\n", tenv_bench(&run_objone, 1)/1000000.0);
+	printf("iface_dyncast_complex: %g\n", tenv_bench(&run_complex, 1)/1000000.0);
 }
 
-TESTNSE(iface_dyncast);
+TENV_NSE(iface_dyncast);
 #endif
 
 void check_res(void *)
@@ -193,12 +193,12 @@ void check_res(void *)
 
 int main()
 {
-	test_init();
+	tenv_init();
 #ifdef TEST_IFACE_STRING
-	TESTRUN(iface_string);
+	TENV_RUN(iface_string);
 #endif
 #ifdef TEST_IFACE_DYNCAST
-	TESTRUN(iface_dyncast);
+	TENV_RUN(iface_dyncast);
 #endif
 	return 0;
 }

@@ -1,0 +1,40 @@
+.def SD_BASE		base
+.def SD_DB		db
+.def SD_COMMON		common
+.def SD_STATEMENT	statement
+.def SD_WRAP		wrap
+
+.def SUBDIRS		${SD_BASE},${SD_DB},${SD_COMMON},${SD_STATEMENT},${SD_WRAP}
+.def ESUBDIRS		{${SUBDIRS}}
+
+.include ${ESUBDIRS}/mklist
+
+NEED:
+	cxx
+
+FLAGS:
+	cxx=$(CXXINC) $(SOCXXFLAGS)
+	shlib=$(SOLDXXFLAGS)
+
+OUTPUT:
+	shlib:drsqltenv:f=shlib;s=s
+
+META:
+	vsid:{052CBA78-BD44-4BC4-BDC5-83CBD2826057}:g=s
+
+SOURCES:
+	no:mklist:g=t
+	lshlib:dr:g=s
+	lshlib:drsql:g=s
+
+FCHECK:
+	${ESUBDIRS}/*.cxx::s=t
+	${ESUBDIRS}/*.cxx::s=s
+	${ESUBDIRS}/*.hxx::s=t
+	${ESUBDIRS}/*.hxx::s=ditenv
+	${ESUBDIRS}/mklist::s=t
+
+
+DIST_INC:
+	ditenv:dr/sql/tenv
+

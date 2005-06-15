@@ -34,10 +34,10 @@
  **/
 
 /*drt
- * include:	dr/testenv/def_testenv.hxx
+ * include:	dr/tenv/def.hxx
  * include: 	dr/Object.hxx
- * ns:		dr::testenv
- * class:	TestObject
+ * ns:		dr::tenv
+ * class:	TestIdObject
  * ancestor:	dr::Object
  * ifaces:	
  * at:	int				id;
@@ -50,15 +50,15 @@
 #include <dr/Const.hxx>
 #include <dr/Ref.hxx>
 
-#include "_gen/TestObject-all.hxx"
+#include "_gen/TestIdObject-all.hxx"
 
-DR_TESTENV_NS_BEGIN
+DR_TENV_NS_BEGIN
 
 
-Refcnt TestObject::living_count = 0;
+Refcnt TestIdObject::living_count = 0;
 
 DR_MET(public)
-TestObject::TestObject(int id_):
+TestIdObject::TestIdObject(int id_):
 	id(id_),
 	value(DR_STR(unknown))
 {
@@ -66,46 +66,46 @@ TestObject::TestObject(int id_):
 }
 
 DR_MET(public)
-TestObject::TestObject(const String &value_):
+TestIdObject::TestIdObject(const String &value_):
 	value(value_)
 {
 	living_count++;
 }
 
 DR_MET(virtual protected)
-TestObject::~TestObject()
+TestIdObject::~TestIdObject()
 {
 	living_count--;
 }
 
 DR_MET(public virtual)
-int TestObject::getId()
+int TestIdObject::getId()
 {
 	return id;
 }
 
 DR_MET(public virtual)
-String TestObject::getValue()
+String TestIdObject::getValue()
 {
 	return value;
 }
 
 DR_MET(public static)
-int TestObject::countLiving()
+int TestIdObject::countLiving()
 {
 	return living_count;
 }
 
 DR_MET(public static)
-TestObject *TestObject::createInstance()
+TestIdObject *TestIdObject::createInstance()
 {
-	return new TestObject(0);
+	return new TestIdObject(0);
 }
 
 DR_MET(public virtual)
-int TestObject::cmp(const Iface *second) const
+int TestIdObject::cmp(const Iface *second) const
 {
-	if (TestObject *seco = (TestObject *)second->accCheckFinal(comp_name)) {
+	if (TestIdObject *seco = (TestIdObject *)second->accCheckFinal(comp_name)) {
 		return id == seco->id ? 0 : id < seco->id ? -1 : 1;
 	}
 	else {
@@ -114,9 +114,9 @@ int TestObject::cmp(const Iface *second) const
 }
 
 DR_MET(public virtual)
-bool TestObject::eq(const Iface *second) const
+bool TestIdObject::eq(const Iface *second) const
 {
-	if (TestObject *seco = (TestObject *)second->accCheckFinal(comp_name)) {
+	if (TestIdObject *seco = (TestIdObject *)second->accCheckFinal(comp_name)) {
 		return id == seco->id;
 	}
 	else {
@@ -125,10 +125,10 @@ bool TestObject::eq(const Iface *second) const
 }
 
 DR_MET(public virtual)
-long TestObject::hash() const
+long TestIdObject::hash() const
 {
 	return id;
 }
 
 
-DR_TESTENV_NS_END
+DR_TENV_NS_END

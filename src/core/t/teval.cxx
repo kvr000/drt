@@ -40,56 +40,53 @@
 #include <dr/Mem.hxx>
 #include <dr/DataNotFoundException.hxx>
 
-#include <dr/testenv/testenv.hxx>
+#include <dr/tenv/tenv.hxx>
 
 #include <dr/IntEvaluator.hxx>
 
 DR_NS_USE
-DR_TESTENV_NS_USE
+DR_TENV_NS_USE
 
 
 #define TEST_EVAL
 
 #ifdef TEST_EVAL
-TESTNS(eval);
+TENV_NS(eval);
 void test()
 {
 	Ref<Evaluator> evaluator;
 
-	CHECK_EXCEPTION(evaluator.setNoref(new IntEvaluator(")(")); evaluator->evaluate(tref(new Evaluator::ArgumentsHash())), dr::Exception);
+	TENV_CHECK_EXCEPTION(evaluator.setNoref(new IntEvaluator(")(")); evaluator->evaluate(tref(new Evaluator::ArgumentsHash())), dr::Exception);
 
 	evaluator.setNoref(new IntEvaluator("4+5*7"));
-	CHECK(evaluator->evaluate(tref(new Evaluator::ArgumentsHash())) == 39);
+	TENV_CHECK(evaluator->evaluate(tref(new Evaluator::ArgumentsHash())) == 39);
 
 	evaluator.setNoref(new IntEvaluator("4*5+7"));
-	CHECK(evaluator->evaluate(tref(new Evaluator::ArgumentsHash())) == 27);
+	TENV_CHECK(evaluator->evaluate(tref(new Evaluator::ArgumentsHash())) == 27);
 
 	evaluator.setNoref(new IntEvaluator("-4*(5+8*7)+-4*(6/2)"));
-	CHECK(evaluator->evaluate(tref(new Evaluator::ArgumentsHash())) == -256);
+	TENV_CHECK(evaluator->evaluate(tref(new Evaluator::ArgumentsHash())) == -256);
 
 	evaluator.setNoref(new IntEvaluator("!defined x && !defined \\1 && !defined a"));
-	CHECK(evaluator->evaluate(tref(new Evaluator::ArgumentsHash())) == 1);
+	TENV_CHECK(evaluator->evaluate(tref(new Evaluator::ArgumentsHash())) == 1);
 
 	evaluator.setNoref(new IntEvaluator("5&1|8"));
-	CHECK(evaluator->evaluate(tref(new Evaluator::ArgumentsHash())) == 9);
+	TENV_CHECK(evaluator->evaluate(tref(new Evaluator::ArgumentsHash())) == 9);
 
 	evaluator.setNoref(new IntEvaluator("1024<<30"));
-	CHECK(evaluator->evaluate(tref(new Evaluator::ArgumentsHash())) == ((Sint64)1024)<<30);
+	TENV_CHECK(evaluator->evaluate(tref(new Evaluator::ArgumentsHash())) == ((Sint64)1024)<<30);
 
 	evaluator.setNoref(new IntEvaluator("1024*1024>>18"));
-	CHECK(evaluator->evaluate(tref(new Evaluator::ArgumentsHash())) == ((Sint64)1024*1024)>>18);
+	TENV_CHECK(evaluator->evaluate(tref(new Evaluator::ArgumentsHash())) == ((Sint64)1024*1024)>>18);
 
 	evaluator.setNoref(new IntEvaluator("0x1234>><<16"));
-	CHECK(evaluator->evaluate(tref(new Evaluator::ArgumentsHash())) == 0x3412);
+	TENV_CHECK(evaluator->evaluate(tref(new Evaluator::ArgumentsHash())) == 0x3412);
 
 	evaluator.setNoref(new IntEvaluator("0x12345678>><<32>><<4"));
-	CHECK(evaluator->evaluate(tref(new Evaluator::ArgumentsHash())) == 0x87654321);
+	TENV_CHECK(evaluator->evaluate(tref(new Evaluator::ArgumentsHash())) == 0x87654321);
 
-	evaluator.setNoref(new IntEvaluator("0x0123456789abcdef>><<64"));
-	CHECK(evaluator->evaluate(tref(new Evaluator::ArgumentsHash())) == (Sint64)0xefcdab8967452301ULL);
-
-	evaluator.setNoref(new IntEvaluator("((0xf<<60)+0xedcba9876543210)>><<64"));
-	CHECK(evaluator->evaluate(tref(new Evaluator::ArgumentsHash())) == (Sint64)0x1032547698badcfeULL);
+	evaluator.setNoref(new IntEvaluator("0x123456789abcdef0>><<64"));
+	TENV_CHECK(evaluator->evaluate(tref(new Evaluator::ArgumentsHash())) == (Sint64)0xf0debc9a78563412ULL);
 
 	{
 		ERef<Evaluator::ArgumentsHash::Constants> constants(new Evaluator::ArgumentsHash::Constants);
@@ -106,21 +103,21 @@ void test()
 
 		ERef<Evaluator::ArgumentsHash> arguments(new Evaluator::ArgumentsHash(constants, values));
 		evaluator.setNoref(new IntEvaluator("a*c+e/c-f"));
-		CHECK(evaluator->evaluate(arguments) == -3);
+		TENV_CHECK(evaluator->evaluate(arguments) == -3);
 
 		evaluator.setNoref(new IntEvaluator("!defined x && defined \\1 && !defined \\2 && defined a && defined seven"));
-		CHECK(evaluator->evaluate(arguments) == 1);
+		TENV_CHECK(evaluator->evaluate(arguments) == 1);
 
 		evaluator.setNoref(new IntEvaluator("a*c+e/c-g"));
 		xtry {
-			CHECK(evaluator->evaluate(arguments) == 0);
+			TENV_CHECK(evaluator->evaluate(arguments) == 0);
 			DR_AssertInvalid();
 		}
 		xcatch (DataNotFoundException, ex) {
 		}
 		xend;
 		evaluator.setNoref(new IntEvaluator("a*c+e/c-f+\\1/\\0"));
-		CHECK(evaluator->evaluate(arguments) == 0);
+		TENV_CHECK(evaluator->evaluate(arguments) == 0);
 
 		evaluator.setNoref(new IntEvaluator("a*c+e/c-f*\\2"));
 		xtry {
@@ -132,20 +129,20 @@ void test()
 		xend;
 
 		evaluator.setNoref(new IntEvaluator("a < b && (c > d || e < f)"));
-		CHECK(evaluator->evaluate(arguments) != 0);
+		TENV_CHECK(evaluator->evaluate(arguments) != 0);
 
 		evaluator.setNoref(new IntEvaluator("-f-+f-!f+f-f*f/f == f != f < (f > f <= f >= f && f || f ^^ f)"));
 		evaluator->evaluate(arguments);
 	}
 }
-TESTNSE(eval);
+TENV_NSE(eval);
 #endif
 
-DR_TESTENV_MAIN()
+DR_TENV_MAIN()
 {
-	test_init();
+	tenv_init();
 #ifdef TEST_EVAL
-	TESTRUN(eval);
+	TENV_RUN(eval);
 #endif
 	return 0;
 }

@@ -51,10 +51,10 @@
 #include <dr/io/NetAddressInet4.hxx>
 #include <dr/io/NetAddressLocal.hxx>
 
-#include <dr/testenv/testenv.hxx>
+#include <dr/tenv/tenv.hxx>
 
 DR_IO_NS_USE;
-DR_TESTENV_NS_USE
+DR_TENV_NS_USE
 
 
 #define TEST_FILE
@@ -62,7 +62,7 @@ DR_TESTENV_NS_USE
 #define TEST_SOCK
 
 #ifdef TEST_FILE
-TESTNS(file);
+TENV_NS(file);
 void test()
 {
 	Fatal::plog("test file start\n");
@@ -76,12 +76,12 @@ void test()
 	xend;
 	Fatal::plog("test file done\n");
 }
-TESTNSE(file);
+TENV_NSE(file);
 #endif
 
 
 #ifdef TEST_DIR
-TESTNS(dir);
+TENV_NS(dir);
 void test()
 {
 	xtry {
@@ -96,12 +96,12 @@ void test()
 	}
 	xend;
 }
-TESTNSE(dir);
+TENV_NSE(dir);
 #endif
 
 
 #ifdef TEST_SOCK
-TESTNS(sock);
+TENV_NS(sock);
 
 void sender_th(unsigned short port)
 {
@@ -272,20 +272,20 @@ void test()
 	xend;
 	Fatal::plog("sock stream local: out\n");
 }
-TESTNSE(sock);
+TENV_NSE(sock);
 #endif
 
-DR_TESTENV_MAIN()
+DR_TENV_MAIN()
 {
-	test_init();
+	tenv_init();
 #ifdef TEST_FILE
-	TESTRUN(file);
+	TENV_RUN(file);
 #endif
 #ifdef TEST_DIR
-	TESTRUN(dir);
+	TENV_RUN(dir);
 #endif
 #ifdef TEST_SOCK
-	TESTRUN(sock);
+	TENV_RUN(sock);
 #endif
 	return 0;
 }

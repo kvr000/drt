@@ -45,25 +45,25 @@
 
 #include <dr/app/ApplicationCache.hxx>
 
-#include <dr/testenv/testenv.hxx>
-#include <dr/testenv/TestObject.hxx>
+#include <dr/tenv/tenv.hxx>
+#include <dr/tenv/TestIdObject.hxx>
 
 DR_APP_NS_USE;
-DR_TESTENV_NS_USE
+DR_TENV_NS_USE
 
 
 #define TEST_APPCACHE
 
 #ifdef TEST_APPCACHE
-TESTNS(appcache);
+TENV_NS(appcache);
 
 static void checkIds(ApplicationCache *ac, int first, int next)
 {
 	for (int i = 0; i < first; i++) {
-		CHECK(tref(ac->findResource(tref(new TestObject(i)))).isNull());
+		TENV_CHECK(tref(ac->findResource(tref(new TestIdObject(i)))).isNull());
 	}
 	for (int i = first; i < next; i++) {
-		CHECK(!tref(ac->findResource(tref(new TestObject(i)))).isNull());
+		TENV_CHECK(!tref(ac->findResource(tref(new TestIdObject(i)))).isNull());
 	}
 }
 
@@ -71,30 +71,30 @@ void test()
 {
 	ERef<ApplicationCache> ac(new ApplicationCache);
 
-	ac->addResource(1, tref(new TestObject(0)), tref(new TestObject(0)));
-	ac->addResource(1, tref(new TestObject(1)), tref(new TestObject(1)));
-	ac->addResource(2, tref(new TestObject(2)), tref(new TestObject(2)));
-	ac->addResource(2, tref(new TestObject(3)), tref(new TestObject(3)));
-	ac->addResource(4, tref(new TestObject(4)), tref(new TestObject(4)));
+	ac->addResource(1, tref(new TestIdObject(0)), tref(new TestIdObject(0)));
+	ac->addResource(1, tref(new TestIdObject(1)), tref(new TestIdObject(1)));
+	ac->addResource(2, tref(new TestIdObject(2)), tref(new TestIdObject(2)));
+	ac->addResource(2, tref(new TestIdObject(3)), tref(new TestIdObject(3)));
+	ac->addResource(4, tref(new TestIdObject(4)), tref(new TestIdObject(4)));
 
 	checkIds(ac, 0, 5);
-	CHECK(ac->expire(1) == 1);
+	TENV_CHECK(ac->expire(1) == 1);
 	checkIds(ac, 2, 5);
-	CHECK(ac->expire(1) == 1);
+	TENV_CHECK(ac->expire(1) == 1);
 	checkIds(ac, 2, 5);
-	CHECK(ac->expire(2) == 2);
+	TENV_CHECK(ac->expire(2) == 2);
 	checkIds(ac, 4, 5);
-	CHECK(ac->expire(4) == Time::INVAL_TIME);
+	TENV_CHECK(ac->expire(4) == Time::INVAL_TIME);
 	checkIds(ac, 5, 5);
 }
-TESTNSE(appcache);
+TENV_NSE(appcache);
 #endif
 
-DR_TESTENV_MAIN()
+DR_TENV_MAIN()
 {
-	test_init();
+	tenv_init();
 #ifdef TEST_APPCACHE
-	TESTRUN(appcache);
+	TENV_RUN(appcache);
 #endif
 	return 0;
 }

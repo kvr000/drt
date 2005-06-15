@@ -45,21 +45,20 @@
 
 #include <dr/app/WorkerPoolManager.hxx>
 
-#include <dr/testenv/testenv.hxx>
-#include <dr/testenv/TestObject.hxx>
+#include <dr/tenv/tenv.hxx>
 
 /*drt
  * ns:	dr::app::t
  */
 
 DR_APP_NS_USE;
-DR_TESTENV_NS_USE
+DR_TENV_NS_USE
 
 
 #define TEST_WORKER
 
 #ifdef TEST_WORKER
-TESTNS(worker);
+TENV_NS(worker);
 
 class TestWorker: public WorkerPoolManager
 {
@@ -81,15 +80,15 @@ void test()
 	}
 	while (!tref(wm->waitWorkResult()).isNull()) ;
 }
-TESTNSE(worker);
+TENV_NSE(worker);
 #endif
 
-DR_TESTENV_MAIN()
+DR_TENV_MAIN()
 {
 	MM::enableThreadCache(1);
-	test_init();
+	tenv_init();
 #ifdef TEST_WORKER
-	TESTRUN(worker);
+	TENV_RUN(worker);
 #endif
 	return 0;
 }

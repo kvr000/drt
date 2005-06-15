@@ -41,24 +41,24 @@
 #include <dr/MutexCond.hxx>
 #include <dr/ThreadSimple.hxx>
 
-#include <dr/testenv/TestObject.hxx>
-#include <dr/testenv/testenv.hxx>
+#include <dr/tenv/TestIdObject.hxx>
+#include <dr/tenv/tenv.hxx>
 
 DR_NS_USE
-DR_TESTENV_NS_USE
+DR_TENV_NS_USE
 
 
 void signalThread(MutexCond *mc)
 {
-	ERef<TestObject> obj(new TestObject(0));
+	ERef<TestIdObject> obj(new TestIdObject(0));
 	mc->lock();
 	mc->signal();
 	mc->unlock();
 }
 
-void destroyThreadTestObject(void *obj_)
+void destroyThreadTestIdObject(void *obj_)
 {
-	TestObject *obj = (TestObject *)obj_;
+	TestIdObject *obj = (TestIdObject *)obj_;
 
 	Fatal::plog("destroying %ld\n", obj->getId());
 	obj->unref();
@@ -66,7 +66,7 @@ void destroyThreadTestObject(void *obj_)
 
 int main(void)
 {
-	test_init();
+	tenv_init();
 
 	ERef<Mutex> m = Mutex::create();
 	m->lock();

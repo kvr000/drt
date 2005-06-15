@@ -1,0 +1,32 @@
+NEED:
+	cxx
+
+FLAGS:
+	cxx=$(CXXINC) $(SOCXXFLAGS)
+	shlib=$(SOLDXXFLAGS)
+
+OUTPUT:
+	shlib:drtenv:f=shlib;s=s
+
+META:
+	vsid:{D56D9DEC-16FE-4f77-B360-24F8DCF6A30B}:g=s
+
+SOURCES:
+	:def.hxx:g=ditenv,t
+	:tenv.hxx:g=ditenv,t
+	:tenv.cxx:f=cxx;g=s,t
+	:TestIdObject.cxx:f=cxx;g=s,t,gh,ditenv
+	:TestIdObjectKV.cxx:f=cxx;g=s,t,gh,ditenv
+	:TenvObject.cxx:f=cxx;g=s,t,gh,ditenv
+	no:mklist:g=t
+	lshlib:dr:g=s
+
+FCHECK:
+	*.hxx::s=ditenv
+	*.hxx::s=t
+	*.cxx::s=s
+	*.cxx::s=t
+
+DIST_INC:
+	ditenv:dr/tenv
+

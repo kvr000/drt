@@ -18,7 +18,8 @@ SOURCES:
 	lshlib:dr:g=common
 	lshlib:drsql:g=common
 	lshlib:drsqlmysql5:g=common
-	lshlib:drtestenv:g=common
+	lshlib:drtenv:g=common
+	lshlib:drsqltenv:g=common
 
 META:
 	vsid:{25F5222A-3577-4bd4-8759-D6AE2BFC9A56}:g=tlink_dr_sql_mysql5

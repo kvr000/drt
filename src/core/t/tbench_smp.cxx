@@ -40,10 +40,10 @@
 #include <dr/ThreadSimple.hxx>
 #include <dr/Atomic.hxx>
 
-#include <dr/testenv/testenv.hxx>
+#include <dr/tenv/tenv.hxx>
 
 DR_NS_USE
-DR_TESTENV_NS_USE
+DR_TENV_NS_USE
 
 
 #define TEST_NOATOMIC
@@ -69,14 +69,14 @@ static void runParallels(void (*routine)(volatile SintPtr *), bool check_zero, b
 	}
 	if (check_zero) {
 		for (size_t i = 0; i < TEST_PARALLEL; i++) {
-			CHECK(addr[i] == NULL);
+			TENV_CHECK(addr[i] == NULL);
 		}
 	}
 	MM::free(addr);
 }
 
 #ifdef TEST_NOATOMIC
-TESTNS(noatomic);
+TENV_NS(noatomic);
 
 void worker(volatile SintPtr *val)
 {
@@ -100,15 +100,15 @@ void run_sep()
 
 void test()
 {
-	printf("noatomic_same : %g\n", test_bench(&run_same, 1)/1000000.0);
-	printf("noatomic_sep  : %g\n", test_bench(&run_sep, 1)/1000000.0);
+	printf("noatomic_same : %g\n", tenv_bench(&run_same, 1)/1000000.0);
+	printf("noatomic_sep  : %g\n", tenv_bench(&run_sep, 1)/1000000.0);
 }
 
-TESTNSE(noatomic);
+TENV_NSE(noatomic);
 #endif
 
 #ifdef TEST_ATOMIC
-TESTNS(atomic);
+TENV_NS(atomic);
 
 void worker(volatile SintPtr *val)
 {
@@ -132,15 +132,15 @@ void run_sep()
 
 void test()
 {
-	printf("atomic_same   : %g\n", test_bench(&run_same, 1)/1000000.0);
-	printf("atomic_sep    : %g\n", test_bench(&run_sep, 1)/1000000.0);
+	printf("atomic_same   : %g\n", tenv_bench(&run_same, 1)/1000000.0);
+	printf("atomic_sep    : %g\n", tenv_bench(&run_sep, 1)/1000000.0);
 }
 
-TESTNSE(atomic);
+TENV_NSE(atomic);
 #endif
 
 #ifdef TEST_ATOMIC
-TESTNS(cmpxchg);
+TENV_NS(cmpxchg);
 
 void worker(volatile SintPtr *val)
 {
@@ -164,24 +164,24 @@ void run_sep()
 
 void test()
 {
-	printf("cmpxchg_same   :  %g\n", test_bench(&run_same, 1)/1000000.0);
-	printf("cmpxchg_sep    : %g\n", test_bench(&run_sep, 1)/1000000.0);
+	printf("cmpxchg_same   :  %g\n", tenv_bench(&run_same, 1)/1000000.0);
+	printf("cmpxchg_sep    : %g\n", tenv_bench(&run_sep, 1)/1000000.0);
 }
 
-TESTNSE(cmpxchg);
+TENV_NSE(cmpxchg);
 #endif
 
 int main()
 {
-	test_init();
+	tenv_init();
 #ifdef TEST_NOATOMIC
-	TESTRUN(noatomic);
+	TENV_RUN(noatomic);
 #endif
 #ifdef TEST_ATOMIC
-	TESTRUN(atomic);
+	TENV_RUN(atomic);
 #endif
 #ifdef TEST_CMPXCHG
-	TESTRUN(cmpxchg);
+	TENV_RUN(cmpxchg);
 #endif
 	return 0;
 }

@@ -42,7 +42,7 @@
 #include <dr/Subsystem.hxx>
 #include <dr/Exception.hxx>
 
-#include <dr/testenv/testenv.hxx>
+#include <dr/tenv/tenv.hxx>
 
 DR_NS_USE
 
@@ -51,7 +51,7 @@ DR_NS_USE
 
 
 #ifdef TEST_DLOAD
-TESTNS(dload);
+TENV_NS(dload);
 void test()
 {
 	String error;
@@ -68,13 +68,13 @@ void test()
 	xend;
 	printf("load subsys: %p, err = %s\n", sub, ex ? ex->stringify().utf8().toStr() : "none");
 }
-TESTNSE(dload);
+TENV_NSE(dload);
 #endif
 
 int main()
 {
 #ifdef TEST_DLOAD
-	TESTRUN(dload);
+	TENV_RUN(dload);
 #endif
 	return 0;
 }

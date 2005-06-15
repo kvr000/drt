@@ -41,18 +41,18 @@
 #include <dr/MutexCond.hxx>
 #include <dr/DataNotFoundException.hxx>
 
-#include <dr/testenv/testenv.hxx>
+#include <dr/tenv/tenv.hxx>
 
 #include <dr/ThreadSimple.hxx>
 
 DR_NS_USE
-DR_TESTENV_NS_USE
+DR_TENV_NS_USE
 
 
 #define TEST_TMCACHE
 
 #ifdef TEST_TMCACHE
-TESTNS(tmcache);
+TENV_NS(tmcache);
 
 static MutexCond *wcond = MutexCond::create();
 unsigned running = 0;
@@ -103,15 +103,15 @@ void test()
 	}
 }
 
-TESTNSE(tmcache);
+TENV_NSE(tmcache);
 #endif
 
-DR_TESTENV_MAIN()
+DR_TENV_MAIN()
 {
-	test_init();
+	tenv_init();
 	MM::enableThreadCache(1);
 #ifdef TEST_TMCACHE
-	TESTRUN(tmcache);
+	TENV_RUN(tmcache);
 #endif
 	return 0;
 }

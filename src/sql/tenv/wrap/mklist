@@ -1,0 +1,6 @@
+.cdef SD_WRAP	.
+
+SOURCES:
+	no:${SD_WRAP}/mklist:g=t
+	:${SD_WRAP}/CommonTest.cxx:f=cxx;g=s,t,gh,ditenv
+

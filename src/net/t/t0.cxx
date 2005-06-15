@@ -49,18 +49,18 @@
 #include <dr/net/RpcDecoder.hxx>
 #include <dr/net/XmlRpcEncoder.hxx>
 
-#include <dr/testenv/testenv.hxx>
+#include <dr/tenv/tenv.hxx>
 
 DR_IO_NS_USE;
 DR_NET_NS_USE;
-DR_TESTENV_NS_USE
+DR_TENV_NS_USE
 
 
 #define TEST_HTTP
 #define TEST_RPC
 
 #ifdef TEST_HTTP
-TESTNS(http);
+TENV_NS(http);
 
 static void runServer(Ref<SocketServer> sserver)
 {
@@ -103,7 +103,7 @@ void testBasic()
 		createClientServer(&hclient, &hserver_thr);
 		hclient->sendRequest("GET", "/", None(), Null());
 		hclient->readHeaders(NULL);
-		CHECK(hclient->readFullContent() == "resp:");
+		TENV_CHECK(hclient->readFullContent() == "resp:");
 	}
 	xcatch (Exception, ex) {
 		Fatal::plog("http exception: %s\n", ex->stringify().utf8().toStr());
@@ -126,7 +126,7 @@ void testChunked()
 		hclient->partialBodyChunked("next part longer than 16 bytes");
 		hclient->partialFinishBodyChunked();
 		hclient->readHeaders(NULL);
-		CHECK(hclient->readFullContent() == "resp:part0next part longer than 16 bytes");
+		TENV_CHECK(hclient->readFullContent() == "resp:part0next part longer than 16 bytes");
 	}
 	xcatch (Exception, ex) {
 		Fatal::plog("http exception: %s\n", ex->stringify().utf8().toStr());
@@ -150,12 +150,12 @@ void test()
 		}
 	}
 }
-TESTNSE(http);
+TENV_NSE(http);
 #endif
 
 
 #ifdef TEST_RPC
-TESTNS(rpc);
+TENV_NS(rpc);
 
 void test()
 {
@@ -171,38 +171,38 @@ void test()
 	Ref<RpcDecoder> decoder;
 	
 	decoder.setNoref(RpcDecoder::createDecoder(rpc_call));
-	CHECK(decoder->readHeader() == 0);
-	CHECK(decoder->readMethodName() == "some.unknown");
-	CHECK(decoder->readInt32() == 534);
+	TENV_CHECK(decoder->readHeader() == 0);
+	TENV_CHECK(decoder->readMethodName() == "some.unknown");
+	TENV_CHECK(decoder->readInt32() == 534);
 	sz = decoder->readArrayLength();
-	CHECK(decoder->checkArrayNext(&sz));
-	CHECK(decoder->readString() == "bla");
-	CHECK(!decoder->checkArrayNext(&sz));
+	TENV_CHECK(decoder->checkArrayNext(&sz));
+	TENV_CHECK(decoder->readString() == "bla");
+	TENV_CHECK(!decoder->checkArrayNext(&sz));
 	sz = decoder->readStructLength();
-	CHECK(decoder->checkStructNext(&sz));
-	CHECK(decoder->readMemberName() == "id");
-	CHECK(!decoder->readBool());
-	CHECK(decoder->checkStructNext(&sz));
-	CHECK(decoder->readMemberName() == "val");
-	CHECK(decoder->readDouble() == 1.5);
-	CHECK(!decoder->checkStructNext(&sz));
+	TENV_CHECK(decoder->checkStructNext(&sz));
+	TENV_CHECK(decoder->readMemberName() == "id");
+	TENV_CHECK(!decoder->readBool());
+	TENV_CHECK(decoder->checkStructNext(&sz));
+	TENV_CHECK(decoder->readMemberName() == "val");
+	TENV_CHECK(decoder->readDouble() == 1.5);
+	TENV_CHECK(!decoder->checkStructNext(&sz));
 	sz = decoder->readStructLength();
-	CHECK(!decoder->checkStructNext(&sz));
-	CHECK(decoder->readBinary() == "abcd");
-	CHECK(decoder->readTime() == Time::fromSeconds(915190496));
+	TENV_CHECK(!decoder->checkStructNext(&sz));
+	TENV_CHECK(decoder->readBinary() == "abcd");
+	TENV_CHECK(decoder->readTime() == Time::fromSeconds(915190496));
 
 	Blob rpc_resp("<?xml version=\"1.0\"?><methodResponse><params><param><value><string>abcd</string></value></param></params></methodResponse>");
 	decoder.setNoref(RpcDecoder::createDecoder(rpc_resp));
-	CHECK(decoder->readHeader() == 1);
+	TENV_CHECK(decoder->readHeader() == 1);
 	decoder->readMethodResponse();
-	CHECK(decoder->readString() == "abcd");
+	TENV_CHECK(decoder->readString() == "abcd");
 
 	String fault_str;
 	Blob rpc_fault("<?xml version=\"1.0\"?><methodResponse><fault><value><struct><member><name>faultCode</name><value><int>5</int></value></member><member><name>faultString</name><value><string>unknown</string></value></member></struct></value></fault></methodResponse>");
 	decoder.setNoref(RpcDecoder::createDecoder(rpc_fault));
-	CHECK(decoder->readHeader() == 2);
-	CHECK(decoder->readFaultResponse(&fault_str) == 5);
-	CHECK(fault_str == "unknown");
+	TENV_CHECK(decoder->readHeader() == 2);
+	TENV_CHECK(decoder->readFaultResponse(&fault_str) == 5);
+	TENV_CHECK(fault_str == "unknown");
 
 	ERef<RpcEncoder> encoder(new XmlRpcEncoder);
 	encoder->writeHeader();
@@ -226,18 +226,18 @@ void test()
 
 }
 
-TESTNSE(rpc);
+TENV_NSE(rpc);
 #endif
 
 
-DR_TESTENV_MAIN()
+DR_TENV_MAIN()
 {
-	test_init();
+	tenv_init();
 #ifdef TEST_HTTP
-	TESTRUN(http);
+	TENV_RUN(http);
 #endif
 #ifdef TEST_RPC
-	TESTRUN(rpc);
+	TENV_RUN(rpc);
 #endif
 	return 0;
 }

@@ -1,0 +1,6 @@
+.cdef SD_DB		.
+
+SOURCES:
+	no:${SD_DB}/mklist:g=t
+	:${SD_DB}/DbSample0.cxx:f=cxx;g=s,t,gh,ditenv
+

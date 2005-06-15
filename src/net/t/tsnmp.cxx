@@ -37,31 +37,31 @@
 
 #include <dr/net/SnmpAgent.hxx>
 
-#include <dr/testenv/testenv.hxx>
+#include <dr/tenv/tenv.hxx>
 
 DR_IO_NS_USE;
 DR_NET_NS_USE;
-DR_TESTENV_NS_USE
+DR_TENV_NS_USE
 
 
 #define TEST_SNMP
 
 #ifdef TEST_SNMP
-TESTNS(snmp);
+TENV_NS(snmp);
 
 void test()
 {
 	ERef<dr::net::SnmpAgent> agent(new dr::net::SnmpAgent("tsnmp"));
 }
-TESTNSE(snmp);
+TENV_NSE(snmp);
 #endif
 
 
-DR_TESTENV_MAIN()
+DR_TENV_MAIN()
 {
-	test_init();
+	tenv_init();
 #ifdef TEST_SNMP
-	TESTRUN(snmp);
+	TENV_RUN(snmp);
 #endif
 	return 0;
 }

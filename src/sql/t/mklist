@@ -17,7 +17,7 @@ SOURCES:
 	no:mklist:g=t
 	lshlib:dr:g=common
 	lshlib:drsql:g=common
-	lshlib:drtestenv:g=common
+	lshlib:drtenv:g=common
 
 META:
 	vsid:{02C78BA6-8E70-4f87-B187-233DF20F61F4}:g=tlink_drsql

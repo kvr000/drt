@@ -14,7 +14,7 @@ SOURCES:
 	:tgui.cxx:f=cxx;g=tgui,t
 	no:mklist:g=t
 	lshlib:dr:g=tgui
-	lshlib:drtestenv:g=tgui
+	lshlib:drtenv:g=tgui
 	lshlib:drgui:g=tgui
 
 META:

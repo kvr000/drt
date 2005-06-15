@@ -34,8 +34,8 @@ PRESUBS:
 	design
 
 POSTSUBS:
-	testenv
-	t: testenv
+	tenv
+	t: tenv
 
 NEED:
 	cxx

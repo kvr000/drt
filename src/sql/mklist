@@ -11,7 +11,8 @@
 
 POSTSUBS:
 	t
-	mysql5
+	tenv
+	mysql5: tenv
 	sqldump_filt
 
 NEED:

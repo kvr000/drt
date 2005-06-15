@@ -33,16 +33,16 @@
  * @license	http://www.gnu.org/licenses/lgpl.txt GNU Lesser General Public License v3
  **/
 
-#include <dr/testenv/testenv.hxx>
+#include <dr/tenv/tenv.hxx>
 
 #include <dr/io/def_io.hxx>
 
 DR_IO_NS_USE
-DR_TESTENV_NS_USE
+DR_TENV_NS_USE
 
 
 int main(void)
 {
-	test_init();
+	tenv_init();
 	return 0;
 }

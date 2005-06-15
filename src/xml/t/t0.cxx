@@ -48,17 +48,17 @@
 #include <dr/xml/XmlElement.hxx>
 #include <dr/xml/XmlSubsystem.hxx>
 
-#include <dr/testenv/testenv.hxx>
+#include <dr/tenv/tenv.hxx>
 
 DR_XML_NS_USE;
-DR_TESTENV_NS_USE
+DR_TENV_NS_USE
 
 
 #define TEST_XML
 #define TEST_MULTIXML
 
 #ifdef TEST_XML
-TESTNS(xml);
+TENV_NS(xml);
 
 static void handleEla(XmlElement *el)
 {
@@ -90,12 +90,12 @@ void test()
 	}
 	xend;
 }
-TESTNSE(xml);
+TENV_NSE(xml);
 #endif
 
 
 #ifdef TEST_MULTIXML
-TESTNS(multixml);
+TENV_NS(multixml);
 
 void test()
 {
@@ -114,9 +114,9 @@ void test()
 		tf.setNull();
 		ERef<XmlSubsystem> xmlss(XmlSubsystem::getImpl(Null()));
 		RArray<XmlDoc> docs;
-		CHECK(xmlss->createMultiDocFromFile(&docs, "testfile.xml") == 2);
-		CHECK(tref(docs[0]->findPathElement("/Data/El"))->getTexts() == "Cont0");
-		CHECK(tref(docs[1]->findPathElement("/Data/El"))->getTexts() == "Cont1");
+		TENV_CHECK(xmlss->createMultiDocFromFile(&docs, "testfile.xml") == 2);
+		TENV_CHECK(tref(docs[0]->findPathElement("/Data/El"))->getTexts() == "Cont0");
+		TENV_CHECK(tref(docs[1]->findPathElement("/Data/El"))->getTexts() == "Cont1");
 		dr::io::File::unlink("testfile.xml");
 	}
 	xcatch (Exception, ex) {
@@ -124,16 +124,16 @@ void test()
 	}
 	xend;
 }
-TESTNSE(multixml);
+TENV_NSE(multixml);
 #endif
 
-DR_TESTENV_MAIN()
+DR_TENV_MAIN()
 {
 #ifdef TEST_XML
-	TESTRUN(xml);
+	TENV_RUN(xml);
 #endif
 #ifdef TEST_MULTIXML
-	TESTRUN(multixml);
+	TENV_RUN(multixml);
 #endif
 	return 0;
 }

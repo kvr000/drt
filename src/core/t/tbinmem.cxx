@@ -42,10 +42,10 @@
 #include <dr/BinaryMemWriter.hxx>
 #include <dr/EndOfDataException.hxx>
 
-#include <dr/testenv/testenv.hxx>
+#include <dr/tenv/tenv.hxx>
 
 DR_NS_USE
-DR_TESTENV_NS_USE
+DR_TENV_NS_USE
 
 
 #define TEST_READER
@@ -53,7 +53,7 @@ DR_TESTENV_NS_USE
 #define TEST_LEBE
 
 #ifdef TEST_LEBE
-TESTNS(lebe);
+TENV_NS(lebe);
 void test()
 {
 	char in[5] = { 1, 2, 3, 4, 5 };
@@ -66,14 +66,14 @@ void test()
 	Mem::copyLe(out_c, in, sizeof(in));
 	Mem::copyBe(out_n, in, sizeof(in));
 #endif
-	CHECK(memcmp(out_n, "\x01\x02\x03\x04\x05", sizeof(in)) == 0);
-	CHECK(memcmp(out_c, "\x05\x04\x03\x02\x01", sizeof(in)) == 0);
+	TENV_CHECK(memcmp(out_n, "\x01\x02\x03\x04\x05", sizeof(in)) == 0);
+	TENV_CHECK(memcmp(out_c, "\x05\x04\x03\x02\x01", sizeof(in)) == 0);
 }
-TESTNSE(lebe);
+TENV_NSE(lebe);
 #endif
 
 #ifdef TEST_READER
-TESTNS(reader);
+TENV_NS(reader);
 void test()
 {
 	bool excepted;
@@ -91,16 +91,16 @@ void test()
 			);
 	BinaryMemReader mr(&parse_data);
 
-	CHECK(mr.readLe64("le") == 0x0807060504030201ULL);
-	CHECK(mr.readLe32("le") == 0x04030201UL);
-	CHECK(mr.readLe16("le") == 0x0201UL);
-	CHECK(mr.readLe8("le") == 0x01UL);
-	CHECK(mr.readBe64("be") == 0x0102030405060708ULL);
-	CHECK(mr.readBe32("be") == 0x001020304UL);
-	CHECK(mr.readBe16("be") == 0x0102UL);
-	CHECK(mr.readBe8("be") == 0x01UL);
-	CHECK(mr.readVarint64("varint") == 0x0807060504030201ULL);
-	CHECK(mr.readBytes(3, "str") == Blob("kra"));
+	TENV_CHECK(mr.readLe64("le") == 0x0807060504030201ULL);
+	TENV_CHECK(mr.readLe32("le") == 0x04030201UL);
+	TENV_CHECK(mr.readLe16("le") == 0x0201UL);
+	TENV_CHECK(mr.readLe8("le") == 0x01UL);
+	TENV_CHECK(mr.readBe64("be") == 0x0102030405060708ULL);
+	TENV_CHECK(mr.readBe32("be") == 0x001020304UL);
+	TENV_CHECK(mr.readBe16("be") == 0x0102UL);
+	TENV_CHECK(mr.readBe8("be") == 0x01UL);
+	TENV_CHECK(mr.readVarint64("varint") == 0x0807060504030201ULL);
+	TENV_CHECK(mr.readBytes(3, "str") == Blob("kra"));
 	excepted = false;
 	xtry {
 		mr.readLe8("except");
@@ -110,14 +110,14 @@ void test()
 		excepted = true;
 	}
 	xend;
-	CHECK(excepted);
+	TENV_CHECK(excepted);
 }
-TESTNSE(reader);
+TENV_NSE(reader);
 #endif
 
 
 #ifdef TEST_WRITER
-TESTNS(writer);
+TENV_NS(writer);
 void test()
 {
 	bool excepted;
@@ -156,24 +156,24 @@ void test()
 		excepted = true;
 	}
 	xend;
-	CHECK(excepted);
-	CHECK(dataw == parse_data);
+	TENV_CHECK(excepted);
+	TENV_CHECK(dataw == parse_data);
 }
-TESTNSE(writer);
+TENV_NSE(writer);
 #endif
 
 
-DR_TESTENV_MAIN()
+DR_TENV_MAIN()
 {
-	test_init();
+	tenv_init();
 #ifdef TEST_READER
-	TESTRUN(reader);
+	TENV_RUN(reader);
 #endif
 #ifdef TEST_WRITER
-	TESTRUN(writer);
+	TENV_RUN(writer);
 #endif
 #ifdef TEST_LEBE
-	TESTRUN(lebe);
+	TENV_RUN(lebe);
 #endif
 	return 0;
 }

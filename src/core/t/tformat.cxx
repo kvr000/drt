@@ -41,16 +41,16 @@
 #include <dr/ThreadSimple.hxx>
 #include <dr/String.hxx>
 
-#include <dr/testenv/testenv.hxx>
+#include <dr/tenv/tenv.hxx>
 
 DR_NS_USE
-DR_TESTENV_NS_USE
+DR_TENV_NS_USE
 
 
 #define TEST_FORMAT
 
 #ifdef TEST_FORMAT
-TESTNS(format);
+TENV_NS(format);
 
 #define TEST_FORMAT_BREAK() printf("\n")
 #define TEST_FORMAT_FLT(fstr) printf("%s: =%s="fstr"=\n", fstr, (const char *)String::formats(fstr, 53253240.0).ascii(), 53253240.0)
@@ -108,14 +108,14 @@ void test()
 	TEST_FORMAT_STR("%s");
 	TEST_FORMAT_BREAK();
 }
-TESTNSE(format);
+TENV_NSE(format);
 #endif
 
 int main()
 {
-	test_init();
+	tenv_init();
 #ifdef TEST_FORMAT
-	TESTRUN(format);
+	TENV_RUN(format);
 #endif
 	return 0;
 }

@@ -37,10 +37,10 @@
 
 #include <dr/Object.hxx>
 
-#include <dr/testenv/testenv.hxx>
+#include <dr/tenv/tenv.hxx>
 
 DR_NS_USE
-DR_TESTENV_NS_USE
+DR_TENV_NS_USE
 
 
 class DR_EXPORT_CLS tObjectInfo: public Object
@@ -57,7 +57,7 @@ void tObjectInfo::printInfo()
 
 int main(void)
 {
-	test_init();
+	tenv_init();
 	tObjectInfo::printInfo();
 	return 0;
 }

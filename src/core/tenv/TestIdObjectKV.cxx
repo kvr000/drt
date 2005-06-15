@@ -36,37 +36,39 @@
 #include <dr/Const.hxx>
 #include <dr/Ref.hxx>
 
-#include <dr/testenv/TestObjectKV.hxx>
+#include <dr/tenv/TestIdObjectKV.hxx>
 
-#include "_gen/TestObjectKV-def.hxx"
+#include "_gen/TestIdObjectKV-def.hxx"
 
 /*drt
- * include:	dr/testenv/def_testenv.hxx
+ * include:	dr/tenv/def.hxx
  * include: 	dr/Object.hxx
- * ns:		dr::testenv
+ * ns:		dr::tenv
  */
 
-DR_TESTENV_NS_BEGIN
+DR_TENV_NS_BEGIN
 
 
 /*drt
- * class:	TestObjectKV::Key
+ * class:	TestIdObjectKV::Key
  * ancestor:	dr::Object
  * ifaces:
+ *
  * ap: int				id;
  */
 
 DR_MET(public)
-TestObjectKV::Key::Key(int id_):
+TestIdObjectKV::Key::Key(int id_):
 	id(id_)
 {
 }
 
 
 /*drt
- * class:	TestObjectKV
+ * class:	TestIdObjectKV
  * ancestor:	dr::Object
  * ifaces:	
+ *
  * at:	int				id;
  * at:	String				value;
  * at:	static Refcnt			living_count;
@@ -74,10 +76,10 @@ TestObjectKV::Key::Key(int id_):
  * use:		dr
  */
 
-Refcnt TestObjectKV::living_count = 0;
+Refcnt TestIdObjectKV::living_count = 0;
 
 DR_MET(public)
-TestObjectKV::TestObjectKV(int id_, const String &value_):
+TestIdObjectKV::TestIdObjectKV(int id_, const String &value_):
 	id(id_),
 	value(value_)
 {
@@ -85,39 +87,39 @@ TestObjectKV::TestObjectKV(int id_, const String &value_):
 }
 
 DR_MET(virtual protected)
-TestObjectKV::~TestObjectKV()
+TestIdObjectKV::~TestIdObjectKV()
 {
 	living_count--;
 }
 
 DR_MET(public virtual)
-int TestObjectKV::getId()
+int TestIdObjectKV::getId()
 {
 	return id;
 }
 
 DR_MET(public virtual)
-String TestObjectKV::getValue()
+String TestIdObjectKV::getValue()
 {
 	return value;
 }
 
 DR_MET(public static)
-int TestObjectKV::countLiving()
+int TestIdObjectKV::countLiving()
 {
 	return living_count;
 }
 
 DR_MET(public virtual)
-long TestObjectKV::hash() const
+long TestIdObjectKV::hash() const
 {
 	return id^value.getHash();
 }
 
 DR_MET(public virtual)
-bool TestObjectKV::eq(const Iface *second) const
+bool TestIdObjectKV::eq(const Iface *second) const
 {
-	if (TestObjectKV *seco = (TestObjectKV *)second->accCheckFinal(comp_name)) {
+	if (TestIdObjectKV *seco = (TestIdObjectKV *)second->accCheckFinal(comp_name)) {
 		return id == seco->id && value.beq(seco->value);
 	}
 	else {
@@ -126,9 +128,9 @@ bool TestObjectKV::eq(const Iface *second) const
 }
 
 DR_MET(public virtual)
-int TestObjectKV::cmp(const Iface *second) const
+int TestIdObjectKV::cmp(const Iface *second) const
 {
-	if (TestObjectKV *seco = (TestObjectKV *)second->accCheckFinal(comp_name)) {
+	if (TestIdObjectKV *seco = (TestIdObjectKV *)second->accCheckFinal(comp_name)) {
 		return id == seco->id ? value.bcmp(seco->value) : id < seco->id ? -1 : 1;
 	}
 	else {
@@ -137,20 +139,20 @@ int TestObjectKV::cmp(const Iface *second) const
 }
 
 DR_MET(public virtual)
-long TestObjectKV::keyHash(int key_id) const
+long TestIdObjectKV::keyHash(int key_id) const
 {
 	return id;
 }
 
 DR_MET(public virtual)
-bool TestObjectKV::keyEq(const Iface *second, int key_id) const
+bool TestIdObjectKV::keyEq(const Iface *second, int key_id) const
 {
 	if (key_id != 0)
 		return Super::keyEq(second, key_id);
-	if (TestObjectKV::Key *seck = (TestObjectKV::Key *)second->accCheckFinal(Key::comp_name)) {
+	if (TestIdObjectKV::Key *seck = (TestIdObjectKV::Key *)second->accCheckFinal(Key::comp_name)) {
 		return id == seck->id;
 	}
-	else if (TestObjectKV *seco = (TestObjectKV *)second->accCheckFinal(comp_name)) {
+	else if (TestIdObjectKV *seco = (TestIdObjectKV *)second->accCheckFinal(comp_name)) {
 		return id == seco->id;
 	}
 	else {
@@ -159,14 +161,14 @@ bool TestObjectKV::keyEq(const Iface *second, int key_id) const
 }
 
 DR_MET(public virtual)
-int TestObjectKV::keyCmp(const Iface *second, int key_id) const
+int TestIdObjectKV::keyCmp(const Iface *second, int key_id) const
 {
 	if (key_id != 0)
 		return Super::keyCmp(second, key_id);
-	if (TestObjectKV::Key *seck = (TestObjectKV::Key *)second->accCheckFinal(Key::comp_name)) {
+	if (TestIdObjectKV::Key *seck = (TestIdObjectKV::Key *)second->accCheckFinal(Key::comp_name)) {
 		return id == seck->id ? 0 : id < seck->id ? -1 : 1;
 	}
-	else if (TestObjectKV *seco = (TestObjectKV *)second->accCheckFinal(comp_name)) {
+	else if (TestIdObjectKV *seco = (TestIdObjectKV *)second->accCheckFinal(comp_name)) {
 		return id == seco->id ? 0 : id < seco->id ? -1 : 1;
 	}
 	else {
@@ -175,4 +177,4 @@ int TestObjectKV::keyCmp(const Iface *second, int key_id) const
 }
 
 
-DR_TESTENV_NS_END
+DR_TENV_NS_END

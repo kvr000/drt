@@ -46,17 +46,17 @@
 #include <dr/config/RowAssignConfig.hxx>
 #include <dr/config/IniConfig.hxx>
 
-#include <dr/testenv/testenv.hxx>
+#include <dr/tenv/tenv.hxx>
 
 DR_CONFIG_NS_USE;
-DR_TESTENV_NS_USE
+DR_TENV_NS_USE
 
 
 #define TEST_ROWASSIGN
 #define TEST_INI
 
 #ifdef TEST_ROWASSIGN
-TESTNS(rowassign);
+TENV_NS(rowassign);
 void test()
 {
 	xtry {
@@ -70,40 +70,40 @@ void test()
 	}
 	xend;
 }
-TESTNSE(rowassign);
+TENV_NSE(rowassign);
 #endif
 
 #ifdef TEST_INI
-TESTNS(ini);
+TENV_NS(ini);
 void test()
 {
 	xtry {
 		ERef<IniConfig> ini(new IniConfig("testconf.ini"));
-		CHECK(ini->getValue("", "invalid", Null()) == String(Null()));
-		CHECK(ini->getValue("", "gl0") == "glob0");
-		CHECK(ini->getValue("main/sub", "gl1") == "glob1");
-		CHECK(ini->getValue("sub", "s1") == "sub");
-		CHECK(ini->getValue("main/sub", "s1") == "main");
-		CHECK(ini->getValue("main/sub", "s0") == "sub");
-		CHECK(tref(ini->getSection("main/sub"))->getValue("s0") == "sub");
+		TENV_CHECK(ini->getValue("", "invalid", Null()) == String(Null()));
+		TENV_CHECK(ini->getValue("", "gl0") == "glob0");
+		TENV_CHECK(ini->getValue("main/sub", "gl1") == "glob1");
+		TENV_CHECK(ini->getValue("sub", "s1") == "sub");
+		TENV_CHECK(ini->getValue("main/sub", "s1") == "main");
+		TENV_CHECK(ini->getValue("main/sub", "s0") == "sub");
+		TENV_CHECK(tref(ini->getSection("main/sub"))->getValue("s0") == "sub");
 	}
 	xcatch (Exception, ex) {
 		printf("caught exception: %s\n", ex->stringify().utf8().toStr());
-		CHECK(0);
+		TENV_CHECK(0);
 	}
 	xend;
 }
-TESTNSE(ini);
+TENV_NSE(ini);
 #endif
 
-DR_TESTENV_MAIN()
+DR_TENV_MAIN()
 {
-	test_init();
+	tenv_init();
 #ifdef TEST_ROWASSIGN
-	TESTRUN(rowassign);
+	TENV_RUN(rowassign);
 #endif
 #ifdef TEST_INI
-	TESTRUN(ini);
+	TENV_RUN(ini);
 #endif
 	return 0;
 }

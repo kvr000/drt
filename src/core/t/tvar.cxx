@@ -36,51 +36,51 @@
 #include <dr/Ref.hxx>
 #include <dr/Variant.hxx>
 
-#include <dr/testenv/testenv.hxx>
+#include <dr/tenv/tenv.hxx>
 
 DR_NS_USE
-DR_TESTENV_NS_USE
+DR_TENV_NS_USE
 
 #define TEST_VARIANT
 #define TEST_EQ
 
 #ifdef TEST_VARIANT
-TESTNS(variant);
+TENV_NS(variant);
 void test()
 {
 	ERef<Variant> var0(new Variant(false));
 }
-TESTNSE(variant);
+TENV_NSE(variant);
 #endif
 
 
 #ifdef TEST_EQ
-TESTNS(eq);
+TENV_NS(eq);
 void test()
 {
-	CHECK(tref(new Variant(BString(Null())))->eq(tref(new Variant(BString(Null())))));
-	CHECK(tref(new Variant(Null()))->eq(tref(new Variant(BString(Null())))));
-	CHECK(tref(new Variant(BString(Null())))->eq(tref(new Variant(Null()))));
-	CHECK(!tref(new Variant(Null()))->eq(tref(new Variant(BString("0")))));
-	CHECK(!tref(new Variant(BString(Null())))->eq(tref(new Variant(BString("0")))));
-	CHECK(!tref(new Variant(BString("")))->eq(tref(new Variant(BString("0")))));
-	CHECK(tref(new Variant((Sint64)0))->eq(tref(new Variant(BString("0")))));
-	CHECK(!tref(new Variant((Sint64)0))->eq(tref(new Variant(BString("1")))));
-	CHECK(!tref(new Variant((Sint64)0))->eq(tref(new Variant(BString("")))));
-	CHECK(!tref(new Variant(BString("")))->eq(tref(new Variant((Sint64)0))));
+	TENV_CHECK(tref(new Variant(BString(Null())))->eq(tref(new Variant(BString(Null())))));
+	TENV_CHECK(tref(new Variant(Null()))->eq(tref(new Variant(BString(Null())))));
+	TENV_CHECK(tref(new Variant(BString(Null())))->eq(tref(new Variant(Null()))));
+	TENV_CHECK(!tref(new Variant(Null()))->eq(tref(new Variant(BString("0")))));
+	TENV_CHECK(!tref(new Variant(BString(Null())))->eq(tref(new Variant(BString("0")))));
+	TENV_CHECK(!tref(new Variant(BString("")))->eq(tref(new Variant(BString("0")))));
+	TENV_CHECK(tref(new Variant((Sint64)0))->eq(tref(new Variant(BString("0")))));
+	TENV_CHECK(!tref(new Variant((Sint64)0))->eq(tref(new Variant(BString("1")))));
+	TENV_CHECK(!tref(new Variant((Sint64)0))->eq(tref(new Variant(BString("")))));
+	TENV_CHECK(!tref(new Variant(BString("")))->eq(tref(new Variant((Sint64)0))));
 }
-TESTNSE(eq);
+TENV_NSE(eq);
 #endif
 
 
 int main()
 {
-	test_init();
+	tenv_init();
 #ifdef TEST_VARIANT
-	TESTRUN(variant);
+	TENV_RUN(variant);
 #endif
 #ifdef TEST_EQ
-	TESTRUN(eq);
+	TENV_RUN(eq);
 #endif
 	return 0;
 }

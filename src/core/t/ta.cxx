@@ -36,7 +36,7 @@
 #include <dr/Alloc.hxx>
 #include <dr/Shared.hxx>
 
-#include <dr/testenv/testenv.hxx>
+#include <dr/tenv/tenv.hxx>
 
 DR_NS_USE
 

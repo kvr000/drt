@@ -35,12 +35,12 @@
 
 #include <stdio.h>
 
-#include <dr/testenv/testenv.hxx>
+#include <dr/tenv/tenv.hxx>
 #include <dr/Assert.hxx>
 #include <dr/MethodConv.hxx>
 
 DR_NS_USE
-DR_TESTENV_NS_USE
+DR_TENV_NS_USE
 
 
 class C0;
@@ -81,7 +81,7 @@ public:
 
 int main(void)
 {
-	test_init();
+	tenv_init();
 	DR_Assert(MethodConv::funcToMptr(MethodConv::methodToFptr(&O::pmeth0)) == &O::pmeth0);
 	DR_Assert(MethodConv::funcToMptr(MethodConv::methodToFptr(&O::vmeth0)) == &O::vmeth0);
 	DR_Assert(MethodConv::funcToMptr(MethodConv::methodToFptr(&O::pmeth1)) == &O::pmeth1);

@@ -1,0 +1,6 @@
+.cdef SD_COMMON		.
+
+SOURCES:
+	no:${SD_COMMON}/mklist:g=t
+	:${SD_COMMON}/TestUnique.cxx:f=cxx;g=s,t,gh,ditenv
+

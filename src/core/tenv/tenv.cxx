@@ -50,19 +50,20 @@
 #endif
 #endif
 
+#include <dr/x_kw.hxx>
 #include <dr/types.hxx>
 #include <dr/Assert.hxx>
 #include <dr/Array.hxx>
 #include <dr/ThreadSimple.hxx>
 
-#include <dr/testenv/testenv.hxx>
+#include <dr/tenv/tenv.hxx>
 
-DR_TESTENV_NS_BEGIN
+DR_TENV_NS_BEGIN
 
 
 #if (defined DR_OS_UNIX) && (!defined DR_OS_WNT)
 
-void test_handle_req(int n)
+void tenv_handle_req(int n)
 {
 	(void)n;
 	Fatal::printFailed("");
@@ -70,7 +71,7 @@ void test_handle_req(int n)
 
 #endif
 
-void test_init()
+void tenv_init()
 {
 	srand(time(NULL));
 #if (defined DR_OS_WCE)
@@ -78,11 +79,11 @@ void test_init()
 #endif
 	Fatal::setDebug("ts");
 #if (defined DR_OS_UNIX) && (!defined DR_OS_WNT)
-	signal(SIGINT, &test_handle_req);
+	signal(SIGINT, &tenv_handle_req);
 #endif
 }
 
-long test_bench(const Eslot0<void> &run, long count)
+long tenv_bench(const Eslot0<void> &run, long count)
 {
 	int i;
 #if (defined DR_OS_UNIX) && (!defined DR_OS_WNT)
@@ -106,13 +107,25 @@ long test_bench(const Eslot0<void> &run, long count)
 #endif
 }
 
-static void test_parbench_performer(const Eslot0<void> run, long count)
+void tenv_run(const char *name, const Eslot0<void> &run)
+{
+	xtry {
+		run();
+	}
+	xcatch (dr::Exception, ex) {
+		Fatal::plog("Unhandled exception in %s: %s\n", name, ex->stringify().utf8().toStr());
+		xthrowmove(ex.getAndNull());
+	}
+	xend;
+}
+
+static void tenv_parbench_performer(const Eslot0<void> run, long count)
 {
 	for (long i = 0; i < count; i++)
 		run();
 }
 
-long test_parbench(int num_threads, const Eslot0<void> &run, long count)
+long tenv_parbench(int num_threads, const Eslot0<void> &run, long count)
 {
 	int ti;
 	RArray<ThreadSimple> threads;
@@ -128,7 +141,7 @@ long test_parbench(int num_threads, const Eslot0<void> &run, long count)
 
 	if (num_threads < 0)
 		num_threads = 8;
-	Eslot2<void, Eslot0<void>, long> performer(&test_parbench_performer);
+	Eslot2<void, Eslot0<void>, long> performer(&tenv_parbench_performer);
 	for (ti = 0; ti < num_threads; ti++) {
 		threads.append(tref(ThreadSimple::go(performer.a1Set(run).a1Set(count))));
 	}
@@ -147,13 +160,13 @@ long test_parbench(int num_threads, const Eslot0<void> &run, long count)
 #endif
 }
 
-void test_abort()
+void tenv_abort()
 {
 	Fatal::printFailed("");
 	abort();
 }
 
-DR_TESTENV_PUB void test_sleep(long time)
+DR_TENV_PUB void tenv_sleep(long time)
 {
 #ifdef DR_OS_WNT
 	Sleep(time*1000);
@@ -163,4 +176,4 @@ DR_TESTENV_PUB void test_sleep(long time)
 }
 
 
-DR_TESTENV_NS_END
+DR_TENV_NS_END

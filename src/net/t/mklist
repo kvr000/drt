@@ -20,7 +20,7 @@ SOURCES:
 	lshlib:dr:g=common
 	lshlib:drio:g=common
 	lshlib:drnet:g=common
-	lshlib:drtestenv:g=common
+	lshlib:drtenv:g=common
 
 META:
 	vsid:{5941BE5B-7938-4b8b-A6ED-83E7C6A5E51F}:g=tlink_drnet

@@ -36,29 +36,29 @@
 #include <dr/Const.hxx>
 #include <dr/Time.hxx>
 
-#include <dr/testenv/testenv.hxx>
+#include <dr/tenv/tenv.hxx>
 
 DR_NS_USE
-DR_TESTENV_NS_USE
+DR_TENV_NS_USE
 
 
 #define	TEST_TIME_INVALID
 
 
 #ifdef TEST_TIME_INVALID
-TESTNS(time_invalid);
+TENV_NS(time_invalid);
 void test()
 {
 	Fatal::plog("%llx\n", Time::INVAL_TIME);
 }
-TESTNSE(time_invalid);
+TENV_NSE(time_invalid);
 #endif
 
-DR_TESTENV_MAIN()
+DR_TENV_MAIN()
 {
-	test_init();
+	tenv_init();
 #ifdef TEST_TIME_INVALID
-	TESTRUN(time_invalid);
+	TENV_RUN(time_invalid);
 #endif
 	return 0;
 }

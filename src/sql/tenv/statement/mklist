@@ -1,0 +1,6 @@
+.cdef SD_STATEMENT	.
+
+SOURCES:
+	no:${SD_STATEMENT}/mklist:g=t
+	:${SD_STATEMENT}/TestStatementSeek.cxx:f=cxx;g=s,t,gh,ditenv
+

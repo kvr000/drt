@@ -45,16 +45,15 @@
 #include <dr/io/Directory.hxx>
 #include <dr/serv/io/DirProcessingWriter.hxx>
 
-#include <dr/testenv/testenv.hxx>
-#include <dr/testenv/TestObject.hxx>
+#include <dr/tenv/tenv.hxx>
 
-DR_TESTENV_NS_USE
+DR_TENV_NS_USE
 
 
 #define TEST_DIRPROC
 
 #ifdef TEST_DIRPROC
-TESTNS(dirproc);
+TENV_NS(dirproc);
 
 void test()
 {
@@ -64,14 +63,14 @@ void test()
 
 	dpw->putContent("bla");
 }
-TESTNSE(dirproc);
+TENV_NSE(dirproc);
 #endif
 
-DR_TESTENV_MAIN()
+DR_TENV_MAIN()
 {
-	test_init();
+	tenv_init();
 #ifdef TEST_DIRPROC
-	TESTRUN(dirproc);
+	TENV_RUN(dirproc);
 #endif
 	return 0;
 }
