@@ -12,6 +12,7 @@ OUTPUT:
 	exec:tbench_dyn:f=exec;s=tbench_dyn,common;r=test,bench
 	exec:tbench_atomic:f=exec;s=tbench_atomic,common;r=test,bench
 	exec:tbench_strind:f=exec;s=tbench_strind,common;r=test,bench
+	exec:tbench_strconstr:f=exec;s=tbench_strconstr,common;r=test,bench
 	exec:tbench_smp:f=exec;s=tbench_smp,common;r=test,bench
 	exec:tformat:f=exec;s=tformat,common;r=test
 	exec:tinfo:f=exec;s=tinfo,common;r=test
@@ -34,6 +35,7 @@ SOURCES:
 	:tlink_dr.cxx:f=cxx;g=tlink_dr,t
 	:tbench_dyn.cxx:f=cxx;g=tbench_dyn,t
 	:tbench_atomic.cxx:f=cxx;g=tbench_atomic,t
+	:tbench_strconstr.cxx:f=cxx;g=tbench_strconstr,t
 	:tbench_strind.cxx:f=cxx;g=tbench_strind,t
 	:tbench_smp.cxx:f=cxx;g=tbench_smp,t
 	:tformat.cxx:f=cxx;g=tformat,t
@@ -61,6 +63,7 @@ META:
 	vsid:{18D76038-D144-4886-806C-331F91F05FD5}:g=tbench_dyn
 	vsid:{781179E9-ADD7-4faf-8B68-76727298EF70}:g=tbench_atomic
 	vsid:{89AAA2CA-D93B-45ab-BD1E-897CF9932936}:g=tbench_strind
+	vsid:{DF67988C-6AF2-45E1-A816-8DADBD45CBF1}:g=tbench_strconstr
 	vsid:{0ACC2B90-24BF-49fc-B6BA-F017883F7F30}:g=tbench_smp
 	vsid:{A122A318-A69A-4efb-9E40-5B8A0AF550B2}:g=tformat
 	vsid:{E132A8F9-1FB8-4e1c-9855-CAE467D1A4D4}:g=tinfo

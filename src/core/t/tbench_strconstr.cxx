@@ -44,39 +44,24 @@ DR_NS_USE
 DR_TENV_NS_USE
 
 
-TENV_NS(strind);
+TENV_NS(strconstr);
 
-void run_find()
+static Sint64 i = 0;
+void run_strconstr()
 {
-	String strings[] = { "bla", "kra", "sehy", "bflm" };
-	String bla_str("bla");
-	StringIndex si(sizeof(strings)/sizeof(strings[0]), strings);
-	for (int i = 0; i < 32*1024*1024; i++) {
-		si.find(bla_str);
-	}
-}
-
-void run_findXchg()
-{
-	String strings[] = { "bla", "kra", "sehy", "bflm" };
-	String bla_str("bla");
-	StringIndex si(sizeof(strings)/sizeof(strings[0]), strings);
-	for (int i = 0; i < 32*1024*1024; i++) {
-		si.findXchg(bla_str);
-	}
+	BString(BString::createNumber(i++));
 }
 
 void test()
 {
-	printf("findXchg: %g\n", tenv_bench(&run_findXchg, 1)/1000000.0);
-	printf("find: %g\n", tenv_bench(&run_find, 1)/1000000.0);
+	printf("strconstr: %g\n", tenv_bench(&run_strconstr, 2000000)/1000000.0);
 }
 
-TENV_NSE(strind);
+TENV_NSE(strconstr);
 
 int main()
 {
 	tenv_init();
-	TENV_RUN(strind);
+	TENV_RUN(strconstr);
 	return 0;
 }

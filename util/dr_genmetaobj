@@ -189,6 +189,11 @@ foreach my $model (@models) {
 				$form->print(tabalign("$_", 16).$model->getDrTagValue($_)."\n");
 			}
 		}
+		else {
+			foreach (qw(req_get req_set req_new req_del)) {
+				$form->print(tabalign("$_", 16)."guest\n");
+			}
+		}
 		foreach (qw(trigger_set trigger_new trigger_del)) {
 			if (defined (my $v = $model->checkDrTagValue($_))) {
 				$form->print(tabalign("$_", 16).$model->getDrTagValue($_)."\n");
