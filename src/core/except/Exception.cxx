@@ -45,7 +45,7 @@ DR_THROW_IMPL_SIMPLE(Exception);
 
 String Exception::stringify() const
 {
-	return "unknown exception occured";
+	return String("unknown exception occured: ")+classname();
 }
 
 
