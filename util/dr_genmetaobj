@@ -210,7 +210,7 @@ foreach my $model (@models) {
 	foreach my $view (@{$model->{view_list}}) {
 		eval {
 			$form->print(tabalign("view", 16).$view->{name}."\n");
-			foreach (qw(nocompos suggest supplier renderer addcompos iniclass gui_filter)) {
+			foreach (qw(nocompos suggest supplier renderer addcompos iniclass gui_filter view_attrs)) {
 				if (defined (my $v = $view->checkDrTagValue($_))) {
 					$form->print(tabalign("\t$_", 24).$v."\n")
 				}
@@ -259,6 +259,9 @@ foreach my $model (@models) {
 				$form->print(tabalign("\ttype", 24).translateFormType($attr)."\n");
 				$form->print(tabalign("\tlogical", 24).$tagger->getTag("logical")->{value}."\n");
 				$form->print(tabalign("\tdisplay", 24).$tagger->getTag("display")->{value}."\n");
+				if (defined (my $handling = $tagger->checkTagValue("handling"))) {
+					$form->print(tabalign("\thandling", 24).$handling."\n");
+				}
 			}
 			elsif ($attr->{stype} eq "assoc") {
 				my @tprimary = $attr->expandAssocAttrs();

@@ -71,7 +71,7 @@ CommonTest::~CommonTest()
 }
 
 DR_MET(public virtual)
-void CommonTest::test()
+void CommonTest::test(const String &arg DR_INIT(= Null()))
 {
 	tref(new TestUnique(tref(db_pool->getConnectionPing())))->test();
 	tref(new TestStatementSeek(tref(db_pool->getConnectionPing())))->test();

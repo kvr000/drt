@@ -70,7 +70,7 @@ TestUnique::~TestUnique()
 }
 
 DR_MET(public virtual)
-void TestUnique::test()
+void TestUnique::test(const String &arg DR_INIT(= Null()))
 {
 	db_sample0->removeAll();
 

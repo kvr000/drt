@@ -69,7 +69,7 @@ TestStatementSeek::~TestStatementSeek()
 }
 
 DR_MET(public virtual)
-void TestStatementSeek::test()
+void TestStatementSeek::test(const String &arg DR_INIT(= Null()))
 {
 	db_sample0->removeAll();
 

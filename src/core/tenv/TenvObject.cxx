@@ -65,7 +65,7 @@ TenvObject::~TenvObject()
 }
 
 DR_MET(public virtual abstract)
-//void TenvObject::test()
+//void TenvObject::test(const String &arg = DR_INIT(Null()))
 
 
 DR_TENV_NS_END
