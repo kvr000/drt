@@ -270,7 +270,7 @@ void Statement_mysql5::executeUpdate()
 retry:
 	if (par_bindings.count()) {
 		if (mysql_stmt_param_count(stmt) != par_bindings.count())
-			xthrownew(SqlException(-1, "missing binding"));
+			xthrownew(SqlException(-1, String("missing binding to ")+stmt_str));
 		if (mysql_stmt_bind_param(stmt, &par_bindings[0]) != 0) {
 			Connection_mysql5::throwSqlExcept(mysql_stmt_sqlstate(stmt), mysql_stmt_error(stmt));
 		}
@@ -293,7 +293,7 @@ ResultSet *Statement_mysql5::executeQuery()
 retry:
 	if (par_bindings.count()) {
 		if (mysql_stmt_param_count(stmt) != par_bindings.count())
-			xthrownew(SqlException(-1, "missing binding"));
+			xthrownew(SqlException(-1, String("missing binding to ")+stmt_str));
 		if (mysql_stmt_bind_param(stmt, &par_bindings[0]) != 0) {
 			Connection_mysql5::throwSqlExcept(mysql_stmt_sqlstate(stmt), mysql_stmt_error(stmt));
 		}
