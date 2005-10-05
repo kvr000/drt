@@ -93,7 +93,7 @@ protected:
 	int				version_major;
 	int				version_minor;
 	size_t				length_add;
-	const unsigned char *		empty_el;
+	const unsigned char *		empty_el;		///< if not NULL, points to the last start-end element
 };
 
 

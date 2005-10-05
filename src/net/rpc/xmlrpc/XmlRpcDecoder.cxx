@@ -63,20 +63,14 @@ XmlRpcDecoder::~XmlRpcDecoder()
 {
 }
 
-#if 0
-size_t XmlRpcDecoder::readGenLength(size_t length_octets)
-{
-	Uint64 length = 0;
-	length_octets += length_add;
-	if (pos > end+length_octets)
-		xthrownew(EndOfDataException("char", "bool"));
-	Mem::copyPartialLe(&length, sizeof(length), pos, length_octets); pos += length_octets;
-	if (length != (size_t)length)
-		xthrownew(OverflowException("size_t"));
-	return (size_t)length;
-}
-#endif
-
+/**
+ * moves the pos to the next element, returning the content in start/length
+ *
+ * @return 0
+ * 	if the starting element was found
+ * @return 1
+ * 	if the end element was found
+ */
 int XmlRpcDecoder::moveToNextElement(const char **start, size_t *length)
 {
 	if (empty_el != NULL) {
@@ -111,6 +105,7 @@ int XmlRpcDecoder::moveToNextElement(const char **start, size_t *length)
 		if (*pos != '>') {
 			xthrownew(InvalidFormatException("end tag", ">"));
 		}
+		pos++;
 		return 1;
 	}
 	for (;;) {
