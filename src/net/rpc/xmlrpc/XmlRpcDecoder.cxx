@@ -630,7 +630,7 @@ String XmlRpcDecoder::readString()
 		size_t cont_length;
 		readContent(&cont_start, &cont_length);
 		skipValueEnd(el_start, el_length);
-		return String::createUtf8(cont_start, cont_length);
+		return String::createUtf8(cont_start, cont_length).replace("&lt;", "<").replace("&gt;", ">").replace("&quot;", "\"");
 	}
 	else {
 		xthrownew(InvalidFormatException("rpc::string::code", String::createUtf8(el_start, el_length)));
@@ -751,7 +751,7 @@ ssize_t XmlRpcDecoder::readArrayLength()
 		return -1;
 	}
 	else {
-		xthrownew(InvalidFormatException("rpc::struct::code", String::createUtf8(el_start, el_length)));
+		xthrownew(InvalidFormatException("rpc::array::code", String::createUtf8(el_start, el_length)));
 		return -1;
 	}
 }
