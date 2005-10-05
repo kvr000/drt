@@ -222,17 +222,17 @@ size_t XmlRpcDecoder::moveToNextValue(const char **type_start)
 	for (;;) {
 		size_t type_length;
 		if (moveToNextElement(type_start, &type_length) != 0) {
-			xthrownew(InvalidFormatException("xmlrpc", "value"));
+			xthrownew(InvalidFormatException("xmlrpc::value", String((const char *)pos, end-pos)));
 		}
 		if (type_length == 5 && memcmp(*type_start, "value", type_length) == 0) {
 			if (moveToNextElement(type_start, &type_length) != 0) {
-				xthrownew(InvalidFormatException("xmlrpc", "value"));
+				xthrownew(InvalidFormatException("xmlrpc::value", String(*type_start, type_length)));
 			}
 			return type_length;
 		}
 		if (type_length == 5 && memcmp(*type_start, "param", type_length) == 0)
 			continue;
-		xthrownew(InvalidFormatException("xmlrpc", String("value")));
+		xthrownew(InvalidFormatException("xmlrpc::value", String(*type_start, type_length)));
 	}
 }
 
