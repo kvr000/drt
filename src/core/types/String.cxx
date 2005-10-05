@@ -1950,6 +1950,16 @@ DR_EXPORT_MET ssize_t String::rfind(const String &s, size_t before) const
 	return -1;
 }
 
+DR_EXPORT_MET bool String::startsWith(const String &s) const
+{
+	return left(s.getLength()) == s;
+}
+
+DR_EXPORT_MET bool String::endsWith(const String &s) const
+{
+	return right(s.getLength()) == s;
+}
+
 DR_EXPORT_MET String &String::replace(const String &what, const String &rep)
 {
 	return replace(what, rep, (size_t)-1);

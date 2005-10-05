@@ -37,6 +37,8 @@
 #include <dr/Const.hxx>
 
 #include <dr/EndOfDataException.hxx>
+#include <dr/Array.hxx>
+#include <dr/Hash.hxx>
 
 #include <dr/io/NetAddressInet4.hxx>
 
@@ -62,6 +64,67 @@ RpcDecoder::~RpcDecoder()
 String RpcDecoder::readClassName()
 {
 	return Null();
+}
+
+Variant *RpcDecoder::readVariant()
+{
+	RpcType type = this->readCheckType();
+	switch (type) {
+	case RT_End:
+		xthrownew(EndOfDataException("type", "type"));
+		break;
+
+	case RT_Int:
+		return new Variant(readInt64());
+
+	case RT_Bool:
+		return new Variant(readBool());
+
+	case RT_Double:
+		return new Variant(readDouble());
+
+	case RT_String:
+		return new Variant(readString());
+
+	case RT_Time:
+		return new Variant(readTime());
+
+	case RT_Binary:
+		return new Variant(readBinary());
+
+	case RT_Struct:
+		{
+			ssize_t num_members = readStructLength();
+			ERef<RHash<String, Variant> > struc(new RHash<String, Variant>);
+			while (checkStructNext(&num_members)) {
+				String member_name = readMemberName();
+				ERef<Variant> member_value(readVariant());
+				(*struc)->create(member_name)->v = member_value;
+			}
+			return new Variant(*struc);
+		}
+
+	case RT_Array:
+		{
+			ssize_t num_members = readArrayLength();
+			ERef<RArray<Variant> > list(new RArray<Variant>);
+			while (checkArrayNext(&num_members)) {
+				ERef<Variant> member_value(readVariant());
+				list->append(member_value);
+			}
+			return new Variant(*list);
+		}
+
+	case RT_MethodName:
+		break;
+
+	case RT_MethodResponse:
+		break;
+
+	case RT_FaultResponse:
+		break;
+	}
+	return NULL;
 }
 
 void RpcDecoder::readValue(const ScalarPtr &value)

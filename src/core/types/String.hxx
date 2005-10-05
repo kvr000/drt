@@ -208,6 +208,9 @@ public:
 	ssize_t				rfind(const String &s) const;
 	ssize_t				rfind(const String &s, size_t before) const;
 
+	bool				startsWith(const String &s) const;
+	bool				endsWith(const String &s) const;
+
 	String &			replace(const String &what, const String &repl);
 	String &			replace(const String &what, const String &repl, size_t count);
 

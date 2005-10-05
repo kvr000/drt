@@ -172,9 +172,9 @@ public: \
 	DR_SUPER_REDIR0C(long, hash); \
 	DR_SUPER_REDIR1C(bool, eq, const DR_NSP(Iface) *); \
 	DR_SUPER_REDIR1C(int, cmp, const DR_NSP(Iface) *); \
-	DR_SUPER_REDIR1C(long, keyHash, int); \
-	DR_SUPER_REDIR2C(bool, keyEq, const DR_NSP(Iface) *, int); \
-	DR_SUPER_REDIR2C(int, keyCmp, const DR_NSP(Iface) *, int)
+	DR_SUPER_REDIR1C(long, hashKey, int); \
+	DR_SUPER_REDIR2C(bool, eqKey, const DR_NSP(Iface) *, int); \
+	DR_SUPER_REDIR2C(int, cmpKey, const DR_NSP(Iface) *, int)
 
 #define DR_REDIR_BEHAV()	\
 	DR_REDIR_STRINGIFY();	\
@@ -326,17 +326,17 @@ public:		/* basic */
 	/**
 	 * @see Iface::keyHash
 	 */
-	virtual long			keyHash(int key) const			{ return hash(); }
+	virtual long			hashKey(int key) const			{ return hash(); }
 
 	/**
 	 * @see Iface::keyEq
 	 */
-	virtual bool			keyEq(const Iface *obj, int key) const	{ return eq(obj); }
+	virtual bool			eqKey(const Iface *obj, int key) const	{ return eq(obj); }
 
 	/**
 	 * @see Iface::keyCmp
 	 */
-	virtual int			keyCmp(const Iface *obj, int key) const	{ return cmp(obj); }
+	virtual int			cmpKey(const Iface *obj, int key) const	{ return cmp(obj); }
 
 	/**
 	 * @see Iface::serializeTo

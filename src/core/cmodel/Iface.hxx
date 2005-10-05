@@ -287,7 +287,7 @@ public:
 	 * @return
 	 * 	the object key hashed value
 	 */
-	virtual long			keyHash(int key) const = 0;
+	virtual long			hashKey(int key) const = 0;
 
 	/**
 	 * compare the object key to another one for equality
@@ -295,7 +295,7 @@ public:
 	 * @return
 	 * 	the equality of the objects
 	 */
-	virtual bool			keyEq(const Iface *obj2, int key) const = 0;
+	virtual bool			eqKey(const Iface *obj2, int key) const = 0;
 
 	/**
 	 * compare the object key to another one for lower/greater
@@ -307,7 +307,7 @@ public:
 	 * @return 1
 	 * 	if the current object is greater than argument
 	 */
-	virtual int			keyCmp(const Iface *obj2, int key) const = 0;
+	virtual int			cmpKey(const Iface *obj2, int key) const = 0;
 
 	/**
 	 * returns state of the object

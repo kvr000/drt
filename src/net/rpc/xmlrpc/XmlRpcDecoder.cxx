@@ -353,18 +353,18 @@ int XmlRpcDecoder::readHeader()
 	}
 }
 
-int XmlRpcDecoder::readCheckType()
+RpcDecoder::RpcType XmlRpcDecoder::readCheckType()
 {
 retry_element:
 	const unsigned char *save_pos = pos;
 	const char *el_start;
 	size_t el_length;
 	if (pos >= end)
-		return -1;
+		return RT_End;
 	switch (moveToNextElement(&el_start, &el_length)) {
 	case -1:
 		xthrownew(InvalidFormatException("xmlrpc", "value"));
-		return -1;
+		return RT_End;
 
 	case 0:
 		if (el_length == 5 && memcmp(el_start, "param", el_length) == 0)
@@ -377,43 +377,43 @@ retry_element:
 					}
 					pos = save_pos;
 					if (el_length == 6 && memcmp(el_start, "params", el_length) == 0) {
-						return 14;
+						return RT_MethodResponse;
 					}
 					else if (el_length == 5 && memcmp(el_start, "fault", el_length) == 0) {
-						return 15;
+						return RT_FaultResponse;
 					}
-					return 14;
+					return RT_MethodResponse;
 				}
 				pos = save_pos;
 				if ((el_length == 2 && memcmp(el_start, "i4", el_length) == 0) || (el_length == 2 && memcmp(el_start, "i8", el_length) == 0) || (el_length == 3 && memcmp(el_start, "int", el_length) == 0)) {
-					return 1;
+					return RT_Int;
 				}
-				else if (el_length == 7 && memcmp(el_start, "boolean", el_length) == 7) {
-					return 2;
+				else if (el_length == 7 && memcmp(el_start, "boolean", el_length) == 0) {
+					return RT_Bool;
 				}
 				else if (el_length == 6 && memcmp(el_start, "double", el_length) == 0) {
-					return 3;
+					return RT_Double;
 				}
 				else if (el_length == 6 && memcmp(el_start, "string", el_length) == 0) {
-					return 4;
+					return RT_String;
 				}
 				else if (el_length == 16 && memcmp(el_start, "dateTime.iso8601", el_length) == 0) {
-					return 5;
+					return RT_Time;
 				}
 				else if (el_length == 6 && memcmp(el_start, "base64", el_length) == 0) {
-					return 6;
+					return RT_Binary;
 				}
 				else if (el_length == 6 && memcmp(el_start, "struct", el_length) == 0) {
-					return 10;
+					return RT_Struct;
 				}
 				else if (el_length == 5 && memcmp(el_start, "array", el_length) == 0) {
-					return 11;
+					return RT_Array;
 				}
 				else if (el_length == 10 && memcmp(el_start, "methodCall", el_length) == 0) {
-					return 13;
+					return RT_MethodName;
 				}
 				else {
-					xthrownew(InvalidFormatException("xmlrpc", "value"));
+					xthrownew(InvalidFormatException("xmlrpc", String(el_start, el_length)));
 				}
 			}
 		}
@@ -421,13 +421,13 @@ retry_element:
 
 	case 1:
 		if ((el_length == 6 && memcmp(el_start, "params", el_length) == 0) || (el_length == 5 && memcmp(el_start, "fault", el_length) == 0)) {
-			return -1;
+			return RT_End;
 		}
 		xthrownew(InvalidFormatException("xmlrpc", "value"));
 		break;
 	}
 	xthrownew(InvalidFormatException("xmlrpc", "value"));
-	return -1;
+	return RT_End;
 }
 
 void XmlRpcDecoder::readSkip()
@@ -590,6 +590,8 @@ bool XmlRpcDecoder::readBool()
 			return true;
 		else if (cont_length == 5 && memcmp(cont_start, "false", cont_length) == 0)
 			return false;
+		else if (cont_length == 1 && (*cont_start == '0' || *cont_start == '1'))
+			return *cont_start-'0';
 		xthrownew(InvalidFormatException("rpc::bool::content", String::createUtf8(cont_start, cont_length)));
 		return false;
 	}

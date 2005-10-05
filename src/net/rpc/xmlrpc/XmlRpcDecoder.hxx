@@ -65,7 +65,7 @@ public:
 	virtual void			readMethodResponse();
 	virtual long			readFaultResponse(String *message);
 
-	virtual int			readCheckType();
+	virtual RpcType			readCheckType();
 	virtual void			readSkip();
 	virtual bool			readBool();
 	virtual Sint32			readInt32();

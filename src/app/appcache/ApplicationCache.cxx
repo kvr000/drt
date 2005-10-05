@@ -225,7 +225,7 @@ bool ApplicationCache::ValueHash::node_eq(dr::Hash_c::Node_c *entry, const void 
 	Object *key_obj = (Object *)((void **)key)[1];
 	if (((ValueHashNode *)entry)->key_id != key_id)
 		return false;
-	return key_id < 0 ? ((ValueHashNode *)entry)->key->eq(key_obj) : ((ValueHashNode *)entry)->key->keyEq(key_obj, key_id);
+	return key_id < 0 ? ((ValueHashNode *)entry)->key->eq(key_obj) : ((ValueHashNode *)entry)->key->eqKey(key_obj, key_id);
 }
 
 DR_MET(protected virtual)
@@ -262,7 +262,7 @@ DR_MET(public)
 void ApplicationCache::ValueHash::remove(int key_id, Object *key)
 {
 	void *hash_key[2] = { (void *)key_id, key };
-	remove_g(key_id < 0 ? key->hash() : key->keyHash(key_id), hash_key);
+	remove_g(key_id < 0 ? key->hash() : key->hashKey(key_id), hash_key);
 }
 
 DR_MET(public)
@@ -270,7 +270,7 @@ ApplicationCache::ValueHashNode *ApplicationCache::ValueHash::createRetCreated(i
 {
 	bool created;
 	void *hash_key[2] = { (void *)key_id, key };
-	ValueHashNode *entry = (ValueHashNode *)create_g(key_id < 0 ? key->hash() : key->keyHash(key_id), hash_key, &created);
+	ValueHashNode *entry = (ValueHashNode *)create_g(key_id < 0 ? key->hash() : key->hashKey(key_id), hash_key, &created);
 	entry->value.setDoref(value);
 	if (!created)
 		return NULL;
@@ -281,7 +281,7 @@ DR_MET(public)
 ApplicationCache::ValueHashNode *ApplicationCache::ValueHash::find(int key_id, Object *key)
 {
 	void *hash_key[2] = { (void *)key_id, key };
-	return (ValueHashNode *)find_g(key_id < 0 ? key->hash() : key->keyHash(key_id), hash_key);
+	return (ValueHashNode *)find_g(key_id < 0 ? key->hash() : key->hashKey(key_id), hash_key);
 }
 
 

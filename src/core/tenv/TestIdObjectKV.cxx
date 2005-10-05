@@ -139,16 +139,16 @@ int TestIdObjectKV::cmp(const Iface *second) const
 }
 
 DR_MET(public virtual)
-long TestIdObjectKV::keyHash(int key_id) const
+long TestIdObjectKV::hashKey(int key_id) const
 {
 	return id;
 }
 
 DR_MET(public virtual)
-bool TestIdObjectKV::keyEq(const Iface *second, int key_id) const
+bool TestIdObjectKV::eqKey(const Iface *second, int key_id) const
 {
 	if (key_id != 0)
-		return Super::keyEq(second, key_id);
+		return Super::eqKey(second, key_id);
 	if (TestIdObjectKV::Key *seck = (TestIdObjectKV::Key *)second->accCheckFinal(Key::comp_name)) {
 		return id == seck->id;
 	}
@@ -161,10 +161,10 @@ bool TestIdObjectKV::keyEq(const Iface *second, int key_id) const
 }
 
 DR_MET(public virtual)
-int TestIdObjectKV::keyCmp(const Iface *second, int key_id) const
+int TestIdObjectKV::cmpKey(const Iface *second, int key_id) const
 {
 	if (key_id != 0)
-		return Super::keyCmp(second, key_id);
+		return Super::cmpKey(second, key_id);
 	if (TestIdObjectKV::Key *seck = (TestIdObjectKV::Key *)second->accCheckFinal(Key::comp_name)) {
 		return id == seck->id ? 0 : id < seck->id ? -1 : 1;
 	}

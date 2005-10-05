@@ -48,7 +48,6 @@
  * ancestor:	dr::Object
  *
  * at:	Ref<HttpServer>			client_http;
- * at:	const StringIndex *		method_wrappers;
  *
  * cnp:	String				system_listMethods_name("system.listMethods");
  */
@@ -82,11 +81,8 @@ RpcServer::~RpcServer()
 {
 }
 
-DR_MET(protected virtual)
-void RpcServer::setMethodWrappers(const StringIndex *methods_wrappers_)
-{
-	method_wrappers = methods_wrappers_;
-}
+DR_MET(protected abstract)
+//const StringIndex *RpcServer::getMethodWrappers()
 
 DR_MET(protected virtual)
 void RpcServer::allocateResources(const String &method_name)
@@ -150,10 +146,19 @@ void RpcServer::endResultArray(dr::net::RpcEncoder *result)
 }
 
 DR_MET(protected virtual)
+void RpcServer::writeSimpleResult(RpcEncoder *result, int code, const String &msg)
+{
+	this->startResultStruct(result, 2);
+	result->writeMemberName(DR_STR(status)); result->writeInt(code);
+	result->writeMemberName(DR_STR(statusMsg)); result->writeString(msg);
+	this->endResultStruct(result);
+}
+
+DR_MET(protected virtual)
 int RpcServer::execute_system_listMethods(dr::net::RpcEncoder *result, dr::net::RpcDecoder *params)
 {
 	SList<String> methods;
-	method_wrappers->appendToList(&methods);
+	getMethodWrappers()->appendToList(&methods);
 	result->writeHeader();
 	result->writeMethodResponse();
 	result->writeArrayLength(methods.count());
@@ -183,7 +188,7 @@ void RpcServer::run()
 					decoder->readHeader();
 					String method = decoder->readMethodName();
 					int (RpcServer::*func_handler)(dr::net::RpcEncoder *result, dr::net::RpcDecoder *params);
-					if ((func_handler = MethodConv::funcToMptr((int (*)(RpcServer *this_, dr::net::RpcEncoder *result, dr::net::RpcDecoder *params))method_wrappers->findPtr(method)))) {
+					if ((func_handler = MethodConv::funcToMptr((int (*)(RpcServer *this_, dr::net::RpcEncoder *result, dr::net::RpcDecoder *params))getMethodWrappers()->findPtr(method)))) {
 						allocateResources(method);
 						xtry {
 							int error = (this->*func_handler)(encoder, decoder);

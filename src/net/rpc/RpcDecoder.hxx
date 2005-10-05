@@ -39,6 +39,7 @@
 #include <dr/net/def_net.hxx>
 
 #include <dr/Hash.hxx>
+#include <dr/Variant.hxx>
 #include <dr/io/StreamBuffer.hxx>
 #include <dr/io/NetAddress.hxx>
 #include <dr/io/SocketStream.hxx>
@@ -55,6 +56,22 @@ class DR_NET_PUB RpcDecoder: public Object, SerializeDecoder
 {
 	DR_OBJECT_DECL(RpcDecoder, Object);
 	DR_REDIR_BEHAV();
+
+public:
+	enum RpcType {
+		RT_End				= -1,
+		RT_Int				= 1,
+		RT_Bool				= 2,
+		RT_Double			= 3,
+		RT_String			= 4,
+		RT_Time				= 5,
+		RT_Binary			= 6,
+		RT_Struct			= 10,
+		RT_Array			= 11,
+		RT_MethodName			= 13,
+		RT_MethodResponse		= 14,
+		RT_FaultResponse		= 15,
+	};
 
 public:
 	/* constructor */		RpcDecoder();
@@ -89,7 +106,7 @@ public:
 	 * @return type id
 	 * 	otherwise
 	 */
-	virtual int			readCheckType() = 0;
+	virtual RpcType			readCheckType() = 0;
 
 	/**
 	 * skips the next type (even complex)
@@ -109,6 +126,7 @@ public:
 	virtual String			readMemberName() = 0;
 	virtual bool			checkArrayNext(ssize_t *count) = 0;
 	virtual bool			checkStructNext(ssize_t *count) = 0;
+	virtual Variant *		readVariant();
 	virtual String			readClassName();
 	virtual void			readValue(const ScalarPtr &value);
 

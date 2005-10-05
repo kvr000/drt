@@ -115,6 +115,9 @@ DR_RINLINE
 void (*RpcHelper::getReader<Sint64>())(RpcDecoder *, void *) { return &readInt64; }
 template <>
 DR_RINLINE
+void (*RpcHelper::getReader<double>())(RpcDecoder *, void *) { return &readDouble; }
+template <>
+DR_RINLINE
 void (*RpcHelper::getReader<String>())(RpcDecoder *, void *) { return &readString; }
 template <>
 DR_RINLINE

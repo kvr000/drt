@@ -135,6 +135,10 @@ public:
 	DR_MINLINE void			moveFrom(SArray *source)		{ moveFrom_g(source); }
 
 public:
+	V *				iterFirst()				{ return len == 0 ? NULL : (V *)data; }
+	V *				iterNext(V *iter)			{ return (char *)++iter-data == (ssize_t)len ? NULL : iter; }
+
+public:
 	iterator			begin()					{ return (V *)data; }
 	iterator			end()					{ return (V *)((char *)data+len); }
 

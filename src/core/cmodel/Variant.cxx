@@ -37,6 +37,8 @@
  * include: 	dr/Object.hxx
  * include: 	dr/Blob.hxx
  * include: 	dr/String.hxx
+ * include: 	dr/Array.hxx
+ * include: 	dr/Hash.hxx
  * ns:		dr
  */
 
@@ -64,8 +66,8 @@ DR_NS_BEGIN
  * 		VT_Binary,
  * 		VT_String,
  * 		VT_Object,
- * 		//VT_Array,
- * 		//VT_Hash,
+ * 		VT_Array,
+ * 		VT_Hash,
  * 		//VT_List,
  * 		//VT_Avl,
  * 	};
@@ -81,6 +83,8 @@ DR_NS_BEGIN
  *		Blob::Data *			binary_val;
  *		String::Data *			string_val;
  *		Object *			object_val;
+ *		RArray<Variant> *		array_val;
+ *		RHash<String, Variant> *	hash_val;
  * 	};
  * }co
  *
@@ -150,6 +154,26 @@ Variant::Variant(Iface *object_val_):
 		vtype = VT_Null;
 	else
 		object_val = object_val_->ref();
+}
+
+DR_MET(public)
+Variant::Variant(RArray<Variant> *array_):
+	vtype(VT_Array)
+{
+	if (array_ == NULL)
+		vtype = VT_Null;
+	else
+		array_val = (RArray<Variant> *)array_->ref();
+}
+
+DR_MET(public)
+Variant::Variant(RHash<String, Variant> *hash_):
+	vtype(VT_Hash)
+{
+	if (hash_ == NULL)
+		vtype = VT_Null;
+	else
+		hash_val = (RHash<String, Variant> *)hash_->ref();
 }
 
 DR_MET(public virtual)
@@ -229,6 +253,8 @@ long Variant::hash() const
 		return ((String *)string_val)->getHash();
 
 	case VT_Object:
+	case VT_Hash:
+	case VT_Array:
 		if (object_val == NULL)
 			return -1;
 		return object_val->hash();
@@ -294,6 +320,8 @@ bool Variant::eq(const Iface *vs_) const
 			break;
 
 		case VT_Object:
+		case VT_Array:
+		case VT_Hash:
 			if (object_val == NULL && vs->isNull())
 				return true;
 			if (vs->vtype == VT_Object && vs->object_val != NULL) {
@@ -369,6 +397,8 @@ int Variant::cmp(const Iface *vs_) const
 			break;
 
 		case VT_Object:
+		case VT_Array:
+		case VT_Hash:
 			if (object_val == NULL && vs->isNull())
 				return 0;
 			if (vs->vtype == VT_Object) {
@@ -413,6 +443,8 @@ String Variant::getName() const
 		return DR_STR(string);
 
 	case VT_Object:
+	case VT_Array:
+	case VT_Hash:
 		return object_val == NULL ? DR_STR(null) : object_val->classname();
 	}
 
@@ -450,6 +482,8 @@ bool Variant::toBool() const
 		return strtoll(((String *)&string_val)->utf8().toStr(), NULL, 10) != 0;
 
 	case VT_Object:
+	case VT_Array:
+	case VT_Hash:
 		return object_val != NULL;
 	}
 
@@ -481,6 +515,8 @@ Sint64 Variant::toInt() const
 		return strtoll(((String *)&string_val)->utf8().toStr(), NULL, 10);
 
 	case VT_Object:
+	case VT_Array:
+	case VT_Hash:
 		return (SintPtr)object_val;
 	}
 
@@ -512,6 +548,8 @@ double Variant::toDouble() const
 		return strtod(((String *)&string_val)->utf8().toStr(), NULL);
 
 	case VT_Object:
+	case VT_Array:
+	case VT_Hash:
 		return (double)(SintPtr)object_val;
 	}
 
@@ -543,6 +581,8 @@ String Variant::toString() const
 		return *(String *)&string_val;
 
 	case VT_Object:
+	case VT_Array:
+	case VT_Hash:
 		return object_val ? Null() : object_val->stringify();
 	}
 
@@ -574,6 +614,8 @@ BString Variant::toUtf8() const
 		return ((String *)&string_val)->utf8();
 
 	case VT_Object:
+	case VT_Array:
+	case VT_Hash:
 		return object_val ? Null() : object_val->stringify().utf8();
 	}
 
@@ -605,6 +647,8 @@ Blob Variant::toBinary() const
 		return ((String *)&string_val)->utf8();
 
 	case VT_Object:
+	case VT_Array:
+	case VT_Hash:
 		return object_val ? Null() : object_val->stringify().utf8();
 	}
 
@@ -626,6 +670,8 @@ Object *Variant::toObject() const
 		return NULL;
 
 	case VT_Object:
+	case VT_Array:
+	case VT_Hash:
 		return object_val ? object_val->ref() : NULL;
 	}
 
