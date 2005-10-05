@@ -197,8 +197,15 @@ next_step:
 				}
 				if (*pos == '/') {
 					empty_el = (const unsigned char *)*start;
+					for (++pos; ; pos++) {
+						if (pos == end)
+							xthrownew(EndOfDataException("char", "element"));
+						if (isspace(*pos))
+							continue;
+						break;
+					}
 				}
-				else if (*pos != '>') {
+				if (*pos != '>') {
 					xthrownew(InvalidFormatException("end tag", ">"));
 				}
 				pos++;
@@ -266,7 +273,9 @@ void XmlRpcDecoder::moveToNextElementReqEnd(const BString &tag_name)
 void XmlRpcDecoder::readContent(const char **cont_start, size_t *cont_length)
 {
 	*cont_start = (const char *)pos;
-	for (; pos < end && *pos != '<'; pos++) ;
+	if (empty_el == NULL) {
+		for (; pos < end && *pos != '<'; pos++) ;
+	}
 	*cont_length = (const char *)pos-*cont_start;
 }
 
@@ -371,6 +380,7 @@ retry_element:
 						xthrownew(InvalidFormatException("xmlrpc", "header"));
 					}
 					pos = save_pos;
+					empty_el = NULL;
 					if (el_length == 6 && memcmp(el_start, "params", el_length) == 0) {
 						return RT_MethodResponse;
 					}
@@ -380,6 +390,7 @@ retry_element:
 					return RT_MethodResponse;
 				}
 				pos = save_pos;
+				empty_el = NULL;
 				if ((el_length == 2 && memcmp(el_start, "i4", el_length) == 0) || (el_length == 2 && memcmp(el_start, "i8", el_length) == 0) || (el_length == 3 && memcmp(el_start, "int", el_length) == 0)) {
 					return RT_Int;
 				}
