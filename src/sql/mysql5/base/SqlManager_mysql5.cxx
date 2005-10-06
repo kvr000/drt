@@ -62,14 +62,16 @@ Connection *SqlManager_mysql5::openConnection(THash<String, String> *args)
 	BString pass((*args)["pass"].utf8());
 
 	if (MYSQL *handle = mysql_init(NULL)) {
-		my_bool reconnect = atoi((*args)["reconnect"].utf8());
 		bool locks = atoi((*args)["locks"].utf8());
+#if 0
+		my_bool reconnect = atoi((*args)["reconnect"].utf8());
 #if MYSQL_VERSION_ID >= 0x50100
 		if (reconnect) {
 			mysql_options(handle, MYSQL_OPT_RECONNECT, &reconnect);
 		}
 #else
 		handle->reconnect = reconnect;
+#endif
 #endif
 		if (mysql_real_connect(handle, host.toStr(), user.toStr(), pass.toStr(), db.toStr(), atoi(port.toStr()), NULL, CLIENT_FOUND_ROWS)) {
 			xtry {
@@ -86,7 +88,9 @@ Connection *SqlManager_mysql5::openConnection(THash<String, String> *args)
 				for (size_t i = 0; i < sizeof(charvars)/sizeof(charvars[0]); i++) {
 					tref(new Statement_mysql5_direct(c, String("SET ")+charvars[i]+"='"+charset+"'"))->executeUpdate();
 				}
+#if 0
 				c->auto_reconnect = reconnect;
+#endif
 				c->use_locks = locks;
 				return c.getAndNull();
 			}

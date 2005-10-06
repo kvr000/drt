@@ -33,13 +33,20 @@
  * @license	http://www.gnu.org/licenses/lgpl.txt GNU Lesser General Public License v3
  **/
 
+/*drt
+ * include:	mysql/mysql.h
+ * 
+ * include:	dr/sql/mysql5/def.hxx
+ * 
+ * include:	dr/sql/Connection.hxx
+ *
+ * ns:		dr::sql::mysql5
+ *
+ * forward:	class ResultSet_mysql5;
+ */
+
 #include <dr/x_kw.hxx>
-#include <dr/Const.hxx>
-#include <dr/Exception.hxx>
 
-#include <mysql/mysql.h>
-
-#include <dr/sql/SqlException.hxx>
 #include <dr/sql/SqlUniqueConstraintException.hxx>
 
 #include <dr/sql/mysql5/Statement_mysql5.hxx>
@@ -47,25 +54,36 @@
 #include <dr/sql/mysql5/ResultSet_mysql5.hxx>
 
 #include <dr/sql/mysql5/Connection_mysql5.hxx>
+#include "_gen/Connection_mysql5-all.hxx"
 
 DR_SQL_MYSQL5_NS_BEGIN
 
-DR_OBJECT_DEF(DR_SQL_MYSQL5_NS_STR, Connection_mysql5, Connection);
-DR_OBJECT_IMPL_SIMPLE(Connection_mysql5);
 
+/*drt
+ * class:	Connection_mysql5
+ * ancestor:	dr::sql::Connection
+ *
+ * ap:	MYSQL *				mysql_handle;
+ * ap:	bool				use_locks;
+ *
+ * ap:	ResultSet_mysql5 *		busy_rs;
+ */
+
+DR_MET(public)
 Connection_mysql5::Connection_mysql5(MYSQL *handle_):
 	mysql_handle(handle_),
-	auto_reconnect(false),
 	use_locks(false),
 	busy_rs(NULL)
 {
 }
 
+DR_MET(protected virtual)
 Connection_mysql5::~Connection_mysql5()
 {
 	mysql_close(mysql_handle);
 }
 
+DR_MET(public virtual)
 bool Connection_mysql5::ping()
 {
 	int err = mysql_ping(mysql_handle);
@@ -75,18 +93,33 @@ bool Connection_mysql5::ping()
 	return true;
 }
 
+DR_MET(public virtual)
 void Connection_mysql5::reconnect()
 {
 }
 
+DR_MET(public virtual)
+void Connection_mysql5::setAutoCommit(bool autocommit)
+{
+	if (mysql_autocommit(mysql_handle, autocommit) != 0)
+		throwMyExcept();
+}
+
+DR_MET(public virtual)
 void Connection_mysql5::commit()
 {
+	if (mysql_commit(mysql_handle) != 0)
+		throwMyExcept();
 }
 
+DR_MET(public virtual)
 void Connection_mysql5::rollback()
 {
+	if (mysql_rollback(mysql_handle) != 0)
+		throwMyExcept();
 }
 
+DR_MET(public virtual)
 Statement *Connection_mysql5::createStatement(const String &sql)
 {
 	saveBusy();
@@ -103,6 +136,7 @@ Statement *Connection_mysql5::createStatement(const String &sql)
 	return NULL;
 }
 
+DR_MET(public virtual)
 Statement *Connection_mysql5::prepareStatement(const String &sql)
 {
 	ERef<Statement> s(createStatement(sql));
@@ -110,6 +144,7 @@ Statement *Connection_mysql5::prepareStatement(const String &sql)
 	return s.getAndNull();
 }
 
+DR_MET(public virtual)
 bool Connection_mysql5::prepareLockStatements(Statement **lock_mem, Statement **unlock_mem, int lock_type0, const String *table0, ...)
 {
 	bool exists = false;
@@ -148,6 +183,7 @@ bool Connection_mysql5::prepareLockStatements(Statement **lock_mem, Statement **
 	return exists;
 }
 
+DR_MET(public virtual)
 bool Connection_mysql5::prepareLockStatements(Statement **lock_mem, Statement **unlock_mem, int *types, const String *tables, size_t count)
 {
 	bool exists = false;
@@ -175,6 +211,15 @@ bool Connection_mysql5::prepareLockStatements(Statement **lock_mem, Statement **
 	return exists;
 }
 
+DR_MET(public inline)
+//void Connection_mysql5::destroyingRs(ResultSet_mysql5 *rs)
+//{ if (busy_rs == rs) busy_rs = NULL; }
+
+DR_MET(public inline)
+//void Connection_mysql5::saveBusy()
+//{ if (busy_rs) processAllBusy(); }
+
+DR_MET(public)
 void Connection_mysql5::processAllBusy()
 {
 	if (busy_rs) {
@@ -183,6 +228,7 @@ void Connection_mysql5::processAllBusy()
 	}
 }
 
+DR_MET(public static)
 int Connection_mysql5::parseSqlCode(const char *code_str)
 {
 	int code = 0;
@@ -196,6 +242,13 @@ int Connection_mysql5::parseSqlCode(const char *code_str)
 	return code;
 }
 
+DR_MET(public virtual)
+void Connection_mysql5::throwMyExcept()
+{
+	throwSqlExcept(mysql_sqlstate(mysql_handle), mysql_error(mysql_handle));
+}
+
+DR_MET(public static)
 void Connection_mysql5::throwSqlExcept(const char *code_str, const char *error_desc)
 {
 	int code = parseSqlCode(code_str);

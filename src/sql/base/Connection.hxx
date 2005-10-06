@@ -58,6 +58,7 @@ public:
 	virtual void			reconnect() = 0;
 
 public:
+	virtual void			setAutoCommit(bool autocommit) = 0;
 	virtual void			commit() = 0;
 	virtual void			rollback() = 0;
 

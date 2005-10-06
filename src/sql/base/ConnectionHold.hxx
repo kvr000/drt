@@ -65,6 +65,7 @@ public:
 public:
 	virtual bool			ping();
 	virtual void			reconnect();
+	virtual void			setAutoCommit(bool autocommit);
 	virtual void			commit();
 	virtual void			rollback();
 

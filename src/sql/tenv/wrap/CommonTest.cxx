@@ -57,11 +57,13 @@ DR_SQL_TENV_NS_BEGIN
  * ancestor:	dr::tenv::TenvObject
  *
  * at:	Ref<ConnectionPool>		db_pool;
+ * at:	Ref<ConnectionHold>		db_conn;
  */
 
 DR_MET(public)
 CommonTest::CommonTest(ConnectionPool *db_pool_):
-	db_pool(db_pool_, true)
+	db_pool(db_pool_, true),
+	db_conn(db_pool->getConnectionPing(), false)
 {
 }
 
@@ -73,8 +75,9 @@ CommonTest::~CommonTest()
 DR_MET(public virtual)
 void CommonTest::test(const String &arg DR_INIT(= Null()))
 {
-	tref(new TestUnique(tref(db_pool->getConnectionPing())))->test();
-	tref(new TestStatementSeek(tref(db_pool->getConnectionPing())))->test();
+	tref(new TestUnique(db_conn))->test();
+	tref(new TestStatementSeek(db_conn))->test();
+	db_conn->commit();
 }
 
 

@@ -267,7 +267,7 @@ void Statement_mysql5::executeUpdate()
 	conn->saveBusy();
 	if (!stmt)
 		recreateStmt();
-retry:
+//retry:
 	if (par_bindings.count()) {
 		if (mysql_stmt_param_count(stmt) != par_bindings.count())
 			xthrownew(SqlException(-1, String("missing binding to ")+stmt_str));
@@ -276,10 +276,12 @@ retry:
 		}
 	}
 	if (mysql_stmt_execute(stmt) != 0) {
+#if 0
 		if (conn->auto_reconnect && (stmt->last_errno == CR_SERVER_LOST || stmt->last_errno == 0) && conn->mysql_handle->net.last_errno == 0) {
 			recreateStmt();
 			goto retry;
 		}
+#endif
 		Connection_mysql5::throwSqlExcept(mysql_stmt_sqlstate(stmt), mysql_stmt_error(stmt));
 	}
 	mysql_stmt_free_result(stmt);
@@ -290,7 +292,7 @@ ResultSet *Statement_mysql5::executeQuery()
 	conn->saveBusy();
 	if (!stmt)
 		recreateStmt();
-retry:
+//retry:
 	if (par_bindings.count()) {
 		if (mysql_stmt_param_count(stmt) != par_bindings.count())
 			xthrownew(SqlException(-1, String("missing binding to ")+stmt_str));
@@ -299,10 +301,12 @@ retry:
 		}
 	}
 	if (mysql_stmt_execute(stmt) != 0) {
+#if 0
 		if (conn->auto_reconnect && (stmt->last_errno == CR_SERVER_LOST || stmt->last_errno == 0) && conn->mysql_handle->net.last_errno == 0) {
 			recreateStmt();
 			goto retry;
 		}
+#endif
 		Connection_mysql5::throwSqlExcept(mysql_stmt_sqlstate(stmt), mysql_stmt_error(stmt));
 	}
 	xtry {

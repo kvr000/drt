@@ -65,6 +65,11 @@ void ConnectionHold::reconnect()
 	connection->reconnect();
 }
 
+void ConnectionHold::setAutoCommit(bool autocommit)
+{
+	return connection->setAutoCommit(autocommit);
+}
+
 void ConnectionHold::commit()
 {
 	return connection->commit();
