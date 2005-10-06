@@ -314,7 +314,7 @@ Blob HttpClient::processEasy(const String &url)
 DR_MET(protected virtual)
 void HttpClient::createConnection(NetAddress *addr)
 {
-	ERef<SocketStream> server_conn(new SocketStream(SocketStream::domain_inet4, "tcp"));
+	ERef<SocketStream> server_conn(new SocketStream(SocketStream::domain_inet4, Socket::proto_tcp));
 	server_conn->connect(addr);
 	read_stream.reinit(server_conn);
 }

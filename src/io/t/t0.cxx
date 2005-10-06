@@ -126,7 +126,7 @@ void sender_th(unsigned short port)
 
 void connectInet4_th(NetAddress *server_address)
 {
-	ERef<SocketStream> sock(new SocketStream(Socket::domain_inet4, "ip"));
+	ERef<SocketStream> sock(new SocketStream(Socket::domain_inet4, Socket::proto_ip));
 	xtry {
 		sock->connect(server_address);
 		sock->write("tt0");
@@ -141,7 +141,7 @@ void connectInet4_th(NetAddress *server_address)
 void connectLocal_th(NetAddress *server_address)
 {
 	ERef<NetAddressLocal> client_address(new NetAddressLocal("client_socket"));
-	ERef<SocketStream> sock(new SocketStream(Socket::domain_local, "ip"));
+	ERef<SocketStream> sock(new SocketStream(Socket::domain_local, Socket::proto_ip));
 	xtry {
 		File::unlink(client_address->getPath());
 	}
@@ -158,7 +158,7 @@ void test()
 {
 	Fatal::plog("sock stream: in\n");
 	xtry {
-		ERef<SocketStream> sock(new SocketStream(Socket::domain_inet4, "tcp"));
+		ERef<SocketStream> sock(new SocketStream(Socket::domain_inet4, Socket::proto_ip));
 		sock->bind(tref(new NetAddressInet4("localhost:0")));
 		sock->connect(tref(new NetAddressInet4("localhost:22")));
 		sock->write("bflm\n");
@@ -171,7 +171,7 @@ void test()
 
 	Fatal::plog("sock stream inner: in\n");
 	xtry {
-		ERef<SocketServer> server(new SocketServer(Socket::domain_inet4, "tcp"));
+		ERef<SocketServer> server(new SocketServer(Socket::domain_inet4, Socket::proto_ip));
 		server->bind(tref(new NetAddressInet4("localhost", 0)));
 		server->listen(-1);
 		ERef<Thread> sender(ThreadSimple::go(Eslot(&connectInet4_th).a1Set<ERef<NetAddress> >(server->getLocalAddress())));
@@ -243,7 +243,7 @@ void test()
 	Fatal::plog("sock stream local: in\n");
 	xtry {
 		ERef<NetAddressLocal> server_address(new NetAddressLocal("server_socket"));
-		ERef<SocketServer> sock(new SocketServer(Socket::domain_local, "ip"));
+		ERef<SocketServer> sock(new SocketServer(Socket::domain_local, Socket::proto_ip));
 		xtry {
 			File::unlink(server_address->getPath());
 		}
