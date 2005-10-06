@@ -423,9 +423,9 @@ void HttpServer::sendResponse(int code, const String &message)
 	resp.appendNumber(req_version/256).append(".").appendNumber(req_version&255).append(" ");
 	resp.appendNumber(code).append(" ").append(message.utf8()).append("\r\n");
 	if (connection_state >= 2)
-		resp.append("Connection: Close\r\n");
+		resp.append("connection: close\r\n");
 	else if (req_version < 0x101 && connection_state == 1) {
-		resp.append("Connection: Keep-Alive\r\n");
+		resp.append("connection: keep-alive\r\n");
 	}
 	read_stream.writeFull(resp);
 }

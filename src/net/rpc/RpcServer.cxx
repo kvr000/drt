@@ -146,11 +146,9 @@ void RpcServer::endResultArray(dr::net::RpcEncoder *result)
 }
 
 DR_MET(protected virtual)
-void RpcServer::writeSimpleResult(RpcEncoder *result, int code, const String &msg)
+void RpcServer::writeEmptyResult(RpcEncoder *result)
 {
-	this->startResultStruct(result, 2);
-	result->writeMemberName(DR_STR(status)); result->writeInt(code);
-	result->writeMemberName(DR_STR(statusMsg)); result->writeString(msg);
+	this->startResultStruct(result, 0);
 	this->endResultStruct(result);
 }
 
