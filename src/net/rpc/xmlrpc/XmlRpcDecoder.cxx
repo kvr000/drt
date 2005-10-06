@@ -553,6 +553,7 @@ Sint32 XmlRpcDecoder::readInt32()
 		skipValueEnd(el_start, el_length);
 		Sint32 val = 0;
 		if (*cont_start == '-') {
+			cont_start++;
 			for (cont_length--; cont_length-- > 0; )
 				val = val*10-(*cont_start++-'0');
 		}
