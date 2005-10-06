@@ -137,7 +137,7 @@ void XmlRpcEncoder::writeString(const String &str)
 	if (value_level == 0)
 		content.append("<param>");
 	String escaped = str;
-	escaped.replace("<", "&lt;").replace(">", "&gt;");
+	escaped.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
 	content.append("<value><string>").append(str.utf8()).append("</string></value>");
 	if (value_level == 0)
 		content.append("</param>");

@@ -74,7 +74,7 @@ XmlRpcDecoder::~XmlRpcDecoder()
 int XmlRpcDecoder::moveToNextElement(const char **start, size_t *length)
 {
 	if (empty_el != NULL) {
-		pos = empty_el;
+		*start = (const char *)(pos = empty_el);
 		empty_el = NULL;
 		for (;; pos++) {
 			if (pos == end)
@@ -294,6 +294,9 @@ String XmlRpcDecoder::convertToString(const char *str, size_t len)
 			}
 			else if (memcmp(str, "quot;", 3) == 0) {
 				*os++ = '\"';
+			}
+			else if (memcmp(str, "amp;", 3) == 0) {
+				*os++ = '&';
 			}
 			else {
 				xthrownew(InvalidFormatException("xmlspecial", "&"));
@@ -636,7 +639,7 @@ String XmlRpcDecoder::readString()
 		size_t cont_length;
 		readContent(&cont_start, &cont_length);
 		skipValueEnd(el_start, el_length);
-		return String::createUtf8(cont_start, cont_length).replace("&lt;", "<").replace("&gt;", ">").replace("&quot;", "\"");
+		return convertToString(cont_start, cont_length);
 	}
 	else {
 		xthrownew(InvalidFormatException("rpc::string::code", String::createUtf8(el_start, el_length)));
