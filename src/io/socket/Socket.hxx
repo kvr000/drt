@@ -86,6 +86,7 @@ public:
 	static const String		domain_inet4;
 	static const String		domain_inet6;
 
+	static const String		proto_ip;
 	static const String		proto_tcp;
 	static const String		proto_udp;
 	static const String		proto_icmp;

@@ -100,6 +100,16 @@ int Socket_sysiface_posix::getDomainNum(const String &domain)
 int Socket_sysiface_posix::getProtoNum(const String &proto)
 {
 	struct protoent *pe;
+	if (proto == Socket::proto_ip)
+		return IPPROTO_IP;
+	if (proto == Socket::proto_tcp)
+		return IPPROTO_TCP;
+	if (proto == Socket::proto_udp)
+		return IPPROTO_UDP;
+	if (proto == Socket::proto_icmp)
+		return IPPROTO_ICMP;
+	if (proto == Socket::proto_sctp)
+		return IPPROTO_SCTP;
 	if ((pe = getprotobyname(proto.utf8().toStr())) == NULL)
 		xthrownew(UnsupportedException(NULL, comp_name, proto_string, proto));
 

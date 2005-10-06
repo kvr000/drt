@@ -48,6 +48,7 @@ DR_EXPORT_DTS const String Socket::domain_local(Const::string("local"));
 DR_EXPORT_DTS const String Socket::domain_inet4(Const::string("inet"));
 DR_EXPORT_DTS const String Socket::domain_inet6(Const::string("inet6"));
 
+DR_EXPORT_DTS const String Socket::proto_ip(Const::string("ip"));
 DR_EXPORT_DTS const String Socket::proto_tcp(Const::string("tcp"));
 DR_EXPORT_DTS const String Socket::proto_udp(Const::string("udp"));
 DR_EXPORT_DTS const String Socket::proto_icmp(Const::string("icmp"));
