@@ -248,6 +248,7 @@ foreach my $model (@models) {
 			$roles .= "compos," if ($attr->{stype} eq "compos");
 			$roles = substr($roles, 0, -1);
 			$form->print(tabalign("\trole", 24).$roles."\n");
+			$form->print(tabalign("\tforce_new", 24).$attr->getDrTagValue("force_new")."\n") if ($attr->checkDrTagValue("force_new"));
 			if ($attr->{stype} eq "attr") {
 				my ( $type, $tagger ) = $attr->getFinalTypeWithTagger();
 				foreach (qw(db_conversion db_precision do_mandatory align gui_init)) {
