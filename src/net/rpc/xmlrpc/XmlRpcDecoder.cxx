@@ -5,7 +5,7 @@
  *
  * ----------------------------------------------------------------------------------
  *
- * Copyright (C) 2004-2008 Zbyněk Vyškovský
+ * Copyright (C) 2004-2008 Zbyn¿k Vy¿kovský
  *
  * ----------------------------------------------------------------------------------
  *
@@ -27,7 +27,7 @@
  * along with drt; if not, write to the Free Software Foundation, Inc., 51
  * Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  *
- * @copyright	2004-2008 Zbyněk Vyškovský
+ * @copyright	2004-2008 Zbyn¿k Vy¿kovský
  * @link	mailto:kvr@matfyz.cz
  * @link	http://kvr.matfyz.cz/drt/
  * @license	http://www.gnu.org/licenses/lgpl.txt GNU Lesser General Public License v3
@@ -288,15 +288,26 @@ String XmlRpcDecoder::convertToString(const char *str, size_t len)
 		case '&':
 			if (memcmp(str, "lt;", 3) == 0) {
 				*os++ = '<';
+				str += 3;
 			}
 			else if (memcmp(str, "gt;", 3) == 0) {
 				*os++ = '>';
+				str += 3;
 			}
 			else if (memcmp(str, "quot;", 3) == 0) {
 				*os++ = '\"';
+				str += 3;
 			}
 			else if (memcmp(str, "amp;", 3) == 0) {
 				*os++ = '&';
+				str += 3;
+			}
+			else if (str[0] == '#') {
+				char *stro;
+				*os++ = strtol(str+1, &stro, 0);
+				if (*stro != ';')
+					xthrownew(InvalidFormatException("xmlchr", "&"));
+				str = stro+1;
 			}
 			else {
 				xthrownew(InvalidFormatException("xmlspecial", "&"));
