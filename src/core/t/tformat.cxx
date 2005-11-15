@@ -57,8 +57,12 @@ TENV_NS(format);
 #define TEST_FORMAT_NUM(fstr) printf("%s: =%s="fstr"=\n", fstr, (const char *)String::formats(fstr, 1234).ascii(), 1234)
 #define TEST_FORMAT_STR(fstr) printf("%s: =%s="fstr"=\n", fstr, (const char *)String::formats(fstr, "foobar").ascii(), "foobar")
 
+#define TEST_GENERIC(fmt, val) do { sprintf(pstr, fmt, val); printf("%s: =%s=%s=\n", fmt, (const char *)String::formats(fmt, val).utf8(), pstr); TENV_CHECK(String::formats(fmt, val) == pstr); } while (0)
+
 void test()
 {
+	char pstr[4096];
+
 	TEST_FORMAT_NUM("%d");
 	TEST_FORMAT_NUM("%o");
 	TEST_FORMAT_NUM("%x");
@@ -107,6 +111,9 @@ void test()
 
 	TEST_FORMAT_STR("%s");
 	TEST_FORMAT_BREAK();
+
+	TEST_GENERIC("%016X", 1234);
+	TEST_GENERIC("%016llX", 0x876543210fedcbaULL);
 }
 TENV_NSE(format);
 #endif
