@@ -3,4 +3,5 @@
 SOURCES:
 	no:${SD_COMMON}/mklist:g=t
 	:${SD_COMMON}/TestUnique.cxx:f=cxx;g=s,t,gh,ditenv
+	:${SD_COMMON}/TestNullConstraint.cxx:f=cxx;g=s,t,gh,ditenv
 

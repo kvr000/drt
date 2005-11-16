@@ -54,6 +54,12 @@ DR_SQL_TENV_NS_BEGIN
  * class:	DbSample0
  * type:	sqllayer
  *
+ * sql:	createTable
+ * 		CREATE TABLE sample0 (i int not null, s varchar(64) null, PRIMARY KEY (i))
+ *
+ * sql:	dropTable
+ * 		DROP TABLE sample0
+ *
  * sql:	removeAll
  * 		DELETE FROM sample0
  *
@@ -74,6 +80,15 @@ DR_SQL_TENV_NS_BEGIN
 DR_MET(protected virtual)
 DbSample0::~DbSample0()
 {
+}
+
+DR_MET(public virtual)
+void DbSample0::init()
+{
+	prep_dropTable();
+	prep_createTable();
+	xsafe(st_dropTable->executeUpdate());
+	st_createTable->executeUpdate();
 }
 
 DR_MET(public virtual)

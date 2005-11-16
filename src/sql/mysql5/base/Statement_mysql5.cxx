@@ -33,32 +33,62 @@
  * @license	http://www.gnu.org/licenses/lgpl.txt GNU Lesser General Public License v3
  **/
 
-#include <stdio.h>
+/*drt
+ *
+ * include:	dr/sql/mysql5/def.hxx
+ * 
+ * include:	mysql/mysql.h
+ * 
+ * include:	dr/Array.hxx
+ *
+ * include:	dr/sql/Statement.hxx
+ *
+ * ns:		dr::sql::mysql5
+ *
+ * forward:	class Connection_mysql5;
+ */
 
 #include <dr/x_kw.hxx>
-#include <dr/Const.hxx>
-#include <dr/Exception.hxx>
-#include <dr/UnsupportedException.hxx>
 #include <dr/InvalidFormatException.hxx>
 
-#include <dr/sql/SqlException.hxx>
 #include <dr/sql/SqlParseException.hxx>
+#include <dr/sql/SqlUniqueConstraintException.hxx>
+#include <dr/sql/SqlBadNullConstraintException.hxx>
+#include <dr/sql/SqlForeignKeyConstraintException.hxx>
 
 #include <dr/sql/Date.hxx>
 #include <dr/sql/mysql5/Connection_mysql5.hxx>
 #include <dr/sql/mysql5/ResultSet_mysql5.hxx>
 
-#include <dr/sql/mysql5/Statement_mysql5.hxx>
+#include <mysql/mysqld_error.h>
 
-#include <mysql/mysql.h>
-#include <mysql/errmsg.h>
+#include <dr/sql/mysql5/Statement_mysql5.hxx>
+#include "_gen/Statement_mysql5-all.hxx"
+
 
 DR_SQL_MYSQL5_NS_BEGIN
 
-DR_OBJECT_DEF(DR_SQL_MYSQL5_NS_STR, Statement_mysql5, Statement);
-DR_OBJECT_IMPL_SIMPLE(Statement_mysql5);
 
-Statement_mysql5::Statement_mysql5(Connection_mysql5 *conn_, MYSQL_STMT *stmt_, String stmt_str_):
+/*drt
+ * class:	Statement_mysql5
+ * ancestor:	dr::sql::Statement
+ *
+ * at:	Ref<Connection_mysql5>		conn;
+ * at:	String				stmt_str;
+ * at:	long				limit;
+ * at:	long				offset;
+ * at:	MYSQL_STMT *			stmt;
+ * at:	SArray<MYSQL_BIND, ComparInv<MYSQL_BIND> > par_bindings;
+ * at:	
+ * at:	bool				has_limit:1;
+ * at:	bool				has_offset:1;
+ * at:	bool				is_busy:1;
+ *
+ * friend:	class ResultSet_mysql5;
+ */
+
+DR_MET(public)
+Statement_mysql5::Statement_mysql5(Connection_mysql5 *conn_, MYSQL_STMT *stmt_, const String &stmt_str_):
 	conn(conn_, true),
 	stmt_str(stmt_str_),
 	limit(-1),
@@ -68,6 +98,7 @@ Statement_mysql5::Statement_mysql5(Connection_mysql5 *conn_, MYSQL_STMT *stmt_, 
 {
 }
 
+DR_MET(protected virtual)
 Statement_mysql5::~Statement_mysql5()
 {
 	for (size_t i = 0; i < par_bindings.count(); i++) {
@@ -78,14 +109,16 @@ Statement_mysql5::~Statement_mysql5()
 		mysql_stmt_close(stmt);
 }
 
+DR_MET(protected)
 void Statement_mysql5::recreateStmt()
 {
 	mysql_stmt_close(stmt);
 	if ((stmt = mysql_stmt_init(conn->mysql_handle)) == NULL)
-		Connection_mysql5::throwSqlExcept(mysql_sqlstate(conn->mysql_handle), mysql_error(conn->mysql_handle));
+		throwMyExcept();
 	prepare();
 }
 
+DR_MET(protected)
 MYSQL_BIND *Statement_mysql5::allocParBinding(unsigned idx)
 {
 	unsigned orig_size;
@@ -101,22 +134,26 @@ MYSQL_BIND *Statement_mysql5::allocParBinding(unsigned idx)
 	return &par_bindings[idx];
 }
 
+DR_MET(public virtual)
 void Statement_mysql5::setLimit(long limit_)
 {
 	limit = limit_;
 }
 
+DR_MET(public virtual)
 void Statement_mysql5::setOffset(long offset_)
 {
 	offset = offset_;
 }
 
+DR_MET(public virtual)
 void Statement_mysql5::setOffsetLimit(long offset_, long limit_)
 {
 	offset = offset_;
 	limit = limit_;
 }
 
+DR_MET(public virtual)
 void Statement_mysql5::prepare()
 {
 	conn->saveBusy();
@@ -138,12 +175,14 @@ void Statement_mysql5::prepare()
 	}
 }
 
+DR_MET(public virtual)
 void Statement_mysql5::bindParamNull(unsigned column)
 {
 	MYSQL_BIND *b = allocParBinding(column);
 	b->buffer_type = MYSQL_TYPE_NULL;
 }
 
+DR_MET(public virtual)
 void Statement_mysql5::bindParam(unsigned column, Sint8 value)
 {
 	MYSQL_BIND *b = allocParBinding(column);
@@ -152,6 +191,7 @@ void Statement_mysql5::bindParam(unsigned column, Sint8 value)
 	*(Sint8 *)b->buffer = value;
 }
 
+DR_MET(public virtual)
 void Statement_mysql5::bindParam(unsigned column, Sint16 value)
 {
 	MYSQL_BIND *b = allocParBinding(column);
@@ -160,6 +200,7 @@ void Statement_mysql5::bindParam(unsigned column, Sint16 value)
 	*(Sint16 *)b->buffer = value;
 }
 
+DR_MET(public virtual)
 void Statement_mysql5::bindParam(unsigned column, Sint32 value)
 {
 	MYSQL_BIND *b = allocParBinding(column);
@@ -168,6 +209,7 @@ void Statement_mysql5::bindParam(unsigned column, Sint32 value)
 	*(Sint32 *)b->buffer = value;
 }
 
+DR_MET(public virtual)
 void Statement_mysql5::bindParam(unsigned column, Sint64 value)
 {
 	MYSQL_BIND *b = allocParBinding(column);
@@ -176,6 +218,7 @@ void Statement_mysql5::bindParam(unsigned column, Sint64 value)
 	*(Sint64 *)b->buffer = value;
 }
 
+DR_MET(public virtual)
 void Statement_mysql5::bindParam(unsigned column, double value)
 {
 	MYSQL_BIND *b = allocParBinding(column);
@@ -184,6 +227,7 @@ void Statement_mysql5::bindParam(unsigned column, double value)
 	*(double *)b->buffer = value;
 }
 
+DR_MET(public virtual)
 void Statement_mysql5::bindParam(unsigned column, const String &value)
 {
 	if (value.isNull())
@@ -195,6 +239,7 @@ void Statement_mysql5::bindParam(unsigned column, const String &value)
 	b->buffer_length = value.utf8().getSize();
 }
 
+DR_MET(public virtual)
 void Statement_mysql5::bindParam(unsigned column, const Blob &value)
 {
 	if (value.isNull())
@@ -206,6 +251,7 @@ void Statement_mysql5::bindParam(unsigned column, const Blob &value)
 	b->buffer_length = value.getSize();
 }
 
+DR_MET(public virtual)
 void Statement_mysql5::bindParam(unsigned column, const Date &value)
 {
 	/* TODO */
@@ -215,6 +261,7 @@ void Statement_mysql5::bindParam(unsigned column, const Date &value)
 	//memcpy(b->buffer, value.utf8().toStr(), value.utf8().getSize());
 }
 
+DR_MET(public virtual)
 void Statement_mysql5::bindParam(unsigned column, Variant *value)
 {
 	switch (value->getType()) {
@@ -248,6 +295,7 @@ void Statement_mysql5::bindParam(unsigned column, Variant *value)
 	}
 }
 
+DR_MET(public virtual)
 void Statement_mysql5::bindParams(Variant **values, size_t values_count)
 {
 	if (mysql_stmt_param_count(stmt) != values_count)
@@ -257,11 +305,13 @@ void Statement_mysql5::bindParams(Variant **values, size_t values_count)
 	}
 }
 
+DR_MET(public virtual)
 bool Statement_mysql5::isBusy()
 {
 	return is_busy;
 }
 
+DR_MET(public virtual)
 void Statement_mysql5::executeUpdate()
 {
 	conn->saveBusy();
@@ -272,7 +322,7 @@ void Statement_mysql5::executeUpdate()
 		if (mysql_stmt_param_count(stmt) != par_bindings.count())
 			xthrownew(SqlException(-1, String("missing binding to ")+stmt_str));
 		if (mysql_stmt_bind_param(stmt, &par_bindings[0]) != 0) {
-			Connection_mysql5::throwSqlExcept(mysql_stmt_sqlstate(stmt), mysql_stmt_error(stmt));
+			throwMyExcept();
 		}
 	}
 	if (mysql_stmt_execute(stmt) != 0) {
@@ -282,11 +332,12 @@ void Statement_mysql5::executeUpdate()
 			goto retry;
 		}
 #endif
-		Connection_mysql5::throwSqlExcept(mysql_stmt_sqlstate(stmt), mysql_stmt_error(stmt));
+		throwMyExcept();
 	}
 	mysql_stmt_free_result(stmt);
 }
 
+DR_MET(public virtual)
 ResultSet *Statement_mysql5::executeQuery()
 {
 	conn->saveBusy();
@@ -297,7 +348,7 @@ ResultSet *Statement_mysql5::executeQuery()
 		if (mysql_stmt_param_count(stmt) != par_bindings.count())
 			xthrownew(SqlException(-1, String("missing binding to ")+stmt_str));
 		if (mysql_stmt_bind_param(stmt, &par_bindings[0]) != 0) {
-			Connection_mysql5::throwSqlExcept(mysql_stmt_sqlstate(stmt), mysql_stmt_error(stmt));
+			throwMyExcept();
 		}
 	}
 	if (mysql_stmt_execute(stmt) != 0) {
@@ -307,7 +358,7 @@ ResultSet *Statement_mysql5::executeQuery()
 			goto retry;
 		}
 #endif
-		Connection_mysql5::throwSqlExcept(mysql_stmt_sqlstate(stmt), mysql_stmt_error(stmt));
+		throwMyExcept();
 	}
 	xtry {
 		is_busy = true;
@@ -321,6 +372,7 @@ ResultSet *Statement_mysql5::executeQuery()
 	xend;
 }
 
+DR_MET(public virtual)
 Uint64 Statement_mysql5::getAffectedRows()
 {
 	my_ulonglong r;
@@ -329,24 +381,66 @@ Uint64 Statement_mysql5::getAffectedRows()
 		if ((info = strchr(info, ':')))
 			return strtoll(info+1, (char **)&info, 0);
 		if ((r = mysql_stmt_num_rows(stmt)) == (my_ulonglong)-1) {
-			Connection_mysql5::throwSqlExcept(mysql_stmt_sqlstate(stmt), mysql_stmt_error(stmt));
+			throwMyExcept();
 		}
 	}
 #else
 	if ((r = mysql_stmt_affected_rows(stmt)) == (my_ulonglong)-1) {
-		Connection_mysql5::throwSqlExcept(mysql_stmt_sqlstate(stmt), mysql_stmt_error(stmt));
+		throwMyExcept();
 	}
 #endif
 	return r;
 }
 
+DR_MET(public virtual)
 Uint64 Statement_mysql5::getInsertId()
 {
 	my_ulonglong r;
 	if ((r = mysql_stmt_insert_id(stmt)) == (my_ulonglong)-1) {
-		Connection_mysql5::throwSqlExcept(mysql_stmt_sqlstate(stmt), mysql_stmt_error(stmt));
+		throwMyExcept();
 	}
 	return r;
+}
+
+DR_MET(protected virtual)
+void Statement_mysql5::throwMyExcept()
+{
+	const char *code_str = mysql_stmt_sqlstate(stmt);
+	const char *error_desc = mysql_stmt_error(stmt);
+	int code = Connection_mysql5::parseSqlCode(code_str);
+	SqlException *ex;
+	switch (code) {
+	case 23000:
+		switch (mysql_stmt_errno(stmt)) {
+		case ER_DUP_KEY:
+		case ER_DUP_ENTRY:
+		case ER_DUP_ENTRY_WITH_KEY_NAME:
+		case ER_DUP_ENTRY_AUTOINCREMENT_CASE:
+		case ER_DUP_UNIQUE:
+			ex = new SqlUniqueConstraintException(code, error_desc);
+			break;
+
+		case ER_BAD_NULL_ERROR:
+			ex = new SqlBadNullConstraintException(code, error_desc);
+			break;
+
+		case ER_NO_REFERENCED_ROW:
+		case ER_NO_REFERENCED_ROW_2:
+		case ER_ROW_IS_REFERENCED:
+		case ER_ROW_IS_REFERENCED_2:
+			ex = new SqlForeignKeyConstraintException(code, error_desc);
+			break;
+
+		default:
+			ex = new SqlConstraintException(code, error_desc);
+		}
+		break;
+
+	default:
+		ex = new SqlException(code, error_desc);
+		break;
+	}
+	xthrowmove(ex);
 }
 
 

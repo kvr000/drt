@@ -10,4 +10,6 @@ SOURCES:
 	:${SD_EXCEPT}/SqlConstraintException.cxx:g=s,t
 	:${SD_EXCEPT}/SqlUniqueConstraintException.hxx:g=di,t
 	:${SD_EXCEPT}/SqlUniqueConstraintException.cxx:g=s,t
+	:${SD_EXCEPT}/SqlBadNullConstraintException.cxx:g=di,s,t,gh
+	:${SD_EXCEPT}/SqlForeignKeyConstraintException.cxx:g=di,s,t,gh
 

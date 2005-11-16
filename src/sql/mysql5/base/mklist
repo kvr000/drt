@@ -4,8 +4,7 @@ SOURCES:
 	no:${SD_BASE}/mklist:g=t
 	:${SD_BASE}/def.hxx:g=didev,t
 	:${SD_BASE}/Connection_mysql5.cxx:g=s,t,gh,didev
-	:${SD_BASE}/Statement_mysql5.hxx:g=didev,t
-	:${SD_BASE}/Statement_mysql5.cxx:g=s,t
+	:${SD_BASE}/Statement_mysql5.cxx:g=s,t,gh,didev
 	:${SD_BASE}/Statement_mysql5_direct.hxx:g=didev,t
 	:${SD_BASE}/Statement_mysql5_direct.cxx:g=s,t
 	:${SD_BASE}/ResultSet_mysql5.hxx:g=didev,t

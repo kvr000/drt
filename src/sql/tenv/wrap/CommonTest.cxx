@@ -44,6 +44,7 @@
 #include <dr/x_kw.hxx>
 #include <dr/Exception.hxx>
 #include <dr/sql/tenv/TestUnique.hxx>
+#include <dr/sql/tenv/TestNullConstraint.hxx>
 #include <dr/sql/tenv/TestStatementSeek.hxx>
 
 #include <dr/sql/tenv/CommonTest.hxx>
@@ -76,6 +77,7 @@ DR_MET(public virtual)
 void CommonTest::test(const String &arg DR_INIT(= Null()))
 {
 	tref(new TestUnique(db_conn))->test();
+	tref(new TestNullConstraint(db_conn))->test();
 	tref(new TestStatementSeek(db_conn))->test();
 	db_conn->commit();
 }

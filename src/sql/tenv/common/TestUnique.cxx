@@ -72,7 +72,7 @@ TestUnique::~TestUnique()
 DR_MET(public virtual)
 void TestUnique::test(const String &arg DR_INIT(= Null()))
 {
-	db_sample0->removeAll();
+	db_sample0->init();
 
 	for (int i = 0; i < 2; i++)
 		db_sample0->insert(i, String::createNumber(i));
