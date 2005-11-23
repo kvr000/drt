@@ -121,8 +121,9 @@ bool StatementDummy::isBusy()
 	return false;
 }
 
-void StatementDummy::executeUpdate()
+Uint64 StatementDummy::executeUpdate()
 {
+	return 0;
 }
 
 ResultSet *StatementDummy::executeQuery()

@@ -312,7 +312,7 @@ bool Statement_mysql5::isBusy()
 }
 
 DR_MET(public virtual)
-void Statement_mysql5::executeUpdate()
+Uint64 Statement_mysql5::executeUpdate()
 {
 	conn->saveBusy();
 	if (!stmt)
@@ -335,6 +335,7 @@ void Statement_mysql5::executeUpdate()
 		throwMyExcept();
 	}
 	mysql_stmt_free_result(stmt);
+	return mysql_stmt_affected_rows(stmt);
 }
 
 DR_MET(public virtual)

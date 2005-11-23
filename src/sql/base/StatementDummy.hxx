@@ -82,7 +82,7 @@ public:
 
 public:
 	virtual ResultSet *		executeQuery();
-	virtual void			executeUpdate();
+	virtual Uint64			executeUpdate();
 
 public:
 	virtual Uint64			getAffectedRows();

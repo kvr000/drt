@@ -61,7 +61,7 @@ public:
 	virtual				~Statement_mysql5_direct();
 
 public:
-	virtual void			executeUpdate();
+	virtual Uint64			executeUpdate();
 
 protected:
 	Ref<Connection_mysql5>	conn;

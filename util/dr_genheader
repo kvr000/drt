@@ -480,7 +480,7 @@ sub printClass($$)
 		dieCldContext($cld, "found sql but no sql file was opened") unless ($sql);
 		foreach my $sqd (@{$cld->{sqls}}) {
 			push(@{$cld->{methods}}, { specs => { "protected" => 1 }, ret => "void", "decl" => "prep_$sqd->{name}()" });
-			push(@{$cld->{ats}}, { access => "protected", def => "Ref<dr::sql::Statement>\tst_$sqd->{name};", context => $sqd->{context} });
+			push(@{$cld->{ats}}, { access => "protected", def => tabalign("Ref<dr::sql::Statement>", 32)."st_$sqd->{name};", context => $sqd->{context} });
 			$sql->printf("\nvoid %s::prep_%s()\n{\n\tst_%s.setNoref(db_conn->prepareStatement(\"%s\"));\n}\n", $cld->{class}, $sqd->{name}, $sqd->{name}, escapeCString($sqd->{query}, 2));
 			$tag_writer->addMethod($cld, { ret => "void", decl => "prep_$sqd->{name}", context => $sqd->{context} }) if ($tag_writer);
 		}

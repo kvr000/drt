@@ -80,7 +80,7 @@ public:
 
 public:
 	virtual ResultSet *		executeQuery() = 0;
-	virtual void			executeUpdate() = 0;
+	virtual Uint64			executeUpdate() = 0;
 
 public:
 	virtual Uint64			getAffectedRows() = 0;

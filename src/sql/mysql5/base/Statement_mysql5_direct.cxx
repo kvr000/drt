@@ -60,7 +60,7 @@ Statement_mysql5_direct::~Statement_mysql5_direct()
 {
 }
 
-void Statement_mysql5_direct::executeUpdate()
+Uint64 Statement_mysql5_direct::executeUpdate()
 {
 	BString stmt_utf8(stmt_str.utf8());
 	conn->saveBusy();
@@ -70,7 +70,7 @@ void Statement_mysql5_direct::executeUpdate()
 	if (MYSQL_RES *res = mysql_store_result(conn->mysql_handle)) {
 		mysql_free_result(res);
 	}
-	mysql_affected_rows(conn->mysql_handle);
+	return mysql_affected_rows(conn->mysql_handle);
 }
 
 
