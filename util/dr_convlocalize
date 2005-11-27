@@ -123,7 +123,7 @@ eval {
 			next if (@parsed == 0);
 			die "$in_file:$line: need $count values: $_: ".Dumper(\@parsed) unless (@parsed == $count);
 			next if ($parsed[0] eq "" && $parsed[1] eq "" && $parsed[$col] eq "");
-			STDERR->print("$in_file:$line: invalid class name: $parsed[0]\n"), $errors++, next unless ($parsed[0] =~ m/^(\w|::)+$/);
+			STDERR->print("$in_file:$line: invalid class name: \'$parsed[0]\'\n"), $errors++, next unless ($parsed[0] =~ m/^(\w|::)+$/);
 			$db_full->print("$parsed[0]\t$parsed[1]\n$parsed[$col]\n");
 			my $db_class;
 			if (!defined ($db_class = $db_cls{$parsed[0]}) && !exists $db_cls{$parsed[0]}) {
