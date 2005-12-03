@@ -321,7 +321,7 @@ Blob QueueManager::processOneData(Sint64 line_no, const Blob &line_data)
 		return "";
 	ssize_t pos = 13;
 	{
-		ssize_t tend_p = line_data.find('`', pos);
+		ssize_t tend_p = line_data.findChar('`', pos);
 		if (tend_p < 0) {
 			fprintf(stderr, "stdin:%lld: cannot find ` at the end of table name\n", (long long)line_no);
 			return "";

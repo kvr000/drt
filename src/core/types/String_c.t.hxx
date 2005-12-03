@@ -280,11 +280,12 @@ DR_EXPORT_MET int String_c<Subtype>::bcmp(const String_c &s) const
 		return 1+(fd->al != 0);
 	}
 	if (fd == sd) {
-		return true;
+		return 0;
 	}
 	if ((r = Subtype::pbcmp(fd->str(), sd->str(), (fd->size < sd->size)?fd->size:sd->size)) == 0) {
 		if (fd->size != sd->size)
 			return (fd->size < sd->size)?-2:2;
+		return 0;
 	}
 	return 4*(r > 0)-2;
 }
@@ -368,7 +369,7 @@ DR_EXPORT_MET long String_c<Subtype>::getHash() const
 }
 
 template <typename Subtype>
-String_c<Subtype> String_c<Subtype>::operator+(const String_c &s)
+String_c<Subtype> String_c<Subtype>::operator+(const String_c &s) const
 {
 	Data *out;
 	Data *fd = d, *sd = s.d;
@@ -596,10 +597,10 @@ String_c<Subtype> String_c<Subtype>::right(size_t size) const
 {
 	Data *out;
 	if (size >= d->size) {
-		out = refDg(&Data::zero);
+		out = refDg(d);
 	}
 	else {
-		out = createDgLen(d->str(), d->size-size);
+		out = createDgLen(d->str()+d->size-size, size);
 	}
 
 	return String_c(out);
@@ -713,13 +714,13 @@ ssize_t String_c<Subtype>::skipSpaces(size_t start_pos)
 }
 
 template <typename Subtype>
-DR_EXPORT_MET ssize_t String_c<Subtype>::find(TC chr) const
+DR_EXPORT_MET ssize_t String_c<Subtype>::findChar(TC chr) const
 {
-	return find(chr, 0);
+	return findChar(chr, 0);
 }
 
 template <typename Subtype>
-DR_EXPORT_MET ssize_t String_c<Subtype>::find(TC chr, size_t start_pos) const
+DR_EXPORT_MET ssize_t String_c<Subtype>::findChar(TC chr, size_t start_pos) const
 {
 	for (; ; start_pos++) {
 		if (start_pos == d->size) {
@@ -733,12 +734,46 @@ DR_EXPORT_MET ssize_t String_c<Subtype>::find(TC chr, size_t start_pos) const
 }
 
 template <typename Subtype>
-DR_EXPORT_MET ssize_t String_c<Subtype>::rfind(TC chr, size_t before_pos) const
+DR_EXPORT_MET ssize_t String_c<Subtype>::rfindChar(TC chr, size_t before_pos) const
 {
 	if (before_pos > d->size)
 		before_pos = d->size;
 	for (; (ssize_t)--before_pos >= 0;) {
 		if (d->str()[before_pos] == chr)
+			break;
+	}
+	return before_pos;
+}
+
+template <typename Subtype>
+DR_EXPORT_MET ssize_t String_c<Subtype>::find(const String_c &search) const
+{
+	return find(search, 0);
+}
+
+template <typename Subtype>
+DR_EXPORT_MET ssize_t String_c<Subtype>::find(const String_c &search, size_t start_pos) const
+{
+	size_t ss = search.getSize();
+	for (; ; start_pos++) {
+		if (start_pos+ss > d->size) {
+			start_pos = (size_t)-1;
+			break;
+		}
+		if (Subtype::peq(d->str()+start_pos, search.d->str(), ss))
+			break;
+	}
+	return start_pos;
+}
+
+template <typename Subtype>
+DR_EXPORT_MET ssize_t String_c<Subtype>::rfind(const String_c &search, size_t before_pos) const
+{
+	size_t ss = search.getSize();
+	if (before_pos > d->size-ss && (ssize_t)(before_pos = d->size-ss) < 0)
+		return -1;;
+	for (; (ssize_t)--before_pos >= 0;) {
+		if (Subtype::peq(d->str()+before_pos, search.d->str(), ss))
 			break;
 	}
 	return before_pos;

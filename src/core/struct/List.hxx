@@ -45,7 +45,7 @@
 DR_NS_BEGIN
 
 
-struct ListNode_c
+struct ListNode_c: public Base
 {
 	ListNode_c *			prev, *next;
 };
@@ -125,6 +125,7 @@ public:
 	DR_RINLINE Node *		insert(const V &v)			{ return (Node *)insert_g(link.next, &v); }
 	DR_RINLINE void			remove(Node *n)				{ remove_g(n); }
 	DR_RINLINE V			removeFirst()				{ Node *n = iterFirst(); V v = n->v; remove_g(n); return v; }
+	DR_RINLINE V			removeLast()				{ Node *n = iterLast(); V v = n->v; remove_g(n); return v; }
 	DR_RINLINE V *			accAppendingNew()			{ return &((Node *)appendNew_g(link.prev))->v; }
 	DR_RINLINE V *			accInsertingNew()			{ return &((Node *)insertNew_g(link.prev))->v; }
 

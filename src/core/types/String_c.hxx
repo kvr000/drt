@@ -175,7 +175,7 @@ public:
 
 	long				getHash() const;
 
-	String_c			operator+(const String_c &s);
+	String_c			operator+(const String_c &s) const;
 	String_c &			append(const String_c &s);
 	String_c &			append(const TC *str, size_t size);
 	String_c &			append(const TC *str);
@@ -221,9 +221,13 @@ public:
 	 */
 	ssize_t				skipSpaces(size_t pos);
 
-	ssize_t				find(TC chr) const;
-	ssize_t				find(TC chr, size_t start_pos) const;
-	ssize_t				rfind(TC chr, size_t before_pos) const;
+	ssize_t				findChar(TC chr) const;
+	ssize_t				findChar(TC chr, size_t start_pos) const;
+	ssize_t				rfindChar(TC chr, size_t before_pos) const;
+
+	ssize_t				find(const String_c &search) const;
+	ssize_t				find(const String_c &search, size_t start_pos) const;
+	ssize_t				rfind(const String_c &search, size_t before_pos) const;
 
 	static String_c			createNumber(Sint64 number, int base = 10);
 	static String_c			createNumber(Uint64 number, int base = 10);

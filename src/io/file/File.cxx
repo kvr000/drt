@@ -133,5 +133,25 @@ DR_EXPORT_MET void File::rename(const String &filename_, const String &tofilenam
 	File_sysiface::rename(filename_, tofilename_);
 }
 
+DR_EXPORT_MET Blob File::readFile(const String &filename)
+{
+	ERef<File> fd(new File(filename, M_READ));
+	Blob out;
+	Blob data;
+	while (!(data = fd->read(4096)).isEmpty()) {
+		out.append(data);
+	}
+	return out;
+}
+
+DR_EXPORT_MET void File::writeFile(const String &filename, const Blob &content)
+{
+	ERef<File> fd(new File(filename, M_WRITE|M_CREATE|M_TRUNC));
+	for (size_t p = 0; p < content.getSize(); ) {
+		p += fd->write(content.toStr()+p, content.getSize()-p);
+	}
+	fd->flush();
+}
+
 
 DR_IO_NS_END

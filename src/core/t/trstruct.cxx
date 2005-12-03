@@ -185,6 +185,61 @@ static void remValue(TestList *list, TestTree *tree, size_t idx)
 	checkTree(tree);
 }
 
+static void testBStrAvl()
+{
+	static const BString a_bstr("a");
+	static const BString b_bstr("b");
+	static const BString c_bstr("c");
+	static const BString d_bstr("d");
+	static const BString e_bstr("e");
+	TAvl<BString, BString> tree;
+	tree.create(a_bstr, a_bstr);
+	tree.create(b_bstr, b_bstr);
+	tree.create(c_bstr, c_bstr);
+	tree.create(d_bstr, d_bstr);
+	tree.create(e_bstr, e_bstr);
+
+	TENV_CHECK(tree.accValue(b_bstr));
+	TENV_CHECK(tree.accValue(d_bstr));
+	TENV_CHECK(tree.accValue(a_bstr));
+	TENV_CHECK(tree.iterFirst()->v == a_bstr);
+	TENV_CHECK(tree.iterNext(tree.iterFirst())->v == b_bstr);
+	TENV_CHECK(tree.iterNext(tree.iterNext(tree.iterFirst()))->v == c_bstr);
+	TENV_CHECK(tree.iterNext(tree.iterNext(tree.iterNext(tree.iterFirst())))->v == d_bstr);
+	TENV_CHECK(tree.iterNext(tree.iterNext(tree.iterNext(tree.iterNext(tree.iterFirst()))))->v == e_bstr);
+}
+
+static void testBStrAvlReal()
+{
+	static const BString s0("e");
+	static const BString s1("r");
+	static const BString s2("v");
+	static const BString s3("m");
+	static const BString s4("w");
+	static const BString s5("i");
+	static const BString s6("_");
+	static const BString s7("_");
+	TAvl<BString, BString> tree;
+	tree.create(s0, s0);
+	tree.create(s1, s1);
+	tree.create(s2, s2);
+	tree.create(s3, s3);
+	tree.create(s4, s4);
+	tree.create(s5, s5);
+	tree.create(s6, s6);
+	tree.create(s7, s7);
+
+	TENV_CHECK(tree.count() == 7);
+	TENV_CHECK(tree.accValue(s0));
+	TENV_CHECK(tree.accValue(s3));
+	TENV_CHECK(tree.accValue(s7));
+	//TENV_CHECK(tree.iterFirst()->v == a_bstr);
+	//TENV_CHECK(tree.iterNext(tree.iterFirst())->v == b_bstr);
+	//TENV_CHECK(tree.iterNext(tree.iterNext(tree.iterFirst()))->v == c_bstr);
+	//TENV_CHECK(tree.iterNext(tree.iterNext(tree.iterNext(tree.iterFirst())))->v == d_bstr);
+	//TENV_CHECK(tree.iterNext(tree.iterNext(tree.iterNext(tree.iterNext(tree.iterFirst()))))->v == e_bstr);
+}
+
 void test()
 {
 	TAvl<int, int> tree;
@@ -215,6 +270,8 @@ void test()
 			}
 		}
 	}
+	testBStrAvl();
+	testBStrAvlReal();
 }
 TENV_NSE(avl)
 #endif

@@ -129,8 +129,8 @@ void WorkerPoolManager::addWork(Object *work)
 	pending_work.append(tref(new WorkerPoolThread::WorkMessage(work)));
 	while (free_workers.count() < pending_work.count() && all_workers.count() < (unsigned)max_workers) {
 		WorkerPoolThread *worker = createWorkerThread();
-		all_workers.create(worker);
-		free_workers.create(worker);
+		all_workers.createNode(worker);
+		free_workers.createNode(worker);
 		while (exit_workers.count() > 0) {
 			exit_workers.removeFirst()->wait();
 		}

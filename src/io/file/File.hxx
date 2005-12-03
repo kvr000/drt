@@ -91,6 +91,9 @@ public:
 	static void			rename(const String &filename, const String &tofilename_);
 	static HandleType		getType(const String &filename);
 
+	static Blob			readFile(const String &filename);
+	static void			writeFile(const String &filename, const Blob &content);
+
 public:
 	static const String		unlink_string;
 	static const String		rename_string;

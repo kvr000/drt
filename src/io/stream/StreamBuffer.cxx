@@ -116,7 +116,7 @@ ssize_t StreamBuffer::tryReadUntilChar(char search)
 	ssize_t p = 0;
 	for (;;) {
 		ssize_t n;
-		if ((n = cache.find(search, p)) >= 0)
+		if ((n = cache.findChar(search, p)) >= 0)
 			return n;
 		p = cache.getSize();
 		if (tryExtendCacheAdd(1) == 0)
@@ -129,7 +129,7 @@ ssize_t StreamBuffer::readUntilChar(char search)
 	ssize_t p = 0;
 	for (;;) {
 		ssize_t n;
-		if ((n = cache.find(search, p)) >= 0)
+		if ((n = cache.findChar(search, p)) >= 0)
 			return n;
 		p = cache.getSize();
 		extendCacheAdd(256);

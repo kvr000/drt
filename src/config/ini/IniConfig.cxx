@@ -96,13 +96,13 @@ void IniConfig::initialize(dr::io::StreamBuffer *stream)
 		Blob key;
 		Blob value;
 		ssize_t p;
-		if ((p = line.find('#')) >= 0)
+		if ((p = line.findChar('#')) >= 0)
 			line.removeMid(p);
 		line.trimSpaces();
 		if (line.getSize() == 0)
 			continue;
 		if (line[0] == '[') {
-			ssize_t e = line.find(']');
+			ssize_t e = line.findChar(']');
 			if (e >= 0) {
 				line = line.mid(1, e-1);
 				if ((section = values[String(line)]) == NULL)
@@ -110,7 +110,7 @@ void IniConfig::initialize(dr::io::StreamBuffer *stream)
 				continue;
 			}
 		}
-		if ((p = line.find('=')) < 0)
+		if ((p = line.findChar('=')) < 0)
 			continue;
 		key = line.left(p); key.trimSpaces();
 		value = line.mid(p+1); value.trimSpaces();

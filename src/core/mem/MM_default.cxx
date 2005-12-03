@@ -348,14 +348,14 @@ has_out:
 			RememberHash::Node *hc;
 			StringCache::Node *sc;
 			instance.remember_mutex->lock();
-			hc = instance.remember_hash->create(out, &created);
+			hc = instance.remember_hash->createNode(out, &created);
 			if (!created)
 				DR_AssertMsg("returning already referenced memory");
 			while ((btsize = Fatal::getBacktrace(instance.str, instance.str_len)) >= instance.str_len) {
 				instance.str = (char *)::realloc(instance.str, btsize+32);
 				instance.str_len = btsize+32;
 			}
-			sc = instance.string_cache->create(instance.str, &created);
+			sc = instance.string_cache->createNode(instance.str, &created);
 			if (created)
 				sc->k = strdup(instance.str);
 			hc->v.bt = sc->k;

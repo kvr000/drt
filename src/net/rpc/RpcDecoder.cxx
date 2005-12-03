@@ -99,7 +99,7 @@ Variant *RpcDecoder::readVariant()
 			while (checkStructNext(&num_members)) {
 				String member_name = readMemberName();
 				ERef<Variant> member_value(readVariant());
-				(*struc)->create(member_name)->v = member_value;
+				(*struc)->createNode(member_name)->v = member_value;
 			}
 			return new Variant(*struc);
 		}

@@ -116,7 +116,7 @@ public:
 	DR_RINLINE			~SArray()				{ p_trunc(0); destroy_g(); }
 	DR_RINLINE V &			operator[](unsigned i)			{ DR_Assert(i*tsize < len); return ((V *)data)[i]; }
 	DR_RINLINE const V &		operator[](unsigned i) const		{ DR_Assert(i*tsize < len); return ((V *)data)[i]; }
-	DR_MINLINE unsigned		count()					{ return len/tsize; }
+	DR_MINLINE unsigned		count() const				{ return len/tsize; }
 
 	DR_NINLINE void			resize(unsigned nsize);
 	DR_NINLINE void			resizeInit(unsigned nsize, const V &iv);
@@ -171,7 +171,7 @@ public:
 	DR_RINLINE			~RArray()				{ p_trunc(0); destroy_g(); }
 	DR_RINLINE Ref<V> &		operator[](unsigned i)			{ DR_Assert(i*tsize < len); return ((SV *)data)[i]; }
 	DR_RINLINE const Ref<V> &	operator[](unsigned i) const		{ DR_Assert(i*tsize < len); return ((SV *)data)[i]; }
-	DR_MINLINE unsigned		count()					{ return len/tsize; }
+	DR_MINLINE unsigned		count() const				{ return len/tsize; }
 
 	DR_NINLINE void			resize(unsigned nsize);
 	DR_NINLINE void			resizeInit(unsigned nsize, V *iv);
@@ -212,7 +212,7 @@ public:
 	DR_MINLINE V &			operator[](unsigned i)			{ return *(Base::operator[](i)); }
 	DR_MINLINE const V &		operator[](unsigned i) const		{ return *(Base::operator[](i)); }
 
-	DR_MINLINE unsigned		count()					{ return Base::len/Base::tsize; }
+	DR_MINLINE unsigned		count() const				{ return Base::len/Base::tsize; }
 
 	DR_NINLINE void			resize(unsigned nsize);
 	DR_NINLINE void			resizeNull(unsigned nsize);

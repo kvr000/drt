@@ -212,10 +212,20 @@ sub dieCldContext($$)
 {
 	my $cld			= shift;
 	my $msg			= shift;
+	STDERR->print(Dumper($cld));
 
-	STDERR->print("$cld->{context}: $msg\n");
-	STDERR->print("$cld->{model}->{filename}:0: more definition here\n") if ($cld->{model});
+	STDERR->print("$cld->{context}->{context}: warning: $msg\n");
+	STDERR->print("$cld->{model}->{filename}:0: warning: more definition here\n") if ($cld->{model});
 	dr::Util::doDie("fatal error generating $cld->{class}");
+}
+
+sub warnCldContext($$)
+{
+	my $cld			= shift;
+	my $msg			= shift;
+
+	STDERR->print("$cld->{context}->{context}: $msg\n");
+	STDERR->print("$cld->{model}->{filename}:0: more definition here\n") if ($cld->{model});
 }
 
 sub escapeCString($$)
@@ -500,11 +510,13 @@ sub printClass($$)
 				$mods .= "inline ", $content = $met->{content}, next if ($spec eq "inline");
 				if (my $ini = (grep({ $_->{name} eq $spec } @{$cld->{ini}}))[0]) {
 					my $fullname = "$ini->{name}_$met->{name}";
+					warnCldContext($met, "$met->{specs}->{$spec} already exists in index") if (defined $ini->{str_index}{$met->{specs}->{$spec}});
+					$ini->{str_index}{$met->{specs}->{$spec}} = 1;
 					push(@{$cld->{consts}}, { access => "public", type => "String", name => $fullname, init => "(\"$met->{specs}->{$spec}\")", context => $met->{context} });
 					push(@{$ini->{elements}}, { context => $met->{context}, def => "$fullname\t(UintPtr)MethodConv::methodToFptr(&$cld->{iname}::$met->{name})" });
 					next;
 				}
-				dieCldContext($cld, "unknown method modifier $spec");
+				dieCldContext($met, "unknown method modifier $spec");
 			}
 			$access = 'public' unless (defined $access);
 			while ($mods =~ s/\b(\w+)\b\s(.*\b\1\b)/$2/) {}
@@ -592,7 +604,7 @@ sub printClass($$)
 	if ($has_inner) {
 		printIndented($hxx, $level, sprintf("};\n"));
 	}
-}
+		}
 
 sub parseConstDef($)
 {
@@ -801,7 +813,7 @@ for (my $curf = $cxx, my $curname = $cxxname; defined $curf; $curf = @ARGV ? dr:
 					}
 					elsif ($key eq "ini") {
 						STDERR->print($curf->getContext().": invalid syntax for ini, require 'type name;': $val"), $errors++, next unless ($val =~ m/^(.*?)\s+(\w+);$/);
-						push(@{$cld->{ini}}, { access => "protected", type => $1, name => $2, def => $val, context => createContext($curf, $_), elements => [] });
+						push(@{$cld->{ini}}, { str_index => {}, access => "protected", type => $1, name => $2, def => $val, context => createContext($curf, $_), elements => [] });
 					}
 					elsif ($key eq "iniel") {
 						STDERR->print($curf->getContext().": invalid syntax for iniel, require 'name ini': $val"), $errors++, next unless ($val =~ m/^(\w+)\s+(.+)$/);

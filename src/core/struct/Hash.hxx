@@ -57,7 +57,7 @@ public:
 	DR_RINLINE size_t		count() const				{ return item_count; }
 
 public:
-	struct Node_c
+	struct Node_c: public Base
 	{
 		long			hash;
 		Node_c *		next;
@@ -191,19 +191,21 @@ public:
 	DR_NINLINE			THash(const K *key0, ...)				{ va_list vl; va_start(vl, key0); while (key0) { const V *val0 = va_arg(vl, const V *); create(*key0)->v = *val0; key0 = va_arg(vl, const K *); } }
 	DR_MINLINE			THash(const None &)					{ }
 	DR_MINLINE			~THash()						{ destroy_g(); }
-	DR_NINLINE static THash *	initNew(size_t count, ...)				{ ERef<THash> h(new THash); va_list vl; va_start(vl, count); while (count-- > 0) { const K key0 = va_arg(vl, K); const V val0 = va_arg(vl, V); h->create(key0)->v = val0; } return h.getAndNull(); }
+	DR_NINLINE static THash *	initNew(size_t count, ...)				{ ERef<THash> h(new THash); va_list vl; va_start(vl, count); while (count-- > 0) { const K key0 = va_arg(vl, K); const V val0 = va_arg(vl, V); h->createNode(key0)->v = val0; } return h.getAndNull(); }
 
 public:
 	DR_MINLINE Node *		find(const K &k) const					{ return (Node *)Hash_c::find_g(comp().khash(k), &k); }
 	DR_MINLINE V *			accValue(const K &k) const				{ if (Node *kvp = (Node *)Hash_c::find_g(comp().khash(k), &k)) return &kvp->v; else return NULL; }
-	DR_MINLINE Node *		create(const K &k, bool *created = NULL)		{ return (Node *)Hash_c::create_g(comp().khash(k), &k, created); }
+	DR_MINLINE Node *		createNode(const K &k, bool *created = NULL)		{ return (Node *)Hash_c::create_g(comp().khash(k), &k, created); }
+	DR_MINLINE bool			create(const K &k, const V &v)				{ bool cr; Node *n = createNode(k, &cr); if (cr) n->v = v; return cr; }
+	DR_MINLINE bool			replace(const K &k, const V &v)				{ bool cr; createNode(k, &cr)->v = v; return cr; }
 	DR_MINLINE bool			remove(const K &k)					{ return Hash_c::remove_g(comp().khash(k), &k); }
 	DR_MINLINE void			clean()							{ clean_g(); }
 
 	DR_MINLINE Node *		iterFirst() const					{ return (Node *)Hash_c::iterFirst_g(); }
 	DR_MINLINE Node *		iterNext(Node *cur) const				{ return (Node *)Hash_c::iterNext_g(cur); }
 
-	DR_MINLINE V &			operator[](const K &k)					{ return create(k)->v; }
+	DR_MINLINE V &			operator[](const K &k)					{ return createNode(k)->v; }
 
 	DR_MINLINE void			moveFrom(THash *source)					{ moveFrom_g(source); }
 	DR_MINLINE void			replaceFrom(THash *source)				{ replaceFrom_g(source); }
