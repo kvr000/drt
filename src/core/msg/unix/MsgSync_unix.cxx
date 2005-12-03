@@ -260,6 +260,7 @@ int MsgSync_unix::threadSleep(Sint64 timeout_ns)
 
 void MsgSync_unix::threadWake()
 {
+	int serr;
 	pthread_mutex_lock(&sync_mutex);
 	thread->msg_unsetWaiting();
 	switch (method) {
@@ -268,7 +269,7 @@ void MsgSync_unix::threadWake()
 		break;
 
 	case 1:
-		write(pipe_fd[1], &thread, 1);
+		serr = write(pipe_fd[1], &thread, 1);
 		break;
 	}
 	pthread_mutex_unlock(&sync_mutex);

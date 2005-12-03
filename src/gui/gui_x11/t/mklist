@@ -18,7 +18,7 @@ SOURCES:
 	lshlib:dr:g=common
 	lshlib:drtenv:g=common
 	lshlib:drgui:g=common
-	lshlib:drgui_x11:g=x11
+	lshlib:drguix11:g=x11
 
 META:
 	vsid:{DF356A80-225A-4f9d-AF36-AB4BAAAD1EA7}:g=trylink
