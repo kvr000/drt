@@ -283,7 +283,7 @@ String XmlRpcDecoder::convertToString(const char *str, size_t len)
 {
 	BString out;
 	char *os = out.lock(len);
-	while (len-- > 0) {
+	for (const char *send = str+len; str < send; ) {
 		switch (*str++) {
 		case '&':
 			if (memcmp(str, "lt;", 3) == 0) {
@@ -296,11 +296,11 @@ String XmlRpcDecoder::convertToString(const char *str, size_t len)
 			}
 			else if (memcmp(str, "quot;", 3) == 0) {
 				*os++ = '\"';
-				str += 3;
+				str += 5;
 			}
 			else if (memcmp(str, "amp;", 3) == 0) {
 				*os++ = '&';
-				str += 3;
+				str += 4;
 			}
 			else if (str[0] == '#') {
 				char *stro;

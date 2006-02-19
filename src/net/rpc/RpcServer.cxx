@@ -95,8 +95,14 @@ void RpcServer::releaseResources()
 }
 
 DR_MET(protected virtual)
+void RpcServer::reportError(const String &method_name, const String &error_desc, const Blob &content)
+{
+}
+
+DR_MET(protected virtual)
 void RpcServer::processUnknownMethod(const String &method_name, RpcEncoder *encoder)
 {
+	reportError(method_name, String("unknown method called"), encoder->getContent());
 	encoder->writeHeader();
 	encoder->writeFaultResponse(400, "Unknown method");
 }
@@ -104,6 +110,7 @@ void RpcServer::processUnknownMethod(const String &method_name, RpcEncoder *enco
 DR_MET(protected virtual)
 void RpcServer::processException(const String &method_name, RpcEncoder *encoder, dr::Exception *ex)
 {
+	reportError(method_name, String("failed with exception: ").append(ex->stringify()), encoder->getContent());
 	encoder->writeHeader();
 	encoder->writeFaultResponse(1, String("method failed: ")+ex->stringify());
 }
@@ -111,6 +118,7 @@ void RpcServer::processException(const String &method_name, RpcEncoder *encoder,
 DR_MET(protected virtual)
 void RpcServer::processFailure(const String &method_name, RpcEncoder *encoder, int fault_code)
 {
+	reportError(method_name, String("failed with error: ").appendNumber(fault_code), encoder->getContent());
 	encoder->writeHeader();
 	encoder->writeFaultResponse(fault_code, "method failed");
 }

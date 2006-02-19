@@ -162,7 +162,7 @@ void test()
 	ssize_t sz;
 	Blob rpc_call("<?xml version=\"1.0\"?><methodCall><methodName>some.unknown</methodName><params>"
 			"<param><value><i4>534</i4></value></param>"
-			"<param><value><array><data><value><string>bla</string></value></data></array></value></param>"
+			"<param><value><array><data><value><string>bla&gt;&#10;</string></value></data></array></value></param>"
 			"<param><value><struct><member><name>id</name><value><boolean>false</boolean></value></member><member><name>val</name><value><double>1.5</double></value></member></struct></value></param>"
 			"<param><value><struct></struct></value></param>"
 			"<param><value><base64>YWJjZA==</base64></value></param>"
@@ -176,7 +176,7 @@ void test()
 	TENV_CHECK(decoder->readInt32() == 534);
 	sz = decoder->readArrayLength();
 	TENV_CHECK(decoder->checkArrayNext(&sz));
-	TENV_CHECK(decoder->readString() == "bla");
+	TENV_CHECK(decoder->readString() == "bla>\n");
 	TENV_CHECK(!decoder->checkArrayNext(&sz));
 	sz = decoder->readStructLength();
 	TENV_CHECK(decoder->checkStructNext(&sz));
