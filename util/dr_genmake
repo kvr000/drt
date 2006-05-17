@@ -743,11 +743,31 @@ sub printSlist
 	my $mf		= shift;
 	my $vars	= shift;
 
-
 	$mf->print(dr::build::out::MakeCommon::genRecursiveAction("slist", "lslist", $vars)."\n");
 	$mf->print("lslist:\n");
 	foreach (dr::build::findGroups($vars->{SOURCES}->{list}, [ "t" ])) {
 		$mf->print("\techo \$(DIRS_)$_->{src}\n");
+	}
+	$mf->print("\n");
+}
+
+sub printSublist
+{
+	my $this	= shift;
+	my $mf		= shift;
+	my $vars	= shift;
+
+	$mf->print(dr::build::out::MakeCommon::genRecursiveAction("sblist", "lsblist", $vars)."\n");
+	$mf->print("lsblist:\n");
+	if (defined (my $presubs = $vars->{PRESUBS})) {
+		foreach (@$presubs) {
+			$mf->print("\techo $_->{name}\n");
+		}
+	}
+	if (defined (my $postsubs = $vars->{POSTSUBS})) {
+		foreach (@$postsubs) {
+			$mf->print("\techo $_->{name}\n");
+		}
 	}
 	$mf->print("\n");
 }
@@ -1136,6 +1156,7 @@ sub createOutput
 	}
 
 	$this->printSlist($mf, $vars);
+	$this->printSublist($mf, $vars);
 
 	$this->printOutclean($mf, $vars);
 
