@@ -1,8 +1,9 @@
 .cdef SD_RPC		.
 
+.def SD_FASTRPC		${SD_RPC}/fastrpc
 .def SD_XMLRPC		${SD_RPC}/xmlrpc
 
-.def SUBDIRS		${SD_XMLRPC}
+.def SUBDIRS		${SD_FASTRPC},${SD_XMLRPC}
 .def ESUBDIRS		{${SUBDIRS}}
 
 .include ${ESUBDIRS}/mklist

@@ -56,6 +56,8 @@
 #include <dr/MethodConv.hxx>
 #include <dr/List.hxx>
 #include <dr/net/XmlRpcEncoder.hxx>
+#include <dr/net/FastRpcDecoder.hxx>
+#include <dr/net/FastRpcEncoder.hxx>
 
 #include <dr/net/RpcServer.hxx>
 #include "_gen/RpcServer-all.hxx"
@@ -189,7 +191,8 @@ void RpcServer::run()
 			Blob body = client_http->readFullContent();
 			xtry {
 				ERef<RpcDecoder> decoder(RpcDecoder::createDecoder(body));
-				ERef<RpcEncoder> encoder((RpcEncoder *)new XmlRpcEncoder);
+				ERef<RpcEncoder> encoder;
+				encoder.setNoref(client_http->getHeader("accept").find(FastRpcEncoder::mime_type_string) >= 0 || decoder->classname() == FastRpcDecoder::comp_name ? (RpcEncoder *)new FastRpcEncoder : (RpcEncoder *)new XmlRpcEncoder);
 				xtry {
 					decoder->readHeader();
 					String method = decoder->readMethodName();

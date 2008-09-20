@@ -42,6 +42,7 @@
 
 #include <dr/io/NetAddressInet4.hxx>
 
+#include <dr/net/FastRpcDecoder.hxx>
 #include <dr/net/XmlRpcDecoder.hxx>
 
 #include <dr/net/RpcDecoder.hxx>
@@ -206,7 +207,10 @@ void RpcDecoder::setContent(const Blob &content_)
 RpcDecoder *RpcDecoder::createDecoder(const Blob &data)
 {
 	Ref<RpcDecoder> decoder;
-	decoder.setNoref(new XmlRpcDecoder());
+	if (data.getSize() >= 2 && memcmp(data.toStr(), "\xCA\x11", 2) == 0)
+		decoder.setNoref(new FastRpcDecoder());
+	else
+		decoder.setNoref(new XmlRpcDecoder());
 	decoder->setContent(data);
 	return decoder.getAndNull();
 }

@@ -1,0 +1,10 @@
+.cdef SD_FASTRPC	.
+
+
+SOURCES:
+	no:${SD_FASTRPC}/mklist:g=t
+	:${SD_FASTRPC}/FastRpcEncoder.cxx:g=s,t
+	:${SD_FASTRPC}/FastRpcEncoder.hxx:g=di,t
+	:${SD_FASTRPC}/FastRpcDecoder.cxx:g=s,t
+	:${SD_FASTRPC}/FastRpcDecoder.hxx:g=di,t
+
