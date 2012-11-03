@@ -1,0 +1,6 @@
+/src/**/Makefile
+/**/_Make_gh
+/drtetc/p/*
+/**/_build/
+/**/_dist_full.*
+/src/core/design/split/
