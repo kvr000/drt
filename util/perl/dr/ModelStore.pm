@@ -85,6 +85,8 @@ sub new
 		drtag_spec		=> {},
 		drtag_cnt		=> 0,
 	}, $class;
+
+	return $this;
 }
 
 sub addTag

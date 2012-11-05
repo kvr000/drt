@@ -237,10 +237,12 @@ long Variant::hash() const
 		if (double_val == 0)
 			return 0;
 		if (sizeof(long) >= sizeof(double_val)) {
-			return *(long *)(void *)&double_val;
+			const void *dvp = &double_val;
+			return *(const long *)dvp;
 		}
 		else {
-			long h = *(long *)(void *)&double_val;
+			const void *dvp = &double_val;
+			long h = *(const long *)dvp;
 			for (size_t i = 1; i < sizeof(double_val)/sizeof(long); i++) {
 				h ^= ((long *)(void *)&double_val)[i];
 			}

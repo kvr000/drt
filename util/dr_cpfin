@@ -10,17 +10,17 @@ function runSubAction
 	echo running for $dir >&2
 	if echo "$nocopy" | grep " $dir " > /dev/null; then
 		mkdir -p $destloc
-		echo 'all slist lslist sblist lsblist no nothing targ_init:' > $destloc/Makefile
+		echo 'all slist lslist sblist lsblist no nothing test ltest clean wclean outclean targ_init targ_pre targ_util targ_build targ_post targ_all:' > $destloc/Makefile
 	else
 		for sub in `make -C $dir -s lsblist`; do
 			runSubAction $dir/$sub
 		done
 
 		for file in `make -C $dir -s lslist`; do
-			[ "$file" != mklist ] || continue
+			[ "`basename $file`" != mklist ] || continue
 			dfile=$destsrc/$file
 			mkdir -p `dirname $dfile`
-			perl -e 'while (<>) { if (m,^(#include ")_gen(/.*)$,) { $_ = "${1}local$2\n"; } elsif (m,^/\*drt,) { while (<>) { last if (m,^\s+\*/,) }; $_ = ""; } print($_); }' < $file > $dfile
+			perl -e 'while (<>) { if (m,^(#include ")_gen(/.*)$,) { $_ = "${1}local$2\n"; } elsif (m,^/\*drt,) { while (<>) { last if (m,^\s+\*/,) }; $_ = ""; } elsif (m,^DR_MET,) { $_ = ""; } print($_); }' < $file > $dfile
 			[ ! -x "$file" ] || chmod a+x $dfile
 		done
 

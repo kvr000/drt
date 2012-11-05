@@ -503,7 +503,7 @@ void test()
 	TENV_CHECK(si.find("none") == -1);
 	SList<String> list;
 	si.appendToList(&list);
-	StringIndex vsi(&ss_bla, 8, &ss_sehy, 11, &ss_kra, 3, NULL);
+	StringIndex vsi(&ss_bla, (long)8, &ss_sehy, (long)11, &ss_kra, (long)3, NULL);
 	TENV_CHECK(vsi.find(ss_bla) == 8);
 	TENV_CHECK(vsi.find(ss_sehy) == 11);
 	TENV_CHECK(vsi.find(ss_kra) == 3);

@@ -44,6 +44,7 @@ use Getopt::Std;
 use File::Path;
 
 use File::Basename;
+use DB_File;
 use lib dirname($0)."/perl";
 use dr::XmiParser;
 use dr::FileTransaction;
@@ -53,6 +54,7 @@ our %opts;
 our $xmi_fname;
 our $dst_dir;
 our $file_trans;
+our %gen_map;
 
 sub openClassFile($$)
 {
@@ -63,7 +65,7 @@ sub openClassFile($$)
 	my $fname = $name; $fname =~ s/::/\//g;
 	$fname = "$dst_dir/$fname";
 	mkpath(dirname($fname));
-	return $file_trans->createTruncated("$fname.clsdef");
+	return $file_trans->updateChanged("$fname.clsdef");
 }
 
 sub formatPair($$)
@@ -177,6 +179,11 @@ sub genClass
 	foreach my $ch_class (@{$class->{class_list}}) {
 		genClass($xmi, $ch_class);
 	}
+	if (defined (my $genlist = $class->{comment}->{drtag_hash}{gen}->{value})) {
+		foreach my $genid (split(/,\s*/, $genlist)) {
+			$gen_map{$genid."\t".$xmi->getPrefixName($class)."::".$class->{name}} = $genlist;
+		}
+	}
 }
 
 sub genPackage
@@ -221,6 +228,8 @@ $xmi_fname = shift(@ARGV);
 $dst_dir = shift(@ARGV);
 
 $file_trans = dr::FileTransaction->new();
+tie(%gen_map, 'DB_File', "$dst_dir/genmap.db", O_CREAT|O_RDWR|O_TRUNC, 0666, $DB_BTREE)
+	or dr::Util::doDie("failed to open $dst_dir.genmap");
 
 my $xmi = dr::XmiParser->new($xmi_fname);
 
@@ -231,6 +240,8 @@ foreach my $package (@{$xmi->{packages}}) {
 }
 
 if ($file_trans->commit()) {
+	untie(%gen_map)
+		or dr::Util::doDie("failed to flush $dst_dir/genmap.db");
 	my $dummy = FileHandle->new("$dst_dir.gen", ">");
 	$dummy->printf("ok\n");
 	if (!$dummy->close()) {

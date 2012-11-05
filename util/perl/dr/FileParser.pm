@@ -59,6 +59,13 @@ sub new
 	return $this;
 }
 
+sub getFd
+{
+	my $this		= shift;
+
+	return $this->{fd};
+}
+
 sub readLine
 {
 	my $this		= shift;

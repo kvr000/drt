@@ -47,6 +47,7 @@ use lib dirname($0)."/perl";
 use dr::FileTransaction;
 use dr::SepOutput;
 use dr::ModelStore;
+use dr::GenmapReader;
 use dr::Util qw(defvalue tabalign);
 
 
@@ -72,15 +73,12 @@ getopts('', \%opts);
 die "Usage: $0 [-i] list_file target_file" unless (@ARGV == 2);
 my $listname = shift(@ARGV);
 my $targname = shift(@ARGV);
-die "passed file does not end with suffix .list" unless ($listname =~ m/(.*)\.list$/);
+die "passed file does not end with suffix .list" unless ($listname =~ m/(.*)\.(db|list)$/);
 
 our $file_trans = dr::FileTransaction->new();
 
 our $model_store = dr::ModelStore->new();
 $model_store->registerFixier(\&fixModelInfo);
-
-our $list = FileHandle->new($listname, "<")
-	or die "failed to open $listname: $!";
 
 
 sub readModel($$)
@@ -217,16 +215,13 @@ my @models = ();
 
 my $errors = 0;
 
-while (<$list>) {
-	$lineno++;
-	next if (m/^\s*(#.*|)$/);
-	chomp($_);
+my $list = dr::GenmapReader::open($listname, "sql");
+while (my ($section, $classname) = $list->getNext()) {
 	eval {
-		die "invalid format, need \"location classname\"" unless (m/^(\S+)\s+((\w+::)*\w+)$/);
-		push(@models, readModel($1, $2));
+		push(@models, readModel($section, $classname));
 		1;
 	}
-		or $errors++, STDERR->print($@ =~ m/^\S+:\d+:/ ? $@ : "$listname:$lineno: $@");
+		or $errors++, STDERR->print($@ =~ m/^\S+:\d+:/ ? $@ : $list->getContext().": $@");
 }
 
 my $sql = $file_trans->createTruncated($targname);

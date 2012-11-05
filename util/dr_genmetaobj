@@ -42,10 +42,12 @@ use FileHandle;
 use Data::Dumper;
 use Getopt::Std;
 use File::Basename;
+use DB_File;
 
 use lib dirname($0)."/perl";
 use dr::FileTransaction;
 use dr::FileParser;
+use dr::GenmapReader;
 use dr::ModelStore;
 use dr::Util qw(defvalue tabalign dumpSimple);
 
@@ -73,14 +75,12 @@ die "Usage: $0 list_file touch_file root" unless (@ARGV == 3);
 my $listname = shift(@ARGV);
 my $touch_name = shift(@ARGV);
 my $root = shift(@ARGV);
-die "passed file does not end with suffix .list" unless ($listname =~ m/(.*)\.list$/);
+die "passed file does not end with suffix .list or .db" unless ($listname =~ m/(.*)\.(db|list)$/);
 
 our $file_trans = dr::FileTransaction->new();
 
 our $model_store = dr::ModelStore->new();
 $model_store->registerFixier(\&fixModelInfo);
-
-our $list = dr::FileParser->new($listname);
 
 
 sub readModel($$)
@@ -167,21 +167,19 @@ my @models = ();
 
 my $errors = 0;
 
-while (defined (my $line = $list->readLine())) {
-	$lineno++;
-	next if ($line =~ m/^\s*(#.*|)$/);
-	chomp($line);
+my $list = dr::GenmapReader::open($listname, "metaobj");
+while (my ($section, $classname) = $list->getNext()) {
 	eval {
-		die "invalid format, need \"location classname\"" unless ($line =~ m/^(\S+)\s+((\w+::)*\w+)$/);
-		push(@models, readModel($1, $2));
+		push(@models, readModel($section, $classname));
 		1;
 	}
 		or $errors++, STDERR->print($@ =~ m/^\S+:\d+:/ ? $@ : $list->getContext().": $@");
 }
 
+
 foreach my $model (@models) {
 	my $file = $model->{full}; $file =~ s/::/\//g;
-	my $form = $file_trans->createTruncated("$root/$file.metaobj");
+	my $form = $file_trans->updateChanged("$root/$file.metaobj");
 	eval {
 		$form->print(tabalign("db_table", 16).$model->{db_table}."\n");
 		if (!$model->checkDrTagValue("virtual")) {

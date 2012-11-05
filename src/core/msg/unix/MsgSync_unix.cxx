@@ -140,7 +140,8 @@ int MsgSync_unix::threadSleep(Sint64 timeout_ns)
 			WaitMode mode;
 			if ((mode = node->v.precheck()) != 0) {
 				ERef<Message> msg(new Message);
-				msg->setSlot(*(Eslot1<void, void *> *)((void *)&node->v.notif), (void *)(mode|W_PRECHECK));
+				void *node_notif = (void *)&node->v.notif;
+				msg->setSlot(*(Eslot1<void, void *> *)node_notif, (void *)(mode|W_PRECHECK));
 				thread->addMessage_lr(msg.getAndNull());
 			}
 		}
@@ -250,7 +251,8 @@ int MsgSync_unix::threadSleep(Sint64 timeout_ns)
 				mode |= node->v.mode&(W_EXCEPT);
 			if (mode) {
 				ERef<Message> msg(new Message);
-				msg->setSlot(*(Eslot1<void, void *> *)((void *)&node->v.notif), (void *)mode);
+				void *node_notif = (void *)&node->v.notif;
+				msg->setSlot(*(Eslot1<void, void *> *)node_notif, (void *)mode);
 				thread->addMessage_lr(msg.getAndNull());
 			}
 		}
@@ -273,6 +275,7 @@ void MsgSync_unix::threadWake()
 		break;
 	}
 	pthread_mutex_unlock(&sync_mutex);
+	(void)serr;
 }
 
 

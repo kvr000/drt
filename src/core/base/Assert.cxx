@@ -299,6 +299,7 @@ void Fatal::printBacktrace(const char *msg)
 	size = sprintf(buf, "--- Thread %p end\n", Thread::current());
 	if (fatal_fd != (void *)-1)
 		serr = write((int)(SintPtr)fatal_fd, buf, size);
+	(void)serr;
 	print_mutex->unlock();
 }
 
@@ -313,6 +314,7 @@ void Fatal::plog(const char *msg, ...)
 
 	if (fatal_fd != (void *)-1)
 		serr = write((int)(SintPtr)fatal_fd, buf, strlen(buf));
+	(void)serr;
 }
 
 void Fatal::pdata(const char *msg, size_t size)
@@ -320,6 +322,7 @@ void Fatal::pdata(const char *msg, size_t size)
 	int serr;
 	if (fatal_fd != (void *)-1)
 		serr = write((int)(SintPtr)fatal_fd, msg, size);
+	(void)serr;
 }
 
 void Fatal::log(const char *msg)
@@ -337,6 +340,7 @@ void Fatal::log(const char *msg)
 			serr = write((int)(SintPtr)fatal_fd, msg, strlen(msg));
 		print_mutex->unlock();
 	}
+	(void)serr;
 }
 
 void Fatal::flog(const char *msg, ...)

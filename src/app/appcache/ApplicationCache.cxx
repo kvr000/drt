@@ -261,7 +261,7 @@ void ApplicationCache::ValueHash::freeList()
 DR_MET(public)
 void ApplicationCache::ValueHash::remove(int key_id, Object *key)
 {
-	void *hash_key[2] = { (void *)key_id, key };
+	void *hash_key[2] = { (void *)(long)key_id, key };
 	remove_g(key_id < 0 ? key->hash() : key->hashKey(key_id), hash_key);
 }
 
@@ -269,7 +269,7 @@ DR_MET(public)
 ApplicationCache::ValueHashNode *ApplicationCache::ValueHash::createRetCreated(int key_id, Object *key, Object *value)
 {
 	bool created;
-	void *hash_key[2] = { (void *)key_id, key };
+	void *hash_key[2] = { (void *)(long)key_id, key };
 	ValueHashNode *entry = (ValueHashNode *)create_g(key_id < 0 ? key->hash() : key->hashKey(key_id), hash_key, &created);
 	entry->value.setDoref(value);
 	if (!created)
@@ -280,7 +280,7 @@ ApplicationCache::ValueHashNode *ApplicationCache::ValueHash::createRetCreated(i
 DR_MET(public)
 ApplicationCache::ValueHashNode *ApplicationCache::ValueHash::find(int key_id, Object *key)
 {
-	void *hash_key[2] = { (void *)key_id, key };
+	void *hash_key[2] = { (void *)(long)key_id, key };
 	return (ValueHashNode *)find_g(key_id < 0 ? key->hash() : key->hashKey(key_id), hash_key);
 }
 

@@ -40,12 +40,24 @@ use warnings;
 
 use File::Basename;
 use File::Path;
+use File::Slurp;
 
 sub new
 {
 	my $class = shift; $class = ref($class) || $class;
 
 	return bless { opers => [], umask => eval { my $u = umask(0); umask($u); $u } }, $class;
+}
+
+sub flush
+{
+	my $this		= shift;
+
+	foreach my $op (@{$this->{opers}}) {
+		if ($op->{fd}) {
+			$op->{fd}->flush();
+		}
+	}
 }
 
 sub commit
@@ -58,6 +70,27 @@ sub commit
 		}
 	}
 
+	$this->{opers} = [];
+}
+
+sub rollback
+{
+	my $this		= shift;
+
+	foreach my $op (@{$this->{opers}}) {
+		if ($op->{fd}) {
+			close($op->{fd});
+			undef $op->{fd};
+		}
+		if ($op->{op} eq "rm") {
+			unlink($op->{fname});
+		}
+		elsif ($op->{op} eq "update") {
+		}
+		else {
+			die "unsupported operation: $op->{op}";
+		}
+	}
 	$this->{opers} = [];
 }
 
@@ -90,6 +123,16 @@ sub createTruncated
 	return $fd;
 }
 
+sub updateChanged
+{
+	my $this		= shift;
+	my $fname		= shift;
+
+	my $fd = dr::Util::createStringStream();
+	push(@{$this->{opers}}, { op => "update", fname => $fname, fd => $fd });
+	return $fd;
+}
+
 sub closeFile
 {
 	my $this		= shift;
@@ -116,27 +159,29 @@ sub closeOp
 	if ($op->{fd}->error()) {
 		die "failed to write to $op->{fname}: ".$op->{fd}->error();
 	}
-	chmod((stat($op->{fd}))[2]&07555, $op->{fd}) if (defined $this->{umask});
-	close($op->{fd});
-	undef $op->{fd};
+	if ($op->{op} eq "update") {
+		$op->{fd}->seek(0, 0);
+		my $content = read_file($op->{fd});
+		my $orig_cont = read_file($op->{fname}, err_mode => 'quiet');
+		if (!(defined $orig_cont) || $orig_cont ne $content) {
+			my $updatefd = $this->createTruncated($op->{fname});
+			$updatefd->print($content);
+			$this->closeFile($updatefd);
+		}
+		undef $op->{fd};
+	}
+	else {
+		close($op->{fd});
+		undef $op->{fd};
+		chmod((stat($op->{fname}))[2]&07555, $op->{fname}) if (defined $this->{umask});
+	}
 }
 
 sub DESTROY
 {
 	my $this		= shift;
 
-	foreach my $op (@{$this->{opers}}) {
-		if ($op->{fd}) {
-			close($op->{fd});
-			undef $op->{fd};
-		}
-		if ($op->{op} eq "rm") {
-			unlink($op->{fname});
-		}
-		else {
-			die "unsupported operation: $op->{op}";
-		}
-	}
+	$this->rollback();
 }
 
 

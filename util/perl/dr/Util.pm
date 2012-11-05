@@ -121,6 +121,11 @@ sub openStringStream
 	return $INC{"IO/String.pm"} ? IO::String->new($lines) : IO::Scalar->new(\join("", @$lines));
 }
 
+sub createStringStream
+{
+	return $INC{"IO/String.pm"} ? IO::String->new() : IO::Scalar->new();
+}
+
 sub tablength($)
 {
 	my $str			= shift;
