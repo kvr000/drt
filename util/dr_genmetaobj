@@ -63,8 +63,8 @@ sub fixModelInfo($)
 		$model->{db_table} = $db_table;
 	}
 	else {
-		($model->{db_table} = $model->{name}) =~ s/([[:lower:]])([[:upper:]])/$1_$2/g;
-		$model->{db_table} = lc($model->{db_table});
+		($model->{db_table} = $model->{name}); # =~ s/([[:lower:]])([[:upper:]])/$1_$2/g;
+		#$model->{db_table} = lc($model->{db_table});
 	}
 }
 

@@ -49,8 +49,9 @@ use dr::FileTransaction;
 use dr::FileParser;
 use dr::ModelStore;
 use dr::TagWriter;
-use dr::Util qw(tabalign);
+use dr::Util qw(tabalign escapeString escapeStringContent);
 use dr::prog::java::JavaGenerator;
+use dr::prog::gen::CopyGenerator;
 
 
 our %opts;
@@ -160,51 +161,437 @@ sub readParagraph($)
 	die "didn't find empty line of paragraph starting at $startline";
 }
 
-sub runDirectories($$)
+sub convertToJavaClass
 {
-	my $src_dir		= shift;
-	my $dst_dir		= shift;
+	my $classname			= shift;
 
-	$src_dir .= "/" unless ($src_dir =~ m,/$,);
-	$dst_dir .= "/" unless ($dst_dir =~ m,/$,);
-	my @files;
+	$classname =~ s/::/./g;
 
-	find({
-			no_chdir		=> 1,
-			wanted			=> sub {
-				if (m/(\.\/)?(.*\/|)(.*)\.java$/) {
-					push(@files, $_);
-				}
-			},
-			preprocess		=> sub {
-				return unless ($File::Find::dir eq $src_dir || $File::Find::dir."/" eq $src_dir || $File::Find::dir =~ m,^(.*/)(\w+)$,);
-				return @_;
-			},
-		}, $src_dir);
-
-	foreach my $fullname (@files) {
-		die "wrong name: $fullname" unless (substr($fullname, 0, length($src_dir)) eq $src_dir);
-		my $relname = substr($fullname, length($src_dir));
-		my $src_mtime = (stat("$src_dir$relname"))[9];
-		my $dst_mtime = (stat("$dst_dir$relname"))[9];
-		next if (defined $dst_mtime && $src_mtime <= $dst_mtime);
-		$dst_mtime = "-" unless (defined $dst_mtime);
-		STDERR->print("generate from $src_dir$fullname: $src_mtime $dst_mtime\n");
-		if ((my $err = system($0, $src_dir, $dst_dir, $relname)) != 0) {
-			return $err;
-		}
-	}
-	return 0;
+	return $classname;
 }
 
-sub runFile($$$)
+sub escapeJavaTypeValue
 {
+	my $java_type			= shift;
+	my $value			= shift;
+
+	return "${value}L" if ($java_type eq "Long");
+	return escapeStringContent($value) if ($java_type eq "String");
+	return $value ? "true" : "false" if ($java_type eq "Boolean");
+	return $value;
+}
+
+sub generateEntityBean($$$$)
+{
+	my $context			= shift;
+	my $location			= shift;
+	my $classname			= shift;
+	my $more			= shift;
+
+	my $jclassname = $classname; $jclassname =~ s/::/./g;
+	my $filename = $jclassname; $filename =~ s/\./\//g;
+	my $pkgname = $jclassname; $pkgname =~ s/\.\w+$//;
+	my $classonly = $jclassname; $classonly =~ s/^.*\.//g;
+
+	return if ($context->{processed}->{$filename});
+
+	my $model = $context->{model_store}->loadModel($location, $classname);
+
+	my $fdbean = $context->{file_trans}->updateChanged($context->{dst_dir}."/$filename.java");
+	$context->{processed}->{$filename} = 1;
+
+	$fdbean->print("package $pkgname;\n\n");
+	my $sysimport_ctx = $fdbean->rememberContext();
+	$sysimport_ctx->printOnce("import javax.persistence.Entity;\n");
+	$sysimport_ctx->printOnce("import javax.persistence.Table;\n");
+	my $import_ctx = $fdbean->rememberContext();
+
+	$fdbean->print("\n\n\@Entity\n\@Table(name=\"$classonly\")\npublic class $classonly\n{\n");
+	$fdbean->indent(1);
+	my $pk_ctx = $fdbean->rememberContext();
+	my $pk_attr_ctx = $pk_ctx->subContext()->indentContext(1);
+	my $pk_method_ctx = $pk_ctx->subContext()->indentContext(1);
+	my $pk_end_ctx = $fdbean->rememberContext();
+	$fdbean->printIndented("\n");
+	my $attr_ctx = $fdbean->rememberContext();
+	$fdbean->printIndented("\n");
+	my $method_ctx = $fdbean->rememberContext();
+
+	my @primary;
+	my @primary_types;
+
+	foreach my $attr (@{$model->getAttrs()}) {
+		my $is_primary = $attr->getRole()->{primary};
+		push(@primary, $attr) if ($is_primary);
+		if ($attr->{stype} eq "attr") {
+			my $java_type = dr::prog::java::JavaGenerator::mapJavaAttrType($attr);
+			my $method = ucfirst($attr->{name});
+			$sysimport_ctx->printOnce("import javax.persistence.Column;\n");
+			my $tmap = "";
+			$tmap .= "\@Column(name=\"".$attr->{name}."\")\n";
+			if ($attr->checkDrTagValue("serial")) {
+				$sysimport_ctx->printOnce("import javax.persistence.GenerationType;\n");
+				$sysimport_ctx->printOnce("import javax.persistence.GeneratedValue;\n");
+				$tmap .= "\@GeneratedValue(strategy=GenerationType.AUTO)\n";
+			}
+			my $dfl = (defined $attr->{default}) ?
+				" = ".escapeJavaTypeValue($java_type, $attr->{default}) :
+				(defined $attr->checkDrTagValue("do_mandatory")) ? " = ".escapeJavaTypeValue($java_type, $attr->checkDrTagValue("do_mandatory")) :
+				"";
+			my $athis = $is_primary ? "this.pk" : "this";
+			($is_primary ? $pk_attr_ctx : $attr_ctx)->print($tmap.tabalign("protected $java_type", 32)."$attr->{name}$dfl;\n");
+			$method_ctx->print(tabalign("public void", 32)."set$method($java_type $attr->{name}_)\n{\n\t$athis.$attr->{name} = $attr->{name}_;\n}\n\n");
+			$method_ctx->print(tabalign("public $java_type", 32)."get$method()\n{\n\treturn $athis.$attr->{name};\n}\n\n");
+			if ($is_primary) {
+				$pk_method_ctx->print(tabalign("public void", 32)."set$method($java_type $attr->{name}_)\n{\n\tthis.$attr->{name} = $attr->{name}_;\n}\n\n");
+				$pk_method_ctx->print(tabalign("public $java_type", 32)."get$method()\n{\n\treturn this.$attr->{name};\n}\n\n");
+			}
+		}
+		elsif ($attr->{stype} eq "child") {
+			if ($attr->checkDrTagValue("tied")) {
+				my $tied_class = $attr->getAssocTarget();
+				$import_ctx->printOnce("import ".convertToJavaClass($tied_class->{full}).";\n");
+				$sysimport_ctx->printOnce("import javax.persistence.OneToMany;\n");
+				$sysimport_ctx->printOnce("import javax.persistence.JoinColumn;\n");
+				$sysimport_ctx->printOnce("import javax.persistence.FetchType;\n");
+				$sysimport_ctx->printOnce("import javax.persistence.CascadeType;\n");
+				$sysimport_ctx->printOnce("import java.util.Set;\n");
+				my $tmap = "";
+				$tmap .= "\@OneToMany(fetch=FetchType.EAGER, cascade=CascadeType.ALL)\n";
+				$tmap .= "\@JoinColumn(name=\"".
+				join(",", map({ $_->{name} } $tied_class->getCompos()->expandAssocAttrs())).
+				"\")\n";
+				$attr_ctx->print($tmap.tabalign("private Set<$tied_class->{name}>", 32)."$attr->{name};\n\n");
+				$method_ctx->print(tabalign("public Set<$tied_class->{name}>", 32)."get".ucfirst($attr->{name})."()\n{\n\treturn $attr->{name};\n}\n\n");
+				$method_ctx->print(tabalign("public void", 32)."set".ucfirst($attr->{name})."(Set<$tied_class->{name}> $attr->{name}_)\n{\n\tthis.$attr->{name} = $attr->{name}_;\n}\n\n");
+			}
+		}
+		elsif ($attr->{stype} eq "assoc") {
+			# nothing
+		}
+		elsif ($attr->{stype} eq "compos") {
+			# nothing
+			if ($is_primary) {
+				my $compos = $attr->getAssocTarget();
+				my $compos_class = convertToJavaClass($compos->{name});
+				$pk_attr_ctx->print("\@Column(name=\"$attr->{name}\")\n");
+				$pk_attr_ctx->print(tabalign("public $compos_class.Pk", 32)."$attr->{name}Pk;\n\n");
+				$method_ctx->print(tabalign("public void", 32)."set${compos_class}Pk(${compos_class}.Pk $attr->{name}Pk_)\n{\n\tthis.pk.$attr->{name}Pk = $attr->{name}Pk_;\n}\n\n");
+				$method_ctx->print(tabalign("public $compos_class.Pk", 32)."get${compos_class}Pk()\n{\n\treturn this.pk.$attr->{name}Pk;\n}\n\n");
+			}
+		}
+		else {
+			dr::Util::doDie("unknown attribute stype: $attr->{name} -> $attr->{stype}");
+		}
+	}
+	if (@primary) {
+		$sysimport_ctx->printOnce("import javax.persistence.EmbeddedId;\n");
+		$sysimport_ctx->printOnce("import javax.persistence.Embeddable;\n");
+		$sysimport_ctx->printOnce("import java.io.Serializable;\n");
+		$pk_ctx->print("\@Embeddable\npublic static class Pk implements Serializable\n{\n");
+		$pk_ctx->print("\t".tabalign("private static final long serialVersionUID", 32)."= 1L;\n\n");
+		my $inpk_ctx = $pk_end_ctx->indentContext(1);
+		$inpk_ctx->print(tabalign("public", 32)."Pk()\n{\n}\n\n");
+		$inpk_ctx->print(tabalign("public", 32)."Pk(".join(", ", map({ $_->{stype} eq "compos" ? (convertToJavaClass($_->getAssocTarget()->{name}).".Pk $_->{name}Pk") : (dr::prog::java::JavaGenerator::mapJavaAttrType($_)." $_->{name}"); } @primary)).")\n");
+		$inpk_ctx->print("{\n");
+		foreach my $pka (@primary) {
+			my $suff = $pka->{stype} eq "compos" ? "Pk" : "";
+			$inpk_ctx->print("\t"."this.$pka->{name}$suff = $pka->{name}$suff;\n");
+		}
+		$inpk_ctx->print("}\n\n");
+		my $hash_cont = "0";
+		my $equals_cont = "true";
+		foreach my $pka (@primary) {
+			my $suff = $pka->{stype} eq "compos" ? "Pk" : "";
+			$hash_cont = "($hash_cont)*37+($pka->{name}$suff == null ? 0 : $pka->{name}$suff.hashCode())";
+			$equals_cont .= " && ($pka->{name}$suff == null ? s.$pka->{name}$suff == null : $pka->{name}$suff.equals(s.$pka->{name}$suff))";
+		}
+		$inpk_ctx->print("\@Override\n".tabalign("public int", 32)."hashCode()\n{\n");
+		$inpk_ctx->print("\treturn $hash_cont;\n");
+		$inpk_ctx->print("}\n\n");
+		$inpk_ctx->print("\@Override\n".tabalign("public boolean", 32)."equals(Object o)\n{\n");
+		$inpk_ctx->print("\tif (!(o instanceof Pk))\n\t\treturn false;\n\tPk s = (Pk)o;\n");
+		$inpk_ctx->print("\treturn $equals_cont;\n");
+		$inpk_ctx->print("}\n\n");
+		$pk_end_ctx->print("};\n");
+		$pk_end_ctx->print("\n\@EmbeddedId\n".tabalign("protected Pk", 32)."pk = new Pk();\n\n");
+		$method_ctx->print(tabalign("public Pk", 32)."getPk()\n{\treturn pk;\n}\n\n");
+		$method_ctx->print(tabalign("public void", 32)."setPk(Pk pk_)\n{\tthis.pk = pk_;\n}\n\n");
+	}
+	$fdbean->indent(-1);
+	$fdbean->print("};\n");
+
+	$context->{file_trans}->closeFile($fdbean);
+}
+
+sub generateOperParamList($)
+{
+	my $oper			= shift;
+
+	return join(", ",
+		map({
+				my ( $ptype, $ptagger ) = $_->getFinalTypeWithTagger();
+				($ptype->{stype} eq "primitive" ? dr::prog::java::JavaGenerator::mapJavaType($ptype) : convertToJavaClass($ptype->{full}))." $_->{name}"
+			} @{$oper->{param_list}})
+	);
+}
+
+sub generateEntityDaoIf($$$$)
+{
+	my $context			= shift;
+	my $location			= shift;
+	my $classname			= shift;
+	my $more			= shift;
+
+	my $jbaseclassname = $classname; $jbaseclassname =~ s/::/./g;
+	my $jclassname = $jbaseclassname."Dao";
+	my $filename = $jclassname; $filename =~ s/\./\//g;
+	my $pkgname = $jclassname; $pkgname =~ s/\.\w+$//;
+	my $classonly = $jclassname; $classonly =~ s/^.*\.//g;
+	my $baseclassonly = $jbaseclassname; $baseclassonly =~ s/^.*\.//g;
+
+	return if ($context->{processed}->{$filename});
+
+	my $model = $context->{model_store}->loadModel($location, $classname);
+	my $dao = $model->checkSubModel("${classname}::Dao");
+
+	my $fddao = $context->{file_trans}->updateChanged($context->{dst_dir}."/$filename.java");
+	$context->{processed}->{$filename} = 1;
+
+	$fddao->print("package $pkgname;\n\n");
+	my $sysimport_ctx = $fddao->rememberContext();
+	#$fddao->printOnce($sysimport_ctx, "import java.util.Collection;\n");
+	my $import_ctx = $fddao->rememberContext();
+	$import_ctx->printOnce("import $jbaseclassname;\n");
+
+	$fddao->printIndented("\n\npublic interface $classonly\n{\n");
+	$fddao->indent(1);
+	my $method_ctx = $fddao->rememberContext();
+
+	$method_ctx->print(tabalign("public void", 32)."save($baseclassonly obj);\n\n");
+	$method_ctx->print(tabalign("public void", 32)."remove($baseclassonly obj);\n\n");
+	#$method_ctx->print("public Collection<EntityHolder<$baseclassonly>> list();\n\n");
+	if ($dao) {
+		for my $oper (grep({ $_->{name} =~ /^dr\.(\w+)\./ } @{$dao->{oper_list}})) {
+			dr::Util::doDie("wrong name for dao operation: $oper->{name}") unless ($oper->{name} =~ m/^dr\.(\w+)\.(\w+)$/);
+			my $optype = $1;
+			my $opname = $2;
+			if ($optype eq "load") {
+				if (0) {
+					$sysimport_ctx->printOnce("import dr.core.EntityHolder;\n");
+					$method_ctx->print(tabalign("public EntityHolder<$baseclassonly>", 32)."$opname(".generateOperParamList($oper).");\n\n");
+				}
+				else {
+					$method_ctx->print(tabalign("public $baseclassonly", 32)."$opname(".generateOperParamList($oper).");\n\n");
+				}
+			}
+			elsif ($optype eq "query") {
+				$method_ctx->print(tabalign("public ".dr::prog::java::JavaGenerator::mapJavaType($oper->getReturnTypeWithTagger()), 32)."$opname(".generateOperParamList($oper).");\n\n");
+			}
+			elsif ($optype eq "update") {
+				my $ret_type = dr::prog::java::JavaGenerator::mapJavaType($oper->getReturnTypeWithTagger());
+				$method_ctx->print(tabalign("public $ret_type", 32)."$opname(".generateOperParamList($oper).");\n\n");
+			}
+			else {
+				dr::Util::doDie("unknown dao operation type: $optype");
+			}
+		}
+	}
+
+	$fddao->indent(-1);
+	$fddao->print("};\n");
+
+	$context->{file_trans}->closeFile($fddao);
+}
+
+sub generateEntityDaoHib($$$$)
+{
+	my $context			= shift;
+	my $location			= shift;
+	my $classname			= shift;
+	my $more			= shift;
+
+	my $jbaseclassname = $classname; $jbaseclassname =~ s/::/./g;
+	my $jclassname = $jbaseclassname."DaoImpl";
+	my $filename = $jclassname; $filename =~ s/\./\//g;
+	my $pkgname = $jclassname; $pkgname =~ s/\.\w+$//;
+	my $classonly = $jclassname; $classonly =~ s/^.*\.//g;
+	my $baseclassonly = $jbaseclassname; $baseclassonly =~ s/^.*\.//g;
+
+	return if ($context->{processed}->{$filename});
+
+	my $model = $context->{model_store}->loadModel($location, $classname);
+	my $dao = $model->checkSubModel("${classname}::Dao");
+
+	my $fddao = $context->{file_trans}->updateChanged($context->{dst_dir}."/$filename.java");
+	$context->{processed}->{$filename} = 1;
+
+	$fddao->print("package $pkgname;\n\n");
+	my $sysimport_ctx = $fddao->rememberContext();
+	$sysimport_ctx->printOnce("import $jbaseclassname;\n");
+	$sysimport_ctx->printOnce("import org.hibernate.SessionFactory;\n");
+	$sysimport_ctx->printOnce("//import org.springframework.dao.DataAccessException;\n");
+	$sysimport_ctx->printOnce("import org.springframework.orm.hibernate3.HibernateTemplate;\n");
+	$sysimport_ctx->printOnce("import org.springframework.stereotype.Repository;\n");
+	$sysimport_ctx->printOnce("import org.springframework.transaction.annotation.Propagation;\n");
+	$sysimport_ctx->printOnce("import org.springframework.transaction.annotation.Transactional;\n");
+
+	my $import_ctx = $fddao->rememberContext();
+
+	$fddao->printIndented("\n\n\@Repository\n\@Transactional(readOnly = true)\npublic class $classonly extends dr.core.ContextDao implements ${jbaseclassname}Dao\n{\n");
+	$fddao->indent(1);
+	my $attr_ctx = $fddao->rememberContext();
+	$fddao->printIndented("\n");
+	my $method_ctx = $fddao->rememberContext();
+
+	$fddao->printAt($attr_ctx, tabalign("protected HibernateTemplate", 32)."template = null;\n\n");
+
+	$fddao->printAt($method_ctx, tabalign("public void", 32)."setSessionFactory(SessionFactory sessionFactory)\n{\ttemplate = new HibernateTemplate(sessionFactory);\n}\n\n");
+
+	$fddao->printAt($method_ctx, "\@Transactional(readOnly = false, propagation = Propagation.REQUIRES_NEW)\n".tabalign("public void", 32)."save($baseclassonly obj)\n{\n\ttemplate.saveOrUpdate(obj);\n}\n\n");
+	$fddao->printAt($method_ctx, "\@Transactional(readOnly = false, propagation = Propagation.REQUIRES_NEW)\n".tabalign("public void", 32)."remove($baseclassonly obj)\n{\n\ttemplate.delete(obj);\n}\n\n");
+	#$fddao->printAt($method_ctx, "\@SuppressWarnings(\"unchecked\")\n".tabalign("public Collection<EntityHolder<$baseclassonly>>", 32)."list()\n{\n\tCollection<EntityHolder<$baseclassonly>> result = new LinkedList<EntityHolder<$baseclassonly>>();\n\tfor ($baseclassonly obj: (Collection<$baseclassonly>)template.find(\"from $baseclassonly\")) {\n\t\tresult.add(new EntityHolder<$baseclassonly>(obj, role));\n\t}\n\treturn result;\n}\n\n");
+	if ($dao) {
+		for my $oper (grep({ $_->{name} =~ /^dr\.(\w+)\./ } @{$dao->{oper_list}})) {
+			dr::Util::doDie("wrong name for dao operation: $oper->{name}") unless ($oper->{name} =~ m/^dr\.(\w+)\.(\w+)$/);
+			my $optype = $1;
+			my $opname = $2;
+			if ($optype eq "load") {
+				if (0) {
+					$sysimport_ctx->printOnce("import dr.core.EntityHolder;\n");
+					$sysimport_ctx->printOnce("import java.util.List;\n");
+					$method_ctx->print(tabalign("\@SuppressWarnings(\"unchecked\")\npublic EntityHolder<$baseclassonly>", 32)." $opname(".generateOperParamList($oper).")\n{\n");
+					my $cont_ctx = $method_ctx->indentContext(1);
+					my $sql = "";
+					my $cond = "";
+					my $list = "";
+					if (defined ($sql = $oper->checkDrTagValue("sql"))) {
+						while ($sql =~ m/^(.*?):(\w+)(.*?)$/s) {
+							$sql = "$1?$3";
+							$list .= ", $2";
+						}
+					}
+					else {
+						foreach my $param (@{$oper->{param_list}}) {
+							$cond .= " AND $param->{name} = ?";
+							$list .= ", $param->{name}";
+						}
+						$cond = substr($cond, 5);
+						$sql = "FROM $baseclassonly WHERE $cond";
+					}
+					$cont_ctx->print("List<$baseclassonly> result = template.find(\"".escapeString($sql)."\"$list);\n");
+					$cont_ctx->print("if (result.size() == 0)\n\treturn null;\n");
+					$cont_ctx->print("return new EntityHolder<$baseclassonly>(result.get(0), null);\n");
+					$method_ctx->print("}\n\n");
+				}
+				else {
+					$sysimport_ctx->printOnce("import java.util.List;\n");
+					$method_ctx->print(tabalign("public $baseclassonly", 32)." $opname(".generateOperParamList($oper).")\n{\n");
+					my $cont_ctx = $method_ctx->indentContext(1);
+					my $sql = "";
+					my $cond = "";
+					my $list = "";
+					if (defined ($sql = $oper->checkDrTagValue("sql"))) {
+						while ($sql =~ m/^(.*?):(\w+)(.*?)$/s) {
+							$sql = "$1?$3";
+							$list .= ", $2";
+						}
+					}
+					else {
+						foreach my $param (@{$oper->{param_list}}) {
+							$cond .= " AND $param->{name} = ?";
+							$list .= ", $param->{name}";
+						}
+						$cond = substr($cond, 5);
+						$sql = "FROM $baseclassonly WHERE $cond";
+					}
+					$cont_ctx->print("\@SuppressWarnings(\"unchecked\")\nList<$baseclassonly> result = template.find(\"".escapeString($sql)."\"$list);\n");
+					$cont_ctx->print("if (result.size() == 0)\n\treturn null;\n");
+					$cont_ctx->print("return result.get(0);\n");
+					$method_ctx->print("}\n\n");
+				}
+			}
+			elsif ($optype eq "query") {
+				my $ret_type = dr::prog::java::JavaGenerator::mapJavaType($oper->getReturnTypeWithTagger());
+				$method_ctx->print(tabalign("public $ret_type", 32)."$opname(".generateOperParamList($oper).")\n{\n");
+				my $sql = $oper->getDrTagValue("sql");
+				my $cond = "";
+				my $list = "";
+				while ($sql =~ m/^(.*?):(\w+)(.*?)$/s) {
+					$sql = "$1?$3";
+					$list .= ", $2";
+				}
+				$sysimport_ctx->printOnce("import java.util.List;\n");
+				$method_ctx->print("\t\@SuppressWarnings(\"rawtypes\")\n\tList result = template.find(\"".escapeString($sql)."\"$list);\n");
+				$method_ctx->print("\treturn result.size() == 0 ? null : ($ret_type)result.get(0);\n");
+				$method_ctx->print("}\n\n");
+			}
+			elsif ($optype eq "update") {
+				my $ret_type = dr::prog::java::JavaGenerator::mapJavaType($oper->getReturnTypeWithTagger());
+				$method_ctx->print(tabalign("public $ret_type", 32)."$opname(".generateOperParamList($oper).")\n{\n");
+				my $sql = $oper->getDrTagValue("sql");
+				my $cond = "";
+				my $list = "";
+				while ($sql =~ m/^(.*?):((\w+\.)*\w+)(.*?)$/s) {
+					$sql = "$1?$4";
+					$list .= ", $2";
+				}
+				$method_ctx->print("\ttemplate.bulkUpdate(\"".escapeString($sql)."\"$list);\n");
+				$method_ctx->print("}\n\n");
+			}
+			else {
+				dr::Util::doDie("unknown dao operation type: $optype");
+			}
+		}
+	}
+
+	$fddao->indent(-1);
+	$fddao->print("};\n");
+
+	$context->{file_trans}->closeFile($fddao);
+}
+
+sub generateFile($$$$)
+{
+	my $context			= shift;
+	my $location			= shift;
+	my $classname			= shift;
+	my $gens			= shift;
+
+	foreach my $gen (@$gens) {
+		$gen =~ m/^(\w+)(:(.*))?$/
+			or dr::Util::doDie("failed to match gen element to word(:options)?: $gen");
+		$gen = $1; my $more = $2;
+		if ($gen eq "entbean") {
+			generateEntityBean($context, $location, $classname, $more);
+		}
+		elsif ($gen eq "daoif") {
+			generateEntityDaoIf($context, $location, $classname, $more);
+		}
+		elsif ($gen eq "daohib") {
+			generateEntityDaoHib($context, $location, $classname, $more);
+		}
+		else {
+			dr::Util::doDie("unknown gen identifier '$gen' for $classname");
+		}
+	}
+}
+
+sub runFile($$$$)
+{
+	my $model_store		= shift;
 	my $src_dir		= shift;
 	my $dst_dir		= shift;
 	my $relname		= shift;
 
 	my $err = eval {
-		my $processor = dr::prog::java::JavaGenerator->new($file_trans, $dst_dir, $src_dir, $relname);
+		my $processor;
+		if ($relname =~ m/\.java$/) {
+			$processor = dr::prog::java::JavaGenerator->new($file_trans, $model_store, $dst_dir, $src_dir, $relname);
+		}
+		else {
+			$processor = dr::prog::gen::CopyGenerator->new($file_trans, $model_store, $dst_dir, $src_dir, $relname);
+		}
 		$processor->process()
 			or $file_trans->flush(), 0;
 	};
@@ -215,7 +602,73 @@ sub runFile($$$)
 	return $err;
 }
 
-getopts('d', \%opts);
+sub runDirectories($$)
+{
+	my $src_dir		= shift;
+	my $dst_dir		= shift;
+
+	$src_dir .= "/" unless ($src_dir =~ m,/$,);
+	$dst_dir .= "/" unless ($dst_dir =~ m,/$,);
+	my @files;
+	find({
+			no_chdir		=> 1,
+			wanted			=> sub {
+				if (m/^(\.\/)?(.*\/|)(.*)\.(java|xml|sql)$/) {
+					push(@files, $_);
+				}
+			},
+			preprocess		=> sub {
+				return unless ($File::Find::dir eq $src_dir || $File::Find::dir."/" eq $src_dir || $File::Find::dir =~ m,^(.*/)(\w+)$,);
+				return @_;
+			},
+		}, $src_dir);
+
+	my $model_store = dr::ModelStore->new($opts{m});
+
+	my $context = {
+		file_trans		=> $file_trans,
+		src_dir			=> $src_dir,
+		dst_dir			=> $dst_dir,
+		processed		=> {},
+		model_store		=> $model_store,
+	};
+
+	foreach my $fullname (@files) {
+		die "wrong name: $fullname" unless (substr($fullname, 0, length($src_dir)) eq $src_dir);
+		my $relname = substr($fullname, length($src_dir));
+		my $src_mtime = (stat("$src_dir$relname"))[9];
+		my $dst_mtime = (stat("$dst_dir$relname"))[9];
+		next if (defined $dst_mtime && $src_mtime <= $dst_mtime);
+		$dst_mtime = "-" unless (defined $dst_mtime);
+		STDERR->print("generate from $src_dir$relname: $src_mtime $dst_mtime\n");
+		if ((my $err = runFile($model_store, $src_dir, $dst_dir, $relname)) != 0) {
+			return $err;
+		}
+	}
+
+	if (defined $opts{l}) {
+		my $fdlist = FileHandle->new("$opts{l}", "<")
+			or die "failed to open $opts{l}: $!";
+		while (<$fdlist>) {
+			chomp;
+			s/\s*(|#.*)$//;
+			next unless (length($_));
+			m/^(\w+)\s+(\S+)\s+(.*)$/
+				or die "gen line does not match 'location class gens': $_";
+			my $location = $1;
+			my $classname = $2;
+			my @gens = split(/\s+/, $3);
+			$classname =~ s/\./::/g;
+			generateFile($context, $location, $classname, \@gens);
+		}
+	}
+
+	return 0;
+}
+
+
+getopts('dm:l:', \%opts)
+	or exit(2);
 
 $file_trans = dr::FileTransaction->new();
 my $err;
@@ -226,7 +679,7 @@ if ($opts{d}) {
 }
 else {
 	die "Usage (file): $0 src-dir dst-dir file" unless (@ARGV == 3);
-	$err = runFile($ARGV[0], $ARGV[1], $ARGV[2]);
+	$err = runFile(dr::ModelStore->new($opts{m}), $ARGV[0], $ARGV[1], $ARGV[2]);
 }
 
 if ($err == 0) {
@@ -234,989 +687,3 @@ if ($err == 0) {
 }
 undef $file_trans;
 exit($err);
-
-our $cxxname;
-our $hxxname;
-our $basename;
-
-our $tag_writer;
-our $hxx;
-our $def;
-our $str;
-our $val;
-our $sql;
-our $all;
-our $model_store = dr::ModelStore->new();
-
-our $cxx = dr::FileParser->new($cxxname);
-
-our @cl_list;
-
-our %gen = ();
-our @includes = ();
-our $ns;
-our @ns_use = ();
-our @forwards = ();
-
-sub readModel($$$)
-{
-	my $location		= shift;
-	my $ns			= shift;
-	my $class		= shift;
-
-	my $name;
-
-	if ($location =~ m/^(.+)\/(\w+::.*)$/) {
-		$location = $1;
-		$name = $2;
-	}
-	elsif ($location =~ m/^(.+)\/\.$/) {
-		$location = $1;
-		$name = "${ns}::${class}";
-	}
-	else {
-		die "invalid syntax for model location: $location";
-	}
-
-	my $model = $model_store->loadModel($location, $name);
-
-	return $model;
-}
-
-sub dieCldContext($$)
-{
-	my $cld			= shift;
-	my $msg			= shift;
-	STDERR->print(Dumper($cld));
-
-	STDERR->print("$cld->{context}->{context}: warning: $msg\n");
-	STDERR->print("$cld->{model}->{filename}:0: warning: more definition here\n") if ($cld->{model});
-	dr::Util::doDie("fatal error generating $cld->{class}");
-}
-
-sub warnCldContext($$)
-{
-	my $cld			= shift;
-	my $msg			= shift;
-
-	STDERR->print("$cld->{context}->{context}: $msg\n");
-	STDERR->print("$cld->{model}->{filename}:0: more definition here\n") if ($cld->{model});
-}
-
-sub escapeCString($$)
-{
-	my $str			= shift;
-	my $ind			= shift;
-
-	my $ind_str = "\t"x$ind;
-
-	$str =~ s/([\\"'])/\\$1/g;
-	$str =~ s/\n/\\n"\n$ind_str"/g;
-	return $str;
-}
-
-sub printDirect($$)
-{
-	my $fd			= shift;
-	my $text		= shift;
-
-	if ($fd) {
-		$fd->print($text);
-	}
-}
-
-sub mapUmlType($)
-{
-	my $type		= shift;
-
-	return $type if ($type =~ m/::/);
-	return "String" if ($type =~ m/^string(\(\d*\)|)$/);
-	return "Sint64" if ($type eq "long" || $type eq "Long");
-	return "Sint32" if ($type eq "int" || $type eq "Integer");
-	return "Time::SysTime" if ($type eq "systime");
-
-	dr::Util::doDie("unknown UML type $type");
-}
-
-sub addIndent($)
-{
-	my $s			= shift;
-
-	$s =~ s/^/\t/gm;
-
-	return $s;
-}
-
-sub printIndented($$$)
-{
-	my $fd			= shift;
-	my $level		= shift;
-	my $text		= shift;
-
-	if ($fd) {
-		if ($level > 0) {
-			my $ind = "\t" x $level;
-			$text =~ s/^(.)/$ind$1/gm;
-		}
-		$fd->print($text);
-	}
-}
-
-sub formatMultiComment($)
-{
-	my $comment		= shift;
-
-	my $out = "/**\n";
-	foreach (@$comment) {
-		$out .= " * $_\n";
-	}
-	$out .= " */\n";
-}
-
-sub formatShortComment($)
-{
-	my $comment		= shift;
-
-	my $out = "/**< ";
-	foreach (@$comment) {
-		$out .= "$_ ";
-	}
-	$out .= "*/";
-	return $out;
-}
-
-sub formatMethodDecl($$)
-{
-	my $ret			= shift;
-	my $decl		= shift;
-
-	my $full = tabalign($ret, 32);
-	$full .= $decl;
-	return $full;
-}
-
-sub formatMemberDecl($$)
-{
-	my $type		= shift;
-	my $name		= shift;
-
-	my $full = $type;
-	$full = tabalign($full, 32);
-	$full .= $name;
-	return $full;
-}
-
-sub formatEnumLiteral($$$)
-{
-	my $name			= shift;
-	my $value			= shift;
-	my $comment			= shift;
-
-	my $pre;
-	if (@$comment > 1) {
-		$pre = formatMultiComment($comment);
-		$comment = [];
-	}
-	else {
-		$pre = "";
-	}
-	my $full = $name;
-	if (defined $value) {
-		$full = tabalign($full, 32);
-		$full .= " = $value";
-	}
-	$full .= ",";
-	if (@$comment) {
-		$full = tabalign($full, 80);
-		$full .= formatShortComment($comment);
-	}
-	$full .= "\n";
-	return $full;
-}
-
-sub printObjectHeader($$)
-{
-	my $cld			= shift;
-	my $level		= shift;
-
-	my $what = $cld->{type} eq "exception" ? "THROW" : "OBJECT";
-
-	printIndented($hxx, $level, sprintf("%s %s %s: public %s%s\n{\n", "class", nsToPub($ns), $cld->{iname}, $cld->{ancestor}, join("", map({ ", $_" } @{$cld->{ifaces}}))));
-	printIndented($hxx, $level, sprintf("\tDR_%s_DECL_SIMPLE(%s, %s);\n", $what, $cld->{iname}, $cld->{ancestor}));
-	printDirect($def, "\n");
-	printDirect($def, sprintf("DR_%s_IMPL_IFACE%d(%s%s);\n", $what, scalar @{$cld->{ifaces}}, $cld->{class}, join("", map({ ", $_" } @{$cld->{ifaces}}))));
-	printDirect($def, sprintf("DR_%s_DEF(%s_STR, %s, %s);\n", $what, nsToMacro($ns), $cld->{class}, $cld->{ancestor}));
-}
-
-sub printClass($$);
-sub printClass($$)
-{
-	my $cld			= shift;
-	my $level		= shift;
-
-	$cld->{iname} = $cld->{class};
-	for (my $i = 0; $i < $level; $i++) {
-		$cld->{iname} =~ s/^\w*:://;
-	}
-
-	for (my $i = 0; ; $i++) {
-		splice(@cl_list, $i, 1), last if ($cl_list[$i] == $cld);
-	}
-
-	if ($cld->{type} eq "sqllayer") {
-		$cld->{ancestor} = "dr::sql::SqlLayer" unless (defined $cld->{ancestor});
-		dieCldContext($cld, "sqllayer type used but no sql file opened") unless ($sql);
-		if ($cld->{typeflag}->{noconstr}) {
-			if (!$cld->{typeflag}->{noreg}) {
-				push(@{$cld->{methods}}, { specs => { "static" => 1, "public" => 1 }, ret => "$cld->{class} *", "decl" => "accCached(dr::sql::ConnectionHold *db_conn)" });
-				$sql->printf("DR_MET(static public)\n%s *%s::accCached(dr::sql::ConnectionHold *holder)\n{\n\tif (%s *this_ = (%s *)holder->accDbLayer(comp_name))\n\t\treturn this_;\n\treturn tref(new %s(holder));\n}\n", $cld->{class}, $cld->{class}, $cld->{class}, $cld->{class}, $cld->{class});
-			}
-		}
-		else {
-			unshift(@{$cld->{methods}}, { specs => { "protected" => 1 }, ret => "DR_CONSTRUCT", "decl" => "$cld->{class}(dr::sql::ConnectionHold *db_conn)" });
-			if ($cld->{typeflag}->{noreg}) {
-				$sql->printf("DR_MET(protected)\n%s::%s(dr::sql::ConnectionHold *db_connection_):\n\t%s(db_connection_)\n{\n}\n\n", $cld->{class}, $cld->{class}, $cld->{ancestor});
-			}
-			else {
-				push(@{$cld->{methods}}, { specs => { "static" => 1, "public" => 1 }, ret => "$cld->{class} *", "decl" => "accCached(dr::sql::ConnectionHold *db_conn)" });
-				$sql->printf("DR_MET(protected)\n%s::%s(dr::sql::ConnectionHold *db_connection_):\n\t%s(db_connection_)\n{\n\tdb_connection_->addDbLayer(this);\n}\n\n", $cld->{class}, $cld->{class}, $cld->{ancestor});
-				$sql->printf("DR_MET(static public)\n%s *%s::accCached(dr::sql::ConnectionHold *holder)\n{\n\tif (%s *this_ = (%s *)holder->accDbLayer(comp_name))\n\t\treturn this_;\n\treturn tref(new %s(holder));\n}\n", $cld->{class}, $cld->{class}, $cld->{class}, $cld->{class}, $cld->{class});
-			}
-		}
-	}
-
-	if ($cld->{type} eq "model") {
-		dieCldContext($cld, "no model loaded for class $cld->{class}") unless ($cld->{model});
-		$cld->{type} = $cld->{model}->{stype};
-		$cld->{type} = "object" if ($cld->{type} eq "class");
-		$cld->{type} = "object" if ($cld->{type} eq "assoc");
-		$cld->{ancestor} = $cld->{model}->{ancestor} unless (defined $cld->{ancestor});
-	}
-	dieCldContext($cld, "class $cld->{class} has no ancestor") if (!defined $cld->{ancestor} && !($cld->{type} eq "struct" || $cld->{type} eq "typedef" || $cld->{type} eq "enum"));
-
-	if ($cld->{doc}) {
-		my $doc = $cld->{doc};
-		$doc =~ s/^/ \* /gm;
-		$doc = "/**\n$doc */\n";
-		printIndented($hxx, $level, $doc);
-	}
-	$tag_writer->addClass($cld) if ($tag_writer);
-	my $has_inner = 1;
-	if ($cld->{model} && @{$cld->{model}->{comment}}) {
-		printIndented($hxx, $level, formatMultiComment($cld->{model}->{comment}));
-	}
-	if ($cld->{type} eq "object") {
-		printObjectHeader($cld, $level);
-	}
-	elsif ($cld->{type} eq "exception") {
-		printObjectHeader($cld, $level);
-	}
-	elsif ($cld->{type} eq "sqllayer") {
-		printObjectHeader($cld, $level);
-	}
-	elsif ($cld->{type} eq "noinfo") {
-		printIndented($hxx, $level, sprintf("%s %s %s: public %s\n{", "class", nsToPub($ns), $cld->{iname}, $cld->{ancestor}));
-	}
-	elsif ($cld->{type} eq "struct") {
-		if (defined $cld->{ancestor}) {
-			printIndented($hxx, $level, sprintf("%s %s %s: public %s\n{", "struct", nsToPub($ns), $cld->{iname}, $cld->{ancestor}));
-		}
-		else {
-			printIndented($hxx, $level, sprintf("%s %s %s\n{", "struct", nsToPub($ns), $cld->{iname}));
-		}
-	}
-	elsif ($cld->{type} eq "typedef") {
-		$has_inner = 0;
-		dieCldContext($cld, "typedef $cld->{class} has no base class") unless (defined $cld->{model} && defined $cld->{model}->{base});
-		printIndented($hxx, $level, formatMethodDecl("typedef ".mapUmlType($cld->{model}->{base}), $cld->{iname}).";\n");
-	}
-	elsif ($cld->{type} eq "enum") {
-		$has_inner = 0;
-		printIndented($hxx, $level, "enum $cld->{iname}\n{\n");
-		foreach my $literal (@{$cld->{model}->{literal_list}}) {
-			printIndented($hxx, $level+1, formatEnumLiteral($literal->{name}, $literal->{value}, $literal->{comment}));
-		}
-		printIndented($hxx, $level, "};");
-	}
-	else {
-		dieCldContext($cld, "invalid implementation type $cld->{type} specified for $cld->{class}");
-	}
-
-	if ($cld->{cont} ne "") {
-		printDirect($hxx, "\n");
-		printIndented($hxx, $level, $cld->{cont});
-	}
-
-	for (my $found = 1; $found; ) {
-		$found = 0;
-		foreach (@cl_list) {
-			if ($_->{class} =~ m/^$cld->{class}::\w+$/) {
-				dieCldContext($cld, "no sub class allowed for $cld->{class}: $_->{class}") unless ($has_inner);
-				$found = 1;
-				printDirect($hxx, "\n");
-				printIndented($hxx, $level, "public:\n");
-				printClass($_, $level+1);
-				last;
-			}
-		}
-	}
-
-	if (@{$cld->{sqls}}) {
-		dieCldContext($cld, "found sql but no sql file was opened") unless ($sql);
-		foreach my $sqd (@{$cld->{sqls}}) {
-			push(@{$cld->{methods}}, { specs => { "protected" => 1 }, ret => "void", "decl" => "prep_$sqd->{name}()" });
-			push(@{$cld->{ats}}, { access => "protected", def => tabalign("Ref<dr::sql::Statement>", 32)."st_$sqd->{name};", context => $sqd->{context} });
-			$sql->printf("\nvoid %s::prep_%s()\n{\n\tst_%s.setNoref(db_conn->prepareStatement(\"%s\"));\n}\n", $cld->{class}, $sqd->{name}, $sqd->{name}, escapeCString($sqd->{query}, 2));
-			$tag_writer->addMethod($cld, { ret => "void", decl => "prep_$sqd->{name}", context => $sqd->{context} }) if ($tag_writer);
-		}
-	}
-
-	if (@{$cld->{methods}}) {
-		my $last_allmod = "---";
-		foreach my $met (@{$cld->{methods}}) {
-			my $access;
-			my $mods = "";
-			my $abstr = "";
-			my $content = ";";
-			foreach my $spec (keys %{$met->{specs}}) {
-				$access = $spec, next if ($spec eq "public" || $spec eq "protected" || $spec eq "private");
-				$mods .= "$spec ", next if ($spec eq "virtual" || $spec eq "static");
-				$mods .= "virtual ", $abstr = " = 0", next if ($spec eq "abstract");
-				$mods .= "inline ", $content = $met->{content}, next if ($spec eq "inline");
-				if (my $ini = (grep({ $_->{name} eq $spec } @{$cld->{ini}}))[0]) {
-					my $fullname = "$ini->{name}_$met->{name}";
-					warnCldContext($met, "$met->{specs}->{$spec} already exists in index") if (defined $ini->{str_index}{$met->{specs}->{$spec}});
-					$ini->{str_index}{$met->{specs}->{$spec}} = 1;
-					push(@{$cld->{consts}}, { access => "public", type => "String", name => $fullname, init => "(\"$met->{specs}->{$spec}\")", context => $met->{context} });
-					push(@{$ini->{elements}}, { context => $met->{context}, def => "$fullname\t(UintPtr)MethodConv::methodToFptr(&$cld->{iname}::$met->{name})" });
-					next;
-				}
-				dieCldContext($met, "unknown method modifier $spec");
-			}
-			$access = 'public' unless (defined $access);
-			while ($mods =~ s/\b(\w+)\b\s(.*\b\1\b)/$2/) {}
-			my $allmod = "-$access-$mods-";
-			if ($allmod ne $last_allmod) {
-				printDirect($hxx, "\n");
-				printIndented($hxx, $level, "$access:\n");
-				$last_allmod = $allmod;
-			}
-			elsif (defined $met->{comment}) {
-				printDirect($hxx, "\n");
-			}
-			if (defined $met->{comment}) {
-				my $c = $met->{comment};
-				if ($c ne "") {
-					$c =~ s/^/\t/mg;
-					printIndented($hxx, $level, sprintf("%s", $c));
-				}
-			}
-			if ($content =~ m/\n/s) {
-				my $ind = "\t" x ($level+1);
-				$content =~ s/^\s*//;
-				$content =~ s/^/$ind/mg;
-				$content = "\n$content";
-			}
-			my $decl = $met->{decl};
-			while ($decl =~ m/^(.*?)\s*DR_INIT\((.*)$/) {
-				my $end = dr::Util::findEndParenthesis($2);
-				$decl = "$1 ".substr($2, 0, $end).substr($2, $end+1);
-			}
-			printIndented($hxx, $level, sprintf("\t%s%s\n", formatMethodDecl("$mods$met->{ret}", "$decl$abstr"), $content));
-		}
-	}
-
-	if (@{$cld->{ats}} || @{$cld->{ini}}) {
-		printDirect($hxx, "\n");
-		my $last_access = "";
-		foreach my $ad (@{$cld->{ats}}, @{$cld->{ini}}) {
-			if ($ad->{access} ne $last_access) {
-				$last_access = $ad->{access};
-				printIndented($hxx, $level, sprintf("%s:\n", $last_access));
-			}
-			printIndented($hxx, $level, sprintf("\t%s\n", $ad->{def}));
-			$tag_writer->addAttribute($cld, $ad) if ($tag_writer);
-		}
-	}
-
-	if (@{$cld->{consts}}) {
-		dieCldContext($cld, "found consts but no val file was opened") unless ($val);
-		printDirect($hxx, "\n");
-		my $last_access = "";
-		foreach my $cnd (@{$cld->{consts}}) {
-			if ($cnd->{access} ne $last_access) {
-				$last_access = $cnd->{access};
-				printIndented($hxx, $level, sprintf("%s:\n", $last_access));
-			}
-			printIndented($hxx, $level, sprintf("\t%s;\n", formatMemberDecl("static const $cnd->{type}", $cnd->{name})));
-			$val->printf("const %s %s::%s%s;\n", $cnd->{type}, $cld->{class}, $cnd->{name}, ($cnd->{type} =~ m/^(B|W|)String$/) ? "(Const::".lc($cnd->{type}).$cnd->{init}.")" : $cnd->{init});
-			$tag_writer->addConst($cld, $cnd) if ($tag_writer);
-		}
-	}
-
-	foreach my $ini (@{$cld->{ini}}) {
-		dieCldContext($cld, "found ini but no val file was opened") unless ($val);
-		if ($ini->{type} eq "static const StringIndex") {
-			$val->printf("const StringIndex %s::%s(\n", $cld->{class}, $ini->{name});
-			foreach my $inel (@{$ini->{elements}}) {
-				dieCldContext($cld, "expected 'str_var value' for StringIndex") unless ($inel->{def} =~ m/^(\S+)\s+(.*)$/);
-				$val->printf("\t&$1, $2,\n");
-			}
-			$val->printf("\tNULL\n);\n");
-		}
-		else {
-			dieCldContext($cld, "don't know how to init ini $ini->{type}, supported are 'static const StringIndex'");
-		}
-	}
-
-	if (@{$cld->{friends}}) {
-		printIndented($hxx, $level, "\npublic:\n");
-		foreach my $friend (@{$cld->{friends}}) {
-			printIndented($hxx, $level, sprintf("\t%s\n", formatMethodDecl("friend", $friend)));
-		}
-	}
-
-	if ($has_inner) {
-		printIndented($hxx, $level, sprintf("};\n"));
-	}
-}
-
-sub parseConstDef($)
-{
-	my $def			= shift;
-
-	die "incorrect syntax for const definition: $def" if ($def !~ m/^\s*(.*\S)\s+(\w+)(\(.+\))\s*;\s*$/);
-	die "type undefined" if ($1 eq "");
-	return ( type => $1, name => $2, init => $3 );
-}
-
-sub createModelCld($$)
-{
-	my $location		= shift;
-	my $name		= shift;
-
-	return {
-		class			=> $name,
-		type			=> "model",
-		cont			=> "",
-		typeflag		=> {},
-		ifaces			=> [],
-		methods			=> [],
-		ats			=> [],
-		ini			=> [],
-		consts			=> [],
-		sqls			=> [],
-		friends			=> [],
-		model_loc		=> $location,
-		model			=> readModel($location, $ns, $name),
-	};
-}
-
-sub createContext($$)
-{
-	my $reader		= shift;
-	my $line		= shift;
-
-	my $context = $reader->getContext();
-	dr::Util::doDie("expected context in format file:line") unless ($context =~ m/^(.*):(\d+)$/);
-
-	return { context => $context, file => $1, lineno => $2, line => $line };
-}
-
-my $errors = 0;
-
-my $cld;
-
-my @consts;
-my @strings;
-my @wstrings;
-my @bstrings;
-
-for (my $curf = $cxx, my $curname = $cxxname; defined $curf; $curf = @ARGV ? dr::FileParser->new($curname = shift @ARGV) : undef) {
-	MAIN: while (defined (local $_ = $curf->readLine())) {
-		chomp;
-
-		if ($curname eq $cxxname) {
-			if (m/DR_CON\((\w+),\s*([^)]*)\)/) {
-				my $l = $_;
-				while ($l =~ m/DR_CON\((\w+),\s*([^)]*)\)(.*)$/) {
-					push(@consts, { type => $1, val => $2 });
-					$l = $3;
-				}
-			}
-			if (m/DR_STR\(([^)]*)\)/) {
-				my $l = $_;
-				while ($l =~ m/DR_STR\(([^)]*)\)(.*)$/) {
-					push(@strings, $1);
-					$l = $2;
-				}
-			}
-			if (m/DR_BSTR\(([^)]*)\)/) {
-				my $l = $_;
-				while ($l =~ m/DR_BSTR\(([^)]*)\)(.*)$/) {
-					push(@bstrings, $1);
-					$l = $2;
-				}
-			}
-			if (m/DR_WSTR\(([^)]*)\)/) {
-				my $l = $_;
-				while ($l =~ m/DR_WSTR\(([^)]*)\)(.*)$/) {
-					push(@wstrings, $1);
-					$l = $2;
-				}
-			}
-		}
-		if (m/^\/\*drt\s*$/) {
-			if (defined $cld) {
-				if (defined $cld->{class}) {
-					$cld->{type} = "object" unless (defined $cld->{type});
-					push(@cl_list, $cld);
-				}
-				else {
-					if (defined $cld->{ancestor} || $cld->{cont} ne "" || @{$cld->{ifaces}} || @{$cld->{ats}} ||@{$cld->{consts}} || @{$cld->{methods}} || @{$cld->{friends}} || defined $cld->{doc}) {
-						STDERR->print("no class defined while some of the attributes are"), $errors++;
-					}
-				}
-			}
-			$cld = {
-				cont		=> "",
-				typeflag	=> {},
-				ifaces		=> [],
-				methods		=> [],
-				ats		=> [],
-				ini		=> [],
-				consts		=> [],
-				sqls		=> [],
-				friends		=> [],
-			};
-			while ($_ = $curf->readLine()) {
-				chomp;
-				if (m/^\s*\*\s*$/) {
-					next;
-				}
-				elsif (m/^\s*\*\s*\/\//) {
-					next;
-				}
-				elsif (m/^\s*\*\s*(\w+):\s*(.*?)\s*$/) {
-					my ($key, $val) = ($1, $2);
-					if ($key eq "include") {
-						push(@includes, $val);
-					}
-					elsif ($key eq "ns") {
-						STDERR->printf($curf->getContext().": fatal: ns already defined\n"), exit(1) if (defined $ns);
-						$ns = $val;
-					}
-					elsif ($key eq "gen") {
-						next unless ($curname eq $cxxname);
-						%gen = map({ ( $_ => 1 ) } split(/\s+/, $val));
-					}
-					elsif ($key eq "use") {
-						push(@ns_use, $val);
-					}
-					elsif ($key eq "forward") {
-						push(@forwards, $val);
-					}
-					elsif ($key eq "revert") {
-						if (defined $cld->{ancestor} || $cld->{cont} ne "" || @{$cld->{ifaces}} || @{$cld->{ats}} ||@{$cld->{consts}} || @{$cld->{methods}} || @{$cld->{friends}} || defined $cld->{doc}) {
-							STDERR->print($curf->getContext().": no class defined while some of the attributes are"), $errors++;
-						}
-						for (my $i = 0; ; $i++) {
-							if ($i >= @cl_list) {
-								if ($opts{i}) {
-									last;
-								}
-								else {
-									STDERR->print($curf->getContext().": reverted class not yet defined: $val\n"), exit(1);
-								}
-							}
-							$cld = splice(@cl_list, $i, 1), last if ($cl_list[$i]->{class} eq $val);
-						}
-					}
-					elsif ($key eq "type") {
-						if ($val =~ m/^(\w+)\((.*)\)$/) {
-							$cld->{type} = $1;
-							$cld->{typeflag} = { map({ ( $_ => 1 ) } split(",", $2)) };
-						}
-						else {
-							$cld->{type} = $val;
-						}
-					}
-					elsif ($key eq "class") {
-						STDERR->print($curf->getContext().": fatal: ns undefined\n"), exit(1) unless (defined $ns);
-						$cld->{class} = $val;
-						($cld->{class_last} = $cld->{class}) =~ s/.*:://;
-						$cld->{context} = createContext($curf, $_);
-					}
-					elsif ($key eq "model") {
-						STDERR->print($curf->getContext().": fatal: ns undefined\n"), exit(1) unless (defined $ns);
-						STDERR->print($curf->getContext().": fatal: class undefined\n"), exit(1) unless (defined $cld->{class});
-						STDERR->print($curf->getContext().": only one model allowed\n") if (defined $cld->{model});
-						$cld->{model_loc} = $val;
-						$cld->{model} = eval {
-							readModel($cld->{model_loc}, $ns, $cld->{class});
-						}
-							or STDERR->print($curf->getContext().": failed to read model: $@\n"), $errors++;
-					}
-					elsif ($key eq "model_subs") {
-						STDERR->print($curf->getContext().": fatal: ns undefined\n"), exit(1) unless (defined $ns);
-						STDERR->print($curf->getContext().": fatal: class undefined\n"), exit(1) unless (defined $cld->{class});
-						STDERR->print($curf->getContext().": fatal: model location undefined\n") unless (defined $cld->{model_loc});
-						foreach my $sub (split(/\s+/, $val)) {
-							eval {
-								my $scld = createModelCld($cld->{model_loc}, "$cld->{class}::$sub");
-								$scld->{context} = createContext($curf, $_);
-								push(@cl_list, $scld);
-								1;
-							}
-								or STDERR->print($curf->getContext().": failed to read model: $@\n"), $errors++;
-						}
-					}
-					elsif ($key eq "ancestor") {
-						$cld->{ancestor} = $val;
-					}
-					elsif ($key eq "ifaces") {
-						push(@{$cld->{ifaces}}, split(/s+/, $val));
-					}
-					elsif ($key eq "at") {
-						push(@{$cld->{ats}}, { access => "protected", def => $val, context => createContext($curf, $_) });
-					}
-					elsif ($key eq "ap") {
-						push(@{$cld->{ats}}, { access => "public", def => $val, context => createContext($curf, $_) });
-					}
-					elsif ($key eq "am") {
-						push(@{$cld->{ats}}, { access => "private", def => $val, context => createContext($curf, $_) });
-					}
-					elsif ($key eq "ini") {
-						STDERR->print($curf->getContext().": invalid syntax for ini, require 'type name;': $val"), $errors++, next unless ($val =~ m/^(.*?)\s+(\w+);$/);
-						push(@{$cld->{ini}}, { str_index => {}, access => "protected", type => $1, name => $2, def => $val, context => createContext($curf, $_), elements => [] });
-					}
-					elsif ($key eq "iniel") {
-						STDERR->print($curf->getContext().": invalid syntax for iniel, require 'name ini': $val"), $errors++, next unless ($val =~ m/^(\w+)\s+(.+)$/);
-						my $ini = (grep({ $_->{name} eq $1 } @{$cld->{ini}}))[0]
-							or STDERR->print($curf->getContext().": ini $1 not defined"), $errors++, next;
-						push(@{$ini->{elements}}, { context => createContext($curf, $_), def => $2 });
-					}
-					elsif ($key eq "cnp") {
-						eval {
-							push(@{$cld->{consts}}, { access => "public", parseConstDef($val), context => createContext($curf, $_) });
-						}
-							or STDERR->print($curf->getContext().": $@\n"), $errors++;
-					}
-					elsif ($key eq "sql") {
-						my ( $name, $query );
-						if ($val =~ m/^(\w+)\s*$/) {
-							$name = $1;
-							eval { $query = readParagraph($curf); };
-							die $curf->getContext().": incorrect syntax for paragraph: $@" if ($@);
-						}
-						elsif ($val =~ m/^(\w+)\s+(\S.*)$/) {
-							$name = $1;
-							$query = $2;
-						}
-						if (!defined $name) {
-							STDERR->print($curf->getContext().": incorrect syntax for sql\n"), $errors++;
-						}
-						else {
-							push(@{$cld->{sqls}}, { context => createContext($curf, $_), name => $name, query => $query });
-						}
-					}
-					elsif ($key eq "friend") {
-						push(@{$cld->{friends}}, $val);
-					}
-					elsif ($key eq "co") {
-						if ($val =~ m/^(\w*)\s*{$/) {
-							eval { $cld->{cont} .= ($1 ? "$1:\n" : "").addIndent(readContent($curf, "}co")) };
-							die $curf->getContext().": incorrect syntax for co: $@" if ($@);
-						}
-						else {
-							die $curf->getContext().": incorrect syntax for co: need co:{";
-						}
-					}
-					elsif ($key eq "doc") {
-						if ($val eq "{") {
-							eval { $cld->{doc} .= readContent($curf, "}doc") };
-							die $curf->getContext().": incorrect syntax for doc: $@" if ($@);
-						}
-						else {
-							die $curf->getContext().": incorrect syntax for doc: need doc:{";
-						}
-					}
-					else {
-						STDERR->printf($curf->getContext().": unknown statement\n");
-						$errors++;
-					}
-				}
-				elsif (m/^\s*\*\/\s*$/) {
-					last;
-				}
-				else {
-					STDERR->printf($curf->getContext().": incorrect syntax\n"), $errors++;
-				}
-			}
-		}
-		elsif (m/^\s*$/) {
-			#@funcspec = ();
-		}
-		elsif (m/^\s/) {
-			# skip
-		}
-		elsif (m/^DR_MET\((.*)\)\s*$/) {
-			my $metd = {
-				specs		=> { map({ die $curf->getContext().": invalid spec: $_" unless (m/^(\w+)(:(\S*))?$/); ( $1 => (defined $3 ? $3 : 1) ) } split(/\s+/, $1)) },
-			};
-			my $is_abstr = defined $metd->{specs}->{abstract};
-			my $is_inline = defined $metd->{specs}->{inline};
-			if (!(defined $cld && defined $cld->{class})) {
-				STDERR->printf($curf->getContext().": fatal: class undefined\n"), $errors++ if (!$opts{i});
-			}
-			else {
-				FUNC_DECL: while ($_ = $curf->readLine()) {
-					chomp;
-					if (m/^\/\*\*\s*$/) {
-						$metd->{comment} = "$_\n";
-						while ($_ = $curf->readLine()) {
-							chomp;
-							$metd->{comment} .= "$_\n";
-							next FUNC_DECL if (m/^\s*\*\/\s*$/);
-						}
-						die "unable to find end of comment";
-					}
-					if ($is_abstr) {
-						if (m/^\/\/\s?(.*)$/s) {
-							$_ = $1;
-						}
-						else {
-							STDERR->printf($curf->getContext().": abstract declaration must start with //\n");
-							$errors++;
-						}
-					}
-					if ($is_inline) {
-						if (m/^\/\/\s?(.*)$/s) {
-							my $use_decl = $1;
-							$metd->{content} = "";
-							while ($_ = $curf->readLine()) {
-								chomp;
-								last if ($_ =~ m/^\s*$/);
-								if ($_ !~ m/^\/\/(.*)$/) {
-									STDERR->printf($curf->getContext().": inline definition must end with empty line\n");
-								}
-								$metd->{content} .= "$1\n";
-							}
-							if ($metd->{content} =~ m/.*\n.*\n/s) {
-								$metd->{content} = " $metd->{content}";
-							}
-							else {
-								$metd->{content} =~ s/^/\t/gm;
-								$metd->{content} = "\n$metd->{content}";
-							}
-							chomp($metd->{content});
-							$_ = $use_decl;
-						}
-						else {
-							STDERR->printf($curf->getContext().": inline declaration must start with // and include {}\n");
-							$errors++;
-						}
-					}
-					$metd->{context} = createContext($curf, $_);
-					if (m/^$cld->{class}::(($cld->{class_last})\(.*\)(\s*const)?)\s*:?\s*$/) {
-						$metd->{ret} = "DR_CONSTRUCT";
-						$metd->{name} = $2;
-						$metd->{decl} = $1;
-						last;
-					}
-					elsif (m/^$cld->{class}::((~$cld->{class_last})\(\))\s*$/) {
-						$metd->{ret} = "";
-						$metd->{name} = $2;
-						$metd->{decl} = $1;
-						push(@{$metd->{spec}}, "virtual");
-						last;
-					}
-					elsif (m/^(.*?)\s*($cld->{class})::(operator[^(]+)(\(.*\)(\s+const)?)\s*$/) {
-						$metd->{ret} = $1;
-						$metd->{name} = $3;
-						$metd->{decl} = "$3$4";
-						last;
-					}
-					elsif (m/^(.*?)\s*($cld->{class})::(\w+)(\(.*\)(\s+const)?)\s*$/) {
-						$metd->{ret} = $1;
-						$metd->{name} = $3;
-						$metd->{decl} = "$3$4";
-						last;
-					}
-					else {
-						STDERR->printf($curf->getContext().": expected method declaration\n");
-						$errors++;
-						next MAIN;
-					}
-				}
-				push(@{$cld->{methods}}, $metd);
-			}
-		}
-		else {
-			# nothing
-		}
-	}
-}
-
-if (!defined $cld) {
-	# ignore
-}
-elsif (defined $cld->{class}) {
-	$cld->{type} = "object" unless (defined $cld->{type});
-	push(@cl_list, $cld);
-}
-else {
-	if (defined $cld->{ancestor} || $cld->{cont} ne "" || @{$cld->{ifaces}} || @{$cld->{ats}} || @{$cld->{consts}} || @{$cld->{methods}} || @{$cld->{friends}} || defined $cld->{doc}) {
-		STDERR->print("no class defined while some of the attributes are"), $errors++;
-	}
-}
-
-if (!%gen) {
-	%gen = map({ ( $_ => 1 ) } ( "def", "hxx", "all" ));
-	$gen{str} = 1 if (@strings || @bstrings || @wstrings);
-	$gen{val} = 1 if (grep({ @{$_->{consts}} } @cl_list) || 1);
-	$gen{sql} = 1 if (grep({ @{$_->{sqls}} || $_->{type} eq "sqllayer" } @cl_list));
-}
-
-if ($gen{hxx} || $gen{def}) {
-	STDERR->printf("$cxxname:0: fatal: namespace undefined\n"), $errors++ unless (defined $ns);
-}
-exit(1) if ($errors);
-
-if ($gen{hxx} && !$opts{i}) {
-	$hxx = $file_trans->createTruncated("$basename.hxx");
-}
-if ($gen{def}) {
-	$def = $file_trans->createTruncated("$basename-def.hxx");
-}
-if ($gen{str}) {
-	$str = $file_trans->createTruncated("$basename-str.hxx");
-}
-if ($gen{val}) {
-	$val = $file_trans->createTruncated("$basename-val.hxx");
-}
-if ($gen{sql}) {
-	$sql = $file_trans->createTruncated("$basename-sql.hxx");
-}
-if (!$gen{noall}) {
-	$all = $file_trans->createTruncated("$basename-all.hxx");
-}
-if (!$gen{notags}) {
-	$tag_writer = dr::TagWriter->new($file_trans->createTruncated("$basename.tags"));
-}
-
-if ($all) {
-	my $name = $basename;
-	$name =~ s/.*\///;
-	$all->printf("/* The file is generated from %s, do not modify */\n", $cxxname);
-	if ($hxx) {
-		$all->printf("#include <%s>\n", fileToName($ns, $hxxname));
-	}
-	foreach (keys %gen) {
-		next if ($_ eq "all" || $_ eq "hxx");
-		$all->printf("#include \"_gen/%s-%s.hxx\"\n", $name, $_);
-	}
-}
-
-if ($str) {
-	$str->printf("/* The file is generated from %s, do not modify */\n", $cxxname);
-	$str->printf("#include <dr/Const.hxx>\n\n");
-	my %printed;
-	foreach (@consts) {
-		next if ($printed{$_});
-		$printed{$_} = 1;
-		$str->printf("static const $_->{type} drc$_->{type}_$_->{val}($_->{val});\n", $_, $_);
-	}
-	foreach (@strings) {
-		next if ($printed{$_});
-		$printed{$_} = 1;
-		$str->printf("static const dr::String drcstr_%s(dr::Const::string(\"%s\"));\n", $_, $_);
-	}
-	my %bprinted;
-	foreach (@bstrings) {
-		next if ($bprinted{$_});
-		$bprinted{$_} = 1;
-		$str->printf("static const dr::BString drcbstr_%s(dr::Const::bstring(\"%s\"));\n", $_, $_);
-	}
-	my %wprinted;
-	foreach (@wstrings) {
-		next if ($wprinted{$_});
-		$wprinted{$_} = 1;
-		$str->printf("static const dr::WString drcwstr_%s(dr::Const::wstring(\"%s\"));\n", $_, $_);
-	}
-}
-
-if ($val) {
-	$val->printf("/* The file is generated from %s, do not modify */\n", $cxxname);
-	$val->printf("#include <dr/Const.hxx>\n\n");
-	$val->printf("%s\n\n", nsToMacroBegin($ns));
-}
-
-if ($sql) {
-	$sql->printf("/* The file is generated from %s, do not modify */\n", $cxxname);
-	$sql->printf("%s\n\n", nsToMacroBegin($ns));
-}
-
-if ($hxx) {
-	$hxx->printf("/* The file is generated from %s, do not modify */\n", $cxxname);
-	$hxx->printf("/* The same license applies to use of header file */\n\n");
-	$hxx->printf("#ifndef %s\n# define %s\n\n", fileToHeader($ns, $hxxname), fileToHeader($ns, $hxxname));
-	foreach my $inc (@includes) {
-		$hxx->printf("#include <$inc>\n");
-	}
-	$hxx->printf("\n%s\n", nsToMacroBegin($ns));
-	if (@ns_use) {
-		$hxx->printf("\n");
-		foreach my $use (@ns_use) {
-			$hxx->printf("%s_USE;\n", nsToMacro($use));
-		}
-	}
-	$hxx->printf("\n");
-	if (@forwards) {
-		$hxx->printf("\n");
-		foreach my $forward (@forwards) {
-			$hxx->printf("%s\n", $forward);
-		}
-	}
-	$hxx->printf("\n");
-}
-
-if ($def) {
-	$def->printf("#include <dr/Const.hxx>\n\n");
-	$def->printf("%s\n\n", nsToMacroBegin($ns));
-}
-
-if (@cl_list) {
-	die "class list specified but header not open" unless ($gen{hxx});
-	while (@cl_list) {
-		my $selected;
-		foreach (@cl_list) {
-			$selected = $_, last if ($_->{class} !~ m/::/);
-		}
-		die "$cxxname:0: cannot find any base class in the list: ".Dumper(\@cl_list) unless (defined $selected);
-		printClass($selected, 0);
-	}
-}
-if ($sql) {
-	$sql->printf("\n\n%s\n", nsToMacroEnd($ns));
-}
-if ($val) {
-	$val->printf("\n\n%s\n", nsToMacroEnd($ns));
-}
-if ($def) {
-	$def->printf("\n\n%s\n", nsToMacroEnd($ns));
-}
-if ($hxx) {
-	$hxx->printf("\n\n%s\n\n#endif\n", nsToMacroEnd($ns));
-}
-if ($tag_writer) {
-	$tag_writer->flush();
-}
-
-if ($file_trans->commit()) {
-	my $dummy = FileHandle->new("$basename.gen", ">");
-	$dummy->printf("ok\n");
-	if (!$dummy->close()) {
-		die "failed to update dummy file $basename.gen: $!";
-	}
-}

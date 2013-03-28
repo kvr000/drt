@@ -33,10 +33,11 @@ sub process
 			if ($line =~ m/^\s*\/\*drt\s*$/) {
 				$this->processCommentBody();
 			}
-			elsif ($line =~ m/^\s*\/\/drt\s+(.*)$/) {
-				$errors += $this->processCommentSingle($1);
+			elsif ($line =~ m/^\s*\/\/drt\s+(\w+):\s*(.*?)\s*$/) {
+				$errors += $this->processCommentSingle($1, $2);
 			}
 			else {
+				($this->{cur_indent} = $line) =~ s/^(\s*).*/$1/;
 				$errors += $this->processLine($line);
 			}
 		};
@@ -212,6 +213,14 @@ sub processCommentSingle
 	die "unsupported tag: $cmtag";
 }
 
+sub processRegularLine
+{
+	my $this		= shift;
+	my $line		= shift;
+
+	$this->printLine($line);
+}
+
 sub getCommentType
 {
 	my $this		= shift;
@@ -236,6 +245,18 @@ sub printLine
 	my $line		= shift;
 
 	$this->{out_main}->print($line) if (defined $this->{out_main});
+}
+
+sub printIndented
+{
+	my $this		= shift;
+	my $text		= shift;
+
+	my $ind = $this->{cur_indent};
+	chomp($ind);
+
+	$text =~ s/^/$ind/gm;
+	$this->{out_main}->print($text) if (defined $this->{out_main});
 }
 
 

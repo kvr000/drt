@@ -38,10 +38,130 @@
 use strict;
 use warnings;
 
+use File::Basename;
+use lib dirname($0)."/perl";
+use dr::Util;
+
+package KeyValueDbWriter;
+
+use strict;
+use warnings;
+
+sub new
+{
+	my $ref			= shift;
+	my $class		= ref($ref) || $ref;
+	my $filename		= shift;
+
+	my $this = bless {
+		filename		=> $filename,
+	}, $class;
+
+	return $this;
+}
+
+sub open
+{
+	my $filename		= shift;
+
+	if ($filename =~ m/\.csvdb$/) {
+		return CsvdbKeyValueDbWriter->new($filename);
+	}
+	else {
+		return DbaKeyValueDbWriter->new($filename);
+	}
+}
+
+
+package CsvdbKeyValueDbWriter;
+
+use strict;
+use warnings;
+
+use base qw(KeyValueDbWriter);
+
+use Text::CSV;
+
+sub new
+{
+	my $class = shift; $class = ref($class) || $class;
+
+	my $this = $class->SUPER::new(@_);
+
+	$this->{fd} = FileHandle->new($this->{filename}, ">")
+		or dr::Util::doDie("failed to open $this->{filename}: $!");
+	$this->{csv_manip} = Text::CSV->new({ binary => 1 });
+
+	return $this;
+}
+
+sub write
+{
+	my $this		= shift;
+	my $key			= shift;
+	my $value		= shift;
+
+	$this->{csv_manip}->combine($key, $value);
+	$this->{fd}->print($this->{csv_manip}->string()."\n");
+}
+
+sub close
+{
+	my $this		= shift;
+	$this->{fd}->flush()
+		or dr::Util::doDie("failed to flush $this->{filename}: $!");
+	$this->{fd}->close();
+}
+
+
+package DbaKeyValueDbWriter;
+
+use strict;
+use warnings;
+
+use base qw(KeyValueDbWriter);
+
+sub new
+{
+	my $class = shift; $class = ref($class) || $class;
+
+	my $this = $class->SUPER::new(@_);
+
+	my $db_load = $ENV{"db_load" } || "db4.8_load";
+
+	open($this->{fd}, "| $db_load -t btree -T $this->{filename}")
+		or dr::Util::doDie("failed to run $db_load $this->{filename}: $!");
+
+	return $this;
+}
+
+sub write
+{
+	my $this		= shift;
+	my $key			= shift;
+	my $value		= shift;
+
+	$this->{fd}->print("$key\n$value\n");
+}
+
+sub close
+{
+	my $this		= shift;
+	$this->{fd}->close()
+		or dr::Util::doDie("failed to flush $this->{filename}: $!");
+}
+
+
+package main;
+
+use strict;
+use warnings;
+
 use FileHandle;
 use File::Basename;
 use Data::Dumper;
 use Getopt::Std;
+use dr::Util;
 #use DB_File;
 
 sub splitCsvLine($)
@@ -107,7 +227,6 @@ sub compareFormats($$)
 
 die "usage: $0 localize-file input-files..." unless (@ARGV > 1);
 
-our $db_load = $ENV{"db_load" } || "db4.8_load";
 our $db_name = shift @ARGV;
 our %db_cls;
 our $prefix = ($db_name =~ m,^(.*?)([^/]*)$,)[0];
@@ -117,11 +236,12 @@ if ($db_name !~ m,^(.*/|)(\w+)/([^/]*)$,) {
 our $lang = $2;
 
 mkdir("${prefix}/cls");
-unlink($_) foreach (glob("${prefix}cls/*.cls.db"));
+unlink($_) foreach (glob("${prefix}cls/*.cls.*db"));
 unlink($db_name);
 
-open(my $db_full, "| $db_load -t btree -T $db_name")
-	or die "failed to open loader to $db_name: $!";
+our $db_full = KeyValueDbWriter::open($db_name);
+my $ext = $db_name;
+$ext =~ s/.*\.//g;
 
 my $errors = 0;
 eval {
@@ -159,27 +279,26 @@ eval {
 			die "$in_file:$line: need $count values: $_: ".Dumper(\@parsed) unless (@parsed == $count);
 			next if ($parsed[0] eq "" && $parsed[1] eq "" && $parsed[$col] eq "");
 			STDERR->print("$in_file:$line: invalid class name: \'$parsed[0]\'\n"), $errors++, next unless ($parsed[0] =~ m/^(\w|::)+$/);
-			$db_full->print("$parsed[0]\t$parsed[1]\n$parsed[$col]\n");
+			$db_full->write("$parsed[0]\t$parsed[1]", $parsed[$col]);
 			my $db_class;
 			if (!defined ($db_class = $db_cls{$parsed[0]}) && !exists $db_cls{$parsed[0]}) {
 				if ($parsed[0] =~ m/^([A-Za-z_]+::)*[A-Za-z_]+$/) {
 					my $name = $parsed[0];
 					$name =~ s/::/-/g;
-					open($db_class, "| $db_load -t btree -T ${prefix}cls/$name.cls.db")
-						or die "failed to open loader to ${prefix}cls/$name.cls.db: $!";
+					$db_class = KeyValueDbWriter::open("${prefix}cls/$name.cls.$ext");
 					$db_cls{$parsed[0]} = $db_class;
 				}
 			}
 			if (defined $db_class) {
-				$db_class->print("$parsed[0]\t$parsed[1]\n$parsed[$col]\n");
+				$db_class->write("$parsed[0]\t$parsed[1]", $parsed[$col]);
 			}
 		}
 	}
-	close($db_full);
+	$db_full->close();
 	foreach (values %db_cls) {
-		close($_) or die "failed to close class file";
+		$_->close();
 	}
 	!$errors;
 }
-	or close($db_full), unlink($db_name), die $@;
+	or $db_full->close(), unlink($db_name), die $@;
 exit(0);

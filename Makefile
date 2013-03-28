@@ -5,9 +5,9 @@ all:
 	@echo Specify target first >&2
 	@false
 
-include etc/p/root.mk
-etc/p/root.mk:
-	touch etc/p/root.mk
+include drtetc/p/root.mk
+drtetc/p/root.mk:
+	touch drtetc/p/root.mk
 
 makes:
 	make -C src gmake
@@ -17,7 +17,7 @@ slist:
 	@echo INSTALL
 	@echo Makefile
 	@echo senv.sh
-	@gen_rls etc | grep -v etc/p/
+	@gen_rls drtetc | grep -v drtetc/p/
 	@gen_rls def | grep -v def/p
 	@gen_rls util | grep -v util/p_
 	@echo include
@@ -27,7 +27,7 @@ slist:
 
 # p files list
 plist:
-	@find etc/p ! -type d ! -size 0 -print
+	@find drtetc/p ! -type d ! -size 0 -print
 	@find util -name p_\* -print
 
 
@@ -87,9 +87,9 @@ diff:
 tarout:
 	@bdir=`pwd`; bdir=`basename "$$bdir"`/; \
 	$(MAKE) -s slist | \
-	grep -v '^etc/.*/' | \
+	grep -v '^drtetc/.*/' | \
 	sed "s:^:$$bdir:" | \
-	( cd ..; exec tar fcv - --exclude $${bdir}etc/p/\* --exclude $${bdir}include/\* --exclude $${bdir}lib/\* --exclude $${bdir}bin/\* --exclude .svn --exclude \*.orig --exclude \*.rej -T - )
+	( cd ..; exec tar fcv - --exclude $${bdir}drtetc/p/\* --exclude $${bdir}include/\* --exclude $${bdir}lib/\* --exclude $${bdir}bin/\* --exclude .svn --exclude \*.orig --exclude \*.rej -T - )
 
 tar:
 	@MAKEFLAGS=`echo $$MAKEFLAGS | sed 's/w//g'`; \

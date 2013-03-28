@@ -293,6 +293,20 @@ sub getAttrType
 	}
 }
 
+sub getElementType
+{
+	my $this		= shift;
+	my $element		= shift;
+
+	if ($element->{type_type} eq "primitive") {
+		die Dumper($element) unless (defined $element->{type_primitive});
+		return $element->{type_primitive};
+	}
+	else {
+		return $this->{owner}->resolveDatatype($element->{type_xid});
+	}
+}
+
 
 package dr::XmiParser;
 
@@ -376,7 +390,7 @@ sub read_warnUnknown
 	my $this		= shift;
 	my $main_reader		= shift;
 
-	$this->read_doDie("unexpected element ".$this->{reader}->name()."");
+	$this->read_doDie("unexpected element '".$this->{reader}->name()."'");
 }
 
 sub readRelevant
@@ -622,8 +636,12 @@ sub read_processPackage
 
 	my $saved_context = $this->{read_context};
 	$this->{read_context} = dr::XmiParser::Package->new($this, "package");
-
-	my @classes;
+	if (!($this->{read_context}->{parent} = $saved_context)) {
+		$this->{read_context}->{name} = "";
+	}
+	else {
+		Scalar::Util::weaken($this->{read_context}->{parent});
+	}
 
 	while (defined (my $name = $reader->readNode())) {
 		if ($name eq "packagedElement") {
@@ -1069,12 +1087,17 @@ sub read_processOwnedOperation
 			static			=> defvalue($main_reader->getOptionalAttr("isStatic"), "false") eq "true",
 			abstract		=> defvalue($main_reader->getOptionalAttr("isAbstract"), "false") eq "true",
 		)},
+		returntype		=> undef,
+		param_list		=> [],
 		comment			=> dr::XmiParser::Comment->new(),
 	};
 
 	while (defined (my $name = $reader->readNode())) {
 		if ($name eq "xmi:Extension") {
 			$this->read_processOwnedOperationExtension($reader);
+		}
+		elsif ($name eq "ownedParameter") {
+			$this->read_processOwnedOperationOwnedParameter($reader);
 		}
 		else {
 			$this->read_unknownNode($reader);
@@ -1097,6 +1120,60 @@ sub read_processOwnedOperationExtension
 			$this->read_unknownNode($reader);
 		}
 	}
+}
+
+sub read_processOwnedOperationOwnedParameter
+{
+	my $this			= shift;
+	my $main_reader			= shift;
+	my $reader			= $main_reader->getSubLeveler();
+
+	$this->{read_oper_par} = {
+		name				=> $main_reader->getMandatoryAttr("name"),
+		direction			=> $main_reader->getMandatoryAttr("direction"),
+	};
+
+	while (defined (my $name = $reader->readNode())) {
+		if ($name eq "type") {
+			$this->read_processOwnedOperationOwnedParameterType($reader);
+		}
+		else {
+			$this->read_unknownNode($reader);
+		}
+	}
+
+	if ($this->{read_oper_par}->{name} eq "return") {
+		$this->{read_oper}->{returntype} = $this->{read_oper_par};
+	}
+	else {
+		push(@{$this->{read_oper}->{param_list}}, $this->{read_oper_par});
+	}
+}
+
+sub read_processOwnedOperationOwnedParameterType
+{
+	my $this			= shift;
+	my $main_reader			= shift;
+
+	my $type_type = $this->read_getMandatoryAttr("xmi:type");
+	if ($type_type eq "uml:PrimitiveType") {
+		$this->{read_oper_par}->{type_type} = "primitive";
+		if ($this->read_getMandatoryAttr("href") !~ m/.*#(\w+)$/) {
+			$this->read_doDie("invalid format for type href");
+		}
+		if (!defined ($this->{read_oper_par}->{type_primitive} = $UML_PRIMITIVE_TYPES{$1})) {
+			$this->read_doDie("unknown UML primitive type: $1");
+		}
+	}
+	elsif ($type_type eq "uml:Class") {
+		$this->{read_oper_par}->{type_type} = "class";
+		$this->{read_oper_par}->{type_xid} = $this->read_getMandatoryAttr("xmi:idref");
+	}
+	else {
+		$this->read_doDie("unknown type type: $type_type");
+	}
+
+	$this->read_needNodeEnd($main_reader);
 }
 
 sub read_processEnum
@@ -1269,7 +1346,7 @@ sub postprocRegisterPackage
 	$this->{package_xi}->{$package->{xmi_id}} = $package;
 
 	foreach my $ch_package (@{$package->{package_list}}) {
-		Scalar::Util::weaken($ch_package->{parent} = $package);
+		#Scalar::Util::weaken($ch_package->{parent} = $package);
 		$this->postprocRegisterPackage($ch_package);
 	}
 	foreach my $ch_class (@{$package->{class_list}}) {
@@ -1402,7 +1479,6 @@ sub postprocess
 		$this->postprocRegisterDatatype($datatype);
 	}
 	foreach my $package (@{$this->{packages}}) {
-		$package->{parent} = undef;
 		$this->postprocRegisterPackage($package);
 	}
 
@@ -1424,7 +1500,7 @@ sub getFullName
 	my $this		= shift;
 	my $obj			= shift;
 
-	return (defined $obj->{parent} ? $this->getFullName($obj->{parent})."::" : "") . $obj->{name};
+	return (defined $obj->{parent} && $obj->{parent}->{name} ? $this->getFullName($obj->{parent})."::" : "") . $obj->{name};
 }
 
 sub formatDatatype

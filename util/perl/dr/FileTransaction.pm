@@ -41,6 +41,7 @@ use warnings;
 use File::Basename;
 use File::Path;
 use File::Slurp;
+use dr::FileWriter;
 
 sub new
 {
@@ -118,7 +119,8 @@ sub createTruncated
 		$fd = FileHandle->new($fname, ">")
 			or die "failed to open file $fname: $!";
 	}
-	binmode($fd);
+	$fd = dr::FileWriter->new($fd);
+	$fd->binmode();
 	push(@{$this->{opers}}, { op => "rm", fname => $fname, fd => $fd });
 	return $fd;
 }
@@ -128,7 +130,7 @@ sub updateChanged
 	my $this		= shift;
 	my $fname		= shift;
 
-	my $fd = dr::Util::createStringStream();
+	my $fd = dr::FileWriter->new(dr::Util::createStringStream());
 	push(@{$this->{opers}}, { op => "update", fname => $fname, fd => $fd });
 	return $fd;
 }
@@ -161,7 +163,8 @@ sub closeOp
 	}
 	if ($op->{op} eq "update") {
 		$op->{fd}->seek(0, 0);
-		my $content = read_file($op->{fd});
+		my $content = "";
+		while ($op->{fd}->read(my $buf, 32768) > 0) { $content .= $buf; }
 		my $orig_cont = read_file($op->{fname}, err_mode => 'quiet');
 		if (!(defined $orig_cont) || $orig_cont ne $content) {
 			my $updatefd = $this->createTruncated($op->{fname});
@@ -171,7 +174,7 @@ sub closeOp
 		undef $op->{fd};
 	}
 	else {
-		close($op->{fd});
+		$op->{fd}->close();
 		undef $op->{fd};
 		chmod((stat($op->{fname}))[2]&07555, $op->{fname}) if (defined $this->{umask});
 	}

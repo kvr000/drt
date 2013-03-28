@@ -48,7 +48,7 @@ use DB_File;
 use lib dirname($0)."/perl";
 use dr::XmiParser;
 use dr::FileTransaction;
-use dr::Util qw(tabalign);
+use dr::Util qw(tabalign escapeString unescapeString);
 
 our %opts;
 our $xmi_fname;
@@ -100,10 +100,10 @@ sub formatComment($$)
 	my $out = "";
 
 	foreach my $dr (sort({ $a->{order} <=> $b->{order} } @{$comment->{drtag_list}})) {
-		$out .= sprintf("%s%s", "\t" x $indent, formatTriplet("drtag", $dr->{name}, $dr->{value}));
+		$out .= sprintf("%s%s", "\t" x $indent, formatTriplet("drtag", $dr->{name}, escapeString($dr->{value})));
 	}
 	foreach my $com (@{$comment->{comment}}) {
-		$out .= sprintf("%s%s", "\t" x $indent, formatPair("comment", $com));
+		$out .= sprintf("%s%s", "\t" x $indent, formatPair("comment", escapeString($com)));
 	}
 	return $out;
 }
@@ -136,6 +136,7 @@ sub genClass
 	}
 	elsif ($class->{type} eq "class" || $class->{type} eq "association") {
 		foreach my $attr (@{$class->{attr_list}}) {
+			next if ($attr->{comment}->{drtag_hash}->{disabled});
 			if (!defined $attr->{association_xid}) {
 				$fd->print(formatPair("attr", $attr->{name}));
 				$fd->print("\t".formatPair("type", $xmi->formatDatatype($class->getAttrType($attr))));
@@ -159,16 +160,30 @@ sub genClass
 			$fd->print("\t".formatPair("default", $attr->{default_value})) if (defined $attr->{default_value});
 			$fd->print(formatComment(1, $attr->{comment}));
 		}
+		my %oper_printed = ();
 		foreach my $action (grep({ $_->{name} =~ m/^dr\.action\.(.*)$/ } @{$class->{oper_list}})) {
+			$oper_printed{$action->{name}} = 1;
 			my $action_name = ($action->{name} =~ m/^dr\.action\.(.*)$/)[0];
 			$fd->print(formatPair("action", $action_name));
 			$fd->print("\t".formatPair("classify", join(",", keys %{$action->{classify}})));
 			$fd->print(formatComment(1, $action->{comment}));
 		}
-		foreach my $action (grep({ $_->{name} =~ m/^dr\.view\.(.*)$/ } @{$class->{oper_list}})) {
-			my $action_name = ($action->{name} =~ m/^dr\.view\.(.*)$/)[0];
+		foreach my $view (grep({ $_->{name} =~ m/^dr\.view\.(.*)$/ } @{$class->{oper_list}})) {
+			$oper_printed{$view->{name}} = 1;
+			my $action_name = ($view->{name} =~ m/^dr\.view\.(.*)$/)[0];
 			$fd->print(formatPair("view", $action_name));
-			$fd->print(formatComment(1, $action->{comment}));
+			$fd->print(formatComment(1, $view->{comment}));
+		}
+		foreach my $oper (grep({ !$oper_printed{$_->{name}} } @{$class->{oper_list}})) {
+			$fd->print(formatPair("oper", $oper->{name}));
+			$fd->print(formatComment(1, $oper->{comment}));
+			$fd->print("\t".formatPair("classify", join(",", keys %{$oper->{classify}})));
+			$fd->print("\t".formatPair("return", $xmi->formatDatatype($class->getElementType($oper->{returntype}))));
+			foreach my $par (@{$oper->{param_list}}) {
+				$fd->print("\t".formatPair("param", $par->{name}));
+				$fd->print("\t\t".formatPair("type", $xmi->formatDatatype($class->getElementType($par))));
+				$fd->print("\t\t".formatPair("direction", $par->{direction}));
+			}
 		}
 	}
 	else {
@@ -191,9 +206,10 @@ sub genPackage
 	my $xmi			= shift;
 	my $package		= shift;
 
-	my $location = $package->{name}; $location =~ s/::/\//g;
+	return if (!$package->{name});
+	my $location = $xmi->getFullName($package); $location =~ s/::/\//g;
 	if ($location !~ /^(\w+)(\/(\w+))*$/) {
-		die "invalid package name: $package->{name}";
+		die "invalid package name: ".$xmi->getFullName($package);
 	}
 	$location = "$dst_dir/$location";
 	mkpath($location);
@@ -217,7 +233,7 @@ sub genObject
 	}
 	else {
 		#print(Dumper($obj));
-		die "unknown object type for $obj->{name}: $obj->{type}";
+		die "unknown object type for $obj->{fullname}: $obj->{type}";
 	}
 }
 

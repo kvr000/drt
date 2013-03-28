@@ -46,6 +46,11 @@ elif which ctags-exuberant >/dev/null 2>&1; then
 else
 	ctags -o ctags.tags -R "$@"
 fi
+
+while [ $# -gt 0 ] && echo "x$1" | grep ^x- > /dev/null; do
+	shift
+done
+
 for env in `env | grep ^LC_ | cut -d = -f 1`; do unset $env; done
 if false; then
 	find . -name \*.tags -type f -print0 | sort --files0-from=- -m -o tags && rm ctags.tags

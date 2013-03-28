@@ -61,7 +61,7 @@ sub genericDrtag
 {
 	my $val			= shift;
 
-	dr::Util::doDie("invalid format of drtag: $val") unless ($val =~ m/^(\w+)(\((\w+)\))?\s+(\S.*)$/);
+	dr::Util::doDie("invalid format of drtag: $val") unless ($val =~ m/^(\w+)(\((\w+)\))?\s+(\S.*)$/s);
 	return {
 		name			=> $1,
 		spec			=> $3,
@@ -276,11 +276,15 @@ sub getSubModel
 	return $this->{owner}->loadModel($this->{location}, $pname);
 }
 
-sub getFinalType
+sub checkSubModel
 {
 	my $this		= shift;
+	my $pname		= shift;
 
-	return $this;
+	if ($this->{owner}->{class_hash}->{$pname}) {
+		return $this->{owner}->{class_hash}->{$pname};
+	}
+	return $this->{owner}->checkModel($this->{location}, $pname);
 }
 
 sub getFinalTypeWithTagger
@@ -288,6 +292,51 @@ sub getFinalTypeWithTagger
 	my $this		= shift;
 
 	return ( $this, $this->{drtag}->cloneTagger() );
+}
+
+sub getSubFinalTypeWithTagger
+{
+	my $this			= shift;
+	my $subname			= shift;
+	my $subtype			= shift;
+
+	if (my $type = dr::ModelStore::Primitive::checkPrimitive($this, $subtype)) {
+		return ( $type, $this->{drtag} );
+	}
+	elsif ($subtype =~ m/ref:\s*(()|((.+)\.([^.]+))|((.+)\.)|(\.(.+)))\s*$/) {
+		if (defined $2) {
+			if (defined (my $typeref = $this->checkDrTagValue("typeref"))) {
+				dr::Util::doDie("reference target required") unless (defined $subname);
+				return $this->getSubModel($this->getDrTagValue("typeref"))->getAttr($subname)->getFinalTypeWithTagger();
+			}
+			else {
+				dr::Util::doDie("reference target required") unless (defined $subname);
+				return $this->getSubModel($this->{package})->getAttr($subname)->getFinalTypeWithTagger();
+			}
+		}
+		elsif (defined $3) {
+			return $this->getSubModel($4)->getAttr($5)->getFinalTypeWithTagger();
+		}
+		elsif (defined $6) {
+			dr::Util::doDie("reference target required") unless (defined $subname);
+			return $this->getSubModel($6)->getAttr($subname)->getFinalTypeWithTagger();
+		}
+		elsif (defined $8) {
+			my $attr_name = $9;
+			if (defined (my $typeref = $this->checkDrTagValue("typeref"))) {
+				return $this->getSubModel($this->getDrTagValue("typeref"))->getAttr($attr_name)->getFinalTypeWithTagger();
+			}
+			else {
+				return $this->getSubModel($this->{package})->getAttr($attr_name)->getFinalTypeWithTagger();
+			}
+		}
+		else {
+			die "unexpected regexp result";
+		}
+	}
+	else {
+		return $this->getSubModel($subtype)->getFinalTypeWithTagger();
+	}
 }
 
 sub getDrTagger
@@ -337,6 +386,7 @@ sub getDrSpecs
 
 sub postLoad
 {
+	my $this			= shift;
 }
 
 sub load
@@ -358,7 +408,7 @@ sub readBaseDrtag
 	my $key			= shift;
 	my $val			= shift;
 
-	$this->{drtag}->addTag($val);
+	$this->{drtag}->addTag(dr::Util::unescapeString($val));
 }
 
 sub readBaseComment
@@ -368,7 +418,7 @@ sub readBaseComment
 	my $key			= shift;
 	my $val			= shift;
 
-	push(@{$this->{comment}}, $val);
+	push(@{$this->{comment}}, dr::Util::unescapeString($val));
 }
 
 
@@ -384,7 +434,10 @@ sub checkPrimitive
 	my $owner		= shift;
 	my $type		= shift;
 
-	if ($type =~ m/::/) {
+	if ($type =~ m/^ref:/) {
+		return;
+	}
+	elsif ($type =~ m/::/) {
 		return;
 	}
 	else {
@@ -429,10 +482,22 @@ sub new
 	my $this = $class->SUPER::new($owner, $basic);
 
 	$this->{attr_list} = [];
+	$this->{attr_hash} = {};
 	$this->{action_list} = [];
+	$this->{oper_list} = [];
 	$this->{view_list} = [];
+	$this->{compos} = undef;
 
 	return $this;
+}
+
+sub getCompos
+{
+	my $this		= shift;
+
+	dr::Util::doDie("getting compos which is not defined for $this->{name}") if (!defined $this->{compos});
+
+	return $this->{compos};
 }
 
 sub getPrimary
@@ -474,6 +539,13 @@ sub getIndexes
 	return @{$this->{index_list}};
 }
 
+sub getAttrs
+{
+	my $this		= shift;
+
+	return $this->{attr_list};
+}
+
 our %CLASS_MAPPER = (
 	%dr::ModelStore::ClassBase::BASE_MAPPER,
 	compos			=> \&readClassCompos,
@@ -482,6 +554,7 @@ our %CLASS_MAPPER = (
 	child			=> \&readClassChild,
 	action			=> \&readClassAction,
 	view			=> \&readClassView,
+	oper			=> \&readClassOper,
 );
 
 sub load
@@ -507,6 +580,8 @@ sub readClassCompos
 	$compos->load($base->getSubLeveler());
 
 	push(@{$this->{attr_list}}, $compos);
+
+	$this->{compos} = $compos;
 }
 
 sub readClassAttr
@@ -519,7 +594,10 @@ sub readClassAttr
 	my $attr = dr::ModelStore::Attr->new($this, { stype => "attr", name => $val });
 	$attr->load($base->getSubLeveler());
 
-	push(@{$this->{attr_list}}, $attr) unless ($attr->checkDrTagValue("disabled"));
+	if (!$attr->checkDrTagValue("disabled")) {
+		push(@{$this->{attr_list}}, $attr);
+		$this->{attr_hash}{$attr->{name}} = $attr;
+	}
 }
 
 sub readClassAssoc
@@ -574,6 +652,28 @@ sub readClassView
 	push(@{$this->{view_list}}, $view);
 }
 
+sub readClassOper
+{
+	my $this		= shift;
+	my $base		= shift;
+	my $key			= shift;
+	my $val			= shift;
+
+	my $view = dr::ModelStore::Oper->new($this, { stype => "oper", name => $val });
+	$view->load($base->getSubLeveler());
+
+	push(@{$this->{oper_list}}, $view);
+}
+
+sub getAttr
+{
+	my $this		= shift;
+	my $attr_name		= shift;
+
+	$this->dieContext("attr $attr_name not found in $this->{name}") unless (defined $this->{attr_hash}{$attr_name});
+	return $this->{attr_hash}{$attr_name}
+}
+
 
 package dr::ModelStore::Typedef;
 
@@ -595,19 +695,6 @@ sub new
 	$this->{base} = undef;
 
 	return $this;
-}
-
-sub getFinalType
-{
-	my $this		= shift;
-
-	if (my $type = dr::ModelStore::Primitive::checkPrimitive($this->{owner}, $this->{base})) {
-		return $type;
-	}
-	else {
-		eval { return $this->getSubModel($this->{base})->getFinalType(); }
-			or $this->dieContext("failed to open final type", $@);
-	}
 }
 
 sub getFinalTypeWithTagger
@@ -778,7 +865,7 @@ sub readComment
 	my $key			= shift;
 	my $val			= shift;
 
-	push(@{$enum->{comment}}, $val);
+	push(@{$enum->{comment}}, dr::Util::unescapeString($val));
 }
 
 sub readDrtag
@@ -788,7 +875,7 @@ sub readDrtag
 	my $key			= shift;
 	my $val			= shift;
 
-	$this->{drtag}->addTag($val);
+	$this->{drtag}->addTag(dr::Util::unescapeString($val));
 }
 
 sub getDrTagger
@@ -904,13 +991,6 @@ our %MODEL_ATTRBASE_MAPPER = (
 	default			=> \&readClassAttrDirect,
 );
 
-sub postLoad
-{
-	my $this		= shift;
-
-	dr::Util::doDie("$this->{owner}->{full}.$this->{name}: mandatory undefined") unless (defined $this->{mandatory});
-}
-
 sub load
 {
 	my $this		= shift;
@@ -921,6 +1001,13 @@ sub load
 	dr::ModelStore::Util::genericLoad($this, $reader, \%MODEL_ATTRBASE_MAPPER);
 
 	$this->postLoad();
+}
+
+sub postLoad
+{
+	my $this		= shift;
+
+	dr::Util::doDie("$this->{owner}->{full}.$this->{name}: mandatory undefined") unless (defined $this->{mandatory});
 }
 
 sub readClassAttrDirect
@@ -940,7 +1027,7 @@ sub readClassAttrDrtag
 	my $key			= shift;
 	my $val			= shift;
 
-	$this->{drtag}->addTag($val);
+	$this->{drtag}->addTag(dr::Util::unescapeString($val));
 }
 
 sub readClassAttrComment
@@ -950,7 +1037,7 @@ sub readClassAttrComment
 	my $key			= shift;
 	my $val			= shift;
 
-	push(@{$this->{comment}}, $val);
+	push(@{$this->{comment}}, dr::Util::unescapeString($val));
 }
 
 
@@ -961,36 +1048,19 @@ use warnings;
 
 use base "dr::ModelStore::AttrBase";
 
-sub getFinalType
-{
-	my $this		= shift;
-
-	if (my $type = dr::ModelStore::Primitive::checkPrimitive($this->{owner}, $this->{type})) {
-		return $type;
-	}
-	else {
-		eval { return $this->{owner}->getSubModel($this->{type})->getFinalType(); }
-			or $this->dieContext("failed to open final type", $@);
-	}
-}
+use Data::Dumper;
 
 sub getFinalTypeWithTagger
 {
-	my $this		= shift;
+	my $this			= shift;
 
-	if (my $type = dr::ModelStore::Primitive::checkPrimitive($this->{owner}, $this->{type})) {
-		return ( $type, $this->{drtag} );
-	}
-	else {
-		my ( $type, $tagger );
-		eval {
-			( $type, $tagger ) = $this->{owner}->getSubModel($this->{type})->getFinalTypeWithTagger();
-			$tagger->mergeReplacing($this->{drtag});
-			1;
-		}
-			or $this->dieContext("failed to open final type $this->{type}", $@);
+	my @r = eval {
+		my ( $type, $tagger ) = $this->{owner}->getSubFinalTypeWithTagger($this->{name}, $this->{type});
+		$tagger->mergeReplacing($this->{drtag});
 		return ( $type, $tagger );
-	}
+	};
+	$this->dieContext("failed to process $this->{owner}->{full}.$this->{name}", $@) if ($@);
+	return @r;
 }
 
 
@@ -1031,25 +1101,13 @@ sub getAssocTarget
 		or $this->dieContext("failed to open final type", $@);
 };
 
-sub getFinalType
-{
-	my $this		= shift;
-
-	my @refs = $this->expandAssocAttrs();
-	if (@refs != 1) {
-		$this->dieContext("getFinalType called on reference to not single attributes");
-	}
-
-	return $refs[0]->{attr}->getFinalType();
-}
-
 sub getFinalTypeWithTagger
 {
 	my $this		= shift;
 
 	my @refs = $this->expandAssocAttrs();
 	if (@refs != 1) {
-		$this->dieContext("getFinalTypeWithTagger called on reference to not single attributes");
+		$this->dieContext("getFinalTypeWithTagger called on reference to not single attribute: $this->{name}");
 	}
 
 	my ( $type, $tagger ) = $refs[0]->{attr}->getFinalTypeWithTagger();
@@ -1064,7 +1122,7 @@ sub expandAssocAttrs
 
 	my $this		= shift;
 
-	if (++$deeprec_check%1024  == 0&& caller(1024)) {
+	if (++$deeprec_check%1024  == 0 && caller(1024)) {
 		dr::Util::doDie("deep recursion");
 	}
 	my $target = $this->getAssocTarget();
@@ -1083,7 +1141,7 @@ sub expandAssocAttrs
 				push(@exp_primary, { name => (@primary == 1 ? $this->{name} : $pa->{name}), attr => $targ_exp[0]->{attr} });
 			}
 			else {
-				STDERR->print("$this->{owner}->{full}: adding $pa->{name} with multi\n");
+				#STDERR->print("$this->{owner}->{full}: adding $pa->{name} with multi\n");
 				foreach my $tpa (@targ_exp) {
 					push(@exp_primary, { name => ($pa->getAssocPrefix() || "").$tpa->{name}, attr => $tpa->{attr} });
 				}
@@ -1166,6 +1224,8 @@ package dr::ModelStore::OperInfo;
 
 use strict;
 use warnings;
+
+use dr::Util qw(unescapeString);
 
 sub new
 {
@@ -1271,7 +1331,7 @@ sub readComment
 	my $key			= shift;
 	my $val			= shift;
 
-	push(@{$this->{comment}}, $val);
+	push(@{$this->{comment}}, dr::Util::unescapeString($val));
 }
 
 sub readDrtag
@@ -1281,11 +1341,11 @@ sub readDrtag
 	my $key			= shift;
 	my $val			= shift;
 
-	$this->{drtag}->addTag($val);
+	$this->{drtag}->addTag(dr::Util::unescapeString($val));
 }
 
 
-package dr::ModelStore::ActionBase;
+package dr::ModelStore::OperBase;
 
 use strict;
 use warnings;
@@ -1294,11 +1354,11 @@ use base "dr::ModelStore::OperInfo";
 
 sub new
 {
-	my $ref			= shift;
-	my $class		= ref($ref) || $ref;
+	my $ref				= shift;
+	my $class			= ref($ref) || $ref;
 
-	my $owner		= shift;
-	my $basic		= shift;
+	my $owner			= shift;
+	my $basic			= shift;
 
 	my $this = $class->SUPER::new($owner, $basic);
 	$this->{classify} = {};
@@ -1306,33 +1366,300 @@ sub new
 	return $this;
 }
 
-our %MODEL_ACTIONBASE_MAPPER = (
+our %MODEL_OPERATIONBASE_MAPPER = (
 	%MODEL_OPERINFO_MAPPER,
 	classify		=> \&readClassify,
 );
 
 sub load
 {
-	my $this		= shift;
-	my $reader		= shift;
+	my $this			= shift;
+	my $reader			= shift;
 
 	$this->{file_context} = $reader->getContext();
 
-	dr::ModelStore::Util::genericLoad($this, $reader, \%MODEL_ACTIONBASE_MAPPER);
+	dr::ModelStore::Util::genericLoad($this, $reader, \%MODEL_OPERATIONBASE_MAPPER);
 
 	$this->postLoad();
 }
 
 sub readClassify
 {
-	my $this		= shift;
-	my $base		= shift;
-	my $key			= shift;
-	my $val			= shift;
+	my $this			= shift;
+	my $base			= shift;
+	my $key				= shift;
+	my $val				= shift;
 
 	foreach (split(/,\s*/, $val)) {
 		$this->{classify}->{$_} = 1;
 	}
+}
+
+sub getReturnTypeWithTagger
+{
+	my $this			= shift;
+
+	my @r = eval {
+		my ( $type, $tagger ) = $this->{owner}->getSubFinalTypeWithTagger(undef, $this->{returntype});
+		$tagger->mergeReplacing($this->{drtag});
+		return ( $type, $tagger );
+	};
+	$this->dieContext("failed to process $this->{owner}->{full}.$this->{name}().returntype", $@) if ($@);
+	return @r;
+}
+
+
+package dr::ModelStore::OperParam;
+
+use strict;
+use warnings;
+
+sub new
+{
+	my $ref				= shift;
+	my $class			= ref($ref) || $ref;
+
+	my $owner			= shift;
+	my $basic			= shift;
+
+	my $this = bless {
+		owner				=> $owner,
+		name				=> $basic->{name},
+		stype				=> $basic->{stype},
+		mandatory			=> undef,
+		comment				=> [],
+		drtag				=> dr::ModelStore::Drtag->new(),
+	}, $class;
+
+	Scalar::Util::weaken($this->{owner});
+
+	return $this;
+}
+
+sub dieContext
+{
+	my $this			= shift;
+	my $msg				= shift;
+	my $cause			= shift;
+
+	dr::Util::doDie(((defined $cause)) ? "$this->{file_context}: $msg\n$cause" : "$this->{file_context}: $msg");
+}
+
+sub getDrTagger
+{
+	my $this			= shift;
+
+	return $this->{drtag};
+}
+
+sub getDrTag
+{
+	my $this			= shift;
+	my $tag				= shift;
+
+	eval {
+		return $this->{drtag}->getTag($tag);
+	}
+		or $this->dieContext($@);
+}
+
+sub getDrTagValue
+{
+	my $this			= shift;
+	my $tag				= shift;
+
+	eval {
+		return $this->{drtag}->getTagValue($tag);
+	}
+		or $this->dieContext($@);
+}
+
+sub checkDrTagValue
+{
+	my $this			= shift;
+	my $tag				= shift;
+
+	return $this->{drtag}->checkTagValue($tag);
+}
+
+sub getDrSpecs
+{
+	my $this			= shift;
+	my $spec			= shift;
+
+	return $this->{drtag}->getSpecs($spec);
+}
+
+our %MODEL_OPERATIONPARAM_MAPPER = (
+	drtag			=> \&readOperParamDrtag,
+	comment			=> \&readOperParamComment,
+	type			=> \&readOperParamDirect,
+	mandatory		=> \&readOperParamDirect,
+	default			=> \&readOperParamDirect,
+	direction		=> \&readOperParamDirect,
+);
+
+sub load
+{
+	my $this			= shift;
+	my $reader			= shift;
+
+	$this->{file_context} = $reader->getContext();
+
+	dr::ModelStore::Util::genericLoad($this, $reader, \%MODEL_OPERATIONPARAM_MAPPER);
+
+	$this->postLoad();
+}
+
+sub postLoad
+{
+	my $this			= shift;
+	my $reader			= shift;
+}
+
+sub readOperParamDirect
+{
+	my $this			= shift;
+	my $base			= shift;
+	my $key				= shift;
+	my $val				= shift;
+
+	$this->{$key} = $val;
+}
+
+sub readOperParamDrtag
+{
+	my $this			= shift;
+	my $base			= shift;
+	my $key				= shift;
+	my $val				= shift;
+
+	$this->{drtag}->addTag(dr::Util::unescapeString($val));
+}
+
+sub readOperParamComment
+{
+	my $this			= shift;
+	my $base			= shift;
+	my $key				= shift;
+	my $val				= shift;
+
+	push(@{$this->{comment}}, dr::Util::unescapeString($val));
+}
+
+sub getFinalTypeWithTagger
+{
+	my $this			= shift;
+
+	my @r = eval {
+		my ( $type, $tagger ) = $this->{owner}->{owner}->getSubFinalTypeWithTagger($this->{name}, $this->{type});
+		$tagger->mergeReplacing($this->{drtag});
+		return ( $type, $tagger );
+	};
+	$this->dieContext("failed to process $this->{owner}->{owner}->{full}.$this->{owner}->{name}().$this->{name}", $@) if ($@);
+	return @r;
+}
+
+
+package dr::ModelStore::Oper;
+
+use strict;
+use warnings;
+
+use base "dr::ModelStore::OperBase";
+
+sub new
+{
+	my $ref				= shift;
+	my $class			= ref($ref) || $ref;
+
+	my $owner			= shift;
+	my $basic			= shift;
+
+	my $this = $class->SUPER::new($owner, $basic);
+
+	$this->{returntype} = undef;
+	$this->{param_list} = [];
+
+	return $this;
+}
+
+our %MODEL_OPERATION_MAPPER = (
+	%MODEL_OPERATIONBASE_MAPPER,
+	return				=> \&readOperReturn,
+	param				=> \&readOperParam,
+);
+
+sub load
+{
+	my $this			= shift;
+	my $reader			= shift;
+
+	$this->{file_context} = $reader->getContext();
+
+	dr::ModelStore::Util::genericLoad($this, $reader, \%MODEL_OPERATION_MAPPER);
+
+	$this->postLoad();
+}
+
+sub readOperReturn
+{
+	my $this			= shift;
+	my $base			= shift;
+	my $key				= shift;
+	my $val				= shift;
+
+	$this->{returntype} = $val;
+}
+
+sub readOperParam
+{
+	my $this			= shift;
+	my $base			= shift;
+	my $key				= shift;
+	my $val				= shift;
+
+	my $param = dr::ModelStore::OperParam->new($this, { stype => "param", name => $val });
+	$param->load($base->getSubLeveler());
+
+	push(@{$this->{param_list}}, $param);
+}
+
+
+package dr::ModelStore::ActionBase;
+
+use strict;
+use warnings;
+
+use base "dr::ModelStore::OperBase";
+
+sub new
+{
+	my $ref				= shift;
+	my $class			= ref($ref) || $ref;
+
+	my $owner			= shift;
+	my $basic			= shift;
+
+	my $this = $class->SUPER::new($owner, $basic);
+
+	return $this;
+}
+
+our %MODEL_ACTIONBASE_MAPPER = (
+	%MODEL_OPERATIONBASE_MAPPER,
+);
+
+sub load
+{
+	my $this			= shift;
+	my $reader			= shift;
+
+	$this->{file_context} = $reader->getContext();
+
+	dr::ModelStore::Util::genericLoad($this, $reader, \%MODEL_ACTIONBASE_MAPPER);
+
+	$this->postLoad();
 }
 
 
@@ -1379,10 +1706,12 @@ sub new
 {
 	my $ref			= shift;
 	my $class		= ref($ref) || $ref;
+	my $default_location	= shift;
 
 	my $this = bless {
 		class_hash		=> {},
 		fixiers			=> [],
+		default_location	=> $default_location,
 	}, $class;
 
 	return $this;
@@ -1413,18 +1742,26 @@ sub createClass
 
 sub registerFixier
 {
-	my $this		= shift;
-	my $sub			= shift;
+	my $this			= shift;
+	my $sub				= shift;
 
 	push(@{$this->{fixiers}}, $sub);
 }
 
 sub loadModel
 {
-	my $this		= shift;
-	my $location		= shift;
-	my $pname		= shift;
+	my $this			= shift;
+	my $location			= shift;
+	my $pname			= shift;
 
+	dr::Util::doDie("pname undefined") unless (defined $pname);
+
+	if (!defined $location) {
+		if (!defined ($location = $this->{default_location})) {
+			dr::Util::doDie("no location nor default location specified while loading $pname");
+		}
+	}
+	$pname =~ s/\./::/g;
 	my $fname = $pname;
 	$fname =~ s/::/\//g;
 	$fname = "$location/$fname";
@@ -1446,7 +1783,7 @@ sub loadModel
 				$stype = $v;
 			}
 			else {
-				die "unexpected key found while still missing basic information: $k";
+				die "unexpected key found while still missing basic information (package, name and type): $k";
 			}
 			last if (defined $package && defined $name && defined $stype);
 		}
@@ -1458,6 +1795,28 @@ sub loadModel
 		or die "\n".$reader->getContext().": $@";
 
 	return $model;
+}
+
+sub checkModel
+{
+	my $this			= shift;
+	my $location			= shift;
+	my $pname			= shift;
+
+	dr::Util::doDie("pname undefined") unless (defined $pname);
+
+	if (!defined $location) {
+		if (!defined ($location = $this->{default_location})) {
+			dr::Util::doDie("no location nor default location specified while loading $pname");
+		}
+	}
+	$pname =~ s/\./::/g;
+	my $fname = $pname;
+	$fname =~ s/::/\//g;
+	$fname = "$location/$fname.clsdef";
+	return undef if (!-f $fname);
+
+	return $this->loadModel($location, $pname);
 }
 
 

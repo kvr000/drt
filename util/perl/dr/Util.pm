@@ -41,7 +41,7 @@ use warnings;
 use Exporter;
 
 our @ISA = qw(Exporter);
-our @EXPORT_OK = qw(doDie dumpSimple defvalue tablength tabalign);
+our @EXPORT_OK = qw(doDie dumpSimple defvalue tablength tabalign escapeString unescapeString escapeStringContent);
 
 use Scalar::Util qw(isweak reftype);
 
@@ -273,6 +273,52 @@ sub findEndParenthesis($)
 		}
 	}
 	return $p;
+}
+
+sub escapeString($)
+{
+	my $s				= shift;
+
+	$s =~ s/\\/\\\\/g;
+	$s =~ s/\n/\\n/g;
+	$s =~ s/\t/\\t/g;
+	$s =~ s/"/\\"/g;
+	return $s;
+}
+
+sub unescapeString($)
+{
+	my $s				= shift;
+
+	my $n = "";
+	while ($s =~ m/^(.*?)\\(.)(.*)$/s) {
+		my $r;
+		if ($2 eq "\\") {
+			$r = "\\";
+		}
+		elsif ($2 eq "n") {
+			$r = "\n";
+		}
+		elsif ($2 eq "t") {
+			$r = "\t";
+		}
+		elsif ($2 eq "\"") {
+			$r = "\"";
+		}
+		else {
+			doDie("failed to process string, wrong escape: \\$2");
+		}
+		$n .= "$1$r";
+		$s = $3;
+	}
+	return "$n$s";
+}
+
+sub escapeStringContent($)
+{
+	my $s				= shift;
+
+	return ($s =~ m/^"(.*)"$/) ? "\"".escapeString($1)."\"" : $s;
 }
 
 

@@ -47,7 +47,7 @@ sub new
 	my $fname		= shift;
 
 	my $fd = FileHandle->new($fname, "<")
-		or die "failed to open $fname";
+		or dr::Util::doDie("failed to open $fname");
 
 	my $this = bless {
 		fname			=> $fname,

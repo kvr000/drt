@@ -95,13 +95,14 @@ sub getNext
 {
 	my $this		= shift;
 
-	if (defined (my $line = $this->{list_fd}->getline())) {
+	while (defined (my $line = $this->{list_fd}->getline())) {
 		$this->{lineno}++;
-		next if (m/^\s*(#.*|)$/);
 		chomp($line);
+		next if ($line =~ m/^\s*(#.*|)$/);
 		dr::Util::doDie("invalid format, need \"location classname\"") unless ($line =~ m/^(\S+)\s+((\w+::)*\w+)$/);
 		return ( $1, $2 );
 	}
+	return;
 }
 
 sub getContext
