@@ -24,6 +24,16 @@ sub print
 	$this->{context}->{content} .= $content;
 }
 
+sub printf
+{
+	my $this			= shift;
+	
+	my $content			= sprintf(@_);
+
+	$content =~ s/^(.+)$/$this->{indent}$1/gm;
+	$this->{context}->{content} .= $content;
+}
+
 sub printOnce
 {
 	my $this			= shift;
@@ -42,14 +52,30 @@ sub indentContext
 	my $this			= shift;
 	my $level			= shift || 1;
 
-	my $ind_ctx = dr::FileWriter::Context->new($this->{owner});
-	$ind_ctx->{context} = $this->{context};
+	my $ind_ctx = $this->subContext();
 	$ind_ctx->{indent} = $this->{indent}.("\t" x $level);
 
 	return $ind_ctx;
 }
 
 sub subContext
+{
+	my $this			= shift;
+
+	$this->{owner}->print("");
+
+	my $new_context = { content => "", next => $this->{context}->{next} };
+	my $ind_ctx = dr::FileWriter::Context->new($this->{owner});
+	$ind_ctx->{context} = { content => "", next => $new_context };
+	$this->{context}->{next} = $ind_ctx->{context};
+	$ind_ctx->{indent} = $this->{indent};
+
+	$this->{context} = $new_context;
+
+	return $ind_ctx;
+}
+
+sub subAfterContext
 {
 	my $this			= shift;
 
@@ -101,6 +127,16 @@ sub print
 {
 	my $this			= shift;
 	my $content			= shift;
+
+	$this->{current} = ($this->{current}->{next} = { content => $content, next => undef });
+}
+
+sub printf
+{
+	my $this			= shift;
+	
+	my $fmt				= shift;
+	my $content			= sprintf($fmt, @_);
 
 	$this->{current} = ($this->{current}->{next} = { content => $content, next => undef });
 }

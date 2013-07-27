@@ -49,8 +49,10 @@ use dr::FileTransaction;
 use dr::FileParser;
 use dr::ModelStore;
 use dr::TagWriter;
-use dr::Util qw(tabalign escapeString escapeStringContent);
+use dr::Util qw(tabalign escapeString escapeStringContent convertBool);
 use dr::prog::java::JavaGenerator;
+use dr::prog::java::JavaOutFileContext;
+use dr::prog::java::JavaOutputGenerator;
 use dr::prog::gen::CopyGenerator;
 
 
@@ -170,6 +172,13 @@ sub convertToJavaClass
 	return $classname;
 }
 
+sub convertToBoolean
+{
+	my $value			= shift;
+
+	return $value ? "true" : "false";
+}
+
 sub escapeJavaTypeValue
 {
 	my $java_type			= shift;
@@ -179,6 +188,261 @@ sub escapeJavaTypeValue
 	return escapeStringContent($value) if ($java_type eq "String");
 	return $value ? "true" : "false" if ($java_type eq "Boolean");
 	return $value;
+}
+
+sub convertPkType($)
+{
+	my $model			= shift;
+
+	my @primary = $model->getPrimary();
+	if (@primary > 1) {
+		return $model->{name}.".Pk";
+	}
+	else {
+		return dr::prog::java::JavaGenerator::mapJavaAttrType($primary[0]);
+	}
+}
+
+sub generateEntityBeanPart($$$)
+{
+	my $context			= shift;
+	my $java_out			= shift;
+	my $model			= shift;
+
+	my $code_ctx			= $java_out->{code_ctx};
+
+	my $classname = $model->{name};
+	my $jclassname = $classname; $jclassname =~ s/::/./g;
+	my $filename = $jclassname; $filename =~ s/\./\//g;
+	my $pkgname = $jclassname; $pkgname =~ s/\.\w+$//;
+	my $classonly = $jclassname; $classonly =~ s/^.*\.//g;
+
+	$java_out->printSysimport("import javax.persistence.Entity;\n");
+	$java_out->printSysimport("import javax.persistence.Table;\n");
+
+	my $cls_ctx = $code_ctx->subContext();
+	$code_ctx->print("\@Entity\n\@Table(name=\"$classonly\")\npublic class $classonly implements java.io.Serializable\n{\n");
+	my $inner = $code_ctx->indentContext(1);
+	$inner->print(tabalign("private static final long", 32)."serialVersionUID = 1L;\n\n");
+	my $nested_out = $java_out->dupWithFileContext($inner->subContext());
+	my $pk_ctx = $inner->subContext();
+	my $pk_attr_ctx = $pk_ctx->subAfterContext()->indentContext(1);
+	my $pk_method_ctx = $pk_ctx->subAfterContext()->indentContext(1);
+	my $pk_end_ctx = $inner->subContext();
+	$inner->print("\n");
+	my $attr_ctx = $inner->subContext();
+	$inner->print("\n");
+	my $method_ctx = $inner->subContext();
+
+	my @primary = $model->getPrimary();
+
+	my $display_order = "";
+
+	foreach my $nested_name (@{$model->getNestedNames()}) {
+		#STDERR->print("processing nested $nested_name\n");
+		my $nested = $model->checkSubModel("$model->{full}::$nested_name")
+			or dr::Util::doDie("failed to load nested class $model->{full}::$nested_name");
+		if ($nested->{stype} eq "enum") {
+			dr::prog::java::JavaOutputGenerator->new($nested_out)->generateNested($nested);
+			$nested_out->printCode("\n");
+		}
+	}
+
+	foreach my $attr (@{$model->getAttrs()}) {
+		my $primary_level = $attr->getRole()->{primary} ? @primary > 1 : -1;
+		if ($attr->{stype} eq "attr") {
+			my ( $type, $tagger ) = $attr->getFinalTypeWithTagger();
+			my $java_type = dr::prog::java::JavaGenerator::mapJavaAttrType($attr);
+			my $method = ucfirst($attr->{name});
+			$java_out->printSysimport("import javax.persistence.Column;\n");
+			my $tmap = "";
+			$tmap .= "\@Column(name=\"".$attr->{name}."\")\n";
+			if ($attr->checkDrTagValue("serial")) {
+				$java_out->printSysimport("import javax.persistence.GenerationType;\n");
+				$java_out->printSysimport("import javax.persistence.GeneratedValue;\n");
+				$tmap .= "\@GeneratedValue(strategy=GenerationType.AUTO)\n";
+			}
+			my $dfl = (defined $attr->{default}) ?
+				" = ".escapeJavaTypeValue($java_type, $attr->{default}) :
+				(defined $attr->checkDrTagValue("do_mandatory")) ? " = ".escapeJavaTypeValue($java_type, $attr->checkDrTagValue("do_mandatory")) :
+				"";
+			my $athis = $primary_level > 0 ? "this.pk" : "this";
+			if ($primary_level > 0) {
+				$pk_attr_ctx->print($tmap.tabalign("public $java_type", 32)."$attr->{name}$dfl;\n");
+			}
+			elsif ($primary_level == 0) {
+				$java_out->printSysimport("import javax.persistence.Id;\n");
+				$attr_ctx->print($tmap."\@Id\n".tabalign("protected $java_type", 32)."$attr->{name}$dfl;\n");
+			}
+			else {
+				if (defined (my $logical = $tagger->checkTagValue("logical"))) {
+					$java_out->printSysimport("import dr.logical.LogicalUse;\n");
+					$attr_ctx->print("\@LogicalUse(logical = ".convertToJavaClass($logical).".class)\n");
+				}
+				if (defined (my $display = $tagger->checkTagValue("display"))) {
+					$java_out->printSysimport("import dr.logical.DisplayUse;\n");
+					$attr_ctx->print("\@DisplayUse(display = \"".escapeString($display)."\")\n");
+					$display_order .= ", \"".escapeString($attr->{name})."\"";
+				}
+				$java_out->printSysimport("import dr.meta.FieldRoles;\n");
+				my $roles = "";
+				foreach my $roleName (qw(req_new req_get req_set req_del)) {
+					my $role = $tagger->checkTagValue($roleName) // $model->checkDrTagValue($roleName);
+					if (!defined $role) {
+						if (!$model->checkDrTagValue("virtual")) {
+							dr::Util::doDie("role $roleName not defined for $classname.$attr->{name}");
+						}
+						else {
+							$role = "guest";
+						}
+					}
+					my $x = $roleName;
+					$x =~ s/_(.)/\U$1/;
+					$roles .= ", $x = \"".escapeString($role)."\"";
+				}
+				$attr_ctx->print("\@FieldRoles(".substr($roles, 2).")\n");
+				$java_out->printSysimport("import dr.meta.Mandatory;\n");
+				$attr_ctx->print("\@Mandatory(mandatory = ".convertToBoolean($attr->{mandatory}).")\n");
+				$attr_ctx->print($tmap.tabalign("protected $java_type", 32)."$attr->{name}$dfl;\n");
+			}
+			if ($primary_level == 0) {
+				$method_ctx->print(tabalign("public $java_type", 32)."getPk()\n{\treturn $attr->{name};\n}\n\n");
+				$method_ctx->print(tabalign("public void", 32)."setPk($java_type $attr->{name}_)\n{\tthis.$attr->{name} = $attr->{name}_;\n}\n\n");
+			}
+			$method_ctx->print(tabalign("public void", 32)."set$method($java_type $attr->{name}_)\n{\n\t$athis.$attr->{name} = $attr->{name}_;\n}\n\n");
+			$method_ctx->print(tabalign("public $java_type", 32)."get$method()\n{\n\treturn $athis.$attr->{name};\n}\n\n");
+			if ($primary_level > 0) {
+				$pk_method_ctx->print(tabalign("public void", 32)."set$method($java_type $attr->{name}_)\n{\n\tthis.$attr->{name} = $attr->{name}_;\n}\n\n");
+				$pk_method_ctx->print(tabalign("public $java_type", 32)."get$method()\n{\n\treturn this.$attr->{name};\n}\n\n");
+			}
+		}
+		elsif ($attr->{stype} eq "child") {
+			if ($attr->checkDrTagValue("tied")) {
+				my $tied_class = $attr->getAssocTarget();
+				$java_out->printAppimport("import ".convertToJavaClass($tied_class->{full}).";\n");
+				$java_out->printSysimport("import javax.persistence.OneToMany;\n");
+				$java_out->printSysimport("import javax.persistence.JoinColumns;\n");
+				$java_out->printSysimport("import javax.persistence.JoinColumn;\n");
+				$java_out->printSysimport("import javax.persistence.FetchType;\n");
+				$java_out->printSysimport("import javax.persistence.CascadeType;\n");
+				$java_out->printSysimport("import java.util.Set;\n");
+				my $tmap = "";
+				$tmap .= "\@OneToMany(fetch=FetchType.EAGER, cascade=CascadeType.ALL)\n";
+				$tmap .= "\@JoinColumns({ ".
+				join(", ", map({ "\@JoinColumn(name=\"$_->{name}\")" } $tied_class->getCompos()->expandAssocAttrs())).
+				" })\n";
+				$attr_ctx->print($tmap.tabalign("private Set<$tied_class->{name}>", 32)."$attr->{name};\n\n");
+				$method_ctx->print(tabalign("public Set<$tied_class->{name}>", 32)."get".ucfirst($attr->{name})."()\n{\n\treturn $attr->{name};\n}\n\n");
+				$method_ctx->print(tabalign("public void", 32)."set".ucfirst($attr->{name})."(Set<$tied_class->{name}> $attr->{name}_)\n{\n\tthis.$attr->{name} = $attr->{name}_;\n}\n\n");
+			}
+		}
+		elsif ($attr->{stype} eq "assoc") {
+			my $java_type = dr::prog::java::JavaGenerator::mapJavaAttrType($attr);
+			my $method = ucfirst($attr->{name});
+			$java_out->printSysimport("import javax.persistence.Column;\n");
+			my $tmap = "";
+			$tmap .= "\@Column(name=\"".$attr->{name}."\")\n";
+			if ($attr->checkDrTagValue("serial")) {
+				$java_out->printSysimport("import javax.persistence.GenerationType;\n");
+				$java_out->printSysimport("import javax.persistence.GeneratedValue;\n");
+				$tmap .= "\@GeneratedValue(strategy=GenerationType.AUTO)\n";
+			}
+			my $dfl = (defined $attr->{default}) ?
+				" = ".escapeJavaTypeValue($java_type, $attr->{default}) :
+				(defined $attr->checkDrTagValue("do_mandatory")) ? " = ".escapeJavaTypeValue($java_type, $attr->checkDrTagValue("do_mandatory")) :
+				"";
+			my $athis = $primary_level > 0 ? "this.pk" : "this";
+			if ($primary_level > 0) {
+				$pk_attr_ctx->print($tmap.tabalign("public $java_type", 32)."$attr->{name}$dfl;\n");
+			}
+			elsif ($primary_level == 0) {
+				$java_out->printSysimport("import javax.persistence.Id;\n");
+				$attr_ctx->print($tmap."\@Id\n".tabalign("protected $java_type", 32)."$attr->{name}$dfl;\n");
+			}
+			else {
+				$attr_ctx->print($tmap.tabalign("protected $java_type", 32)."$attr->{name}$dfl;\n");
+			}
+			if ($primary_level == 0) {
+				$method_ctx->print(tabalign("public $java_type", 32)."getPk()\n{\treturn $attr->{name};\n}\n\n");
+				$method_ctx->print(tabalign("public void", 32)."setPk($java_type $attr->{name}_)\n{\tthis.$attr->{name} = $attr->{name}_;\n}\n\n");
+			}
+			$method_ctx->print(tabalign("public void", 32)."set$method($java_type $attr->{name}_)\n{\n\t$athis.$attr->{name} = $attr->{name}_;\n}\n\n");
+			$method_ctx->print(tabalign("public $java_type", 32)."get$method()\n{\n\treturn $athis.$attr->{name};\n}\n\n");
+			if ($primary_level > 0) {
+				$pk_method_ctx->print(tabalign("public void", 32)."set$method($java_type $attr->{name}_)\n{\n\tthis.$attr->{name} = $attr->{name}_;\n}\n\n");
+				$pk_method_ctx->print(tabalign("public $java_type", 32)."get$method()\n{\n\treturn this.$attr->{name};\n}\n\n");
+			}
+		}
+		elsif ($attr->{stype} eq "compos") {
+			my $compos = $attr->getAssocTarget();
+			my $compos_class = convertToJavaClass($compos->{name});
+			my $pktype = convertPkType($compos);
+			$pk_attr_ctx->print("\@Column(name=\"$attr->{name}\")\n");
+			$pk_attr_ctx->print(tabalign("public $pktype", 32)."$attr->{name};\n\n");
+			$method_ctx->print(tabalign("public void", 32)."set".ucfirst($attr->{name})."($pktype $attr->{name}_)\n{\n\tthis.pk.$attr->{name} = $attr->{name}_;\n}\n\n");
+			$method_ctx->print(tabalign("public $pktype", 32)."get".ucfirst($attr->{name})."()\n{\n\treturn this.pk.$attr->{name};\n}\n\n");
+		}
+		else {
+			dr::Util::doDie("unknown attribute stype: $attr->{name} -> $attr->{stype}");
+		}
+	}
+	if (@primary > 1) {
+		$java_out->printSysimport("import javax.persistence.EmbeddedId;\n");
+		$java_out->printSysimport("import javax.persistence.Embeddable;\n");
+		$java_out->printSysimport("import java.io.Serializable;\n");
+		$pk_ctx->print("\@Embeddable\npublic static class Pk implements Serializable\n{\n");
+		$pk_ctx->print("\t".tabalign("private static final long serialVersionUID", 32)."= 1L;\n\n");
+		my $inpk_ctx = $pk_end_ctx->indentContext(1);
+		$inpk_ctx->print(tabalign("public", 32)."Pk()\n{\n}\n\n");
+		$inpk_ctx->print(tabalign("public", 32)."Pk(".join(", ", map({ $_->{stype} eq "compos" ? (convertPkType($_->getAssocTarget())." $_->{name}") : (dr::prog::java::JavaGenerator::mapJavaAttrType($_)." $_->{name}"); } @primary)).")\n");
+		$inpk_ctx->print("{\n");
+		foreach my $pka (@primary) {
+			$inpk_ctx->print("\t"."this.$pka->{name} = $pka->{name};\n");
+		}
+		$inpk_ctx->print("}\n\n");
+		my $hash_cont = "0";
+		my $equals_cont = "true";
+		foreach my $pka (@primary) {
+			$hash_cont = "($hash_cont)*37+($pka->{name} == null ? 0 : $pka->{name}.hashCode())";
+			$equals_cont .= " && ($pka->{name} == null ? s.$pka->{name} == null : $pka->{name}.equals(s.$pka->{name}))";
+		}
+		$inpk_ctx->print("\@Override\n".tabalign("public int", 32)."hashCode()\n{\n");
+		$inpk_ctx->print("\treturn $hash_cont;\n");
+		$inpk_ctx->print("}\n\n");
+		$inpk_ctx->print("\@Override\n".tabalign("public boolean", 32)."equals(Object o)\n{\n");
+		$inpk_ctx->print("\tif (!(o instanceof Pk))\n\t\treturn false;\n\tPk s = (Pk)o;\n");
+		$inpk_ctx->print("\treturn $equals_cont;\n");
+		$inpk_ctx->print("}\n\n");
+		$pk_end_ctx->print("};\n");
+		$pk_end_ctx->print("\n\@EmbeddedId\n".tabalign("protected Pk", 32)."pk = new Pk();\n\n");
+		$method_ctx->print(tabalign("public Pk", 32)."getPk()\n{\treturn pk;\n}\n\n");
+		$method_ctx->print(tabalign("public void", 32)."setPk(Pk pk_)\n{\tthis.pk = pk_;\n}\n\n");
+	}
+	$code_ctx->print("};\n");
+
+	if (@{$model->{action_list}}) {
+		$java_out->printSysimport("import dr.meta.ActionDef;\n");
+		$java_out->printSysimport("import dr.meta.ActionDefs;\n");
+		my $actions = "";
+		foreach my $action (@{$model->{action_list}}) {
+			eval {
+				my $atext = "name = \"".escapeString($action->{name})."\"";
+				if (defined (my $form_actioner = $action->checkDrTagValue("form_actioner"))) {
+					$atext .= ", formActioner = \"".escapeString($form_actioner)."\"";
+				}
+				$atext .= ", reqRole = \"".escapeString($action->getDrTagValue("req_role"))."\"";
+				$actions .= ", \@ActionDef($atext)";
+				1;
+			}
+				or dr::Util::doDie("failed to process $model->{full}.$action->{name}:\n$@");
+		}
+		$cls_ctx->print("\@ActionDefs(actions = { ".substr($actions, 2)." })\n");
+	}
+
+	if ($display_order) {
+		$java_out->printSysimport("import dr.meta.DisplayOrder;\n");
+		$cls_ctx->print("\@DisplayOrder(fields = { ".substr($display_order, 2)." })\n");
+	}
 }
 
 sub generateEntityBean($$$$)
@@ -198,128 +462,19 @@ sub generateEntityBean($$$$)
 	my $model = $context->{model_store}->loadModel($location, $classname);
 
 	my $fdbean = $context->{file_trans}->updateChanged($context->{dst_dir}."/$filename.java");
+	my $writer = $fdbean->rememberContext();
 	$context->{processed}->{$filename} = 1;
 
-	$fdbean->print("package $pkgname;\n\n");
-	my $sysimport_ctx = $fdbean->rememberContext();
-	$sysimport_ctx->printOnce("import javax.persistence.Entity;\n");
-	$sysimport_ctx->printOnce("import javax.persistence.Table;\n");
-	my $import_ctx = $fdbean->rememberContext();
+	$writer->print("package $pkgname;\n");
+	$writer->print("\n");
+	my $sysimport_ctx = $writer->subContext();
+	$writer->print("\n");
+	my $appimport_ctx = $writer->subContext();
 
-	$fdbean->print("\n\n\@Entity\n\@Table(name=\"$classonly\")\npublic class $classonly\n{\n");
-	$fdbean->indent(1);
-	my $pk_ctx = $fdbean->rememberContext();
-	my $pk_attr_ctx = $pk_ctx->subContext()->indentContext(1);
-	my $pk_method_ctx = $pk_ctx->subContext()->indentContext(1);
-	my $pk_end_ctx = $fdbean->rememberContext();
-	$fdbean->printIndented("\n");
-	my $attr_ctx = $fdbean->rememberContext();
-	$fdbean->printIndented("\n");
-	my $method_ctx = $fdbean->rememberContext();
+	$writer->print("\n\n");
 
-	my @primary;
-	my @primary_types;
-
-	foreach my $attr (@{$model->getAttrs()}) {
-		my $is_primary = $attr->getRole()->{primary};
-		push(@primary, $attr) if ($is_primary);
-		if ($attr->{stype} eq "attr") {
-			my $java_type = dr::prog::java::JavaGenerator::mapJavaAttrType($attr);
-			my $method = ucfirst($attr->{name});
-			$sysimport_ctx->printOnce("import javax.persistence.Column;\n");
-			my $tmap = "";
-			$tmap .= "\@Column(name=\"".$attr->{name}."\")\n";
-			if ($attr->checkDrTagValue("serial")) {
-				$sysimport_ctx->printOnce("import javax.persistence.GenerationType;\n");
-				$sysimport_ctx->printOnce("import javax.persistence.GeneratedValue;\n");
-				$tmap .= "\@GeneratedValue(strategy=GenerationType.AUTO)\n";
-			}
-			my $dfl = (defined $attr->{default}) ?
-				" = ".escapeJavaTypeValue($java_type, $attr->{default}) :
-				(defined $attr->checkDrTagValue("do_mandatory")) ? " = ".escapeJavaTypeValue($java_type, $attr->checkDrTagValue("do_mandatory")) :
-				"";
-			my $athis = $is_primary ? "this.pk" : "this";
-			($is_primary ? $pk_attr_ctx : $attr_ctx)->print($tmap.tabalign("protected $java_type", 32)."$attr->{name}$dfl;\n");
-			$method_ctx->print(tabalign("public void", 32)."set$method($java_type $attr->{name}_)\n{\n\t$athis.$attr->{name} = $attr->{name}_;\n}\n\n");
-			$method_ctx->print(tabalign("public $java_type", 32)."get$method()\n{\n\treturn $athis.$attr->{name};\n}\n\n");
-			if ($is_primary) {
-				$pk_method_ctx->print(tabalign("public void", 32)."set$method($java_type $attr->{name}_)\n{\n\tthis.$attr->{name} = $attr->{name}_;\n}\n\n");
-				$pk_method_ctx->print(tabalign("public $java_type", 32)."get$method()\n{\n\treturn this.$attr->{name};\n}\n\n");
-			}
-		}
-		elsif ($attr->{stype} eq "child") {
-			if ($attr->checkDrTagValue("tied")) {
-				my $tied_class = $attr->getAssocTarget();
-				$import_ctx->printOnce("import ".convertToJavaClass($tied_class->{full}).";\n");
-				$sysimport_ctx->printOnce("import javax.persistence.OneToMany;\n");
-				$sysimport_ctx->printOnce("import javax.persistence.JoinColumn;\n");
-				$sysimport_ctx->printOnce("import javax.persistence.FetchType;\n");
-				$sysimport_ctx->printOnce("import javax.persistence.CascadeType;\n");
-				$sysimport_ctx->printOnce("import java.util.Set;\n");
-				my $tmap = "";
-				$tmap .= "\@OneToMany(fetch=FetchType.EAGER, cascade=CascadeType.ALL)\n";
-				$tmap .= "\@JoinColumn(name=\"".
-				join(",", map({ $_->{name} } $tied_class->getCompos()->expandAssocAttrs())).
-				"\")\n";
-				$attr_ctx->print($tmap.tabalign("private Set<$tied_class->{name}>", 32)."$attr->{name};\n\n");
-				$method_ctx->print(tabalign("public Set<$tied_class->{name}>", 32)."get".ucfirst($attr->{name})."()\n{\n\treturn $attr->{name};\n}\n\n");
-				$method_ctx->print(tabalign("public void", 32)."set".ucfirst($attr->{name})."(Set<$tied_class->{name}> $attr->{name}_)\n{\n\tthis.$attr->{name} = $attr->{name}_;\n}\n\n");
-			}
-		}
-		elsif ($attr->{stype} eq "assoc") {
-			# nothing
-		}
-		elsif ($attr->{stype} eq "compos") {
-			# nothing
-			if ($is_primary) {
-				my $compos = $attr->getAssocTarget();
-				my $compos_class = convertToJavaClass($compos->{name});
-				$pk_attr_ctx->print("\@Column(name=\"$attr->{name}\")\n");
-				$pk_attr_ctx->print(tabalign("public $compos_class.Pk", 32)."$attr->{name}Pk;\n\n");
-				$method_ctx->print(tabalign("public void", 32)."set${compos_class}Pk(${compos_class}.Pk $attr->{name}Pk_)\n{\n\tthis.pk.$attr->{name}Pk = $attr->{name}Pk_;\n}\n\n");
-				$method_ctx->print(tabalign("public $compos_class.Pk", 32)."get${compos_class}Pk()\n{\n\treturn this.pk.$attr->{name}Pk;\n}\n\n");
-			}
-		}
-		else {
-			dr::Util::doDie("unknown attribute stype: $attr->{name} -> $attr->{stype}");
-		}
-	}
-	if (@primary) {
-		$sysimport_ctx->printOnce("import javax.persistence.EmbeddedId;\n");
-		$sysimport_ctx->printOnce("import javax.persistence.Embeddable;\n");
-		$sysimport_ctx->printOnce("import java.io.Serializable;\n");
-		$pk_ctx->print("\@Embeddable\npublic static class Pk implements Serializable\n{\n");
-		$pk_ctx->print("\t".tabalign("private static final long serialVersionUID", 32)."= 1L;\n\n");
-		my $inpk_ctx = $pk_end_ctx->indentContext(1);
-		$inpk_ctx->print(tabalign("public", 32)."Pk()\n{\n}\n\n");
-		$inpk_ctx->print(tabalign("public", 32)."Pk(".join(", ", map({ $_->{stype} eq "compos" ? (convertToJavaClass($_->getAssocTarget()->{name}).".Pk $_->{name}Pk") : (dr::prog::java::JavaGenerator::mapJavaAttrType($_)." $_->{name}"); } @primary)).")\n");
-		$inpk_ctx->print("{\n");
-		foreach my $pka (@primary) {
-			my $suff = $pka->{stype} eq "compos" ? "Pk" : "";
-			$inpk_ctx->print("\t"."this.$pka->{name}$suff = $pka->{name}$suff;\n");
-		}
-		$inpk_ctx->print("}\n\n");
-		my $hash_cont = "0";
-		my $equals_cont = "true";
-		foreach my $pka (@primary) {
-			my $suff = $pka->{stype} eq "compos" ? "Pk" : "";
-			$hash_cont = "($hash_cont)*37+($pka->{name}$suff == null ? 0 : $pka->{name}$suff.hashCode())";
-			$equals_cont .= " && ($pka->{name}$suff == null ? s.$pka->{name}$suff == null : $pka->{name}$suff.equals(s.$pka->{name}$suff))";
-		}
-		$inpk_ctx->print("\@Override\n".tabalign("public int", 32)."hashCode()\n{\n");
-		$inpk_ctx->print("\treturn $hash_cont;\n");
-		$inpk_ctx->print("}\n\n");
-		$inpk_ctx->print("\@Override\n".tabalign("public boolean", 32)."equals(Object o)\n{\n");
-		$inpk_ctx->print("\tif (!(o instanceof Pk))\n\t\treturn false;\n\tPk s = (Pk)o;\n");
-		$inpk_ctx->print("\treturn $equals_cont;\n");
-		$inpk_ctx->print("}\n\n");
-		$pk_end_ctx->print("};\n");
-		$pk_end_ctx->print("\n\@EmbeddedId\n".tabalign("protected Pk", 32)."pk = new Pk();\n\n");
-		$method_ctx->print(tabalign("public Pk", 32)."getPk()\n{\treturn pk;\n}\n\n");
-		$method_ctx->print(tabalign("public void", 32)."setPk(Pk pk_)\n{\tthis.pk = pk_;\n}\n\n");
-	}
-	$fdbean->indent(-1);
-	$fdbean->print("};\n");
+	my $java_out = dr::prog::java::JavaOutFileContext->new($context->{model_store}, $sysimport_ctx, $appimport_ctx, $writer);
+	generateEntityBeanPart($context, $java_out, $model);
 
 	$context->{file_trans}->closeFile($fdbean);
 }
@@ -368,7 +523,8 @@ sub generateEntityDaoIf($$$$)
 	$fddao->indent(1);
 	my $method_ctx = $fddao->rememberContext();
 
-	$method_ctx->print(tabalign("public void", 32)."save($baseclassonly obj);\n\n");
+	$method_ctx->print(tabalign("public void", 32)."insert($baseclassonly obj);\n\n");
+	$method_ctx->print(tabalign("public void", 32)."update($baseclassonly obj);\n\n");
 	$method_ctx->print(tabalign("public void", 32)."remove($baseclassonly obj);\n\n");
 	#$method_ctx->print("public Collection<EntityHolder<$baseclassonly>> list();\n\n");
 	if ($dao) {
@@ -412,9 +568,9 @@ sub generateEntityDaoHib($$$$)
 	my $more			= shift;
 
 	my $jbaseclassname = $classname; $jbaseclassname =~ s/::/./g;
-	my $jclassname = $jbaseclassname."DaoImpl";
+	my $jclassname = $jbaseclassname."DaoHib";
 	my $filename = $jclassname; $filename =~ s/\./\//g;
-	my $pkgname = $jclassname; $pkgname =~ s/\.\w+$//;
+	my $pkgname = $jclassname; $pkgname =~ s/\.\w+$//; $pkgname .= ".perhib";
 	my $classonly = $jclassname; $classonly =~ s/^.*\.//g;
 	my $baseclassonly = $jbaseclassname; $baseclassonly =~ s/^.*\.//g;
 
@@ -423,14 +579,13 @@ sub generateEntityDaoHib($$$$)
 	my $model = $context->{model_store}->loadModel($location, $classname);
 	my $dao = $model->checkSubModel("${classname}::Dao");
 
-	my $fddao = $context->{file_trans}->updateChanged($context->{dst_dir}."/$filename.java");
+	my $fddao = $context->{file_trans}->updateChanged($context->{dst_dir}.dr::Util::prependFile("/$filename.java", "perhib/"));
 	$context->{processed}->{$filename} = 1;
 
 	$fddao->print("package $pkgname;\n\n");
 	my $sysimport_ctx = $fddao->rememberContext();
 	$sysimport_ctx->printOnce("import $jbaseclassname;\n");
 	$sysimport_ctx->printOnce("import org.hibernate.SessionFactory;\n");
-	$sysimport_ctx->printOnce("//import org.springframework.dao.DataAccessException;\n");
 	$sysimport_ctx->printOnce("import org.springframework.orm.hibernate3.HibernateTemplate;\n");
 	$sysimport_ctx->printOnce("import org.springframework.stereotype.Repository;\n");
 	$sysimport_ctx->printOnce("import org.springframework.transaction.annotation.Propagation;\n");
@@ -448,7 +603,8 @@ sub generateEntityDaoHib($$$$)
 
 	$fddao->printAt($method_ctx, tabalign("public void", 32)."setSessionFactory(SessionFactory sessionFactory)\n{\ttemplate = new HibernateTemplate(sessionFactory);\n}\n\n");
 
-	$fddao->printAt($method_ctx, "\@Transactional(readOnly = false, propagation = Propagation.REQUIRES_NEW)\n".tabalign("public void", 32)."save($baseclassonly obj)\n{\n\ttemplate.saveOrUpdate(obj);\n}\n\n");
+	$fddao->printAt($method_ctx, "\@Transactional(readOnly = false, propagation = Propagation.REQUIRES_NEW)\n".tabalign("public void", 32)."insert($baseclassonly obj)\n{\n\ttemplate.saveOrUpdate(obj);\n}\n\n");
+	$fddao->printAt($method_ctx, "\@Transactional(readOnly = false, propagation = Propagation.REQUIRES_NEW)\n".tabalign("public void", 32)."update($baseclassonly obj)\n{\n\ttemplate.saveOrUpdate(obj);\n}\n\n");
 	$fddao->printAt($method_ctx, "\@Transactional(readOnly = false, propagation = Propagation.REQUIRES_NEW)\n".tabalign("public void", 32)."remove($baseclassonly obj)\n{\n\ttemplate.delete(obj);\n}\n\n");
 	#$fddao->printAt($method_ctx, "\@SuppressWarnings(\"unchecked\")\n".tabalign("public Collection<EntityHolder<$baseclassonly>>", 32)."list()\n{\n\tCollection<EntityHolder<$baseclassonly>> result = new LinkedList<EntityHolder<$baseclassonly>>();\n\tfor ($baseclassonly obj: (Collection<$baseclassonly>)template.find(\"from $baseclassonly\")) {\n\t\tresult.add(new EntityHolder<$baseclassonly>(obj, role));\n\t}\n\treturn result;\n}\n\n");
 	if ($dao) {
@@ -551,6 +707,187 @@ sub generateEntityDaoHib($$$$)
 	$context->{file_trans}->closeFile($fddao);
 }
 
+sub getDataSource($)
+{
+	my $classdef			= shift;
+
+	return $classdef->checkDrTagHierarchicalValue("datasource") || dr::Util::doDie("failed to find datasource for class $classdef->{name}");
+}
+
+sub getEjbTransactionParams($$$)
+{
+	my $oper			= shift;
+	my $readOnly_dfl		= shift;
+	my $propagation_dfl		= shift;
+
+	my $readOnly = $oper->checkDrTagValue("readOnly") // $readOnly_dfl;
+	my $propagation = $oper->checkDrTagValue("propagation") // $propagation_dfl;
+	my $args = "";
+	#$args .= ", readOnly = ".(convertBool($readOnly) ? "true" : "false") if ($readOnly ne "");
+	#$args .= ", propagation = Propagation.$propagation" if ($propagation);
+	$args .= ", TransactionAttributeType.$propagation" if ($propagation);
+	return $args ? "\@TransactionAttribute(".substr($args, 2).")\n" : "";
+}
+
+sub generateEntityDaoJpa($$$$)
+{
+	my $context			= shift;
+	my $location			= shift;
+	my $classname			= shift;
+	my $more			= shift;
+
+	my $jbaseclassname = $classname; $jbaseclassname =~ s/::/./g;
+	my $jclassname = $jbaseclassname."DaoJpa";
+	my $filename = $jclassname; $filename =~ s/\./\//g;
+	my $pkgname = $jclassname; $pkgname =~ s/\.\w+$//; $pkgname .= ".perjpa";
+	my $classonly = $jclassname; $classonly =~ s/^.*\.//g;
+	my $baseclassonly = $jbaseclassname; $baseclassonly =~ s/^.*\.//g;
+
+	return if ($context->{processed}->{$filename});
+
+	my $model = $context->{model_store}->loadModel($location, $classname);
+	my $dao = $model->checkSubModel("${classname}::Dao");
+
+	my $fddao = $context->{file_trans}->updateChanged($context->{dst_dir}.dr::Util::prependFile("/$filename.java", "perjpa/"));
+	$context->{processed}->{$filename} = 1;
+
+	$fddao->print("package $pkgname;\n\n");
+	my $sysimport_ctx = $fddao->rememberContext();
+	$sysimport_ctx->printOnce("import $jbaseclassname;\n");
+	$sysimport_ctx->printOnce("import javax.persistence.EntityManager;\n");
+	$sysimport_ctx->printOnce("import javax.persistence.PersistenceContext;\n");
+	$sysimport_ctx->printOnce("import javax.ejb.TransactionAttribute;\n");
+	$sysimport_ctx->printOnce("import javax.ejb.TransactionAttributeType;\n");
+	$sysimport_ctx->printOnce("import org.springframework.stereotype.Repository;\n");
+	#$sysimport_ctx->printOnce("import org.springframework.transaction.annotation.Propagation;\n");
+	#$sysimport_ctx->printOnce("import org.springframework.transaction.annotation.Transactional;\n");
+
+	my $import_ctx = $fddao->rememberContext();
+
+	$fddao->printIndented("\n\n\@Repository\n\@TransactionAttribute(TransactionAttributeType.SUPPORTS)\npublic class $classonly extends dr.core.ContextDao implements ${jbaseclassname}Dao\n{\n");
+	$fddao->indent(1);
+	my $attr_ctx = $fddao->rememberContext();
+	$fddao->printIndented("\n");
+	my $method_ctx = $fddao->rememberContext();
+
+	$fddao->printAt($attr_ctx, "\@PersistenceContext(name=\"".getDataSource($dao || $model)."\")\n".tabalign("protected EntityManager", 32)."em;\n\n");
+
+	$fddao->printAt($method_ctx, "\@Override\n\@TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)\n".tabalign("public void", 32)."insert($baseclassonly obj)\n{\n\tem.persist(obj);\n\tem.flush();\n}\n\n");
+	$fddao->printAt($method_ctx, "\@Override\n\@TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)\n".tabalign("public void", 32)."update($baseclassonly obj)\n{\n\tem.merge(obj);\n\tem.flush();\n}\n\n");
+	$fddao->printAt($method_ctx, "\@Override\n\@TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)\n".tabalign("public void", 32)."remove($baseclassonly obj)\n{\n\tem.remove(obj);\n\tem.flush();\n}\n\n");
+	#$fddao->printAt($method_ctx, "\@SuppressWarnings(\"unchecked\")\n".tabalign("public Collection<EntityHolder<$baseclassonly>>", 32)."list()\n{\n\tCollection<EntityHolder<$baseclassonly>> result = new LinkedList<EntityHolder<$baseclassonly>>();\n\tfor ($baseclassonly obj: (Collection<$baseclassonly>)template.find(\"from $baseclassonly\")) {\n\t\tresult.add(new EntityHolder<$baseclassonly>(obj, role));\n\t}\n\treturn result;\n}\n\n");
+	if ($dao) {
+		for my $oper (grep({ $_->{name} =~ /^dr\.(\w+)\./ } @{$dao->{oper_list}})) {
+			dr::Util::doDie("wrong name for dao operation: $oper->{name}") unless ($oper->{name} =~ m/^dr\.(\w+)\.(\w+)$/);
+			my $optype = $1;
+			my $opname = $2;
+			if ($optype eq "load") {
+				if (0) {
+					$sysimport_ctx->printOnce("import dr.core.EntityHolder;\n");
+					$sysimport_ctx->printOnce("import java.util.List;\n");
+					$method_ctx->print("\@Override\n".tabalign("\@SuppressWarnings(\"unchecked\")\npublic EntityHolder<$baseclassonly>", 32)." $opname(".generateOperParamList($oper).")\n{\n");
+					my $cont_ctx = $method_ctx->indentContext(1);
+					my $sql = "";
+					my $cond = "";
+					my $list = "";
+					if (defined ($sql = $oper->checkDrTagValue("sql"))) {
+						my $i = 0;
+						while ($sql =~ m/^(.*?):(\w+)(.*?)$/s) {
+							++$i;
+							$sql = "$1?$i$3";
+							$list .= ".setParameter($i, $2)";
+						}
+					}
+					else {
+						my $i = 0;
+						foreach my $param (@{$oper->{param_list}}) {
+							++$i;
+							$cond .= " AND $param->{name} = ?$i";
+							$list .= ".setParameter($i, $param->{name})";
+						}
+						$cond = substr($cond, 5);
+						$sql = "FROM $baseclassonly WHERE $cond";
+					}
+					$cont_ctx->print("List<$baseclassonly> result = em.createQuery(\"".escapeString($sql)."\").$list.getResultList();\n");
+					$cont_ctx->print("if (result.size() == 0)\n\treturn null;\n");
+					$cont_ctx->print("return new EntityHolder<$baseclassonly>(result.get(0), null);\n");
+					$method_ctx->print("}\n\n");
+				}
+				else {
+					$sysimport_ctx->printOnce("import java.util.List;\n");
+					$method_ctx->print("\@Override\n".tabalign("public $baseclassonly", 32)."$opname(".generateOperParamList($oper).")\n{\n");
+					my $cont_ctx = $method_ctx->indentContext(1);
+					my $sql = "";
+					my $cond = "";
+					my $list = "";
+					if (defined ($sql = $oper->checkDrTagValue("sql"))) {
+						my $i = 0;
+						while ($sql =~ m/^(.*?):(\w+)(.*?)$/s) {
+							++$i;
+							$sql = "$1?$i$3";
+							$list .= ".setParameter($i, $2)";
+						}
+					}
+					else {
+						my $i = 0;
+						foreach my $param (@{$oper->{param_list}}) {
+							++$i;
+							$cond .= " AND $param->{name} = ?$i";
+							$list .= ".setParameter($i, $param->{name})";
+						}
+						$cond = substr($cond, 5);
+						$sql = "FROM $baseclassonly WHERE $cond";
+					}
+					$cont_ctx->print("\@SuppressWarnings(\"unchecked\")\nList<$baseclassonly> result = em.createQuery(\"".escapeString($sql)."\")$list.getResultList();\n");
+					$cont_ctx->print("if (result.size() == 0)\n\treturn null;\n");
+					$cont_ctx->print("return result.get(0);\n");
+					$method_ctx->print("}\n\n");
+				}
+			}
+			elsif ($optype eq "query") {
+				my $ret_type = dr::prog::java::JavaGenerator::mapJavaType($oper->getReturnTypeWithTagger());
+				$method_ctx->print("\@Override\n".tabalign("public $ret_type", 32)."$opname(".generateOperParamList($oper).")\n{\n");
+				my $sql = $oper->getDrTagValue("sql");
+				my $cond = "";
+				my $list = "";
+				my $i = 0;
+				while ($sql =~ m/^(.*?):(\w+)(.*?)$/s) {
+					++$i;
+					$sql = "$1?$i$3";
+					$list .= ".setParameter($i, $2)";
+				}
+				$sysimport_ctx->printOnce("import java.util.List;\n");
+				$method_ctx->print("\t\@SuppressWarnings(\"rawtypes\")\n\tList result = em.createQuery(\"".escapeString($sql)."\")$list.getResultList();\n");
+				$method_ctx->print("\treturn result.size() == 0 ? null : ($ret_type)result.get(0);\n");
+				$method_ctx->print("}\n\n");
+			}
+			elsif ($optype eq "update") {
+				my $ret_type = dr::prog::java::JavaGenerator::mapJavaType($oper->getReturnTypeWithTagger());
+				$method_ctx->print("\@Override\n".getEjbTransactionParams($oper, 0, "REQUIRES_NEW")."\n".tabalign("public $ret_type", 32)."$opname(".generateOperParamList($oper).")\n{\n");
+				my $sql = $oper->getDrTagValue("sql");
+				my $cond = "";
+				my $list = "";
+				my $i = 0;
+				while ($sql =~ m/^(.*?):((\w+\.)*\w+)(.*?)$/s) {
+					++$i;
+					$sql = "$1?$i$4";
+					$list .= ".setParameter($i, $2)";
+				}
+				$method_ctx->print("\tem.createQuery(\"".escapeString($sql)."\")$list.executeUpdate();\n");
+				$method_ctx->print("}\n\n");
+			}
+			else {
+				dr::Util::doDie("unknown dao operation type: $optype");
+			}
+		}
+	}
+
+	$fddao->indent(-1);
+	$fddao->print("};\n");
+
+	$context->{file_trans}->closeFile($fddao);
+}
+
 sub generateFile($$$$)
 {
 	my $context			= shift;
@@ -567,6 +904,9 @@ sub generateFile($$$$)
 		}
 		elsif ($gen eq "daoif") {
 			generateEntityDaoIf($context, $location, $classname, $more);
+		}
+		elsif ($gen eq "daojpa") {
+			generateEntityDaoJpa($context, $location, $classname, $more);
 		}
 		elsif ($gen eq "daohib") {
 			generateEntityDaoHib($context, $location, $classname, $more);
@@ -613,7 +953,7 @@ sub runDirectories($$)
 	find({
 			no_chdir		=> 1,
 			wanted			=> sub {
-				if (m/^(\.\/)?(.*\/|)(.*)\.(java|xml|sql)$/) {
+				if (m/^(\.\/)?(.*\/|)(.*)\.(java|xml|properties|sql)$/) {
 					push(@files, $_);
 				}
 			},

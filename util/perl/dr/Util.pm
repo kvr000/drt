@@ -41,7 +41,7 @@ use warnings;
 use Exporter;
 
 our @ISA = qw(Exporter);
-our @EXPORT_OK = qw(doDie dumpSimple defvalue tablength tabalign escapeString unescapeString escapeStringContent);
+our @EXPORT_OK = qw(doDie dumpSimple defvalue tablength tabalign escapeString unescapeString escapeStringContent convertBool);
 
 use Scalar::Util qw(isweak reftype);
 
@@ -319,6 +319,38 @@ sub escapeStringContent($)
 	my $s				= shift;
 
 	return ($s =~ m/^"(.*)"$/) ? "\"".escapeString($1)."\"" : $s;
+}
+
+sub getFileOnly($)
+{
+	my $path			= shift;
+
+	$path =~ s,.*/,,g;
+	return $path;
+}
+
+sub getDirOnly($)
+{
+	my $path			= shift;
+
+	$path =~ s,^(.*/|)[^/]+$,$1,g;
+	return $path;
+}
+
+sub prependFile($$)
+{
+	my $path			= shift;
+	my $prepend			= shift;
+
+	$path =~ m,^(.*/|)([^/]*)$,;
+	return "$1$prepend$2";
+}
+
+sub convertBool($)
+{
+	my $value			= shift;
+
+	return $value eq "true" ? 1 : $value eq "false" ? 0 : $value =~ m/^[01]$/ ? $value+0 : doDie("invalid bool value: $value");
 }
 
 

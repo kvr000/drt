@@ -17,7 +17,7 @@ our %JAVA_TAGS = (
 
 sub new
 {
-	my $classname		= shift;
+	my $classname			= shift;
 
 	my $this = $classname->SUPER::new(@_);
 	$this->{shortcut} = {};
@@ -30,20 +30,22 @@ sub new
 }
 
 our %JAVA_UML_TYPES = (
-	void			=> "void",
-	string			=> "String",
-	int			=> "Integer",
-	Integer			=> "Integer",
-	long			=> "Long",
-	Long			=> "Long",
-	float			=> "Double",
-	Float			=> "Double",
-	double			=> "Double",
-	Double			=> "Double",
-	boolean			=> "Boolean",
-	Boolean			=> "Boolean",
+	void				=> "void",
+	string				=> "String",
+	binary				=> "byte[]",
+	int				=> "Integer",
+	Integer				=> "Integer",
+	long				=> "Long",
+	Long				=> "Long",
+	float				=> "Double",
+	Float				=> "Double",
+	double				=> "Double",
+	Double				=> "Double",
+	boolean				=> "Boolean",
+	Boolean				=> "Boolean",
 );
 
+# static
 sub mapJavaType
 {
 	my $type			= shift;
@@ -67,6 +69,7 @@ sub mapJavaType
 	}
 }
 
+# static
 sub mapJavaAttrType
 {
 	my $attr			= shift;
@@ -142,6 +145,10 @@ sub processLine
 		if ($line =~ m/^((public|private|protected)\s+|)((abstract)\s+|)class\s+(\w+)(\s*<.*>)?\s+extends\s+((\w+\.)*\w+)(\s+.*|)$/) {
 			$this->{class_name} = $5;
 			$this->{ancestor_name} = $7;
+			$this->processClassDef($line);
+		}
+		elsif ($line =~ m/^((public|private|protected)\s+|)((abstract)\s+|)\@*interface\s+(\w+).*$/) {
+			$this->{class_name} = $5;
 			$this->processClassDef($line);
 		}
 		elsif ($line =~ m/^\s*$/) {
@@ -273,7 +280,7 @@ sub processClassStart
 	my $line			= shift;
 
 	die "did not find class specification" unless (defined $this->{class_name});
-	die "did not find ancestor specification" unless (defined $this->{ancestor_name});
+	#die "did not find ancestor specification" unless (defined $this->{ancestor_name});
 	die "did not find package specification" unless (defined $this->{package_name});
 
 	$this->{class_started} = 1;

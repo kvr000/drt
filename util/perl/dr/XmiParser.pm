@@ -649,7 +649,7 @@ sub read_processPackage
 			next;
 		}
 		elsif ($name eq "xmi:Extension") {
-			$this->read_skipNode($reader);
+			$this->read_processPackageExtensions($reader);
 			next;
 		}
 		else {
@@ -658,6 +658,35 @@ sub read_processPackage
 	}
 	push(@{$this->{packages}}, $this->{read_context});
 	$this->{read_context} = $saved_context;
+}
+
+sub read_processPackageExtensions
+{
+	my $this		= shift;
+
+	my $reader		= shift->getSubLeveler();
+
+	my $saved_extender = $this->{read_extender};
+	$this->{read_extender} = $this->read_getMandatoryAttr("extender");
+
+	while (defined (my $name = $reader->readNode())) {
+		if ($name eq "taggedValue") {
+			$this->read_processClassTaggedValue($reader);
+		}
+		else {
+			$this->read_unknownNode($reader);
+		}
+	}
+
+	$this->{read_extender} = $saved_extender;
+}
+
+sub read_processPackageTaggedValue
+{
+	my $this		= shift;
+	my $main_reader		= shift;
+
+	$this->read_processGenericTagged($main_reader, $this->{read_context}->{comment});
 }
 
 sub read_processClass

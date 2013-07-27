@@ -95,6 +95,15 @@ sub rollback
 	$this->{opers} = [];
 }
 
+sub mkdir
+{
+	my $this			= shift;
+	my $dir				= shift;
+
+	-d $dir or mkdir($dir) or -d $dir
+		or die "failed to create directory $dir: $!";
+}
+
 sub openRead
 {
 	my $this		= shift;

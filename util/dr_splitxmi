@@ -108,6 +108,33 @@ sub formatComment($$)
 	return $out;
 }
 
+sub formatClassComment($$)
+{
+	my $indent		= shift;
+	my $classdef		= shift;
+
+	my $out = "";
+
+	my %drtags = ();
+
+	foreach my $dr (sort({ $a->{order} <=> $b->{order} } @{$classdef->{comment}->{drtag_list}})) {
+		$out .= sprintf("%s%s", "\t" x $indent, formatTriplet("drtag", $dr->{name}, escapeString($dr->{value})));
+		$drtags{$dr->{name}} = 1;
+	}
+	for (my $package = $classdef->{parent}; $package; $package = $package->{parent}) {
+		next if ($package->{type} ne "package");
+		foreach my $dr (sort({ $a->{order} <=> $b->{order} } @{$package->{comment}->{drtag_list}})) {
+			next if ($drtags{$dr->{name}});
+			$out .= sprintf("%s%s", "\t" x $indent, formatTriplet("drtag", $dr->{name}, escapeString($dr->{value})));
+			$drtags{$dr->{name}} = 1;
+		}
+	}
+	foreach my $com (@{$classdef->{comment}->{comment}}) {
+		$out .= sprintf("%s%s", "\t" x $indent, formatPair("comment", escapeString($com)));
+	}
+	return $out;
+}
+
 sub genClass
 {
 	my $xmi			= shift;
@@ -117,11 +144,14 @@ sub genClass
 
 	$fd->print(formatPair("package", $xmi->getPrefixName($class)));
 	$fd->print(formatPair("name", $class->{name}));
-	$fd->print(formatPair("type", $class->{type}));
+	$fd->print(formatPair("stype", $class->{type}));
 	if (defined $class->{ancestor}) {
 		$fd->print(formatPair("ancestor", $xmi->formatDatatype($class->{ancestor})));
 	}
-	$fd->print(formatComment(0, $class->{comment}));
+	$fd->print(formatClassComment(0, $class));
+	foreach my $nested (@{$class->{class_list}}) {
+		$fd->print(formatPair("nested", $nested->{name}));
+	}
 	if ($class->{type} eq "typedef") {
 		$fd->print(formatPair("base", $xmi->formatDatatype($class->getTypedefSource())));
 	}
@@ -244,8 +274,9 @@ $xmi_fname = shift(@ARGV);
 $dst_dir = shift(@ARGV);
 
 $file_trans = dr::FileTransaction->new();
-tie(%gen_map, 'DB_File', "$dst_dir/genmap.db", O_CREAT|O_RDWR|O_TRUNC, 0666, $DB_BTREE)
-	or dr::Util::doDie("failed to open $dst_dir.genmap");
+$file_trans->mkdir($dst_dir);
+tie(%gen_map, 'DB_File', "$dst_dir/_genmap.db", O_CREAT|O_RDWR|O_TRUNC, 0666, $DB_BTREE)
+	or dr::Util::doDie("failed to open $dst_dir/_genmap.db");
 
 my $xmi = dr::XmiParser->new($xmi_fname);
 
@@ -257,10 +288,10 @@ foreach my $package (@{$xmi->{packages}}) {
 
 if ($file_trans->commit()) {
 	untie(%gen_map)
-		or dr::Util::doDie("failed to flush $dst_dir/genmap.db");
-	my $dummy = FileHandle->new("$dst_dir.gen", ">");
+		or dr::Util::doDie("failed to flush $dst_dir/_genmap.db");
+	my $dummy = FileHandle->new("$dst_dir/_gen.gen", ">");
 	$dummy->printf("ok\n");
 	if (!$dummy->close()) {
-		die "failed to update dummy file $dst_dir.gen: $!";
+		die "failed to update dummy file $dst_dir/_gen.gen: $!";
 	}
 }

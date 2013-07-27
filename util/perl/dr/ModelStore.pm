@@ -241,6 +241,7 @@ sub new
 		filename		=> $basic->{filename},
 		full			=> "$basic->{package}::$basic->{name}",
 		stype			=> $basic->{stype},
+		nested_names		=> [],
 		comment			=> [],
 		drtag			=> dr::ModelStore::Drtag->new(),
 	}, $class;
@@ -261,6 +262,7 @@ sub dieContext
 }
 
 our %BASE_MAPPER = (
+	nested			=> \&readNested,
 	drtag			=> \&readBaseDrtag,
 	comment			=> \&readBaseComment,
 );
@@ -280,6 +282,8 @@ sub checkSubModel
 {
 	my $this		= shift;
 	my $pname		= shift;
+
+	dr::Util::doDie("pname undefined") unless (defined $pname);
 
 	if ($this->{owner}->{class_hash}->{$pname}) {
 		return $this->{owner}->{class_hash}->{$pname};
@@ -376,6 +380,34 @@ sub checkDrTagValue
 	return $this->{drtag}->checkTagValue($tag);
 }
 
+sub getParentName
+{
+	my $this			= shift;
+
+	#dr::Util::doDie("classname $this->{name} does not have prefix") unless ($this->{name} =~ m/^(.*)::.*$/);
+	return $this->{package};
+}
+
+sub checkDrTagHierarchicalValue
+{
+	my $this			= shift;
+	my $tag				= shift;
+
+	for (my $classdef = $this; $classdef; $classdef = $this->checkSubModel($classdef->getParentName())) {
+		if (defined (my $value = $this->checkDrTagValue($tag))) {
+			return $value;
+		}
+	}
+	return undef;
+}
+
+sub getNestedNames
+{
+	my $this			= shift;
+
+	return $this->{nested_names};
+}
+
 sub getDrSpecs
 {
 	my $this		= shift;
@@ -403,22 +435,32 @@ sub load
 
 sub readBaseDrtag
 {
-	my $this		= shift;
-	my $base		= shift;
-	my $key			= shift;
-	my $val			= shift;
+	my $this			= shift;
+	my $base			= shift;
+	my $key				= shift;
+	my $val				= shift;
 
 	$this->{drtag}->addTag(dr::Util::unescapeString($val));
 }
 
 sub readBaseComment
 {
-	my $this		= shift;
-	my $base		= shift;
-	my $key			= shift;
-	my $val			= shift;
+	my $this			= shift;
+	my $base			= shift;
+	my $key				= shift;
+	my $val				= shift;
 
 	push(@{$this->{comment}}, dr::Util::unescapeString($val));
+}
+
+sub readNested
+{
+	my $this			= shift;
+	my $base			= shift;
+	my $key				= shift;
+	my $val				= shift;
+
+	push(@{$this->{nested_names}}, dr::Util::unescapeString($val));
 }
 
 
@@ -507,12 +549,7 @@ sub getPrimary
 	if (!defined $this->{primary}) {
 		$this->{primary} = [];
 		foreach my $attr (@{$this->{attr_list}}) {
-			if ($attr->{stype} eq "compos") {
-				push(@{$this->{primary}}, $attr);
-			}
-			elsif (my $role = $attr->getRole()) {
-				push(@{$this->{primary}}, $attr) if (defined $role->{primary});
-			}
+			push(@{$this->{primary}}, $attr) if ($attr->getRole()->{primary});
 		}
 	}
 
@@ -753,28 +790,35 @@ use base "dr::ModelStore::ClassBase";
 
 sub new
 {
-	my $ref			= shift;
-	my $class		= ref($ref) || $ref;
+	my $ref				= shift;
+	my $class			= ref($ref) || $ref;
 
-	my $owner		= shift;
-	my $basic		= shift;
+	my $owner			= shift;
+	my $basic			= shift;
 
 	my $this = $class->SUPER::new($owner, $basic);
 
-	$this->{lit_list} = [];
+	$this->{literal_list} = [];
 
 	return $this;
 }
 
+sub getLiterals
+{
+	my $this			= shift;
+
+	return $this->{literal_list};
+}
+
 our %ENUM_MAPPER = (
 	%dr::ModelStore::ClassBase::BASE_MAPPER,
-	enum			=> \&readEnumLiteral,
+	enum				=> \&readEnumLiteral,
 );
 
 sub load
 {
-	my $this		= shift;
-	my $reader		= shift;
+	my $this			= shift;
+	my $reader			= shift;
 
 	$this->{file_context} = $reader->getContext();
 
@@ -1779,11 +1823,11 @@ sub loadModel
 			elsif ($k eq "name") {
 				$name = $v;
 			}
-			elsif ($k eq "type") {
+			elsif ($k eq "stype") {
 				$stype = $v;
 			}
 			else {
-				die "unexpected key found while still missing basic information (package, name and type): $k";
+				die "unexpected key found while still missing basic information (package, name and stype): $k";
 			}
 			last if (defined $package && defined $name && defined $stype);
 		}

@@ -1,0 +1,142 @@
+#!/usr/bin/perl
+
+###
+## drt library
+##
+## drt multiplatform development toolkit
+##
+## ----------------------------------------------------------------------------------
+##
+## Copyright (C) 2004-2008 Zbyněk Vyškovský
+##
+## ----------------------------------------------------------------------------------
+##
+## LICENSE:
+##
+## This file is part of drt
+##
+## drt is free software; you can redistribute it and/or modify it under the
+## terms of the GNU Lesser General Public License as published by the Free
+## Software Foundation; either version 3 of the License, or (at your option)
+## any later version.
+##
+## drt is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+## FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for
+## more details.
+##
+## You should have received a copy of the GNU Lesser General Public License
+## along with drt; if not, write to the Free Software Foundation, Inc., 51
+## Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+##
+## @copyright	2004-2008 Zbyněk Vyškovský
+## @link	mailto:kvr@matfyz.cz
+## @link	http://kvr.matfyz.cz/drt/
+## @license	http://www.gnu.org/licenses/lgpl.txt GNU Lesser General Public License v3
+###
+
+use strict;
+use warnings;
+
+use FileHandle;
+use File::Basename;
+use Data::Dumper;
+use Getopt::Std;
+use IPC::Open3;
+use File::Path;
+
+use lib dirname($0)."/perl";
+use dr::Util;
+
+sub runSys
+{
+	my $maxret			= shift;
+	my $wd				= shift;
+	my $in				= shift;
+	my $out				= shift;
+
+	my $cmd = "cd $wd && ".join(" ", @_);
+	#STDERR->print("running $cmd\n");
+	my $pid = fork()
+		// dr::Util::doDie("failed to fork: $!");
+	
+	if ($pid == 0) {
+		if ($in) {
+			open(STDIN, "<&", $in)
+				or dr::Util::doDie("failed to dup STDIN: $!");
+		}
+		if ($out) {
+			open(STDOUT, ">&", $out)
+				or dr::Util::doDie("failed to dup STDOUT: $!");
+		}
+		chdir($wd);
+		exec(@_)
+			or dr::Util::doDie("failed to exec $cmd: $!");
+	}
+	waitpid($pid, 0);
+	dr::Util::doDie("failed to run $cmd: $?") if (($?&0xff) || ($?>>8) > $maxret);
+}
+
+sub runBackup
+{
+	my $origSrc			= shift;
+
+	mkpath("tmp/b-$origSrc");
+	my $lastBackup = 0;
+	for ($lastBackup = 0; -d "tmp/b-$origSrc/$lastBackup"; $lastBackup++) {}
+	if ($lastBackup > 9) {
+		--$lastBackup;
+		runSys(0, "tmp/b-$origSrc", undef, undef, "rm", "-rf", $lastBackup);
+	}
+	while ($lastBackup > 0) {
+		runSys(0, "tmp/b-$origSrc", undef, undef, "mv", $lastBackup-1, $lastBackup);
+		--$lastBackup;
+	}
+	mkpath("tmp/b-$origSrc/0");
+	runSys(0, ".", undef, undef, "cp", "--reflink=auto", "-Ra", "x-$origSrc/.", "tmp/b-$origSrc/0/.");
+}
+
+
+our %opts;
+getopts('hdpsb', \%opts)
+	or exit(2);
+
+if ($opts{h}) {
+	STDERR->print(<<EOS
+Usage: [-h] {-d|-p|-s|-b}\n
+-h	help
+-d	run diff on generated directory
+-p	run patch on original directory
+-s	run full sync (-d -p -b)
+-b	run backup
+EOS
+	);
+}
+if (@ARGV != 1) {
+	STDERR->print("missing argument: source_dir\n");
+	exit(2);
+}
+our $origSrc = shift @ARGV;
+$origSrc =~ s,/*$,,;
+
+mkpath("tmp");
+if ($opts{d}) {
+	runSys(1, ".", undef, undef, "diff", "-urN", "tmp/b-$origSrc/0/", "x-$origSrc");
+}
+elsif ($opts{p}) {
+	runSys(0, "$origSrc", undef, undef, "patch", "-p1");
+}
+elsif ($opts{s}) {
+	dr::Util::doDie("tmp/b-$origSrc/0 does not exist, did you forgot to run -b first?") unless (-d "tmp/b-$origSrc/0");
+	runSys(1, ".", undef, FileHandle->new("tmp/p-$origSrc.diff", ">"), "diff", "-urN", "tmp/b-$origSrc/0/", "x-$origSrc/");
+	runSys(0, "$origSrc", FileHandle->new("tmp/p-$origSrc.diff", "<"), undef, "patch", "-p1");
+	runBackup($origSrc);
+}
+elsif ($opts{b}) {
+	runBackup($origSrc);
+}
+else {
+	STDERR->print("missing command, run -h for help\n");
+	exit(2);
+}
+exit(0);

@@ -16,6 +16,7 @@ SOURCES:
 	:t0.cxx:f=cxx;g=t0,t
 	no:mklist:g=t
 	lshlib:dr:g=common
+	lshlib:drio:g=common
 	lshlib:drservio:g=common
 	lshlib:drtenv:g=common
 
