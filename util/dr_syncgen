@@ -121,14 +121,14 @@ $origSrc =~ s,/*$,,;
 
 mkpath("tmp");
 if ($opts{d}) {
-	runSys(1, ".", undef, undef, "diff", "-urN", "tmp/b-$origSrc/0/", "x-$origSrc");
+	runSys(1, ".", undef, undef, "diff", "-urN", "--exclude=*.sw?", "tmp/b-$origSrc/0/", "x-$origSrc");
 }
 elsif ($opts{p}) {
 	runSys(0, "$origSrc", undef, undef, "patch", "-p1");
 }
 elsif ($opts{s}) {
 	dr::Util::doDie("tmp/b-$origSrc/0 does not exist, did you forgot to run -b first?") unless (-d "tmp/b-$origSrc/0");
-	runSys(1, ".", undef, FileHandle->new("tmp/p-$origSrc.diff", ">"), "diff", "-urN", "tmp/b-$origSrc/0/", "x-$origSrc/");
+	runSys(1, ".", undef, FileHandle->new("tmp/p-$origSrc.diff", ">"), "diff", "--exclude=*.sw?", "-urN", "tmp/b-$origSrc/0/", "x-$origSrc/");
 	runSys(0, "$origSrc", FileHandle->new("tmp/p-$origSrc.diff", "<"), undef, "patch", "-p1");
 	runBackup($origSrc);
 }

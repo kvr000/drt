@@ -26,6 +26,7 @@ sub process
 	my $errors = 0;
 
 	$this->{out_main} = $this->openTargets();
+	$this->{current_ctx} = $this->{out_main}->rememberContext();
 
 	while (defined (my $line = $this->{in_parser}->readLine())) {
 		eval {
@@ -244,7 +245,7 @@ sub printLine
 	my $this		= shift;
 	my $line		= shift;
 
-	$this->{out_main}->print($line) if (defined $this->{out_main});
+	$this->{current_ctx}->print($line) if (defined $this->{current_ctx});
 }
 
 sub printIndented
@@ -256,7 +257,7 @@ sub printIndented
 	chomp($ind);
 
 	$text =~ s/^/$ind/gm;
-	$this->{out_main}->print($text) if (defined $this->{out_main});
+	$this->{current_ctx}->print($text) if (defined $this->{out_main});
 }
 
 

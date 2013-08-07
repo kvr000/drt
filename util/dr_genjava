@@ -440,8 +440,8 @@ sub generateEntityBeanPart($$$)
 	}
 
 	if ($display_order) {
-		$java_out->printSysimport("import dr.meta.DisplayOrder;\n");
-		$cls_ctx->print("\@DisplayOrder(fields = { ".substr($display_order, 2)." })\n");
+		$java_out->printSysimport("import dr.meta.FieldOrder;\n");
+		$cls_ctx->print("\@FieldOrder(fields = { ".substr($display_order, 2)." })\n");
 	}
 }
 
@@ -756,6 +756,7 @@ sub generateEntityDaoJpa($$$$)
 	$sysimport_ctx->printOnce("import $jbaseclassname;\n");
 	$sysimport_ctx->printOnce("import javax.persistence.EntityManager;\n");
 	$sysimport_ctx->printOnce("import javax.persistence.PersistenceContext;\n");
+	#$sysimport_ctx->printOnce("import javax.persistence.PersistenceUnit;\n");
 	$sysimport_ctx->printOnce("import javax.ejb.TransactionAttribute;\n");
 	$sysimport_ctx->printOnce("import javax.ejb.TransactionAttributeType;\n");
 	$sysimport_ctx->printOnce("import org.springframework.stereotype.Repository;\n");
@@ -770,7 +771,9 @@ sub generateEntityDaoJpa($$$$)
 	$fddao->printIndented("\n");
 	my $method_ctx = $fddao->rememberContext();
 
-	$fddao->printAt($attr_ctx, "\@PersistenceContext(name=\"".getDataSource($dao || $model)."\")\n".tabalign("protected EntityManager", 32)."em;\n\n");
+	$fddao->printAt($attr_ctx, "\@PersistenceContext(unitName=\"".getDataSource($dao || $model)."\")\n");
+	#$fddao->printAt($attr_ctx, "\@PersistenceUnit(name=\"".getDataSource($dao || $model)."\")\n");
+	$fddao->printAt($attr_ctx, tabalign("protected EntityManager", 32)."em;\n\n");
 
 	$fddao->printAt($method_ctx, "\@Override\n\@TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)\n".tabalign("public void", 32)."insert($baseclassonly obj)\n{\n\tem.persist(obj);\n\tem.flush();\n}\n\n");
 	$fddao->printAt($method_ctx, "\@Override\n\@TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)\n".tabalign("public void", 32)."update($baseclassonly obj)\n{\n\tem.merge(obj);\n\tem.flush();\n}\n\n");

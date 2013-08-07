@@ -129,13 +129,20 @@ sub processLine
 	elsif ($line =~ m/^\s*import\s*((\S*)\.(\w+))\s*;\s*$/) {
 		$this->processImport($line, $1);
 	}
+	elsif ($line =~ m,^\s*//,) {
+		$this->printLine($line);
+	}
 	elsif ($line =~ m/^{/) {
 		return $this->processClassStart($line);
 	}
 	elsif ($line =~ m/^}/) {
 		return $this->processClassEnd($line);
 	}
+	elsif ($line =~ m/^\s*$/) {
+		$this->printLine($line);
+	}
 	else {
+		$this->{current_ctx} = $this->{out_main}->rememberContext();
 		while ($line =~ m/^(.*?)DRTYPE\((\w+)\.(\w+)\)(.*)$/s) {
 			my ( $start, $type, $attr, $end ) = ( $1, $2, $3, $4 );
 			my $classmodel = $this->loadModel($type);
@@ -150,9 +157,6 @@ sub processLine
 		elsif ($line =~ m/^((public|private|protected)\s+|)((abstract)\s+|)\@*interface\s+(\w+).*$/) {
 			$this->{class_name} = $5;
 			$this->processClassDef($line);
-		}
-		elsif ($line =~ m/^\s*$/) {
-			$this->printLine($line);
 		}
 		elsif ($line =~ m,^\s+.*\babstract\b\)\s*;\s*(//.*|/\*.*|)$,) {
 			$this->processMethodAbstract($line);
@@ -258,7 +262,7 @@ sub processImport
 
 	dr::Util::doDie("did not find import specification: $line") unless ($line =~ m/^\s*import\s*((\S*)\.(\w+))\s*;\s*$/);
 	$this->{imports}->{$3} = $1;
-	$this->{import_ctx} = $this->{out_main}->rememberContext() if (!defined $this->{import_ctx});
+	$this->{current_ctx} = $this->{import_ctx} = $this->{out_main}->rememberContext() if (!defined $this->{import_ctx});
 	$this->{import_ctx}->printOnce("import $1;\n");
 
 	return 0;

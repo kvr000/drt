@@ -40,9 +40,9 @@ set -e
 if test -n "$CTAGS"; then
 	$CTAGS -o ctags.tags "$@"
 elif which exuberant-ctags >/dev/null 2>&1; then
-	exuberant-ctags --exclude=doc --c++-kinds=+p --fields=+iaS --extra=+q -o ctags.tags -R "$@"
+	exuberant-ctags --exclude=tmp --exclude=doc --c++-kinds=+p --fields=+iaS --extra=+q -o ctags.tags -R "$@"
 elif which ctags-exuberant >/dev/null 2>&1; then
-	ctags-exuberant --exclude=doc --c++-kinds=+p --fields=+iaS --extra=+q -o ctags.tags -R "$@"
+	ctags-exuberant --exclude=tmp --exclude=doc --c++-kinds=+p --fields=+iaS --extra=+q -o ctags.tags -R "$@"
 else
 	ctags -o ctags.tags -R "$@"
 fi
