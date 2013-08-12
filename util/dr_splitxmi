@@ -208,6 +208,7 @@ sub genClass
 			$fd->print(formatPair("oper", $oper->{name}));
 			$fd->print(formatComment(1, $oper->{comment}));
 			$fd->print("\t".formatPair("classify", join(",", keys %{$oper->{classify}})));
+			dr::Util::doDie("returntype not specified for $oper->{name}") unless (defined $oper->{returntype});
 			$fd->print("\t".formatPair("return", $xmi->formatDatatype($class->getElementType($oper->{returntype}))));
 			foreach my $par (@{$oper->{param_list}}) {
 				$fd->print("\t".formatPair("param", $par->{name}));

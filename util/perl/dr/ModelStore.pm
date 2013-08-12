@@ -278,6 +278,19 @@ sub getSubModel
 	return $this->{owner}->loadModel($this->{location}, $pname);
 }
 
+sub formatTyperef
+{
+	my $this			= shift;
+	my $typeref			= shift;
+
+	if ($typeref =~ m/^\.(.*)$/) {
+		return "$this->{package}::$1";
+	}
+	else {
+		return $typeref;
+	}
+}
+
 sub checkSubModel
 {
 	my $this		= shift;
@@ -311,7 +324,7 @@ sub getSubFinalTypeWithTagger
 		if (defined $2) {
 			if (defined (my $typeref = $this->checkDrTagValue("typeref"))) {
 				dr::Util::doDie("reference target required") unless (defined $subname);
-				return $this->getSubModel($this->getDrTagValue("typeref"))->getAttr($subname)->getFinalTypeWithTagger();
+				return $this->getSubModel($this->formatTyperef($typeref))->getAttr($subname)->getFinalTypeWithTagger();
 			}
 			else {
 				dr::Util::doDie("reference target required") unless (defined $subname);
@@ -328,7 +341,7 @@ sub getSubFinalTypeWithTagger
 		elsif (defined $8) {
 			my $attr_name = $9;
 			if (defined (my $typeref = $this->checkDrTagValue("typeref"))) {
-				return $this->getSubModel($this->getDrTagValue("typeref"))->getAttr($attr_name)->getFinalTypeWithTagger();
+				return $this->getSubModel($this->formatTyperef($typeref))->getAttr($attr_name)->getFinalTypeWithTagger();
 			}
 			else {
 				return $this->getSubModel($this->{package})->getAttr($attr_name)->getFinalTypeWithTagger();

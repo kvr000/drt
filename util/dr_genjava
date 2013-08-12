@@ -515,7 +515,6 @@ sub generateEntityDaoIf($$$$)
 
 	$fddao->print("package $pkgname;\n\n");
 	my $sysimport_ctx = $fddao->rememberContext();
-	#$fddao->printOnce($sysimport_ctx, "import java.util.Collection;\n");
 	my $import_ctx = $fddao->rememberContext();
 	$import_ctx->printOnce("import $jbaseclassname;\n");
 
@@ -541,15 +540,19 @@ sub generateEntityDaoIf($$$$)
 					$method_ctx->print(tabalign("public $baseclassonly", 32)."$opname(".generateOperParamList($oper).");\n\n");
 				}
 			}
-			elsif ($optype eq "query") {
-				$method_ctx->print(tabalign("public ".dr::prog::java::JavaGenerator::mapJavaType($oper->getReturnTypeWithTagger()), 32)."$opname(".generateOperParamList($oper).");\n\n");
+			elsif ($optype eq "list") {
+				$import_ctx->printOnce("import java.util.Collection;\n");
+				$method_ctx->print(tabalign("public Collection<$baseclassonly>", 32)."$opname(".generateOperParamList($oper).");\n\n");
 			}
 			elsif ($optype eq "update") {
 				my $ret_type = dr::prog::java::JavaGenerator::mapJavaType($oper->getReturnTypeWithTagger());
 				$method_ctx->print(tabalign("public $ret_type", 32)."$opname(".generateOperParamList($oper).");\n\n");
 			}
+			elsif ($optype eq "query") {
+				$method_ctx->print(tabalign("public ".dr::prog::java::JavaGenerator::mapJavaType($oper->getReturnTypeWithTagger()), 32)."$opname(".generateOperParamList($oper).");\n\n");
+			}
 			else {
-				dr::Util::doDie("unknown dao operation type: $optype");
+				dr::Util::doDie("$jbaseclassname.$oper->{name}: unknown dao operation type: $optype");
 			}
 		}
 	}
@@ -667,9 +670,9 @@ sub generateEntityDaoHib($$$$)
 					$method_ctx->print("}\n\n");
 				}
 			}
-			elsif ($optype eq "query") {
+			elsif ($optype eq "list") {
 				my $ret_type = dr::prog::java::JavaGenerator::mapJavaType($oper->getReturnTypeWithTagger());
-				$method_ctx->print(tabalign("public $ret_type", 32)."$opname(".generateOperParamList($oper).")\n{\n");
+				$method_ctx->print(tabalign("public Collection<$baseclassonly>", 32)."$opname(".generateOperParamList($oper).")\n{\n");
 				my $sql = $oper->getDrTagValue("sql");
 				my $cond = "";
 				my $list = "";
@@ -677,9 +680,9 @@ sub generateEntityDaoHib($$$$)
 					$sql = "$1?$3";
 					$list .= ", $2";
 				}
-				$sysimport_ctx->printOnce("import java.util.List;\n");
-				$method_ctx->print("\t\@SuppressWarnings(\"rawtypes\")\n\tList result = template.find(\"".escapeString($sql)."\"$list);\n");
-				$method_ctx->print("\treturn result.size() == 0 ? null : ($ret_type)result.get(0);\n");
+				$sysimport_ctx->printOnce("import java.util.Collection;\n");
+				$method_ctx->print("\t\@SuppressWarnings(\"unchecked\")\n\tCollection<$baseclassonly> result = (Collection<$baseclassonly>)template.find(\"".escapeString($sql)."\"$list);\n");
+				$method_ctx->print("\treturn (Collection<$baseclassonly>)result;\n");
 				$method_ctx->print("}\n\n");
 			}
 			elsif ($optype eq "update") {
@@ -695,8 +698,23 @@ sub generateEntityDaoHib($$$$)
 				$method_ctx->print("\ttemplate.bulkUpdate(\"".escapeString($sql)."\"$list);\n");
 				$method_ctx->print("}\n\n");
 			}
+			elsif ($optype eq "query") {
+				my $ret_type = dr::prog::java::JavaGenerator::mapJavaType($oper->getReturnTypeWithTagger());
+				$method_ctx->print(tabalign("public $ret_type", 32)."$opname(".generateOperParamList($oper).")\n{\n");
+				my $sql = $oper->getDrTagValue("sql");
+				my $cond = "";
+				my $list = "";
+				while ($sql =~ m/^(.*?):(\w+)(.*?)$/s) {
+					$sql = "$1?$3";
+					$list .= ", $2";
+				}
+				$sysimport_ctx->printOnce("import java.util.List;\n");
+				$method_ctx->print("\t\@SuppressWarnings(\"rawtypes\")\n\tList result = template.find(\"".escapeString($sql)."\"$list);\n");
+				$method_ctx->print("\treturn result.size() == 0 ? null : ($ret_type)result.get(0);\n");
+				$method_ctx->print("}\n\n");
+			}
 			else {
-				dr::Util::doDie("unknown dao operation type: $optype");
+				dr::Util::doDie("$jbaseclassname.$oper->{name}: unknown dao operation type: $optype");
 			}
 		}
 	}
@@ -847,9 +865,9 @@ sub generateEntityDaoJpa($$$$)
 					$method_ctx->print("}\n\n");
 				}
 			}
-			elsif ($optype eq "query") {
+			elsif ($optype eq "list") {
 				my $ret_type = dr::prog::java::JavaGenerator::mapJavaType($oper->getReturnTypeWithTagger());
-				$method_ctx->print("\@Override\n".tabalign("public $ret_type", 32)."$opname(".generateOperParamList($oper).")\n{\n");
+				$method_ctx->print("\@Override\n".tabalign("public Collection<$baseclassonly>", 32)."$opname(".generateOperParamList($oper).")\n{\n");
 				my $sql = $oper->getDrTagValue("sql");
 				my $cond = "";
 				my $list = "";
@@ -859,9 +877,9 @@ sub generateEntityDaoJpa($$$$)
 					$sql = "$1?$i$3";
 					$list .= ".setParameter($i, $2)";
 				}
-				$sysimport_ctx->printOnce("import java.util.List;\n");
-				$method_ctx->print("\t\@SuppressWarnings(\"rawtypes\")\n\tList result = em.createQuery(\"".escapeString($sql)."\")$list.getResultList();\n");
-				$method_ctx->print("\treturn result.size() == 0 ? null : ($ret_type)result.get(0);\n");
+				$sysimport_ctx->printOnce("import java.util.Collection;\n");
+				$method_ctx->print("\t\@SuppressWarnings(\"unchecked\")\n\tCollection<$baseclassonly> result = (Collection<$baseclassonly>)em.createQuery(\"".escapeString($sql)."\")$list.getResultList();\n");
+				$method_ctx->print("\treturn (Collection<$baseclassonly>)result;\n");
 				$method_ctx->print("}\n\n");
 			}
 			elsif ($optype eq "update") {
@@ -879,8 +897,25 @@ sub generateEntityDaoJpa($$$$)
 				$method_ctx->print("\tem.createQuery(\"".escapeString($sql)."\")$list.executeUpdate();\n");
 				$method_ctx->print("}\n\n");
 			}
+			elsif ($optype eq "query") {
+				my $ret_type = dr::prog::java::JavaGenerator::mapJavaType($oper->getReturnTypeWithTagger());
+				$method_ctx->print("\@Override\n".tabalign("public $ret_type", 32)."$opname(".generateOperParamList($oper).")\n{\n");
+				my $sql = $oper->getDrTagValue("sql");
+				my $cond = "";
+				my $list = "";
+				my $i = 0;
+				while ($sql =~ m/^(.*?):(\w+)(.*?)$/s) {
+					++$i;
+					$sql = "$1?$i$3";
+					$list .= ".setParameter($i, $2)";
+				}
+				$sysimport_ctx->printOnce("import java.util.List;\n");
+				$method_ctx->print("\t\@SuppressWarnings(\"rawtypes\")\n\tList result = em.createQuery(\"".escapeString($sql)."\")$list.getResultList();\n");
+				$method_ctx->print("\treturn result.size() == 0 ? null : ($ret_type)result.get(0);\n");
+				$method_ctx->print("}\n\n");
+			}
 			else {
-				dr::Util::doDie("unknown dao operation type: $optype");
+				dr::Util::doDie("$jbaseclassname.$oper->{name}: unknown dao operation type: $optype");
 			}
 		}
 	}

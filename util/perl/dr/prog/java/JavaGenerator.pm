@@ -32,6 +32,7 @@ sub new
 our %JAVA_UML_TYPES = (
 	void				=> "void",
 	string				=> "String",
+	String				=> "String",
 	binary				=> "byte[]",
 	int				=> "Integer",
 	Integer				=> "Integer",
@@ -43,6 +44,7 @@ our %JAVA_UML_TYPES = (
 	Double				=> "Double",
 	boolean				=> "Boolean",
 	Boolean				=> "Boolean",
+	Collection			=> "Collection",
 );
 
 # static

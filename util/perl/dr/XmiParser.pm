@@ -298,6 +298,7 @@ sub getElementType
 	my $this		= shift;
 	my $element		= shift;
 
+	dr::Util::doDie("element type not set for $element->{type_xid}") unless (defined $element->{type_type});
 	if ($element->{type_type} eq "primitive") {
 		die Dumper($element) unless (defined $element->{type_primitive});
 		return $element->{type_primitive};
