@@ -67,8 +67,14 @@ sub open
 	if ($filename =~ m/\.csvdb$/) {
 		return CsvdbKeyValueDbWriter->new($filename);
 	}
-	else {
+	elsif ($filename =~ m/\.db$/) {
 		return DbaKeyValueDbWriter->new($filename);
+	}
+	elsif ($filename =~ m/\.properties$/) {
+		return PropertiesKeyValueDbWriter->new($filename);
+	}
+	else {
+		dr::Util::doDie("unknown extensions: $filename");
 	}
 }
 
@@ -152,6 +158,58 @@ sub close
 }
 
 
+package PropertiesKeyValueDbWriter;
+
+use strict;
+use warnings;
+
+use base qw(KeyValueDbWriter);
+
+sub new
+{
+	my $class = shift; $class = ref($class) || $class;
+
+	my $this = $class->SUPER::new(@_);
+
+	$this->{fd} = FileHandle->new($this->{filename}, ">")
+		or dr::Util::doDie("failed to open $this->{filename}: $!");
+	$this->{csv_manip} = Text::CSV->new({ binary => 1 });
+
+	return $this;
+}
+
+sub escapeProperties($)
+{
+	my $s				= shift;
+
+	$s =~ s/\\/\\\\/gs;
+	$s =~ s/\n/\\n/gs;
+	$s =~ s/\r/\\r/gs;
+	$s =~ s/(\s)/\\$1/gs;
+	$s =~ s/([:=])/\\$1/gs;
+
+	return $s;
+}
+
+sub write
+{
+	my $this			= shift;
+	my $key				= shift;
+	my $value			= shift;
+
+	$this->{fd}->print(escapeProperties($key)."=".escapeProperties($value)."\n");
+}
+
+sub close
+{
+	my $this			= shift;
+	$this->{fd}->flush()
+		or dr::Util::doDie("failed to flush $this->{filename}: $!");
+	$this->{fd}->close();
+}
+
+
+
 package main;
 
 use strict;
@@ -230,18 +288,30 @@ die "usage: $0 localize-file input-files..." unless (@ARGV > 1);
 our $db_name = shift @ARGV;
 our %db_cls;
 our $prefix = ($db_name =~ m,^(.*?)([^/]*)$,)[0];
-if ($db_name !~ m,^(.*/|)(\w+)/([^/]*)$,) {
-	die "db file not in language directory";
+
+our $lang;
+
+my $ext = $db_name;
+$ext =~ s/.*\.//g;
+
+if ($ext eq "properties") {
+	if ($db_name !~ m,_(\w+)\.properties$,) {
+		die "db file not in xyz_<lang>.properties format";
+	}
+	$lang = $1;
 }
-our $lang = $2;
+else {
+	if ($db_name !~ m,^(.*/|)(\w+)/([^/]*)$,) {
+		die "db file not in language directory";
+	}
+	$lang = $2;
+}
 
 mkdir("${prefix}/cls");
 unlink($_) foreach (glob("${prefix}cls/*.cls.*db"));
 unlink($db_name);
 
 our $db_full = KeyValueDbWriter::open($db_name);
-my $ext = $db_name;
-$ext =~ s/.*\.//g;
 
 my $errors = 0;
 eval {
@@ -301,4 +371,5 @@ eval {
 	!$errors;
 }
 	or $db_full->close(), unlink($db_name), die $@;
+
 exit(0);
