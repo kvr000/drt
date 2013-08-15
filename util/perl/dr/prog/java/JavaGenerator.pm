@@ -44,11 +44,18 @@ our %JAVA_UML_TYPES = (
 	Double				=> "Double",
 	boolean				=> "Boolean",
 	Boolean				=> "Boolean",
-	Collection			=> "Collection",
+);
+
+our %JAVA_UML_DATASTRUCT = (
+	Collection			=> "java.util.Collection",
+	List				=> "java.util.List",
+	Map				=> "java.util.Map",
+	Set				=> "java.util.Set",
 );
 
 # static
-sub mapJavaType
+## converts virtual type to java type
+sub mapJavaType # javaType-string <- modelType
 {
 	my $type			= shift;
 
@@ -61,13 +68,26 @@ sub mapJavaType
 		if (my $javat = $JAVA_UML_TYPES{$1}) {
 			return $javat;
 		}
-		die "cannot map $primtype";
+		dr::Util::doDie("cannot map '$primtype'");
 	}
 	else {
 		if (my $javat = $JAVA_UML_TYPES{$primtype}) {
 			return $javat;
 		}
-		die "cannot map $primtype";
+		dr::Util::doDie("cannot map '$primtype'");
+	}
+}
+
+# static
+sub mapJavaDatastruct
+{
+	my $type			= shift;	# string
+
+	if (exists $JAVA_UML_DATASTRUCT{$type}) {
+		return $JAVA_UML_DATASTRUCT{$type};
+	}
+	else {
+		dr::Util::doDie("cannot map datastruct $type");
 	}
 }
 
@@ -144,7 +164,7 @@ sub processLine
 		$this->printLine($line);
 	}
 	else {
-		$this->{current_ctx} = $this->{out_main}->rememberContext();
+		$this->{currentCtx} = $this->{out_main}->rememberContext();
 		while ($line =~ m/^(.*?)DRTYPE\((\w+)\.(\w+)\)(.*)$/s) {
 			my ( $start, $type, $attr, $end ) = ( $1, $2, $3, $4 );
 			my $classmodel = $this->loadModel($type);
@@ -264,8 +284,8 @@ sub processImport
 
 	dr::Util::doDie("did not find import specification: $line") unless ($line =~ m/^\s*import\s*((\S*)\.(\w+))\s*;\s*$/);
 	$this->{imports}->{$3} = $1;
-	$this->{current_ctx} = $this->{import_ctx} = $this->{out_main}->rememberContext() if (!defined $this->{import_ctx});
-	$this->{import_ctx}->printOnce("import $1;\n");
+	$this->{currentCtx} = $this->{importCtx} = $this->{out_main}->rememberContext() if (!defined $this->{importCtx});
+	$this->{importCtx}->printOnce("import $1;\n");
 
 	return 0;
 }

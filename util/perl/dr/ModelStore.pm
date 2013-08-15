@@ -254,28 +254,48 @@ sub new
 
 sub dieContext
 {
-	my $this		= shift;
-	my $msg			= shift;
-	my $cause		= shift;
+	my $this			= shift;
+	my $msg				= shift;
+	my $cause			= shift;
 
 	dr::Util::doDie(((defined $cause)) ? "$this->{file_context}: $msg\n$cause" : "$this->{file_context}: $msg");
 }
 
 our %BASE_MAPPER = (
-	nested			=> \&readNested,
-	drtag			=> \&readBaseDrtag,
-	comment			=> \&readBaseComment,
+	nested				=> \&readNested,
+	drtag				=> \&readBaseDrtag,
+	comment				=> \&readBaseComment,
 );
+
+sub getFullname
+{
+	my $this			= shift;
+	my $separator			= shift;
+
+	my $fullname = $this->{full};
+	$fullname =~ s/::/$separator/g if (defined $separator);
+	return $fullname;
+}
+
+sub getBasename
+{
+	my $this			= shift;
+
+	return $this->{name};
+}
 
 sub getSubModel
 {
-	my $this		= shift;
-	my $pname		= shift;
+	my $this			= shift;
+	my $modelName			= shift;
 
-	if ($this->{owner}->{class_hash}->{$pname}) {
-		return $this->{owner}->{class_hash}->{$pname};
+	if ($modelName =~ m/^\.(.*)$/) {
+		$modelName = "$this->{package}::$1";
 	}
-	return $this->{owner}->loadModel($this->{location}, $pname);
+	if ($this->{owner}->{class_hash}->{$modelName}) {
+		return $this->{owner}->{class_hash}->{$modelName};
+	}
+	return $this->{owner}->loadModel($this->{location}, $modelName);
 }
 
 sub formatTyperef
@@ -294,14 +314,14 @@ sub formatTyperef
 sub checkSubModel
 {
 	my $this		= shift;
-	my $pname		= shift;
+	my $modelName		= shift;
 
-	dr::Util::doDie("pname undefined") unless (defined $pname);
+	dr::Util::doDie("modelName undefined") unless (defined $modelName);
 
-	if ($this->{owner}->{class_hash}->{$pname}) {
-		return $this->{owner}->{class_hash}->{$pname};
+	if ($this->{owner}->{class_hash}->{$modelName}) {
+		return $this->{owner}->{class_hash}->{$modelName};
 	}
-	return $this->{owner}->checkModel($this->{location}, $pname);
+	return $this->{owner}->checkModel($this->{location}, $modelName);
 }
 
 sub getFinalTypeWithTagger
@@ -1809,17 +1829,17 @@ sub loadModel
 {
 	my $this			= shift;
 	my $location			= shift;
-	my $pname			= shift;
+	my $modelName			= shift;
 
-	dr::Util::doDie("pname undefined") unless (defined $pname);
+	dr::Util::doDie("modelName undefined") unless (defined $modelName);
 
 	if (!defined $location) {
 		if (!defined ($location = $this->{default_location})) {
-			dr::Util::doDie("no location nor default location specified while loading $pname");
+			dr::Util::doDie("no location nor default location specified while loading $modelName");
 		}
 	}
-	$pname =~ s/\./::/g;
-	my $fname = $pname;
+	$modelName =~ s/\./::/g;
+	my $fname = $modelName;
 	$fname =~ s/::/\//g;
 	$fname = "$location/$fname";
 	my $reader = dr::IndentReader->new("$fname.clsdef")->getBaseLeveler();
@@ -1858,22 +1878,22 @@ sub checkModel
 {
 	my $this			= shift;
 	my $location			= shift;
-	my $pname			= shift;
+	my $modelName			= shift;
 
-	dr::Util::doDie("pname undefined") unless (defined $pname);
+	dr::Util::doDie("modelName undefined") unless (defined $modelName);
 
 	if (!defined $location) {
 		if (!defined ($location = $this->{default_location})) {
-			dr::Util::doDie("no location nor default location specified while loading $pname");
+			dr::Util::doDie("no location nor default location specified while loading $modelName");
 		}
 	}
-	$pname =~ s/\./::/g;
-	my $fname = $pname;
+	$modelName =~ s/\./::/g;
+	my $fname = $modelName;
 	$fname =~ s/::/\//g;
 	$fname = "$location/$fname.clsdef";
 	return undef if (!-f $fname);
 
-	return $this->loadModel($location, $pname);
+	return $this->loadModel($location, $modelName);
 }
 
 

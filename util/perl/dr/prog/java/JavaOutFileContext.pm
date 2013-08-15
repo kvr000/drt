@@ -11,17 +11,17 @@ sub new
 {
 	my $classname			= shift; $classname = ref($classname) || $classname;
 	my $model_store			= shift;
-	my $sysimport_ctx		= shift;
-	my $appimport_ctx		= shift;
-	my $code_ctx			= shift;
+	my $sysimportCtx		= shift;
+	my $appimportCtx		= shift;
+	my $codeCtx			= shift;
 
-	dr::Util::doDie("code_ctx undefined") unless ($code_ctx);
+	dr::Util::doDie("codeCtx undefined") unless ($codeCtx);
 
 	my $this = bless {
 		model_store			=> $model_store,
-		sysimport_ctx			=> $sysimport_ctx,
-		appimport_ctx			=> $appimport_ctx,
-		code_ctx			=> $code_ctx,
+		sysimportCtx			=> $sysimportCtx,
+		appimportCtx			=> $appimportCtx,
+		codeCtx				=> $codeCtx,
 	}, $classname;
 
 	return $this;
@@ -32,7 +32,7 @@ sub printSysimport
 	my $this			= shift;
 	my $line			= shift;
 
-	$this->{sysimport_ctx}->printOnce($line);
+	$this->{sysimportCtx}->printOnce($line);
 }
 
 sub printAppimport
@@ -40,7 +40,7 @@ sub printAppimport
 	my $this			= shift;
 	my $line			= shift;
 
-	$this->{appimport_ctx}->printOnce($line);
+	$this->{appimportCtx}->printOnce($line);
 }
 
 sub printCode
@@ -48,21 +48,21 @@ sub printCode
 	my $this			= shift;
 	my $line			= shift;
 
-	$this->{code_ctx}->print($line);
+	$this->{codeCtx}->print($line);
 }
 
 sub getCodeIndented
 {
 	my $this			= shift;
 
-	return $this->{code_ctx}->indentContext(1);
+	return $this->{codeCtx}->indentContext(1);
 }
 
 sub getSubIndented
 {
 	my $this			= shift;
 
-	return $this->new($this->{model_store}, $this->{sysimport_ctx}, $this->{appimport_ctx}, $this->getCodeIndented());
+	return $this->new($this->{model_store}, $this->{sysimportCtx}, $this->{appimportCtx}, $this->getCodeIndented());
 }
 
 sub dupWithFileContext
@@ -70,7 +70,7 @@ sub dupWithFileContext
 	my $this			= shift;
 	my $file_context		= shift;
 
-	return $this->new($this->{model_store}, $this->{sysimport_ctx}, $this->{appimport_ctx}, $file_context);
+	return $this->new($this->{model_store}, $this->{sysimportCtx}, $this->{appimportCtx}, $file_context);
 }
 
 
