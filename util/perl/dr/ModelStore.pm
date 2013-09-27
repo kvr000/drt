@@ -267,7 +267,47 @@ our %BASE_MAPPER = (
 	comment				=> \&readBaseComment,
 );
 
-sub getFullname
+sub getPackageName
+{
+	my $this			= shift;
+	my $separator			= shift;
+
+	my $package = $this->{package};
+	$package =~ s/::/$separator/g;
+	return $package;
+}
+
+sub getPackageDotName
+{
+	return shift->getPackageName(".");
+}
+
+sub getPackageCxxName
+{
+	return shift->getPackageName("::");
+}
+
+sub getPackageBSlashName
+{
+	return shift->getPackageName("\\");
+}
+
+sub getFullDotName
+{
+	return shift->getFullName(".");
+}
+
+sub getFullCxxName
+{
+	return shift->getFullName("::");
+}
+
+sub getFullBSlashname
+{
+	return shift->getFullName("\\");
+}
+
+sub getFullName
 {
 	my $this			= shift;
 	my $separator			= shift;
@@ -277,7 +317,7 @@ sub getFullname
 	return $fullname;
 }
 
-sub getBasename
+sub getBaseName
 {
 	my $this			= shift;
 
@@ -564,6 +604,13 @@ sub new
 	$this->{compos} = undef;
 
 	return $this;
+}
+
+sub checkCompos
+{
+	my $this		= shift;
+
+	return $this->{compos};
 }
 
 sub getCompos
@@ -1010,9 +1057,19 @@ sub getRole
 				$this->{role}->{$r} = 1;
 			}
 		}
+		if (my $tag = $this->checkDrTagValue("primary")) {
+			$this->{role}->{primary} = 1;
+		}
 	}
 
 	return $this->{role};
+}
+
+sub isPrimary
+{
+	my $this		= shift;
+
+	return !!$this->getRole()->{primary};
 }
 
 sub getDrTagger

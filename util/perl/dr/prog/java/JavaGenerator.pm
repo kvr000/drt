@@ -101,6 +101,62 @@ sub mapJavaAttrType
 	return mapJavaType($atype);
 }
 
+sub getPkTypeName
+{
+	my $clsmodel			= shift;
+
+	my @primary = $clsmodel->getPrimary();
+
+	my $usePk = @primary > 1 || defined $clsmodel->checkCompos();
+
+	if ($usePk) {
+		return $clsmodel->{name}.".Pk";
+	}
+	else {
+		my $attr = $primary[0];
+		my $java_type = dr::prog::java::JavaGenerator::mapJavaAttrType($attr);
+	}
+}
+
+sub getPkFieldName
+{
+	my $clsmodel			= shift;
+
+	my @primary = $clsmodel->getPrimary();
+
+	my $usePk = @primary > 1 || defined $clsmodel->checkCompos();
+
+	if ($usePk) {
+		return "pk";
+	}
+	else {
+		my $attr = $primary[0];
+		return $attr->{name};
+	}
+}
+
+sub formatClassRoles
+{
+	my $clsmodel			= shift;
+
+	my $roles = "";
+	foreach my $roleName (qw(req_new req_get req_set req_del)) {
+		my $role = $clsmodel->checkDrTagValue($roleName);
+		if (!defined $role) {
+			if (!$clsmodel->checkDrTagValue("virtual")) {
+				dr::Util::doDie("role $roleName not defined for ".$clsmodel->getFullClassname());
+			}
+			else {
+				$role = "guest";
+			}
+		}
+		my $x = $roleName;
+		$x =~ s/_(.)/\U$1/;
+		$roles .= ", $x = \"".dr::Util::escapeString($role)."\"";
+	}
+	return substr($roles, 2);
+}
+
 sub getFullClassname
 {
 	my $this			= shift;

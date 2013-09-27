@@ -243,6 +243,7 @@ foreach my $model (@models) {
 			my $roles = defvalue($attr->checkDrTagValue("role"), "")."";
 			$roles .= "," if ($roles ne "");
 			$roles .= "serial," if ($attr->checkDrTagValue("serial"));
+			$roles .= "primary," if ($attr->isPrimary());
 			$roles .= "compos," if ($attr->{stype} eq "compos");
 			$roles = substr($roles, 0, -1);
 			$form->print(tabalign("\trole", 24).$roles."\n");

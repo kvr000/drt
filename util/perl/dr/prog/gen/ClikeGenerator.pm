@@ -21,7 +21,7 @@ sub CMT_SINGLE			{ 4 }
 
 sub process
 {
-	my $this		= shift;
+	my $this			= shift;
 
 	my $errors = 0;
 
@@ -55,28 +55,28 @@ sub process
 
 sub openTargets
 {
-	my $this		= shift;
+	my $this			= shift;
 
 	return undef;
 }
 
 sub finish
 {
-	my $this		= shift;
+	my $this			= shift;
 }
 
 sub processPrecheckLine
 {
-	my $this		= shift;
-	my $line		= shift;
+	my $this			= shift;
+	my $line			= shift;
 
 	return 0;
 }
 
 sub processLine
 {
-	my $this		= shift;
-	my $line		= shift;
+	my $this			= shift;
+	my $line			= shift;
 
 	$this->printLine($line);
 
@@ -85,7 +85,7 @@ sub processLine
 
 sub processCommentBody
 {
-	my $this		= shift;
+	my $this			= shift;
 
 	my $errors = 0;
 
@@ -154,87 +154,87 @@ sub processCommentBody
 
 sub processCommentStart
 {
-	my $this		= shift;
-	my $line		= shift;
+	my $this			= shift;
+	my $line			= shift;
 
 	return 0;
 }
 
 sub processCommentEnd
 {
-	my $this		= shift;
-	my $line		= shift;
+	my $this			= shift;
+	my $line			= shift;
 
 	return 0;
 }
 
 sub processCommentEmpty
 {
-	my $this		= shift;
-	my $line		= shift;
+	my $this			= shift;
+	my $line			= shift;
 
 	return 0;
 }
 
 sub processCommentLine
 {
-	my $this		= shift;
-	my $cmtag		= shift;
-	my $content		= shift;
+	my $this			= shift;
+	my $cmtag			= shift;
+	my $content			= shift;
 
 	die "unsupported tag: $cmtag";
 }
 
 sub processCommentBlock
 {
-	my $this		= shift;
-	my $cmtag		= shift;
-	my $head		= shift;
-	my $block		= shift;
+	my $this			= shift;
+	my $cmtag			= shift;
+	my $head			= shift;
+	my $block			= shift;
 
 	die "unsupported tag: $cmtag";
 }
 
 sub processCommentContinuous
 {
-	my $this		= shift;
-	my $cmtag		= shift;
-	my $head		= shift;
-	my $block		= shift;
+	my $this			= shift;
+	my $cmtag			= shift;
+	my $head			= shift;
+	my $block			= shift;
 
 	die "unsupported tag: $cmtag";
 }
 
 sub processCommentSingle
 {
-	my $this		= shift;
-	my $cmtag		= shift;
-	my $content		= shift;
+	my $this			= shift;
+	my $cmtag			= shift;
+	my $content			= shift;
 
 	die "unsupported tag: $cmtag";
 }
 
 sub processRegularLine
 {
-	my $this		= shift;
-	my $line		= shift;
+	my $this			= shift;
+	my $line			= shift;
 
 	$this->printLine($line);
 }
 
 sub getCommentType
 {
-	my $this		= shift;
-	my $cmtag		= shift;
-	my $cmcontent		= shift;
+	my $this			= shift;
+	my $cmtag			= shift;
+	my $cmcontent			= shift;
 
 	return CMT_UNKNOWN;
 }
 
 sub printError
 {
-	my $this		= shift;
-	my $msg			= shift;
+	my $this			= shift;
+	my $msg				= shift;
 
 	STDERR->print($this->{in_parser}->getContext().": $msg\n");
 	return 1;
@@ -242,16 +242,16 @@ sub printError
 
 sub printLine
 {
-	my $this		= shift;
-	my $line		= shift;
+	my $this			= shift;
+	my $line			= shift;
 
 	$this->{currentCtx}->print($line) if (defined $this->{currentCtx});
 }
 
 sub printIndented
 {
-	my $this		= shift;
-	my $text		= shift;
+	my $this			= shift;
+	my $text			= shift;
 
 	my $ind = $this->{cur_indent};
 	chomp($ind);
