@@ -144,7 +144,7 @@ sub formatClassRoles
 		my $role = $clsmodel->checkDrTagValue($roleName);
 		if (!defined $role) {
 			if (!$clsmodel->checkDrTagValue("virtual")) {
-				dr::Util::doDie("role $roleName not defined for ".$clsmodel->getFullClassname());
+				dr::Util::doDie("role $roleName not defined for ".$clsmodel->getFullDotName());
 			}
 			else {
 				$role = "guest";
