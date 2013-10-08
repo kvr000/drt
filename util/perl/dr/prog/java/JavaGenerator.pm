@@ -221,15 +221,19 @@ sub processLine
 	}
 	else {
 		$this->{currentCtx} = $this->{out_main}->rememberContext();
-		while ($line =~ m/^(.*?)DRTYPE\((\w+)\.(\w+)\)(.*)$/s) {
-			my ( $start, $type, $attr, $end ) = ( $1, $2, $3, $4 );
+		while ($line =~ m/^(.*?)DR_TYPEOF\(((\w+\.)*\w+)\.(\w+)\)(.*)$/s) {
+			my ( $start, $type, $attr, $end ) = ( $1, $2, $4, $5 );
 			my $classmodel = $this->loadModel($type);
 			my $translated = mapJavaAttrType($classmodel->getAttr($attr));
 			$line = "$start$translated$end";
 		}
-		if ($line =~ m/^((public|private|protected)\s+|)((abstract)\s+|)class\s+(\w+)(\s*<.*>)?\s+extends\s+((\w+\.)*\w+)(\s+.*|)$/) {
+		if ($line =~ m/^((public|private|protected)\s+|)((abstract)\s+|)class\s+(\w+)(\s*<.*>)?\s+extends\s+((\w+\.)*\w+(<\w+(\s*,\s*\w+)*>)?)(\s+.*|)$/) {
 			$this->{class_name} = $5;
 			$this->{ancestor_name} = $7;
+			$this->processClassDef($line);
+		}
+		elsif ($line =~ m/^((public|private|protected)\s+|)((abstract)\s+|)enum\s+(\w+)(\s*<.*>)?\s*.*$/) {
+			$this->{class_name} = $5;
 			$this->processClassDef($line);
 		}
 		elsif ($line =~ m/^((public|private|protected)\s+|)((abstract)\s+|)\@*interface\s+(\w+).*$/) {

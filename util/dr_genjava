@@ -603,13 +603,14 @@ sub generateEntityDaoIf($$$$)
 	$sysimportCtx->printOnce("import java.util.List;\n");
 	$importCtx->printOnce("import dr.core.EntityHolder;\n");
 	$importCtx->printOnce("import dr.core.AppContext;\n");
+	$importCtx->printOnce("import org.springframework.validation.Errors;\n");
 
 	$methodCtx->print(tabalign("public ".dr::prog::java::JavaGenerator::getPkTypeName($model), 32)."importDynamicKey(Map<String, Object> data);\n");
 	$methodCtx->print(tabalign("public Map<String, Object>", 32)."exportDynamicData(EntityHolder<$baseclassonly> holder);\n");
 	$methodCtx->print(tabalign("public Map<String, Object>", 32)."exportEntityData(EntityHolder<$baseclassonly> holder);\n");
-	$methodCtx->print(tabalign("public $baseclassonly", 32)."createDynamic(EntityHolder<?> composition, Map<String, Object> data);\n");
+	$methodCtx->print(tabalign("public $baseclassonly", 32)."createDynamic(Errors validationErrors, EntityHolder<?> composition, Map<String, Object> data);\n");
 	$methodCtx->print(tabalign("public EntityHolder<$baseclassonly>", 32)."retrieveDynamic(AppContext baseContext, ".dr::prog::java::JavaGenerator::getPkTypeName($model)." pk);\n");
-	$methodCtx->print(tabalign("public $baseclassonly", 32)."updateDynamic(EntityHolder<?> composition, ".dr::prog::java::JavaGenerator::getPkTypeName($model)." pk, Map<String, Object> updates);\n");
+	$methodCtx->print(tabalign("public $baseclassonly", 32)."updateDynamic(Errors validationErrors, EntityHolder<$baseclassonly> roleObject, ".dr::prog::java::JavaGenerator::getPkTypeName($model)." pk, Map<String, Object> updates);\n");
 	$methodCtx->print(tabalign("public boolean", 32)."deleteDynamic(AppContext baseContext, ".dr::prog::java::JavaGenerator::getPkTypeName($model)." pk);\n");
 	$methodCtx->print(tabalign("public long", 32)."listDynamic(List<EntityHolder<$baseclassonly>> results, EntityHolder<?> composition, Map<String, Object> filter, List<String> sorts, Long start, Long limit);\n");
 
@@ -698,19 +699,20 @@ sub generateEntityDaoHib($$$$)
 	$fddao->printAt($methodCtx, "\@Transactional(readOnly = false, propagation = Propagation.REQUIRED)\n".tabalign("public void", 32)."insert($baseclassonly obj)\n{\n\ttemplate.saveOrUpdate(obj);\n}\n\n");
 	$fddao->printAt($methodCtx, "\@Transactional(readOnly = false, propagation = Propagation.REQUIRED)\n".tabalign("public void", 32)."update($baseclassonly obj)\n{\n\ttemplate.saveOrUpdate(obj);\n}\n\n");
 	$fddao->printAt($methodCtx, "\@Transactional(readOnly = false, propagation = Propagation.REQUIRED)\n".tabalign("public void", 32)."remove($baseclassonly obj)\n{\n\ttemplate.delete(obj);\n}\n\n");
-	$methodCtx->print("\@Transactional(readOnly = false, propagation = Propagation.REQUIRED)\n".tabalign("public boolean", 32)."removeByPk(".dr::prog::java::JavaGenerator::getPkTypeName($model)." pk)\n{\n\ttemplate.bulkUpdate(\"DELETE FROM $baseclassonly WHERE ".dr::prog::java::JavaGenerator::getPkFieldName($model)." = ?\", pk);\nreturn true;\n}\n\n");
+	$methodCtx->print("\@Transactional(readOnly = false, propagation = Propagation.REQUIRED)\n".tabalign("public boolean", 32)."removeByPk(".dr::prog::java::JavaGenerator::getPkTypeName($model)." pk)\n{\n\treturn template.bulkUpdate(\"DELETE FROM $baseclassonly WHERE ".dr::prog::java::JavaGenerator::getPkFieldName($model)." = ?\", pk) != 0;\n}\n\n");
 
 	$sysimportCtx->printOnce("import java.util.Map;\n");
 	$sysimportCtx->printOnce("import java.util.List;\n");
 	$importCtx->printOnce("import dr.core.EntityHolder;\n");
 	$importCtx->printOnce("import dr.core.AppContext;\n");
+	$importCtx->printOnce("import org.springframework.validation.Errors;\n");
 
 	$methodCtx->print(tabalign("public ".dr::prog::java::JavaGenerator::getPkTypeName($model), 32)."importDynamicKey(Map<String, Object> data) { throw new UnsupportedOperationException(\"hibernate dao do not support dynamic operations\"); }\n");
 	$methodCtx->print(tabalign("public Map<String, Object>", 32)."exportDynamicData(EntityHolder<$baseclassonly> holder) { throw new UnsupportedOperationException(\"hibernate dao do not support dynamic operations\"); }\n");
 	$methodCtx->print(tabalign("public Map<String, Object>", 32)."exportEntityData(EntityHolder<$baseclassonly> holder) { throw new UnsupportedOperationException(\"hibernate dao do not support dynamic operations\"); }\n");
-	$methodCtx->print(tabalign("public $baseclassonly", 32)."createDynamic(EntityHolder<?> composition, Map<String, Object> data) { throw new UnsupportedOperationException(\"hibernate dao do not support dynamic operations\"); }\n");
+	$methodCtx->print(tabalign("public $baseclassonly", 32)."createDynamic(Errors validationErrors, EntityHolder<?> composition, Map<String, Object> data) { throw new UnsupportedOperationException(\"hibernate dao do not support dynamic operations\"); }\n");
 	$methodCtx->print(tabalign("public EntityHolder<$baseclassonly>", 32)."retrieveDynamic(AppContext baseContext, ".dr::prog::java::JavaGenerator::getPkTypeName($model)." pk) { throw new UnsupportedOperationException(\"hibernate dao do not support dynamic operations\"); }\n");
-	$methodCtx->print(tabalign("public $baseclassonly", 32)."updateDynamic(EntityHolder<?> composition, ".dr::prog::java::JavaGenerator::getPkTypeName($model)." pk, Map<String, Object> updates) { throw new UnsupportedOperationException(\"hibernate dao do not support dynamic operations\"); }\n");
+	$methodCtx->print(tabalign("public $baseclassonly", 32)."updateDynamic(Errors validationErrors, EntityHolder<$baseclassonly> roleObject, ".dr::prog::java::JavaGenerator::getPkTypeName($model)." pk, Map<String, Object> updates) { throw new UnsupportedOperationException(\"hibernate dao do not support dynamic operations\"); }\n");
 	$methodCtx->print(tabalign("public boolean", 32)."deleteDynamic(AppContext baseContext, ".dr::prog::java::JavaGenerator::getPkTypeName($model)." pk) { throw new UnsupportedOperationException(\"hibernate dao do not support dynamic operations\"); }\n");
 	$methodCtx->print(tabalign("public long", 32)."listDynamic(List<EntityHolder<$baseclassonly>> results, EntityHolder<?> composition, Map<String, Object> filter, List<String> sorts, Long start, Long limit) { throw new UnsupportedOperationException(\"hibernate dao do not support dynamic operations\"); }\n");
 	$methodCtx->print("\n");
@@ -907,13 +909,14 @@ sub generateEntityDaoJpa($$$$)
 	$sysimportCtx->printOnce("import java.util.List;\n");
 	$importCtx->printOnce("import dr.core.EntityHolder;\n");
 	$importCtx->printOnce("import dr.core.AppContext;\n");
+	$importCtx->printOnce("import org.springframework.validation.Errors;\n");
 
 	$methodCtx->print(tabalign("public ".dr::prog::java::JavaGenerator::getPkTypeName($model), 32)."importDynamicKey(Map<String, Object> data)\n{\n\treturn (".dr::prog::java::JavaGenerator::getPkTypeName($model).")getRoleDaoAccess().importDynamicKey(data);\n}\n\n");
 	$methodCtx->print(tabalign("public Map<String, Object>", 32)."exportDynamicData(EntityHolder<$baseclassonly> holder)\n{\n\treturn getRoleDaoAccess().exportDynamicData(holder);\n}\n\n");
 	$methodCtx->print(tabalign("public Map<String, Object>", 32)."exportEntityData(EntityHolder<$baseclassonly> holder)\n{\n\treturn getRoleDaoAccess().exportEntityData(holder);\n}\n\n");
-	$methodCtx->print("\@Override\n$transactionUnit\@TransactionAttribute(TransactionAttributeType.REQUIRED)\n".tabalign("public $baseclassonly", 32)."createDynamic(EntityHolder<?> composition, Map<String, Object> data)\n{\n\treturn getRoleDaoAccess().saveObject(composition, null, data);\n}\n\n");
+	$methodCtx->print("\@Override\n$transactionUnit\@TransactionAttribute(TransactionAttributeType.REQUIRED)\n".tabalign("public $baseclassonly", 32)."createDynamic(Errors validationErrors, EntityHolder<?> composition, Map<String, Object> data)\n{\n\treturn getRoleDaoAccess().createObject(validationErrors, composition, data);\n}\n\n");
 	$methodCtx->print(tabalign("public EntityHolder<$baseclassonly>", 32)."retrieveDynamic(AppContext baseContext, ".dr::prog::java::JavaGenerator::getPkTypeName($model)." pk)\n{\n\treturn getRoleDaoAccess().retrieveObject(baseContext, pk);\n}\n\n");
-	$methodCtx->print("\@Override\n$transactionUnit\@TransactionAttribute(TransactionAttributeType.REQUIRED)\n".tabalign("public $baseclassonly", 32)."updateDynamic(EntityHolder<?> composition, ".dr::prog::java::JavaGenerator::getPkTypeName($model)." pk, Map<String, Object> updates)\n{\n\treturn getRoleDaoAccess().saveObject(composition, pk, updates);\n}\n\n");
+	$methodCtx->print("\@Override\n$transactionUnit\@TransactionAttribute(TransactionAttributeType.REQUIRED)\n".tabalign("public $baseclassonly", 32)."updateDynamic(Errors validationErrors, EntityHolder<$baseclassonly> roleObject, ".dr::prog::java::JavaGenerator::getPkTypeName($model)." pk, Map<String, Object> updates)\n{\n\treturn getRoleDaoAccess().updateObject(validationErrors, roleObject, pk, updates);\n}\n\n");
 	$methodCtx->print("\@Override\n$transactionUnit\@TransactionAttribute(TransactionAttributeType.REQUIRED)\n".tabalign("public boolean", 32)."deleteDynamic(AppContext baseContext, ".dr::prog::java::JavaGenerator::getPkTypeName($model)." pk)\n{\n\treturn getRoleDaoAccess().deleteObject(baseContext, pk);\n}\n\n");
 	$methodCtx->print(tabalign("public long", 32)."listDynamic(List<EntityHolder<$baseclassonly>> results, EntityHolder<?> composition, Map<String, Object> filter, List<String> sorts, Long start, Long limit)\n{\n\treturn getRoleDaoAccess().listObjects(results, composition, filter, sorts, start, limit);\n}\n\n");
 

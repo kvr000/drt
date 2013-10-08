@@ -295,10 +295,11 @@ my $ext = $db_name;
 $ext =~ s/.*\.//g;
 
 if ($ext eq "properties") {
-	if ($db_name !~ m,_(\w+)\.properties$,) {
+	if ($db_name !~ m,^(.*/)(\w+)_(\w+)\.properties$,) {
 		die "db file not in xyz_<lang>.properties format";
 	}
-	$lang = $1;
+	$lang = $3;
+	$prefix = $1."localize/$lang/";
 }
 else {
 	if ($db_name !~ m,^(.*/|)(\w+)/([^/]*)$,) {
@@ -307,7 +308,7 @@ else {
 	$lang = $2;
 }
 
-mkdir("${prefix}/cls");
+mkdir("${prefix}cls");
 unlink($_) foreach (glob("${prefix}cls/*.cls.*db"));
 unlink($db_name);
 
@@ -353,15 +354,15 @@ eval {
 			$db_full->write("$parsed[0]^$parsed[1]", $parsed[$col]);
 			my $db_class;
 			if (!defined ($db_class = $db_cls{$parsed[0]}) && !exists $db_cls{$parsed[0]}) {
-				if ($parsed[0] =~ m/^([A-Za-z_]+::)*[A-Za-z_]+$/) {
+				if ($parsed[0] =~ m/^([A-Za-z_]+\.)*[A-Za-z_]+$/) {
 					my $name = $parsed[0];
-					$name =~ s/::/-/g;
+					#$name =~ s/\./-/g;
 					$db_class = KeyValueDbWriter::open("${prefix}cls/$name.cls.$ext");
 					$db_cls{$parsed[0]} = $db_class;
 				}
 			}
 			if (defined $db_class) {
-				$db_class->write("$parsed[0]\t$parsed[1]", $parsed[$col]);
+				$db_class->write("$parsed[0]^$parsed[1]", $parsed[$col]);
 			}
 		}
 	}

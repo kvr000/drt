@@ -36,7 +36,7 @@ our $file_trans = dr::FileTransaction->new();
 my $idx_name = shift @ARGV;
 my $tag_name = "$idx_name.tags";
 our $idx_fd = $file_trans->createTruncated($idx_name);
-our $tag_writer = dr::TagWriter->new($file_trans->createTruncated($tag_name));
+our $tag_writer = dr::TagWriter->new($file_trans->createTruncated($tag_name))->setBasePath(dirname($tag_name)."/");
 
 find(\&find_checkName, @ARGV);
 
@@ -48,7 +48,7 @@ foreach (@fnames) {
 	my $finfo = { file => $_, classes => [], deps => [] };
 	my $fp = dr::FileParser->new($_);
 	while (defined (my $l = $fp->readLine())) {
-		if ($l =~ m/^(.*=\s*|)dr\.registerClass\("([^"]+)",\s*(null|"([^"]+)"),\s*.*$/) {
+		if ($l =~ m/^(.*=\s*|\(function\(\)|)dr\.registerClass\("([^"]+)",\s*(null|"([^"]+)")(\)|,).*$/) {
 			chomp $l;
 			my $cld = { context => createContext($fp, $l), class => $2, ancestor => defined $4 ? $4 : undef, ifaces => [] };
 			push(@{$finfo->{classes}}, $cld->{class});
