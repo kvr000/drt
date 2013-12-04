@@ -480,7 +480,7 @@ sub generateEntityBean($$$$)
 
 	my $model = $context->{model_store}->loadModel($location, $classname);
 
-	my $fdbean = $context->{file_trans}->updateChanged($context->{dst_dir}."/$filename.java");
+	my $fdbean = $context->{file_trans}->updateChanged($context->{dst_dir}."/java/$filename.java");
 	my $writer = $fdbean->rememberContext();
 	$context->{processed}->{$filename} = 1;
 
@@ -529,7 +529,7 @@ sub generateEntityDaoIf($$$$)
 	my $model = $context->{model_store}->loadModel($location, $classname);
 	my $dao = $model->checkSubModel("${classname}::Dao");
 
-	my $fddao = $context->{file_trans}->updateChanged($context->{dst_dir}."/$filename.java");
+	my $fddao = $context->{file_trans}->updateChanged($context->{dst_dir}."/java/$filename.java");
 	$context->{processed}->{$filename} = 1;
 
 	$fddao->print("package $pkgname.dao;\n\n");
@@ -621,7 +621,7 @@ sub generateEntityDaoHib($$$$)
 	my $model = $context->{model_store}->loadModel($location, $classname);
 	my $dao = $model->checkSubModel("${classname}::Dao");
 
-	my $fddao = $context->{file_trans}->updateChanged($context->{dst_dir}.dr::Util::prependFile("/$filename.java", "perhib/"));
+	my $fddao = $context->{file_trans}->updateChanged($context->{dst_dir}."/java".dr::Util::prependFile("/$filename.java", "perhib/"));
 	$context->{processed}->{$filename} = 1;
 
 	$fddao->print("package $pkgname;\n\n");
@@ -817,7 +817,7 @@ sub generateEntityDaoJpa($$$$)
 	my $model = $context->{model_store}->loadModel($location, $classname);
 	my $dao = $model->checkSubModel("${classname}::Dao");
 
-	my $fddao = $context->{file_trans}->updateChanged($context->{dst_dir}.dr::Util::prependFile("/$filename.java", "perjpa/"));
+	my $fddao = $context->{file_trans}->updateChanged($context->{dst_dir}."/java".dr::Util::prependFile("/$filename.java", "perjpa/"));
 	$context->{processed}->{$filename} = 1;
 
 	$fddao->print("package $pkgname;\n\n");
