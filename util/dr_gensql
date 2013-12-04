@@ -114,18 +114,18 @@ our %SQL_UML_TYPES_VAR = (
 
 sub dieAttrContext($$)
 {
-	my $attr		= shift;
+	my $field		= shift;
 	my $msg			= shift;
 
-	dr::Util::doDie("$attr->{owner}->{filename}:0: $attr->{owner}->{full}.$attr->{name}: $msg");
+	dr::Util::doDie("$field->{owner}->{filename}:0: $field->{owner}->{full}.$field->{name}: $msg");
 }
 
 sub translateSqlType($)
 {
-	my $attr		= shift;
+	my $field		= shift;
 
 	eval {
-		my ( $type, $tagger ) = $attr->getFinalTypeWithTagger();
+		my ( $type, $tagger ) = $field->getFinalTypeWithTagger();
 
 		if (defined (my $db_type = defvalue($tagger->checkTagValue("db_type"), $tagger->checkTagValue("db_conversion")))) {
 			if (($db_type eq "enum" || $db_type eq "set") && $type->{stype} eq "enum") {
@@ -173,17 +173,17 @@ sub translateSqlType($)
 			}
 		}
 	}
-		or dieAttrContext($attr, $@);
+		or dieAttrContext($field, $@);
 }
 
 sub translateSqlTypeDecl($$)
 {
 	my $main		= shift;
-	my $attr		= shift;
+	my $field		= shift;
 
 	my $has_default = 0;
 
-	my $sql_type = translateSqlType($attr);
+	my $sql_type = translateSqlType($field);
 	if (defined (my $do_mandatory = $main->checkDrTagValue("do_mandatory"))) {
 		$sql_type .= " NOT NULL default $do_mandatory";
 		$has_default = 1;
@@ -232,29 +232,29 @@ foreach my $model (@models) {
 	my @primary;
 	$sql->print("create table $model->{db_table} (\n");
 	my $sqlin = dr::SepOutput->new($sql, { sep_in => ",", sep_all => "\n" });
-	foreach my $attr (@{$model->{attr_list}}) {
+	foreach my $field (@{$model->{field_list}}) {
 		eval {
-			if ($attr->{stype} eq "attr") {
-				$sqlin->printObj("\t".defvalue($attr->checkDrTagValue("db_name"), $attr->{name}));
-				$sqlin->printAligned(translateSqlTypeDecl($attr, $attr), 40);
-				if ($attr->getRole()->{primary}) {
-					push(@primary, $attr->{name});
+			if ($field->{stype} eq "field") {
+				$sqlin->printObj("\t".defvalue($field->checkDrTagValue("db_name"), $field->{name}));
+				$sqlin->printAligned(translateSqlTypeDecl($field, $field), 40);
+				if ($field->getRole()->{primary}) {
+					push(@primary, $field->{name});
 				}
 			}
-			elsif ($attr->{stype} eq "assoc" || $attr->{stype} eq "compos") {
-				my @assoc = $attr->expandAssocAttrs();
+			elsif ($field->{stype} eq "assoc" || $field->{stype} eq "compos") {
+				my @assoc = $field->expandAssocAttrs();
 				foreach my $assoc_field (@assoc) {
-					push(@primary, $assoc_field->{name}) if ($attr->getRole()->{primary});
+					push(@primary, $assoc_field->{name}) if ($field->getRole()->{primary});
 					$sqlin->printObj("\t$assoc_field->{name}");
-					$sqlin->printAligned(translateSqlTypeDecl($attr, $assoc_field->{attr}), 40);
-					$sqlin->printAlignedAdd("-- $assoc_field->{attr}->{owner}->{full}.$assoc_field->{attr}->{name}", 72);
+					$sqlin->printAligned(translateSqlTypeDecl($field, $assoc_field->{field}), 40);
+					$sqlin->printAlignedAdd("-- $assoc_field->{field}->{owner}->{full}.$assoc_field->{field}->{name}", 72);
 				}
 			}
-			elsif ($attr->{stype} eq "child") {
+			elsif ($field->{stype} eq "child") {
 				# ignore childs for db at all
 			}
 			else {
-				dr::Util::doDie("$attr->{owner}->{filename}:0: invalid stype $attr->{stype}");
+				dr::Util::doDie("$field->{owner}->{filename}:0: invalid stype $field->{stype}");
 			}
 			1;
 		}

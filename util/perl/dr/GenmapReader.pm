@@ -45,14 +45,16 @@ use dr::Util;
 
 sub new
 {
-	my $ref			= shift;
-	my $class		= ref($ref) || $ref;
-	my $listname		= shift;
-	my $section		= shift;
+	my $ref				= shift;
+	my $class			= ref($ref) || $ref;
+	my $listname			= shift;
+	my $section			= shift;
+	my $packages			= shift;
 
 	my $this = bless {
-		listname		=> $listname,
-		section			=> $section,
+		listname			=> $listname,
+		section				=> $section,
+		packages			=> $packages ? { map({ $_ => 1 } @$packages) } : undef,
 	}, $class;
 
 	return $this;
@@ -60,14 +62,34 @@ sub new
 
 sub open
 {
-	my $listname		= shift;
-	my $section		= shift;
+	my $listname			= shift;
+	my $section			= shift;
+	my $packages			= shift;
 
 	if ($listname =~ m/\.db$/) {
-		return dr::GenmapReader::Db->new($listname, $section);
+		return dr::GenmapReader::Db->new($listname, $section, $packages);
 	}
 	else {
-		return dr::GenmapReader::List->new($listname, $section);
+		return dr::GenmapReader::List->new($listname, $section, $packages);
+	}
+}
+
+sub checkPackage
+{
+	my $this			= shift;
+	my $cls				= shift;
+
+	if ($this->{packages}) {
+		my $conv = $cls;
+		$conv =~ s/::/./g;
+		for (; $conv ne ""; $conv = substr($conv, 0, rindex($conv, "."))) {
+			return 1 if ($this->{packages}{$conv});
+			return 0 unless (index($conv, ".") >= 0);
+		}
+		return 0;
+	}
+	else {
+		return 1;
 	}
 }
 
@@ -93,21 +115,22 @@ sub new
 
 sub getNext
 {
-	my $this		= shift;
+	my $this			= shift;
 
 	while (defined (my $line = $this->{list_fd}->getline())) {
 		$this->{lineno}++;
 		chomp($line);
 		next if ($line =~ m/^\s*(#.*|)$/);
 		dr::Util::doDie("invalid format, need \"location classname\"") unless ($line =~ m/^(\S+)\s+((\w+::)*\w+)$/);
-		return ( $1, $2 );
+		my ( $loc, $cls ) = ( $1, $2 );
+		return ( $loc, $cls ) if (return $this->checkPackage($cls));
 	}
 	return;
 }
 
 sub getContext
 {
-	my $this		= shift;
+	my $this			= shift;
 
 	return "$this->{listname}:$this->{lineno}";
 }
@@ -141,24 +164,27 @@ sub new
 
 sub getNext
 {
-	my $this		= shift;
+	my $this			= shift;
 
-	if (!defined ($this->{cur_key})) {
-		$this->{cur_key} = "$this->{section}\t";
-		return if ($this->{list_db}->seq($this->{cur_key}, my $val, R_CURSOR) != 0);
-	}
-	else {
-		return if ($this->{list_db}->seq($this->{cur_key}, my $val, R_NEXT) != 0);
-	}
-	if ($this->{cur_key} =~ m/^$this->{section}\t((\w+::)*\w+)$/) {
-		return ( dirname($this->{listname}), $1 );
+	for (;;) {
+		if (!defined ($this->{cur_key})) {
+			$this->{cur_key} = "$this->{section}\t";
+			return if ($this->{list_db}->seq($this->{cur_key}, my $val, R_CURSOR) != 0);
+		}
+		else {
+			return if ($this->{list_db}->seq($this->{cur_key}, my $val, R_NEXT) != 0);
+		}
+		if ($this->{cur_key} =~ m/^$this->{section}\t((\w+::)*\w+)$/) {
+			my ( $loc, $cls ) = ( dirname($this->{listname}), $1 );
+			return ( $loc, $cls ) if ($this->checkPackage($cls));
+		}
 	}
 	return;
 }
 
 sub getContext
 {
-	my $this		= shift;
+	my $this			= shift;
 
 	return "";
 }

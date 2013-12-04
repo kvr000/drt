@@ -165,30 +165,30 @@ sub genClass
 		}
 	}
 	elsif ($class->{type} eq "class" || $class->{type} eq "association") {
-		foreach my $attr (@{$class->{attr_list}}) {
-			next if ($attr->{comment}->{drtag_hash}->{disabled});
-			if (!defined $attr->{association_xid}) {
-				$fd->print(formatPair("attr", $attr->{name}));
-				$fd->print("\t".formatPair("type", $xmi->formatDatatype($class->getAttrType($attr))));
+		foreach my $field (@{$class->{field_list}}) {
+			next if ($field->{comment}->{drtag_hash}->{disabled});
+			if (!defined $field->{association_xid}) {
+				$fd->print(formatPair("field", $field->{name}));
+				$fd->print("\t".formatPair("type", $xmi->formatDatatype($class->getAttrType($field))));
 			}
-			elsif ($attr->{aggregation} eq "composite") {
-				$fd->print(formatPair("compos", $attr->{name}));
-				$fd->print("\t".formatPair("ref", $xmi->formatDatatype($class->getAttrType($attr))));
+			elsif ($field->{aggregation} eq "composite") {
+				$fd->print(formatPair("compos", $field->{name}));
+				$fd->print("\t".formatPair("ref", $xmi->formatDatatype($class->getAttrType($field))));
 			}
-			elsif ($attr->{aggregation} eq "child") {
-				$fd->print(formatPair("child", $attr->{name}));
-				$fd->print("\t".formatPair("ref", $xmi->formatDatatype($class->getAttrType($attr))));
+			elsif ($field->{aggregation} eq "child") {
+				$fd->print(formatPair("child", $field->{name}));
+				$fd->print("\t".formatPair("ref", $xmi->formatDatatype($class->getAttrType($field))));
 			}
-			elsif ($attr->{aggregation} eq "none") {
-				$fd->print(formatPair("assoc", $attr->{name}));
-				$fd->print("\t".formatPair("ref", $xmi->formatDatatype($class->getAttrType($attr))));
+			elsif ($field->{aggregation} eq "none") {
+				$fd->print(formatPair("assoc", $field->{name}));
+				$fd->print("\t".formatPair("ref", $xmi->formatDatatype($class->getAttrType($field))));
 			}
 			else {
-				die "unknown aggregation type for ".$xmi->getFullName($class).".$attr->{name}: $attr->{aggregation}";
+				die "unknown aggregation type for ".$xmi->getFullName($class).".$field->{name}: $field->{aggregation}";
 			}
-			$fd->print("\t".formatPair("mandatory", $attr->{mandatory}));
-			$fd->print("\t".formatPair("default", $attr->{default_value})) if (defined $attr->{default_value});
-			$fd->print(formatComment(1, $attr->{comment}));
+			$fd->print("\t".formatPair("mandatory", $field->{mandatory}));
+			$fd->print("\t".formatPair("default", $field->{default_value})) if (defined $field->{default_value});
+			$fd->print(formatComment(1, $field->{comment}));
 		}
 		my %oper_printed = ();
 		foreach my $action (grep({ $_->{name} =~ m/^dr\.action\.(.*)$/ } @{$class->{oper_list}})) {

@@ -71,7 +71,7 @@ sub fixModelInfo($)
 our %opts;
 getopts('', \%opts);
 
-die "Usage: $0 list_file touch_file root" unless (@ARGV == 3);
+die "Usage: $0 list_file touch_file root" unless (@ARGV >= 3);
 my $listname = shift(@ARGV);
 my $touch_name = shift(@ARGV);
 my $root = shift(@ARGV);
@@ -110,18 +110,18 @@ our %FORM_UML_TYPES_VAR = (
 
 sub dieAttrContext($$)
 {
-	my $attr		= shift;
+	my $field		= shift;
 	my $msg			= shift;
 
-	dr::Util::doDie("$attr->{owner}->{filename}:0: $attr->{owner}->{full}.$attr->{name}: $msg");
+	dr::Util::doDie("$field->{owner}->{filename}:0: $field->{owner}->{full}.$field->{name}: $msg");
 }
 
 sub translateFormType($)
 {
-	my $attr		= shift;
+	my $field		= shift;
 
 	eval {
-		my ( $type, $tagger ) = $attr->getFinalTypeWithTagger();
+		my ( $type, $tagger ) = $field->getFinalTypeWithTagger();
 
 		if ($type->{stype} eq "primitive") {
 			my $ptype = $type->{type};
@@ -145,7 +145,7 @@ sub translateFormType($)
 			die "unknown stype $type->{stype} for class $type->{full}";
 		}
 	}
-		or dieAttrContext($attr, $@);
+		or dieAttrContext($field, $@);
 }
 
 sub printActionOptional
@@ -167,7 +167,7 @@ my @models = ();
 
 my $errors = 0;
 
-my $list = dr::GenmapReader::open($listname, "metaobj");
+my $list = dr::GenmapReader::open($listname, "metaobj", @ARGV ? \@ARGV : undef);
 while (my ($section, $classname) = $list->getNext()) {
 	eval {
 		push(@models, readModel($section, $classname));
@@ -183,12 +183,12 @@ foreach my $model (@models) {
 	eval {
 		$form->print(tabalign("db_table", 16).$model->{db_table}."\n");
 		if (!$model->checkDrTagValue("virtual")) {
-			foreach (qw(req_get req_set req_new req_del)) {
+			foreach (qw(roleGet roleSet roleNew roleDel)) {
 				$form->print(tabalign("$_", 16).$model->getDrTagValue($_)."\n");
 			}
 		}
 		else {
-			foreach (qw(req_get req_set req_new req_del)) {
+			foreach (qw(roleGet roleSet roleNew roleDel)) {
 				$form->print(tabalign("$_", 16)."guest\n");
 			}
 		}
@@ -208,7 +208,7 @@ foreach my $model (@models) {
 	foreach my $view (@{$model->{view_list}}) {
 		eval {
 			$form->print(tabalign("view", 16).$view->{name}."\n");
-			foreach (qw(nocompos suggest supplier renderer addcompos iniclass gui_filter view_attrs)) {
+			foreach (qw(nocompos suggest supplier renderer addcompos iniclass gui_filter view_fields)) {
 				if (defined (my $v = $view->checkDrTagValue($_))) {
 					$form->print(tabalign("\t$_", 24).$v."\n")
 				}
@@ -217,78 +217,78 @@ foreach my $model (@models) {
 		}
 			or STDERR->print("failed to process $model->{full}.$view->{name}:\n$@"), $errors++;
 	}
-	foreach my $attr (@{$model->{attr_list}}) {
+	foreach my $field (@{$model->{field_list}}) {
 		eval {
-			$form->print(tabalign($attr->{stype}, 16).$attr->{name}."\n");
+			$form->print(tabalign($field->{stype}, 16).$field->{name}."\n");
 			foreach (qw(db_name)) {
-				if (defined (my $v = $attr->checkDrTagValue($_))) {
+				if (defined (my $v = $field->checkDrTagValue($_))) {
 					$form->print(tabalign("\t$_", 24).$v."\n");
 				}
 			}
-			foreach (qw(req_sys req_mode)) {
-				$form->print(tabalign("\t$_", 24).defvalue($attr->checkDrTagValue($_), "")."\n");
+			foreach (qw(reqSys req_mode)) {
+				$form->print(tabalign("\t$_", 24).defvalue($field->checkDrTagValue($_), "")."\n");
 			}
-			if (defined (my $req_view = $attr->checkDrTagValue("req_view"))) {
-				$form->print(tabalign("\treq_view", 24).$req_view."\n");
+			if (defined (my $reqView = $field->checkDrTagValue("reqView"))) {
+				$form->print(tabalign("\treqView", 24).$reqView."\n");
 			}
 			else {
-				$form->print(tabalign("\treq_view", 24).($attr->{stype} eq "child" ? "__explicit__" : "")."\n");
+				$form->print(tabalign("\treqView", 24).($field->{stype} eq "child" ? "__explicit__" : "")."\n");
 			}
-			foreach (qw(req_get req_set req_new)) {
-				if (defined (my $v = $attr->checkDrTagValue($_))) {
+			foreach (qw(roleGet roleSet roleNew)) {
+				if (defined (my $v = $field->checkDrTagValue($_))) {
 					$form->print(tabalign("\t$_", 24).$v."\n");
 				}
 			}
-			$form->print(tabalign("\tmandatory", 24).$attr->{mandatory}."\n");
-			my $roles = defvalue($attr->checkDrTagValue("role"), "")."";
+			$form->print(tabalign("\tmandatory", 24).$field->{mandatory}."\n");
+			my $roles = defvalue($field->checkDrTagValue("role"), "")."";
 			$roles .= "," if ($roles ne "");
-			$roles .= "serial," if ($attr->checkDrTagValue("serial"));
-			$roles .= "primary," if ($attr->isPrimary());
-			$roles .= "compos," if ($attr->{stype} eq "compos");
+			$roles .= "serial," if ($field->checkDrTagValue("serial"));
+			$roles .= "primary," if ($field->isPrimary());
+			$roles .= "compos," if ($field->{stype} eq "compos");
 			$roles = substr($roles, 0, -1);
 			$form->print(tabalign("\trole", 24).$roles."\n");
-			$form->print(tabalign("\tforce_new", 24).$attr->getDrTagValue("force_new")."\n") if ($attr->checkDrTagValue("force_new"));
-			if ($attr->{stype} eq "attr") {
-				my ( $type, $tagger ) = $attr->getFinalTypeWithTagger();
+			$form->print(tabalign("\tforce_new", 24).$field->getDrTagValue("force_new")."\n") if ($field->checkDrTagValue("force_new"));
+			if ($field->{stype} eq "field") {
+				my ( $type, $tagger ) = $field->getFinalTypeWithTagger();
 				foreach (qw(db_conversion db_precision do_mandatory align gui_init)) {
 					if (defined (my $val = $tagger->checkTagValue($_))) {
 						$form->print(tabalign("\t$_", 24).$val."\n");
 					}
 				}
-				$form->print(tabalign("\ttext", 24).defvalue($tagger->checkTagValue("text"), $attr->{name})."\n");
-				$form->print(tabalign("\ttype", 24).translateFormType($attr)."\n");
+				$form->print(tabalign("\ttext", 24).defvalue($tagger->checkTagValue("text"), $field->{name})."\n");
+				$form->print(tabalign("\ttype", 24).translateFormType($field)."\n");
 				$form->print(tabalign("\tlogical", 24).$tagger->getTag("logical")->{value}."\n");
 				$form->print(tabalign("\tdisplay", 24).$tagger->getTag("display")->{value}."\n");
 				if (defined (my $handling = $tagger->checkTagValue("handling"))) {
 					$form->print(tabalign("\thandling", 24).$handling."\n");
 				}
 			}
-			elsif ($attr->{stype} eq "assoc") {
-				my @tprimary = $attr->expandAssocAttrs();
-				die "association references more than one attribute, not yet supported" if (@tprimary != 1);
-				my ( $type, $tagger ) = $tprimary[0]->{attr}->getFinalTypeWithTagger();
-				$tagger->mergeReplacing($attr->getDrTagger());
-				$form->print(tabalign("\tref", 24).$attr->{ref}."\n");
-				$form->print(tabalign("\ttext", 24).defvalue($tagger->checkTagValue("text"), $attr->{name})."\n");
-				$form->print(tabalign("\ttype", 24).translateFormType($attr)."\n");
+			elsif ($field->{stype} eq "assoc") {
+				my @tprimary = $field->expandAssocAttrs();
+				die "association references more than one field, not yet supported" if (@tprimary != 1);
+				my ( $type, $tagger ) = $tprimary[0]->{field}->getFinalTypeWithTagger();
+				$tagger->mergeReplacing($field->getDrTagger());
+				$form->print(tabalign("\tref", 24).$field->{ref}."\n");
+				$form->print(tabalign("\ttext", 24).defvalue($tagger->checkTagValue("text"), $field->{name})."\n");
+				$form->print(tabalign("\ttype", 24).translateFormType($field)."\n");
 				$form->print(tabalign("\tref_display", 24).$tagger->getTagValue("ref_display")."\n") if ($tagger->checkTag("ref_display"));
 				$form->print(tabalign("\tlogical", 24).$tagger->getTag("logical")->{value}."\n");
 				$form->print(tabalign("\tdisplay", 24).$tagger->getTag("display")->{value}."\n");
 			}
-			elsif ($attr->{stype} eq "compos") {
-				$form->print(tabalign("\tref", 24).$attr->{ref}."\n");
-				$form->print(tabalign("\ttext", 24).defvalue($attr->checkDrTagValue("text"), $attr->{name})."\n");
+			elsif ($field->{stype} eq "compos") {
+				$form->print(tabalign("\tref", 24).$field->{ref}."\n");
+				$form->print(tabalign("\ttext", 24).defvalue($field->checkDrTagValue("text"), $field->{name})."\n");
 			}
-			elsif ($attr->{stype} eq "child") {
-				$form->print(tabalign("\tref", 24).$attr->{ref}."\n");
-				$form->print(tabalign("\ttext", 24).defvalue($attr->checkDrTagValue("text"), $attr->{name})."\n");
+			elsif ($field->{stype} eq "child") {
+				$form->print(tabalign("\tref", 24).$field->{ref}."\n");
+				$form->print(tabalign("\ttext", 24).defvalue($field->checkDrTagValue("text"), $field->{name})."\n");
 			}
 			else {
-				dr::Util::doDie("unknown stype $attr->{stype}:\n".dumpSimple($attr)."\n");
+				dr::Util::doDie("unknown stype $field->{stype}:\n".dumpSimple($field)."\n");
 			}
 			1;
 		}
-			or STDERR->print("failed to process $model->{full}.$attr->{name}:\n$@"), $errors++;
+			or STDERR->print("failed to process $model->{full}.$field->{name}:\n$@"), $errors++;
 	}
 	foreach my $assoc_display (values %{$model->getDrSpecs("assoc_display")}) {
 		eval {
@@ -306,8 +306,8 @@ foreach my $model (@models) {
 			$form->print(tabalign("action", 16).$action->{name}."\n");
 			$form->print(tabalign("\ttext", 24).defvalue($action->checkDrTagValue("text"), $action->{name})."\n");
 			$form->print(tabalign("\tclassify", 24).join(",", keys %{$action->{classify}})."\n");
-			$form->print(tabalign("\treq_role", 24).$action->getDrTagValue("req_role")."\n");
-			foreach (qw(req_sys req_view gui_def gui_actions nocompos)) {
+			$form->print(tabalign("\troleAction", 24).$action->getDrTagValue("roleAction")."\n");
+			foreach (qw(reqSys reqView guiDef guiActions nocompos)) {
 				if (defined (my $v = $action->checkDrTagValue($_))) {
 					$form->print(tabalign("\t$_", 24).$v."\n")
 				}

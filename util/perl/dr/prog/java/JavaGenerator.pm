@@ -53,6 +53,24 @@ our %JAVA_UML_DATASTRUCT = (
 	Set				=> "java.util.Set",
 );
 
+our %JAVA_UML_PRIMITIVES = (
+	void				=> 1,
+	boolean				=> 1,
+	byte				=> 1,
+	short				=> 1,
+	int				=> 1,
+	long				=> 1,
+	float				=> 1,
+	double				=> 1,
+);
+
+sub isJavaTypePrimitive
+{
+	my $type			= shift;
+
+	return exists $JAVA_UML_PRIMITIVES{$type};
+}
+
 # static
 ## converts virtual type to java type
 sub mapJavaType # javaType-string <- modelType
@@ -94,9 +112,11 @@ sub mapJavaDatastruct
 # static
 sub mapJavaAttrType
 {
-	my $attr			= shift;
+	my $field			= shift;
 
-	my ( $atype, $atagger ) = $attr->getFinalTypeWithTagger();
+	dr::Util::doDie("field is null") if (!defined $field);
+
+	my ( $atype, $atagger ) = $field->getFinalTypeWithTagger();
 
 	return mapJavaType($atype);
 }
@@ -113,8 +133,8 @@ sub getPkTypeName
 		return $clsmodel->{name}.".Pk";
 	}
 	else {
-		my $attr = $primary[0];
-		my $java_type = dr::prog::java::JavaGenerator::mapJavaAttrType($attr);
+		my $field = $primary[0];
+		my $java_type = dr::prog::java::JavaGenerator::mapJavaAttrType($field);
 	}
 }
 
@@ -130,8 +150,8 @@ sub getPkFieldName
 		return "pk";
 	}
 	else {
-		my $attr = $primary[0];
-		return $attr->{name};
+		my $field = $primary[0];
+		return $field->{name};
 	}
 }
 
@@ -140,7 +160,7 @@ sub formatClassRoles
 	my $clsmodel			= shift;
 
 	my $roles = "";
-	foreach my $roleName (qw(req_new req_get req_set req_del)) {
+	foreach my $roleName (qw(roleNew roleGet roleSet roleDel)) {
 		my $role = $clsmodel->checkDrTagValue($roleName);
 		if (!defined $role) {
 			if (!$clsmodel->checkDrTagValue("virtual")) {
@@ -150,11 +170,37 @@ sub formatClassRoles
 				$role = "guest";
 			}
 		}
-		my $x = $roleName;
-		$x =~ s/_(.)/\U$1/;
-		$roles .= ", $x = \"".dr::Util::escapeString($role)."\"";
+		$roles .= ", $roleName = \"".dr::Util::escapeString($role)."\"";
 	}
 	return substr($roles, 2);
+}
+
+sub formatFieldRoles
+{
+	my $clsmodel			= shift;
+	my $field			= shift;
+
+	my $roles = "";
+	foreach my $roleName (qw(roleNew roleGet roleSet roleDel)) {
+		my $role = $field->checkDrTagValue($roleName) // $clsmodel->checkDrTagValue($roleName);
+		if (!defined $role) {
+			if (!$clsmodel->checkDrTagValue("virtual")) {
+				dr::Util::doDie("role $roleName not defined for ".$clsmodel->getFullDotName());
+			}
+			else {
+				$role = "guest";
+			}
+		}
+		$roles .= ", $roleName = \"".dr::Util::escapeString($role)."\"";
+	}
+	return substr($roles, 2);
+}
+
+sub formatBoolean
+{
+	my $value			= shift;
+
+	return $value ? "true" : "false";
 }
 
 sub getFullClassname
@@ -222,12 +268,12 @@ sub processLine
 	else {
 		$this->{currentCtx} = $this->{out_main}->rememberContext();
 		while ($line =~ m/^(.*?)DR_TYPEOF\(((\w+\.)*\w+)\.(\w+)\)(.*)$/s) {
-			my ( $start, $type, $attr, $end ) = ( $1, $2, $4, $5 );
+			my ( $start, $type, $field, $end ) = ( $1, $2, $4, $5 );
 			my $classmodel = $this->loadModel($type);
-			my $translated = mapJavaAttrType($classmodel->getAttr($attr));
+			my $translated = mapJavaAttrType($classmodel->getAttr($field));
 			$line = "$start$translated$end";
 		}
-		if ($line =~ m/^((public|private|protected)\s+|)((abstract)\s+|)class\s+(\w+)(\s*<.*>)?\s+extends\s+((\w+\.)*\w+(<\w+(\s*,\s*\w+)*>)?)(\s+.*|)$/) {
+		if ($line =~ m/^((public|private|protected)\s+|)((abstract)\s+|)class\s+(\w+)(\s*<.*>)?\s+extends\s+((\w+\.)*\w+(<(\w+|\?)(\s*,\s*(\w+|\?))*>)?)(\s+.*|)$/) {
 			$this->{class_name} = $5;
 			$this->{ancestor_name} = $7;
 			$this->processClassDef($line);
@@ -246,7 +292,7 @@ sub processLine
 		elsif ($line =~ m,^\s+.*\)\s*;\s*(//.*|/\*.*|)$,) {
 			$this->processMethodDef($line);
 		}
-		elsif ($line =~ m/^\s*((public|protected|private)\s+)*([a-zA-Z_.]+)\s+(\w+)(|\s*=.*);.*$/) {
+		elsif ($line =~ m/^\s*((public|protected|private)\s+)*([a-zA-Z_.]+(<.*?>|))\s+(\w+)(|\s*=.*);.*$/) {
 			$this->processAttributeDef($line);
 		}
 		else {
@@ -407,8 +453,8 @@ sub processAttributeDef
 	my $this		= shift;
 	my $line		= shift;
 
-	$this->dieContext($this->getContext(), "failed to match attribute definition: $line") unless ($line =~ m/^\s*((public|protected|private)\s+)*([a-zA-Z_.]+)\s+(\w+)(|\s*=.*);.*$/);
-	my ( $atype, $aname ) = ( $3, $4 );
+	$this->dieContext($this->getContext(), "failed to match field definition: $line") unless ($line =~ m/^\s*((public|protected|private)\s+)*([a-zA-Z_.]+(<.*?>|))\s+(\w+)(|\s*=.*);.*$/);
+	my ( $atype, $aname ) = ( $3, $5 );
 
 	foreach my $pending (@{$this->{pending}}) {
 		if (exists $ATTR_TAGS{$pending->{name}}) {

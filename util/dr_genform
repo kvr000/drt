@@ -92,18 +92,18 @@ our %FORM_UML_TYPES_VAR = (
 
 sub dieAttrContext($$)
 {
-	my $attr		= shift;
+	my $field		= shift;
 	my $msg			= shift;
 
-	dr::Util::doDie("$attr->{owner}->{filename}:0: $attr->{owner}->{full}.$attr->{name}: $msg");
+	dr::Util::doDie("$field->{owner}->{filename}:0: $field->{owner}->{full}.$field->{name}: $msg");
 }
 
 sub translateFormType($)
 {
-	my $attr		= shift;
+	my $field		= shift;
 
 	eval {
-		my ( $type, $tagger ) = $attr->getFinalTypeWithTagger();
+		my ( $type, $tagger ) = $field->getFinalTypeWithTagger();
 
 		if ($type->{stype} eq "primitive") {
 			my $ptype = $type->{type};
@@ -127,16 +127,16 @@ sub translateFormType($)
 			die "unknown stype $type->{stype} for class $type->{full}";
 		}
 	}
-		or dieAttrContext($attr, $@);
+		or dieAttrContext($field, $@);
 }
 
 sub printAttrOptional
 {
 	my $formfile		= shift;
-	my $attr		= shift;
+	my $field		= shift;
 	my $name		= shift;
 
-	if (defined (my $v = $attr->checkDrTagValue($name))) {
+	if (defined (my $v = $field->checkDrTagValue($name))) {
 		$formfile->print(tabalign("\t$name", 24).$v."\n");
 		return 1;
 	}
@@ -182,21 +182,21 @@ foreach my $model (@models) {
 			$form->print(tabalign($global, 16).$value."\n");
 		}
 	}
-	foreach my $attr (@{$model->{attr_list}}) {
-		my ( $type, $tagger ) = $attr->getFinalTypeWithTagger();
+	foreach my $field (@{$model->{field_list}}) {
+		my ( $type, $tagger ) = $field->getFinalTypeWithTagger();
 		eval {
-			$form->print(tabalign("attr", 16).$attr->{name}."\n");
-			$form->print(tabalign("\ttext", 24).defvalue($tagger->checkTagValue("text"), $attr->{name})."\n");
-			$form->print(tabalign("\ttype", 24).translateFormType($attr)."\n");
-			$form->print(tabalign("\tmandatory", 24).$attr->{mandatory}."\n");
+			$form->print(tabalign("field", 16).$field->{name}."\n");
+			$form->print(tabalign("\ttext", 24).defvalue($tagger->checkTagValue("text"), $field->{name})."\n");
+			$form->print(tabalign("\ttype", 24).translateFormType($field)."\n");
+			$form->print(tabalign("\tmandatory", 24).$field->{mandatory}."\n");
 			$form->print(tabalign("\tlogical", 24).$tagger->getTagValue("logical")."\n");
 			$form->print(tabalign("\tdisplay", 24).$tagger->getTagValue("display")."\n");
 			foreach (qw(req_sys req_get req_set req_view req_mode)) {
-				printAttrOptional($form, $attr, $_);
+				printAttrOptional($form, $field, $_);
 			}
 			1;
 		}
-			or die "failed to process $model->{full}.$attr->{name}: $@: ".Dumper($tagger);
+			or die "failed to process $model->{full}.$field->{name}: $@: ".Dumper($tagger);
 	}
 	foreach my $action (@{$model->{action_list}}) {
 		eval {

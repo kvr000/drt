@@ -98,7 +98,7 @@ sub getMandatoryAttr
 	my $name		= shift;
 
 	my $value = $this->{owner}->{reader}->getAttribute($name);
-	$this->{owner}->read_doDie("mandatory attribute $name not found in element") unless (defined $value);
+	$this->{owner}->read_doDie("mandatory field $name not found in element") unless (defined $value);
 	return $value;
 }
 
@@ -201,8 +201,8 @@ sub new
 		class_hash		=> {},
 		package_list		=> [],
 		package_hash		=> {},
-		attr_list		=> [],
-		attr_hash		=> {},
+		field_list		=> [],
+		field_hash		=> {},
 		oper_list		=> [],
 		oper_hash		=> {},
 	}, $class;
@@ -244,10 +244,10 @@ sub new
 sub addAttribute
 {
 	my $this		= shift;
-	my $attr		= shift;
+	my $field		= shift;
 
-	push(@{$this->{attr_list}}, $attr);
-	$this->{attr_hash}->{$attr->{name}} = $attr;
+	push(@{$this->{field_list}}, $field);
+	$this->{field_hash}->{$field->{name}} = $field;
 }
 
 sub addOperation
@@ -281,15 +281,15 @@ sub getTypedefSource
 sub getAttrType
 {
 	my $this		= shift;
-	my $attr		= shift;
+	my $field		= shift;
 
-	die "attribute $attr->{name} undefined for class $this->{name}" unless (defined $this->{attr_hash}->{$attr->{name}});
-	if ($attr->{type_type} eq "primitive") {
-		die Dumper($attr) unless (defined $attr->{type_primitive});
-		return $attr->{type_primitive};
+	die "field $field->{name} undefined for class $this->{name}" unless (defined $this->{field_hash}->{$field->{name}});
+	if ($field->{type_type} eq "primitive") {
+		die Dumper($field) unless (defined $field->{type_primitive});
+		return $field->{type_primitive};
 	}
 	else {
-		return $this->{owner}->resolveDatatype($attr->{type_xid});
+		return $this->{owner}->resolveDatatype($field->{type_xid});
 	}
 }
 
@@ -485,23 +485,23 @@ sub read_needNodeEnd
 sub read_getMandatoryAttr
 {
 	my $this		= shift;
-	my $attr		= shift;
+	my $field		= shift;
 
 	my $reader		= $this->{reader};
 
-	my $value = $reader->getAttribute($attr);
-	$this->read_doDie("mandatory attribute $attr not found in element") unless (defined $value);
+	my $value = $reader->getAttribute($field);
+	$this->read_doDie("mandatory field $field not found in element") unless (defined $value);
 	return $value;
 }
 
 sub read_getOptionalAttr
 {
 	my $this		= shift;
-	my $attr		= shift;
+	my $field		= shift;
 
 	my $reader		= $this->{reader};
 
-	my $value = $reader->getAttribute($attr);
+	my $value = $reader->getAttribute($field);
 	return $value;
 }
 
@@ -618,6 +618,9 @@ sub read_processPackagedElement
 	}
 	elsif ($type eq "uml:Association") {
 		$this->read_processAssociation($reader);
+	}
+	elsif ($type eq "uml:Node") {
+		$this->read_processNode($reader);
 	}
 	elsif ($type eq "uml:Artifact") {
 		$this->read_processArtifact($reader);
@@ -941,8 +944,8 @@ sub read_processOwnedAttribute
 		return;
 	}
 
-	my $saved_attr = $this->{read_attr};
-	$this->{read_attr} = {
+	my $saved_field = $this->{read_field};
+	$this->{read_field} = {
 		association_xid		=> $association_xid,
 		aggregation		=> $aggregation,
 		name			=> $name,
@@ -983,41 +986,41 @@ sub read_processOwnedAttribute
 		}
 	}
 
-	if (defined $this->{read_attr}->{lower_value} && defined $this->{read_attr}->{upper_value}) {
-		if ($this->{read_attr}->{lower_value} eq 0 && $this->{read_attr}->{upper_value} eq 0) {
-			$this->{read_attr}->{mandatory} = 0;
+	if (defined $this->{read_field}->{lower_value} && defined $this->{read_field}->{upper_value}) {
+		if ($this->{read_field}->{lower_value} eq 0 && $this->{read_field}->{upper_value} eq 0) {
+			$this->{read_field}->{mandatory} = 0;
 		}
-		elsif ($this->{read_attr}->{lower_value} eq 0 && $this->{read_attr}->{upper_value} eq 1) {
-			$this->{read_attr}->{mandatory} = 0;
+		elsif ($this->{read_field}->{lower_value} eq 0 && $this->{read_field}->{upper_value} eq 1) {
+			$this->{read_field}->{mandatory} = 0;
 		}
-		elsif ($this->{read_attr}->{lower_value} eq 1 && $this->{read_attr}->{upper_value} eq 1) {
-			$this->{read_attr}->{mandatory} = 1;
+		elsif ($this->{read_field}->{lower_value} eq 1 && $this->{read_field}->{upper_value} eq 1) {
+			$this->{read_field}->{mandatory} = 1;
 		}
-		elsif ($this->{read_attr}->{lower_value} eq "0" && $this->{read_attr}->{upper_value} eq "*") {
-			$this->{read_attr}->{mandatory} = "*";
+		elsif ($this->{read_field}->{lower_value} eq "0" && $this->{read_field}->{upper_value} eq "*") {
+			$this->{read_field}->{mandatory} = "*";
 		}
-		elsif ($this->{read_attr}->{lower_value} eq "1" && $this->{read_attr}->{upper_value} eq "*") {
-			$this->{read_attr}->{mandatory} = "*";
+		elsif ($this->{read_field}->{lower_value} eq "1" && $this->{read_field}->{upper_value} eq "*") {
+			$this->{read_field}->{mandatory} = "*";
 		}
-		elsif ($this->{read_attr}->{lower_value} eq "*" && $this->{read_attr}->{upper_value} eq "*") {
-			$this->{read_attr}->{mandatory} = undef;
-			if (defined $this->{read_attr}->{aggregation} && $this->{read_attr}->{aggregation} ne "none") {
+		elsif ($this->{read_field}->{lower_value} eq "*" && $this->{read_field}->{upper_value} eq "*") {
+			$this->{read_field}->{mandatory} = undef;
+			if (defined $this->{read_field}->{aggregation} && $this->{read_field}->{aggregation} ne "none") {
 				$this->read_doDie("unexpected combination of lower/upper: * - * when aggregation type is not none");
 			}
 		}
 		else {
-			$this->read_doDie("unexpected combination of lower/upper: $this->{read_attr}->{lower_value} - $this->{read_attr}->{upper_value}");
+			$this->read_doDie("unexpected combination of lower/upper: $this->{read_field}->{lower_value} - $this->{read_field}->{upper_value}");
 		}
 	}
 	else {
-		$this->{read_attr}->{mandatory} = 1;
+		$this->{read_field}->{mandatory} = 1;
 	}
 
-	$this->read_doDie("type unspecified for $this->{read_context}->{name}.$name") unless (defined $this->{read_attr}->{type_type});
+	$this->read_doDie("type unspecified for $this->{read_context}->{name}.$name") unless (defined $this->{read_field}->{type_type});
 
-	$this->{read_context}->addAttribute($this->{read_attr});
+	$this->{read_context}->addAttribute($this->{read_field});
 
-	$this->{read_attr} = $saved_attr;
+	$this->{read_field} = $saved_field;
 }
 
 sub read_processOwnedAttributeType
@@ -1027,17 +1030,17 @@ sub read_processOwnedAttributeType
 
 	my $type_type = $this->read_getMandatoryAttr("xmi:type");
 	if ($type_type eq "uml:PrimitiveType") {
-		$this->{read_attr}->{type_type} = "primitive";
+		$this->{read_field}->{type_type} = "primitive";
 		if ($this->read_getMandatoryAttr("href") !~ m/.*#(\w+)$/) {
 			$this->read_doDie("invalid format for type href");
 		}
-		if (!defined ($this->{read_attr}->{type_primitive} = $UML_PRIMITIVE_TYPES{$1})) {
+		if (!defined ($this->{read_field}->{type_primitive} = $UML_PRIMITIVE_TYPES{$1})) {
 			$this->read_doDie("unknown UML primitive type: $1");
 		}
 	}
 	elsif ($type_type eq "uml:Class") {
-		$this->{read_attr}->{type_type} = "class";
-		$this->{read_attr}->{type_xid} = $this->read_getMandatoryAttr("xmi:idref");
+		$this->{read_field}->{type_type} = "class";
+		$this->{read_field}->{type_xid} = $this->read_getMandatoryAttr("xmi:idref");
 	}
 	else {
 		$this->read_doDie("unknown type type: $type_type");
@@ -1051,7 +1054,7 @@ sub read_processOwnedAttributeDefaultValue
 	my $this		= shift;
 	my $main_reader		= shift;
 
-	$this->{read_attr}->{default_value} = $this->read_getMandatoryAttr("value");
+	$this->{read_field}->{default_value} = $this->read_getMandatoryAttr("value");
 
 	$this->read_needNodeEnd($main_reader);
 }
@@ -1062,7 +1065,7 @@ sub read_processOwnedAttributeComment
 	my $main_reader		= shift;
 
 	eval {
-		$this->{read_attr}->{comment}->processComment($this->read_getMandatoryAttr("body"));
+		$this->{read_field}->{comment}->processComment($this->read_getMandatoryAttr("body"));
 		1;
 	}
 		or $this->read_doDie($@);
@@ -1075,7 +1078,7 @@ sub read_processOwnedAttributeLowerValue
 	my $this		= shift;
 	my $main_reader		= shift;
 
-	$this->{read_attr}->{lower_value} = $this->read_getMandatoryAttr("value");
+	$this->{read_field}->{lower_value} = $this->read_getMandatoryAttr("value");
 
 	$this->read_needNodeEnd($main_reader);
 }
@@ -1085,7 +1088,7 @@ sub read_processOwnedAttributeUpperValue
 	my $this		= shift;
 	my $main_reader		= shift;
 
-	$this->{read_attr}->{upper_value} = $this->read_getMandatoryAttr("value");
+	$this->{read_field}->{upper_value} = $this->read_getMandatoryAttr("value");
 
 	$this->read_needNodeEnd($main_reader);
 }
@@ -1097,7 +1100,7 @@ sub read_processOwnedAttributeExtension
 
 	while (defined (my $name = $reader->readNode())) {
 		if ($name eq "taggedValue") {
-			$this->read_processGenericTagged($reader, $this->{read_attr}->{comment});
+			$this->read_processGenericTagged($reader, $this->{read_field}->{comment});
 		}
 		else {
 			$this->read_unknownNode($reader);
@@ -1329,6 +1332,14 @@ sub read_processEnumLiteralExtension
 	}
 }
 
+sub read_processNode
+{
+	my $this		= shift;
+	my $main_reader		= shift;
+
+	$this->read_skipNode($main_reader);
+}
+
 sub read_processArtifact
 {
 	my $this		= shift;
@@ -1397,16 +1408,16 @@ sub postprocRegisterClass
 		$this->postprocRegisterClass($ch_class);
 	}
 
-	foreach my $attr (@{$class->{attr_list}}) {
-		Scalar::Util::weaken($attr->{parent} = $class);
-		$this->postprocRegisterClassAttr($attr);
+	foreach my $field (@{$class->{field_list}}) {
+		Scalar::Util::weaken($field->{parent} = $class);
+		$this->postprocRegisterClassAttr($field);
 	}
 }
 
 sub postprocRegisterClassAttr
 {
 	my $this		= shift;
-	my $attr		= shift;
+	my $field		= shift;
 }
 
 sub resolveDatatype
@@ -1450,8 +1461,8 @@ sub postprocRefClass
 
 	my $resolved = 0;
 
-	for (my $i = 0; $i < @{$class->{attr_list}}; $i++) {
-		$i-- if ($this->postprocRefClassAttr(${$class->{attr_list}}[$i]));
+	for (my $i = 0; $i < @{$class->{field_list}}; $i++) {
+		$i-- if ($this->postprocRefClassAttr(${$class->{field_list}}[$i]));
 	}
 	foreach my $ch_class (@{$class->{class_list}}) {
 		$this->postprocRefClass($ch_class);
@@ -1466,34 +1477,34 @@ sub postprocRefClass
 sub postprocRefClassAttr
 {
 	my $this		= shift;
-	my $attr		= shift;
+	my $field		= shift;
 
 	eval {
-		$attr->{datatype} = $attr->{type_primitive} || $this->resolveDatatype($attr->{type_xid});
+		$field->{datatype} = $field->{type_primitive} || $this->resolveDatatype($field->{type_xid});
 		1;
 	}
-		or die "$attr->{parent}->{name}.$attr->{name}: $@";
+		or die "$field->{parent}->{name}.$field->{name}: $@";
 
-	if (!defined $attr->{mandatory}) {
-		if ($attr->{aggregation} eq "none") {
-			my $found_attr;
-			foreach my $assoc_attr (@{$attr->{datatype}->{attr_list}}) {
-				if (defined $assoc_attr->{association_xid} && $assoc_attr->{association_xid} eq $attr->{association_xid}) {
-					$found_attr = $assoc_attr;
+	if (!defined $field->{mandatory}) {
+		if ($field->{aggregation} eq "none") {
+			my $found_field;
+			foreach my $assoc_field (@{$field->{datatype}->{field_list}}) {
+				if (defined $assoc_field->{association_xid} && $assoc_field->{association_xid} eq $field->{association_xid}) {
+					$found_field = $assoc_field;
 					last;
 				}
 			}
-			if (!defined $found_attr) {
-				dr::Util::doDie("$attr->{parent}->{name}.$attr->{name}: association target not found: $attr->{association_xid}");
+			if (!defined $found_field) {
+				dr::Util::doDie("$field->{parent}->{name}.$field->{name}: association target not found: $field->{association_xid}");
 			}
-			if ($found_attr->{aggregation} ne "composite") {
-				dr::Util::doDie("$attr->{parent}->{name}.$attr->{name}: association target is not composite as expected for * - * multiplicity: ".dumpSimple($found_attr));
+			if ($found_field->{aggregation} ne "composite") {
+				dr::Util::doDie("$field->{parent}->{name}.$field->{name}: association target is not composite as expected for * - * multiplicity: ".dumpSimple($found_field));
 			}
-			$attr->{aggregation} = "child";
-			$attr->{mandatory} = "*";
+			$field->{aggregation} = "child";
+			$field->{mandatory} = "*";
 		}
 		else {
-			dr::Util::doDie("$attr->{parent}->{name}.$attr->{name}: mandatory not defined and aggregation is not none");
+			dr::Util::doDie("$field->{parent}->{name}.$field->{name}: mandatory not defined and aggregation is not none");
 		}
 	}
 

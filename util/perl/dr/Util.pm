@@ -41,7 +41,7 @@ use warnings;
 use Exporter;
 
 our @ISA = qw(Exporter);
-our @EXPORT_OK = qw(doDie dumpSimple defvalue tablength tabalign escapeString unescapeString escapeStringContent convertBool);
+our @EXPORT_OK = qw(doDie dumpSimple defvalue tablength tabalign escapeString textToString unescapeString escapeStringContent convertBool);
 
 use Scalar::Util qw(isweak reftype);
 
@@ -284,6 +284,11 @@ sub escapeString($)
 	$s =~ s/\t/\\t/g;
 	$s =~ s/"/\\"/g;
 	return $s;
+}
+
+sub textToString($)
+{
+	return "\"".escapeString(shift)."\"";
 }
 
 sub unescapeString($)

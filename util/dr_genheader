@@ -699,7 +699,7 @@ for (my $curf = $cxx, my $curname = $cxxname; defined $curf; $curf = @ARGV ? dr:
 				}
 				else {
 					if (defined $cld->{ancestor} || $cld->{cont} ne "" || @{$cld->{ifaces}} || @{$cld->{ats}} ||@{$cld->{consts}} || @{$cld->{methods}} || @{$cld->{friends}} || defined $cld->{doc}) {
-						STDERR->print("no class defined while some of the attributes are"), $errors++;
+						STDERR->print("no class defined while some of the fields are"), $errors++;
 					}
 				}
 			}
@@ -743,7 +743,7 @@ for (my $curf = $cxx, my $curname = $cxxname; defined $curf; $curf = @ARGV ? dr:
 					}
 					elsif ($key eq "revert") {
 						if (defined $cld->{ancestor} || $cld->{cont} ne "" || @{$cld->{ifaces}} || @{$cld->{ats}} ||@{$cld->{consts}} || @{$cld->{methods}} || @{$cld->{friends}} || defined $cld->{doc}) {
-							STDERR->print($curf->getContext().": no class defined while some of the attributes are"), $errors++;
+							STDERR->print($curf->getContext().": no class defined while some of the fields are"), $errors++;
 						}
 						for (my $i = 0; ; $i++) {
 							if ($i >= @cl_list) {
@@ -992,7 +992,7 @@ elsif (defined $cld->{class}) {
 }
 else {
 	if (defined $cld->{ancestor} || $cld->{cont} ne "" || @{$cld->{ifaces}} || @{$cld->{ats}} || @{$cld->{consts}} || @{$cld->{methods}} || @{$cld->{friends}} || defined $cld->{doc}) {
-		STDERR->print("no class defined while some of the attributes are"), $errors++;
+		STDERR->print("no class defined while some of the fields are"), $errors++;
 	}
 }
 

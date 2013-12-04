@@ -399,12 +399,12 @@ sub getSubFinalTypeWithTagger
 			return $this->getSubModel($6)->getAttr($subname)->getFinalTypeWithTagger();
 		}
 		elsif (defined $8) {
-			my $attr_name = $9;
+			my $field_name = $9;
 			if (defined (my $typeref = $this->checkDrTagValue("typeref"))) {
-				return $this->getSubModel($this->formatTyperef($typeref))->getAttr($attr_name)->getFinalTypeWithTagger();
+				return $this->getSubModel($this->formatTyperef($typeref))->getAttr($field_name)->getFinalTypeWithTagger();
 			}
 			else {
-				return $this->getSubModel($this->{package})->getAttr($attr_name)->getFinalTypeWithTagger();
+				return $this->getSubModel($this->{package})->getAttr($field_name)->getFinalTypeWithTagger();
 			}
 		}
 		else {
@@ -596,8 +596,8 @@ sub new
 
 	my $this = $class->SUPER::new($owner, $basic);
 
-	$this->{attr_list} = [];
-	$this->{attr_hash} = {};
+	$this->{field_list} = [];
+	$this->{field_hash} = {};
 	$this->{action_list} = [];
 	$this->{oper_list} = [];
 	$this->{view_list} = [];
@@ -628,8 +628,8 @@ sub getPrimary
 
 	if (!defined $this->{primary}) {
 		$this->{primary} = [];
-		foreach my $attr (@{$this->{attr_list}}) {
-			push(@{$this->{primary}}, $attr) if ($attr->getRole()->{primary});
+		foreach my $field (@{$this->{field_list}}) {
+			push(@{$this->{primary}}, $field) if ($field->getRole()->{primary});
 		}
 	}
 
@@ -660,13 +660,13 @@ sub getAttrs
 {
 	my $this		= shift;
 
-	return $this->{attr_list};
+	return $this->{field_list};
 }
 
 our %CLASS_MAPPER = (
 	%dr::ModelStore::ClassBase::BASE_MAPPER,
 	compos			=> \&readClassCompos,
-	attr			=> \&readClassAttr,
+	field			=> \&readClassAttr,
 	assoc			=> \&readClassAssoc,
 	child			=> \&readClassChild,
 	action			=> \&readClassAction,
@@ -696,7 +696,7 @@ sub readClassCompos
 	my $compos = dr::ModelStore::Compos->new($this, { stype => "compos", name => $val });
 	$compos->load($base->getSubLeveler());
 
-	push(@{$this->{attr_list}}, $compos);
+	push(@{$this->{field_list}}, $compos);
 
 	$this->{compos} = $compos;
 }
@@ -708,12 +708,12 @@ sub readClassAttr
 	my $key			= shift;
 	my $val			= shift;
 
-	my $attr = dr::ModelStore::Attr->new($this, { stype => "attr", name => $val });
-	$attr->load($base->getSubLeveler());
+	my $field = dr::ModelStore::Attr->new($this, { stype => "field", name => $val });
+	$field->load($base->getSubLeveler());
 
-	if (!$attr->checkDrTagValue("disabled")) {
-		push(@{$this->{attr_list}}, $attr);
-		$this->{attr_hash}{$attr->{name}} = $attr;
+	if (!$field->checkDrTagValue("disabled")) {
+		push(@{$this->{field_list}}, $field);
+		$this->{field_hash}{$field->{name}} = $field;
 	}
 }
 
@@ -727,7 +727,7 @@ sub readClassAssoc
 	my $assoc = dr::ModelStore::Assoc->new($this, { stype => "assoc", name => $val });
 	$assoc->load($base->getSubLeveler());
 
-	push(@{$this->{attr_list}}, $assoc);
+	push(@{$this->{field_list}}, $assoc);
 }
 
 sub readClassChild
@@ -740,7 +740,7 @@ sub readClassChild
 	my $child = dr::ModelStore::Child->new($this, { stype => "child", name => $val });
 	$child->load($base->getSubLeveler());
 
-	push(@{$this->{attr_list}}, $child);
+	push(@{$this->{field_list}}, $child);
 }
 
 sub readClassAction
@@ -785,10 +785,10 @@ sub readClassOper
 sub getAttr
 {
 	my $this		= shift;
-	my $attr_name		= shift;
+	my $field_name		= shift;
 
-	$this->dieContext("attr $attr_name not found in $this->{name}") unless (defined $this->{attr_hash}{$attr_name});
-	return $this->{attr_hash}{$attr_name}
+	$this->dieContext("field $field_name not found in $this->{name}") unless (defined $this->{field_hash}{$field_name});
+	return $this->{field_hash}{$field_name}
 }
 
 
@@ -1241,10 +1241,10 @@ sub getFinalTypeWithTagger
 
 	my @refs = $this->expandAssocAttrs();
 	if (@refs != 1) {
-		$this->dieContext("getFinalTypeWithTagger called on reference to not single attribute: $this->{name}");
+		$this->dieContext("getFinalTypeWithTagger called on reference to not single field: $this->{name}");
 	}
 
-	my ( $type, $tagger ) = $refs[0]->{attr}->getFinalTypeWithTagger();
+	my ( $type, $tagger ) = $refs[0]->{field}->getFinalTypeWithTagger();
 	$tagger->mergeReplacing($this->{drtag});
 
 	return ( $type, $tagger );
@@ -1266,23 +1266,23 @@ sub expandAssocAttrs
 	my @exp_primary;
 
 	foreach my $pa (@primary) {
-		if ($pa->{stype} eq "attr") {
-			push(@exp_primary, { name => (@primary == 1 ? $this->{name} : $pa->{name}), attr => $pa });
+		if ($pa->{stype} eq "field") {
+			push(@exp_primary, { name => (@primary == 1 ? $this->{name} : $pa->{name}), field => $pa });
 		}
 		elsif ($pa->{stype} eq "assoc" || $pa->{stype} eq "compos") {
 			my @targ_exp = $pa->expandAssocAttrs();
 			if (@targ_exp == 1) {
-				push(@exp_primary, { name => (@primary == 1 ? $this->{name} : $pa->{name}), attr => $targ_exp[0]->{attr} });
+				push(@exp_primary, { name => (@primary == 1 ? $this->{name} : $pa->{name}), field => $targ_exp[0]->{field} });
 			}
 			else {
 				#STDERR->print("$this->{owner}->{full}: adding $pa->{name} with multi\n");
 				foreach my $tpa (@targ_exp) {
-					push(@exp_primary, { name => ($pa->getAssocPrefix() || "").$tpa->{name}, attr => $tpa->{attr} });
+					push(@exp_primary, { name => ($pa->getAssocPrefix() || "").$tpa->{name}, field => $tpa->{field} });
 				}
 			}
 		}
 		else {
-			$this->dieContext("invalid attribute stype: $pa->{stype}");
+			$this->dieContext("invalid field stype: $pa->{stype}");
 		}
 	}
 
@@ -1540,6 +1540,13 @@ sub getReturnTypeWithTagger
 	};
 	$this->dieContext("failed to process $this->{owner}->{full}.$this->{name}().returntype", $@) if ($@);
 	return @r;
+}
+
+sub isStatic
+{
+	my $this			= shift;
+
+	return $this->{classify}->{static} // 0;
 }
 
 
