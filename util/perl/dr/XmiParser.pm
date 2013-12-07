@@ -435,6 +435,31 @@ sub readNode
 	return;
 }
 
+sub readElementContent
+{
+	my $this			= shift;
+
+	my $reader			= $this->{reader};
+
+	if (defined $this->{read_pending_end}) {
+		return "";
+	}
+	while (my $err = $reader->read()) {
+		$this->read_doDie("failed to parse XML") if ($err < 0);
+		my $type = $reader->nodeType;
+		next if ($type == XML_READER_TYPE_COMMENT || $type == XML_READER_TYPE_WHITESPACE || $type == XML_READER_TYPE_SIGNIFICANT_WHITESPACE);
+		if ($type == XML_READER_TYPE_TEXT) {
+			return $reader->value();
+		}
+		elsif ($type == XML_READER_TYPE_END_ELEMENT) {
+			$this->{read_pending_end} = $reader->name;
+		}
+		else {
+			$this->read_doDie("expected content");
+		}
+	}
+}
+
 sub read_processDump
 {
 	my $this		= shift;
@@ -590,6 +615,10 @@ sub read_processModel
 	while (defined (my $name = $reader->readNode())) {
 		if ($name eq "packagedElement") {
 			$this->read_processPackagedElement($reader);
+			next;
+		}
+		elsif ($name eq "ownedMember") {
+			$this->read_processOwnedMember($reader);
 			next;
 		}
 		else {
@@ -1170,6 +1199,12 @@ sub read_processOwnedOperationOwnedParameter
 		if ($name eq "type") {
 			$this->read_processOwnedOperationOwnedParameterType($reader);
 		}
+		elsif ($name eq "lowerValue") {
+			$this->read_processOwnedOperationOwnedParameterLowerValue($reader);
+		}
+		elsif ($name eq "upperValue") {
+			$this->read_processOwnedOperationOwnedParameterUpperValue($reader);
+		}
 		else {
 			$this->read_unknownNode($reader);
 		}
@@ -1205,6 +1240,22 @@ sub read_processOwnedOperationOwnedParameterType
 	else {
 		$this->read_doDie("unknown type type: $type_type");
 	}
+
+	$this->read_needNodeEnd($main_reader);
+}
+
+sub read_processOwnedOperationOwnedParameterLowerValue
+{
+	my $this			= shift;
+	my $main_reader			= shift;
+
+	$this->read_needNodeEnd($main_reader);
+}
+
+sub read_processOwnedOperationOwnedParameterUpperValue
+{
+	my $this			= shift;
+	my $main_reader			= shift;
 
 	$this->read_needNodeEnd($main_reader);
 }
@@ -1296,6 +1347,10 @@ sub read_processEnumLiteral
 			$this->read_processEnumLiteralDefault($reader, \$literal->{default});
 			next;
 		}
+		elsif ($name eq "specification") {
+			$this->read_processEnumLiteralSpecification($reader, $literal);
+			next;
+		}
 		else {
 			$this->read_unknownNode($reader);
 		}
@@ -1311,6 +1366,38 @@ sub read_processEnumLiteralDefault
 	my $default		= shift;
 
 	$$default = $main_reader->getMandatoryAttr("value");
+
+	$this->read_needNodeEnd($main_reader);
+}
+
+sub read_processEnumLiteralSpecification
+{
+	my $this			= shift;
+	my $main_reader			= shift;
+	my $literal			= shift;
+
+	my $reader			= $main_reader->getSubLeveler();
+
+	while (defined (my $name = $reader->readNode())) {
+		if ($name eq "body") {
+			$this->read_processEnumLiteralSpecificationBody($reader, $literal);
+			next;
+		}
+		else {
+			$this->read_unknownNode($reader);
+		}
+	}
+}
+
+sub read_processEnumLiteralSpecificationBody
+{
+	my $this			= shift;
+	my $main_reader			= shift;
+	my $literal			= shift;
+
+	my $reader			= $main_reader->getSubLeveler();
+
+	$literal->{default} = $this->readElementContent();
 
 	$this->read_needNodeEnd($main_reader);
 }
@@ -1354,6 +1441,20 @@ sub read_processAssociation
 	my $main_reader		= shift;
 
 	$this->read_skipNode($main_reader);
+}
+
+sub read_processOwnedMember
+{
+	my $this		= shift;
+	my $reader		= shift;
+
+	my $type = $this->read_getMandatoryAttr("xmi:type");
+	if ($type eq "uml:DataType") {
+		$this->read_processDataType($reader);
+	}
+	else {
+		$this->read_doDie("unknown type: $type");
+	}
 }
 
 sub read_processDataType

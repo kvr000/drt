@@ -80,7 +80,7 @@ sub rollback
 
 	foreach my $op (@{$this->{opers}}) {
 		if ($op->{fd}) {
-			close($op->{fd});
+			$op->{fd}->close();
 			undef $op->{fd};
 		}
 		if ($op->{op} eq "rm") {

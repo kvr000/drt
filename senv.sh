@@ -92,6 +92,10 @@ function main
 			DR_OSTYPE=unix
 			;;
 
+		CYGWIN_NT-6.1-WOW64)
+			DR_OSTYPE=unix
+			;;
+
 		*)
 			echo unknown operating system `uname -s` >&2
 		esac
