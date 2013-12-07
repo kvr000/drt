@@ -921,7 +921,7 @@ sub createOutput
 	$mf = FileHandle->new("$dir/Makefile", ">")
 		or die "failed to open $dir/Makefile: $!\n";
 
-	$mgh = FileHandle->new("$dir/Make_gh", ">")
+	$mgh = FileHandle->new("$dir/_Make_gh", ">")
 		or die "failed to open $dir/Makefile_gh: $!\n";
 
 	$mf->printf("BUILD=%s\n", "_build");
@@ -958,7 +958,7 @@ sub createOutput
 	$mf->print("all: targ_all\ndefault: targ_all\nno: nothing\n\n");
 	$mf->print("gmake:\n\t$vars->{genmake} $config->{fnames}".join("", map({ " \"$_\"" } @{$config->{addopt}}))." \$(DIRS)\n\n");
 	$mf->print("include \$(DRTETCDIR_)main.mk\n\n");
-	$mf->print("lgh:\n\t\$(MAKE) -f Make_gh\n\n");
+	$mf->print("lgh:\n\t\$(MAKE) -f _Make_gh\n\n");
 
 	$mgh->printf("BUILD=%s\n", "_build");
 	$mgh->printf("BUILD_=%s\n", "\$(BUILD)/");
@@ -978,7 +978,7 @@ sub createOutput
 	# automatic header generation
 	$mf->print(dr::build::out::MakeCommon::genParallelAction("gh", "lgh", $vars)."\n");
 	if (!$config->{make}->{noautogh}) {
-		$mf->print("include Make_gh\n");
+		$mf->print("include _Make_gh\n");
 		$targ_init .= " gh_gh";
 	}
 
@@ -1208,7 +1208,7 @@ sub createOutput
 		or die "failed to close file $dir/Makefile";
 
 	$mgh->close()
-		or die "failed to close file $dir/Make_gh";
+		or die "failed to close file $dir/_Make_gh";
 }
 
 
@@ -1284,7 +1284,7 @@ sub createOutput
 
 	my $bf = FileHandle->new("$dir/bld.inf", ">") or die "failed to open $dir/bld.inf"; binmode($bf);
 	my $mf = FileHandle->new("$dir/Makefile", ">") or die "failed to open $dir/Makefile"; binmode($mf);
-	my $mgh = FileHandle->new("$dir/Make_gh", ">") or die "failed to open $dir/Make_gh"; binmode($mgh);
+	my $mgh = FileHandle->new("$dir/_Make_gh", ">") or die "failed to open $dir/_Make_gh"; binmode($mgh);
 
 	$mf->printf("NOTHING=\n");
 	$mf->printf("DIRS=%s\n", ($dir =~ m,^(\./)?(.*)$,)[1]);
@@ -1330,7 +1330,7 @@ EOT
 	# automatic header generation
 	$mf->print(dr::build::out::MakeCommon::genParallelAction("gh", "lgh", $vars)."\n");
 	if (!$config->{make}->{noautogh}) {
-		$mf->print("include Make_gh\n");
+		$mf->print("include _Make_gh\n");
 		$targ_init .= " gh_gh";
 	}
 
@@ -1465,7 +1465,7 @@ EOT
 	$mf->close()
 		or die "failed to write Makefile";
 	$mgh->close()
-		or die "failed to close file $dir/Make_gh";
+		or die "failed to close file $dir/_Make_gh";
 }
 
 
@@ -1805,10 +1805,10 @@ sub new
 		generator	=> $generator,
 	}, $class;
 
-	$this->{dist_map} = FileHandle->new("dist_full.map", ">")
-		or die "failed to open dist_full.map: $!";
-	$this->{dist_list} = FileHandle->new("dist_full.list", ">")
-		or die "failed to open dist_full.list: $!";
+	$this->{dist_map} = FileHandle->new("_dist_full.map", ">")
+		or die "failed to open _dist_full.map: $!";
+	$this->{dist_list} = FileHandle->new("_dist_full.list", ">")
+		or die "failed to open _dist_full.list: $!";
 
 	return $this;
 }
