@@ -55,6 +55,7 @@ our $xmi_fname;
 our $dst_dir;
 our $file_trans;
 our %gen_map;
+our $gen_idx = 0;
 
 sub openClassFile($$)
 {
@@ -227,7 +228,7 @@ sub genClass
 	}
 	if (defined (my $genlist = $class->{comment}->{drtag_hash}{gen}->{value})) {
 		foreach my $genid (split(/,\s*/, $genlist)) {
-			$gen_map{$genid."\t".$xmi->getPrefixName($class)."::".$class->{name}} = $genlist;
+			$gen_map{$genid."\t".sprintf("%09d", ++$gen_idx)."\t".$xmi->getPrefixName($class)."::".$class->{name}} = $genlist;
 		}
 	}
 }

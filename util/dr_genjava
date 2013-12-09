@@ -561,6 +561,7 @@ sub generateEntityDaoIf($$$$)
 	$methodCtx->print(tabalign("public $baseclassonly", 32)."updateDynamic(Errors validationErrors, EntityHolder<$baseclassonly> roleObject, ".dr::prog::java::JavaGenerator::getPkTypeName($model)." pk, Map<String, Object> updates);\n");
 	$methodCtx->print(tabalign("public boolean", 32)."deleteDynamic(AppContext roleContext, ".dr::prog::java::JavaGenerator::getPkTypeName($model)." pk);\n");
 	$methodCtx->print(tabalign("public long", 32)."listDynamic(List<EntityHolder<$baseclassonly>> results, EntityHolder<?> composition, Map<String, Object> filter, List<String> sorts, Long start, Long limit);\n");
+	$methodCtx->print("\n");
 
 	#$methodCtx->print("public Collection<EntityHolder<$baseclassonly>> list();\n\n");
 	if ($dao) {

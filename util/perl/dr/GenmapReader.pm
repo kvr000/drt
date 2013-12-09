@@ -174,7 +174,7 @@ sub getNext
 		else {
 			return if ($this->{list_db}->seq($this->{cur_key}, my $val, R_NEXT) != 0);
 		}
-		if ($this->{cur_key} =~ m/^$this->{section}\t((\w+::)*\w+)$/) {
+		if ($this->{cur_key} =~ m/^$this->{section}\t\d+\t((\w+::)*\w+)$/) {
 			my ( $loc, $cls ) = ( dirname($this->{listname}), $1 );
 			return ( $loc, $cls ) if ($this->checkPackage($cls));
 		}
