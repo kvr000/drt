@@ -514,6 +514,28 @@ sub generateOperParamList($)
 	);
 }
 
+sub translateUpdateRet($)
+{
+	my $oper = shift;
+
+	my $retType = dr::prog::java::JavaGenerator::mapJavaType($oper->getReturnTypeWithTagger());
+	my $proc;
+	if ($retType eq "Boolean") {
+		$retType = "boolean";
+		$proc = " != 0";
+	}
+	elsif ($retType eq "Integer") {
+		$retType = "int";
+		$proc = "";
+	}
+	elsif ($retType eq "Long") {
+		$retType = "long";
+		$proc = "";
+	}
+
+	return ( $retType, $proc );
+}
+
 sub generateEntityDaoIf($$$$)
 {
 	my $context			= shift;
@@ -588,8 +610,8 @@ sub generateEntityDaoIf($$$$)
 				$methodCtx->print(tabalign("public $ret_type", 32)."$opname(".generateOperParamList($oper).");\n\n");
 			}
 			elsif ($optype eq "update") {
-				my $ret_type = dr::prog::java::JavaGenerator::mapJavaType($oper->getReturnTypeWithTagger());
-				$methodCtx->print(tabalign("public $ret_type", 32)."$opname(".generateOperParamList($oper).");\n\n");
+				my ( $retType, $proc ) = translateUpdateRet($oper);
+				$methodCtx->print(tabalign("public $retType", 32)."$opname(".generateOperParamList($oper).");\n\n");
 			}
 			elsif ($optype eq "query") {
 				$methodCtx->print(tabalign("public ".dr::prog::java::JavaGenerator::mapJavaType($oper->getReturnTypeWithTagger()), 32)."$opname(".generateOperParamList($oper).");\n\n");
@@ -748,8 +770,8 @@ sub generateEntityDaoHib($$$$)
 				$methodCtx->print("}\n\n");
 			}
 			elsif ($optype eq "update") {
-				my $ret_type = dr::prog::java::JavaGenerator::mapJavaType($oper->getReturnTypeWithTagger());
-				$methodCtx->print(tabalign("public $ret_type", 32)."$opname(".generateOperParamList($oper).")\n{\n");
+				my $retType = dr::prog::java::JavaGenerator::mapJavaType($oper->getReturnTypeWithTagger());
+				$methodCtx->print(tabalign("public $retType", 32)."$opname(".generateOperParamList($oper).")\n{\n");
 				my $sql = $oper->getDrTagValue("sql");
 				my $cond = "";
 				my $list = "";
@@ -963,10 +985,10 @@ sub generateEntityDaoJpa($$$$)
 				$methodCtx->print("}\n\n");
 			}
 			elsif ($optype eq "update") {
-				my $ret_type = dr::prog::java::JavaGenerator::mapJavaType($oper->getReturnTypeWithTagger());
-				$methodCtx->print("\@Override\n".getEjbTransactionParams($oper, 0, "REQUIRED").tabalign("public $ret_type", 32)."$opname(".generateOperParamList($oper).")\n{\n");
+				my ( $retType, $proc ) = translateUpdateRet($oper);
+				$methodCtx->print("\@Override\n".getEjbTransactionParams($oper, 0, "REQUIRED").tabalign("public $retType", 32)."$opname(".generateOperParamList($oper).")\n{\n");
 				my ( $sql, $list ) = replaceJqlParams($oper);
-				$methodCtx->print("\tem.createQuery(\"".escapeString($sql)."\")$list.executeUpdate();\n");
+				$methodCtx->print("\t".(defined $proc ? "return " : "")."em.createQuery(\"".escapeString($sql)."\")$list.executeUpdate()".(defined $proc ? $proc : "").";\n");
 				$methodCtx->print("}\n\n");
 			}
 			elsif ($optype eq "query") {
