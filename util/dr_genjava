@@ -182,6 +182,10 @@ sub generateEntityBeanPart($$$)
 	}
 	$javaOut->printSysimport("import dr.meta.ViewsList;\n");
 	$codeCtx->print("\@ViewsList(views = {\n");
+	if (!@{$model->{view_list}}) {
+		$javaOut->printSysimport("import dr.meta.ViewInfo;\n");
+		$codeCtx->print("\t\@ViewInfo(name = \"Default\"), ");
+	}
 	foreach my $view (@{$model->{view_list}}) {
 		$javaOut->printSysimport("import dr.meta.ViewInfo;\n");
 		$codeCtx->print("\t\@ViewInfo(name = \"$view->{name}\"");
@@ -795,7 +799,24 @@ sub getEjbTransactionParams($$$)
 	#$args .= ", readOnly = ".(convertBool($readOnly) ? "true" : "false") if ($readOnly ne "");
 	#$args .= ", propagation = Propagation.$propagation" if ($propagation);
 	$args .= ", TransactionAttributeType.$propagation" if ($propagation);
-	return $args ? "\@TransactionAttribute(".substr($args, 2).")\n" : "";
+	my $transactionUnit = "\@Transactional(\"".getDataSource($oper->{owner})."\")\n";
+	return ($args ? "\@TransactionAttribute(".substr($args, 2).")\n" : "").
+		$transactionUnit;
+}
+
+sub replaceJqlParams($)
+{
+	my $oper			= shift;
+
+	my $sql = $oper->getDrTagValue("sql");
+	my $list = "";
+	my $i = 0;
+	while ($sql =~ m/^(.*?):((\w+\.)*\w+(\(\))?)(.*?)$/s) {
+		++$i;
+		$sql = "$1?$i$5";
+		$list .= ".setParameter($i, $2)";
+	}
+	return ( $sql, $list );
 }
 
 sub generateEntityDaoJpa($$$$)
@@ -883,20 +904,15 @@ sub generateEntityDaoJpa($$$$)
 				if (0) {
 					$sysimportCtx->printOnce("import dr.core.EntityHolder;\n");
 					$sysimportCtx->printOnce("import java.util.List;\n");
-					$methodCtx->print("\@Override\n".tabalign("\@SuppressWarnings(\"unchecked\")\npublic EntityHolder<$baseclassonly>", 32)." $opname(".generateOperParamList($oper).")\n{\n");
+					$methodCtx->print("\@Override\n".getEjbTransactionParams($oper, 0, "REQUIRED").tabalign("\@SuppressWarnings(\"unchecked\")\npublic EntityHolder<$baseclassonly>", 32)." $opname(".generateOperParamList($oper).")\n{\n");
 					my $contCtx = $methodCtx->indentContext(1);
 					my $sql = "";
-					my $cond = "";
 					my $list = "";
 					if (defined ($sql = $oper->checkDrTagValue("sql"))) {
-						my $i = 0;
-						while ($sql =~ m/^(.*?):(\w+)(.*?)$/s) {
-							++$i;
-							$sql = "$1?$i$3";
-							$list .= ".setParameter($i, $2)";
-						}
+						( $sql, $list ) = replaceJqlParams($oper);
 					}
 					else {
+						my $cond = "";
 						my $i = 0;
 						foreach my $param (@{$oper->{param_list}}) {
 							++$i;
@@ -913,20 +929,16 @@ sub generateEntityDaoJpa($$$$)
 				}
 				else {
 					$sysimportCtx->printOnce("import java.util.List;\n");
-					$methodCtx->print("\@Override\n".tabalign("public $baseclassonly", 32)."$opname(".generateOperParamList($oper).")\n{\n");
+					$methodCtx->print("\@Override\n".getEjbTransactionParams($oper, 0, "REQUIRED").tabalign("public $baseclassonly", 32)."$opname(".generateOperParamList($oper).")\n{\n");
 					my $contCtx = $methodCtx->indentContext(1);
 					my $sql = "";
-					my $cond = "";
 					my $list = "";
 					if (defined ($sql = $oper->checkDrTagValue("sql"))) {
-						my $i = 0;
-						while ($sql =~ m/^(.*?):(\w+)(.*?)$/s) {
-							++$i;
-							$sql = "$1?$i$3";
-							$list .= ".setParameter($i, $2)";
-						}
+						$sql = replaceJqlParams($oper);
+						( $sql, $list ) = replaceJqlParams($oper);
 					}
 					else {
+						my $cond = "";
 						my $i = 0;
 						foreach my $param (@{$oper->{param_list}}) {
 							++$i;
@@ -944,47 +956,23 @@ sub generateEntityDaoJpa($$$$)
 			}
 			elsif ($optype eq "list") {
 				my $ret_type = translateJavaType($sysimportCtx, $model, $oper->getReturnTypeWithTagger());
-				$methodCtx->print("\@Override\n".tabalign("public $ret_type", 32)."$opname(".generateOperParamList($oper).")\n{\n");
-				my $sql = $oper->getDrTagValue("sql");
-				my $cond = "";
-				my $list = "";
-				my $i = 0;
-				while ($sql =~ m/^(.*?):(\w+)(.*?)$/s) {
-					++$i;
-					$sql = "$1?$i$3";
-					$list .= ".setParameter($i, $2)";
-				}
+				$methodCtx->print("\@Override\n".getEjbTransactionParams($oper, 0, "REQUIRED").tabalign("public $ret_type", 32)."$opname(".generateOperParamList($oper).")\n{\n");
+				my ( $sql, $list ) = replaceJqlParams($oper);
 				$methodCtx->print("\t\@SuppressWarnings(\"unchecked\")\n\t$ret_type result = ($ret_type)em.createQuery(\"".escapeString($sql)."\")$list.getResultList();\n");
 				$methodCtx->print("\treturn result;\n");
 				$methodCtx->print("}\n\n");
 			}
 			elsif ($optype eq "update") {
 				my $ret_type = dr::prog::java::JavaGenerator::mapJavaType($oper->getReturnTypeWithTagger());
-				$methodCtx->print("\@Override\n".getEjbTransactionParams($oper, 0, "REQUIRED")."\n".tabalign("public $ret_type", 32)."$opname(".generateOperParamList($oper).")\n{\n");
-				my $sql = $oper->getDrTagValue("sql");
-				my $cond = "";
-				my $list = "";
-				my $i = 0;
-				while ($sql =~ m/^(.*?):((\w+\.)*\w+(\(\))?)(.*?)$/s) {
-					++$i;
-					$sql = "$1?$i$5";
-					$list .= ".setParameter($i, $2)";
-				}
+				$methodCtx->print("\@Override\n".getEjbTransactionParams($oper, 0, "REQUIRED").tabalign("public $ret_type", 32)."$opname(".generateOperParamList($oper).")\n{\n");
+				my ( $sql, $list ) = replaceJqlParams($oper);
 				$methodCtx->print("\tem.createQuery(\"".escapeString($sql)."\")$list.executeUpdate();\n");
 				$methodCtx->print("}\n\n");
 			}
 			elsif ($optype eq "query") {
 				my $ret_type = dr::prog::java::JavaGenerator::mapJavaType($oper->getReturnTypeWithTagger());
-				$methodCtx->print("\@Override\n".tabalign("public $ret_type", 32)."$opname(".generateOperParamList($oper).")\n{\n");
-				my $sql = $oper->getDrTagValue("sql");
-				my $cond = "";
-				my $list = "";
-				my $i = 0;
-				while ($sql =~ m/^(.*?):(\w+(\(\)?))(.*?)$/s) {
-					++$i;
-					$sql = "$1?$i$4";
-					$list .= ".setParameter($i, $2)";
-				}
+				$methodCtx->print("\@Override\n".getEjbTransactionParams($oper, 0, "REQUIRED").tabalign("public $ret_type", 32)."$opname(".generateOperParamList($oper).")\n{\n");
+				my ( $sql, $list ) = replaceJqlParams($oper);
 				$sysimportCtx->printOnce("import java.util.List;\n");
 				$methodCtx->print("\t\@SuppressWarnings(\"rawtypes\")\n\tList result = em.createQuery(\"".escapeString($sql)."\")$list.getResultList();\n");
 				$methodCtx->print("\treturn result.size() == 0 ? null : ($ret_type)result.get(0);\n");
