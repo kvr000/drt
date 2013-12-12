@@ -430,8 +430,11 @@ sub generateEntityBeanPart($$$)
 			eval {
 				my $atext = "name = \"".escapeString($action->{name})."\"";
 				$atext .= ", isStatic = ".dr::prog::java::JavaGenerator::formatBoolean($action->isStatic())."";
-				if (defined (my $form_actioner = $action->checkDrTagValue("form_actioner"))) {
-					$atext .= ", formActioner = \"".escapeString($form_actioner)."\"";
+				if (defined (my $formActioner = $action->checkDrTagValue("formActioner"))) {
+					$atext .= ", formActioner = \"".escapeString($formActioner)."\"";
+				}
+				if (defined (my $formName = $action->checkDrTagValue("formName"))) {
+					$atext .= ", formName = \"".escapeString($formName)."\"";
 				}
 				if (defined (my $guiDef = $action->checkDrTagValue("guiDef"))) {
 					$atext .= ", guiDef = \"".escapeString($guiDef)."\"";
