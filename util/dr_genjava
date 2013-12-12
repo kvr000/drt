@@ -49,7 +49,7 @@ use dr::FileTransaction;
 use dr::FileParser;
 use dr::ModelStore;
 use dr::TagWriter;
-use dr::Util qw(tabalign escapeString textToString escapeStringContent convertBool);
+use dr::Util qw(tabalign escapeString makeLineEnd indentString textToString escapeStringContent convertBool);
 use dr::prog::java::JavaGenerator;
 use dr::prog::java::JavaOutFileContext;
 use dr::prog::java::JavaOutputGenerator;
@@ -331,6 +331,7 @@ sub generateEntityBeanPart($$$)
 				"";
 			my $athis = $primary_level > 0 ? "this.pk" : "this";
 			if ($primary_level > 0) {
+				$addPkFields .= "\"$field->{name}\", ";
 				printFieldDef($context, $javaOut, $pk_fieldCtx, $model, $field, $tagger, $java_type);
 				$pkOrder .= ", \"".escapeString($field->{name})."\"";
 			}
@@ -599,14 +600,12 @@ sub generateEntityDaoIf($$$$)
 			dr::Util::doDie("wrong name for dao operation: $oper->{name}") unless ($oper->{name} =~ m/^dr\.(\w+)\.(\w+)$/);
 			my $optype = $1;
 			my $opname = $2;
-			if ($optype eq "load") {
-				if (0) {
-					$sysimportCtx->printOnce("import dr.core.EntityHolder;\n");
-					$methodCtx->print(tabalign("public EntityHolder<$baseclassonly>", 32)."$opname(".generateOperParamList($oper).");\n\n");
-				}
-				else {
-					$methodCtx->print(tabalign("public $baseclassonly", 32)."$opname(".generateOperParamList($oper).");\n\n");
-				}
+			if ($optype eq "code") {
+				my $ret_type = translateJavaType($sysimportCtx, $model, $oper->getReturnTypeWithTagger());
+				$methodCtx->print(tabalign("public $ret_type", 32)."$opname(".generateOperParamList($oper).");\n\n");
+			}
+			elsif ($optype eq "load") {
+				$methodCtx->print(tabalign("public $baseclassonly", 32)."$opname(".generateOperParamList($oper).");\n\n");
 			}
 			elsif ($optype eq "list") {
 				my $ret_type = translateJavaType($sysimportCtx, $model, $oper->getReturnTypeWithTagger());
@@ -925,59 +924,37 @@ sub generateEntityDaoJpa($$$$)
 			dr::Util::doDie("wrong name for dao operation: $oper->{name}") unless ($oper->{name} =~ m/^dr\.(\w+)\.(\w+)$/);
 			my $optype = $1;
 			my $opname = $2;
-			if ($optype eq "load") {
-				if (0) {
-					$sysimportCtx->printOnce("import dr.core.EntityHolder;\n");
-					$sysimportCtx->printOnce("import java.util.List;\n");
-					$methodCtx->print("\@Override\n".getEjbTransactionParams($oper, 0, "REQUIRED").tabalign("\@SuppressWarnings(\"unchecked\")\npublic EntityHolder<$baseclassonly>", 32)." $opname(".generateOperParamList($oper).")\n{\n");
-					my $contCtx = $methodCtx->indentContext(1);
-					my $sql = "";
-					my $list = "";
-					if (defined ($sql = $oper->checkDrTagValue("sql"))) {
-						( $sql, $list ) = replaceJqlParams($oper);
-					}
-					else {
-						my $cond = "";
-						my $i = 0;
-						foreach my $param (@{$oper->{param_list}}) {
-							++$i;
-							$cond .= " AND $param->{name} = ?$i";
-							$list .= ".setParameter($i, $param->{name})";
-						}
-						$cond = substr($cond, 5);
-						$sql = "FROM $baseclassonly WHERE $cond";
-					}
-					$contCtx->print("List<$baseclassonly> result = em.createQuery(\"".escapeString($sql)."\").$list.getResultList();\n");
-					$contCtx->print("if (result.size() == 0)\n\treturn null;\n");
-					$contCtx->print("return new EntityHolder<$baseclassonly>(result.get(0), null);\n");
-					$methodCtx->print("}\n\n");
+			if ($optype eq "code") {
+				my $ret_type = translateJavaType($sysimportCtx, $model, $oper->getReturnTypeWithTagger());
+				$methodCtx->print("\@Override\n".getEjbTransactionParams($oper, 0, "REQUIRED").tabalign("public $ret_type", 32)."$opname(".generateOperParamList($oper).")\n{\n");
+				$methodCtx->print(indentString(makeLineEnd($oper->getDrTagValue("code")), "\t"));
+				$methodCtx->print("}\n\n");
+			}
+			elsif ($optype eq "load") {
+				$sysimportCtx->printOnce("import java.util.List;\n");
+				$methodCtx->print("\@Override\n".getEjbTransactionParams($oper, 0, "REQUIRED").tabalign("public $baseclassonly", 32)."$opname(".generateOperParamList($oper).")\n{\n");
+				my $contCtx = $methodCtx->indentContext(1);
+				my $sql = "";
+				my $list = "";
+				if (defined ($sql = $oper->checkDrTagValue("sql"))) {
+					$sql = replaceJqlParams($oper);
+					( $sql, $list ) = replaceJqlParams($oper);
 				}
 				else {
-					$sysimportCtx->printOnce("import java.util.List;\n");
-					$methodCtx->print("\@Override\n".getEjbTransactionParams($oper, 0, "REQUIRED").tabalign("public $baseclassonly", 32)."$opname(".generateOperParamList($oper).")\n{\n");
-					my $contCtx = $methodCtx->indentContext(1);
-					my $sql = "";
-					my $list = "";
-					if (defined ($sql = $oper->checkDrTagValue("sql"))) {
-						$sql = replaceJqlParams($oper);
-						( $sql, $list ) = replaceJqlParams($oper);
+					my $cond = "";
+					my $i = 0;
+					foreach my $param (@{$oper->{param_list}}) {
+						++$i;
+						$cond .= " AND $param->{name} = ?$i";
+						$list .= ".setParameter($i, $param->{name})";
 					}
-					else {
-						my $cond = "";
-						my $i = 0;
-						foreach my $param (@{$oper->{param_list}}) {
-							++$i;
-							$cond .= " AND $param->{name} = ?$i";
-							$list .= ".setParameter($i, $param->{name})";
-						}
-						$cond = substr($cond, 5);
-						$sql = "FROM $baseclassonly WHERE $cond";
-					}
-					$contCtx->print("\@SuppressWarnings(\"unchecked\")\nList<$baseclassonly> result = em.createQuery(\"".escapeString($sql)."\")$list.getResultList();\n");
-					$contCtx->print("if (result.size() == 0)\n\treturn null;\n");
-					$contCtx->print("return result.get(0);\n");
-					$methodCtx->print("}\n\n");
+					$cond = substr($cond, 5);
+					$sql = "FROM $baseclassonly WHERE $cond";
 				}
+				$contCtx->print("\@SuppressWarnings(\"unchecked\")\nList<$baseclassonly> result = em.createQuery(\"".escapeString($sql)."\")$list.getResultList();\n");
+				$contCtx->print("if (result.size() == 0)\n\treturn null;\n");
+				$contCtx->print("return result.get(0);\n");
+				$methodCtx->print("}\n\n");
 			}
 			elsif ($optype eq "list") {
 				my $ret_type = translateJavaType($sysimportCtx, $model, $oper->getReturnTypeWithTagger());

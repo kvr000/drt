@@ -88,10 +88,13 @@ sub mapJavaType # javaType-string <- modelType
 		}
 		dr::Util::doDie("cannot map '$primtype'");
 	}
+	elsif (defined (my $javat = $JAVA_UML_TYPES{$primtype})) {
+		return $javat;
+	}
+	elsif ($primtype =~ m/\./) {
+		return $primtype;
+	}
 	else {
-		if (my $javat = $JAVA_UML_TYPES{$primtype}) {
-			return $javat;
-		}
 		dr::Util::doDie("cannot map '$primtype'");
 	}
 }

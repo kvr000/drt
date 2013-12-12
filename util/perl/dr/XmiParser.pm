@@ -309,6 +309,43 @@ sub getElementType
 }
 
 
+package dr::XmiParser::InputTranslator;
+
+use strict;
+use warnings;
+
+use base qw(IO::Handle);
+
+sub new
+{
+	my $ref				= shift;
+	my $class			= ref($ref) || $ref;
+	my $inputFd			= shift;
+
+	my $this = bless {
+		inputFd				=> $inputFd,
+	}, $class;
+
+	return $this;
+}
+
+sub read
+{
+	my $this			= shift;
+
+	my $ret = $this->inputFd(@_);
+	if (defined $ret) {
+		my $buf = \shift;
+		if ($$buf =~ m/^(.*?)([^\t])([\t].*)/) {
+			my ( $p, $f, $c ) = ( $1, $2, $3 );
+			$c =~ s/\t/&09;/g;
+			$$buf = "$p$f$c";
+		}
+	}
+	return $ret;
+}
+
+
 package dr::XmiParser;
 
 use strict;
@@ -338,7 +375,7 @@ sub new
 	if (0) {
 		my $reader = XML::LibXML->new();
 
-		my $doc = $reader->parse_file($fname)
+		my $doc = $reader->parse_fh(dr::XmiParser::InputTranslator->new(FileHandle->new($fname, "<")))
 			or die "failed to parse $fname";
 		print(Dumper($doc));
 	}

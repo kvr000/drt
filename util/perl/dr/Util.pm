@@ -41,7 +41,7 @@ use warnings;
 use Exporter;
 
 our @ISA = qw(Exporter);
-our @EXPORT_OK = qw(doDie dumpSimple defvalue tablength tabalign escapeString textToString unescapeString escapeStringContent convertBool);
+our @EXPORT_OK = qw(doDie dumpSimple defvalue tablength tabalign escapeString makeLineEnd indentString textToString unescapeString escapeStringContent convertBool);
 
 use Scalar::Util qw(isweak reftype);
 
@@ -273,6 +273,25 @@ sub findEndParenthesis($)
 		}
 	}
 	return $p;
+}
+
+sub makeLineEnd($)
+{
+	my $s				= shift;
+
+	$s .= "\n" if ($s ne "" && substr($s, -1, 1) ne "\n");
+
+	return $s;
+}
+
+sub indentString($$)
+{
+	my $s				= shift;
+	my $indent			= shift;
+
+	$s =~ s/^(.)/$indent$1/gm;
+
+	return $s;
 }
 
 sub escapeString($)
