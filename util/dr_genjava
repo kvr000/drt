@@ -206,6 +206,11 @@ sub generateEntityBeanPart($$$)
 		$codeCtx->print("),\n");
 	}
 	$codeCtx->print("})\n");
+
+	if (defined (my $suggestFields = $model->checkDrTagValue("suggestFields"))) {
+		$javaOut->printSysimport("import dr.meta.SuggestDef;\n");
+		$codeCtx->print("\@SuggestDef(fields = { ".join(", ", map({ "\"$_\"" } split(/,\s*/, $suggestFields)))." })\n");
+	}
 	$javaOut->printSysimport("import dr.meta.FieldRoles;\n");
 	$codeCtx->print("\@FieldRoles(".dr::prog::java::JavaGenerator::formatClassRoles($model).")\n");
 	$codeCtx->print("\@Entity\n\@Table(name=\"$classonly\")\npublic class $classonly implements java.io.Serializable\n{\n");
@@ -304,7 +309,7 @@ sub generateEntityBeanPart($$$)
 				my $tmap = "";
 				$tmap .= "\@OneToMany(fetch=FetchType.EAGER, cascade=CascadeType.ALL)\n";
 				$tmap .= "\@JoinColumns({ ".
-				join(", ", map({ "\@JoinColumn(name=\"$_->{name}\")" } $assoc_class->getCompos()->expandAssocAttrs())).
+				join(", ", map({ "\@JoinColumn(name = \"$_->{name}\", referencedColumnName = \"$_->{name}\")" } $assoc_class->getCompos()->expandAssocAttrs())).
 				" })\n";
 				$fieldCtx->print($tmap.tabalign("private Set<$assoc_class->{name}>", 32)."$field->{name};\n\n");
 				$methodCtx->print(tabalign("public Set<$assoc_class->{name}>", 32)."get".ucfirst($field->{name})."()\n{\n\treturn $field->{name};\n}\n\n");

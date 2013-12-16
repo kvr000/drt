@@ -317,9 +317,9 @@ foreach my $model (@models) {
 			printActionOptional($form, $action, "form_view");
 			printActionOptional($form, $action, "actioner");
 			printActionOptional($form, $action, "options");
-			if (defined (my $form_actioner = $action->checkDrTagValue("form_actioner"))) {
-				my $a = $form_actioner eq "_" ? "$model->{full}_$action->{name}" : index($form_actioner, "_") == 0 ? "$model->{full}$form_actioner" : $form_actioner;
-				$form->print(tabalign("\tform_actioner", 24).$a."\n");
+			if (defined (my $formActioner = $action->checkDrTagValue("formActioner"))) {
+				my $a = $formActioner eq "_" ? "$model->{full}_$action->{name}" : index($formActioner, "_") == 0 ? "$model->{full}$formActioner" : $formActioner;
+				$form->print(tabalign("\tformActioner", 24).$a."\n");
 			}
 			1;
 		}
