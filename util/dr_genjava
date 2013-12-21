@@ -147,7 +147,11 @@ sub printFieldDef($$$$$$$)
 	}
 	if (defined (my $display = $tagger->checkTagValue("display"))) {
 		$javaOut->printSysimport("import dr.logical.DisplayUse;\n");
-		$printCtx->print("\@DisplayUse(display = \"".escapeString($display)."\")\n");
+		my $displayAdd = "";
+		if ($field->{stype} eq "assoc") {
+			$displayAdd .= ", refClass = \"".escapeString($field->getAssocTarget())->getFullDotName()."\"";
+		}
+		$printCtx->print("\@DisplayUse(display = \"".escapeString($display)."\"$displayAdd)\n");
 	}
 	$javaOut->printSysimport("import dr.meta.FieldRoles;\n");
 	$printCtx->print("\@FieldRoles(".dr::prog::java::JavaGenerator::formatFieldRoles($model, $field).")\n");
@@ -306,12 +310,13 @@ sub generateEntityBeanPart($$$)
 				$javaOut->printSysimport("import javax.persistence.FetchType;\n");
 				$javaOut->printSysimport("import javax.persistence.CascadeType;\n");
 				$javaOut->printSysimport("import java.util.Set;\n");
+				$javaOut->printSysimport("import java.util.HashSet;\n");
 				my $tmap = "";
 				$tmap .= "\@OneToMany(fetch=FetchType.EAGER, cascade=CascadeType.ALL)\n";
 				$tmap .= "\@JoinColumns({ ".
 				join(", ", map({ "\@JoinColumn(name = \"$_->{name}\", referencedColumnName = \"$_->{name}\")" } $assoc_class->getCompos()->expandAssocAttrs())).
 				" })\n";
-				$fieldCtx->print($tmap.tabalign("private Set<$assoc_class->{name}>", 32)."$field->{name};\n\n");
+				$fieldCtx->print($tmap.tabalign("private Set<$assoc_class->{name}>", 32)."$field->{name} = new HashSet<$assoc_class->{name}>();\n\n");
 				$methodCtx->print(tabalign("public Set<$assoc_class->{name}>", 32)."get".ucfirst($field->{name})."()\n{\n\treturn $field->{name};\n}\n\n");
 				$methodCtx->print(tabalign("public void", 32)."set".ucfirst($field->{name})."(Set<$assoc_class->{name}> $field->{name}_)\n{\n\tthis.$field->{name} = $field->{name}_;\n}\n\n");
 				$fieldOrder .= ", \"".escapeString($field->{name})."\"";
@@ -578,6 +583,7 @@ sub generateEntityDaoIf($$$$)
 
 	$methodCtx->print(tabalign("public $baseclassonly", 32)."loadByPk(".dr::prog::java::JavaGenerator::getPkTypeName($model)." pk);\n");
 	$methodCtx->print(tabalign("public void", 32)."insert($baseclassonly obj);\n");
+	$methodCtx->print(tabalign("public void", 32)."insertTxNew($baseclassonly obj);\n");
 	$methodCtx->print(tabalign("public void", 32)."update($baseclassonly obj);\n");
 	$methodCtx->print(tabalign("public void", 32)."remove($baseclassonly obj);\n");
 	$methodCtx->print(tabalign("public boolean", 32)."removeByPk(".dr::prog::java::JavaGenerator::getPkTypeName($model)." pk);\n");
@@ -681,6 +687,7 @@ sub generateEntityDaoHib($$$$)
 
 	$methodCtx->print("\@Transactional(readOnly = true, propagation = Propagation.REQUIRED)\n".tabalign("public $baseclassonly", 32)."loadByPk(".dr::prog::java::JavaGenerator::getPkTypeName($model)." pk)\n{\n\tthrow new RuntimeException(\"unsupported\"); /*return template.bulkUpdate(\"FROM $baseclassonly WHERE ".dr::prog::java::JavaGenerator::getPkFieldName($model)." = ?\", pk); */\n}\n\n");
 	$methodCtx->print("\@Transactional(readOnly = false, propagation = Propagation.REQUIRED)\n".tabalign("public void", 32)."insert($baseclassonly obj)\n{\n\ttemplate.saveOrUpdate(obj);\n}\n\n");
+	$methodCtx->print("\@Transactional(readOnly = false, propagation = Propagation.REQUIRES_NEW)\n".tabalign("public void", 32)."insertTxNew($baseclassonly obj)\n{\n\ttemplate.saveOrUpdate(obj);\n}\n\n");
 	$methodCtx->print("\@Transactional(readOnly = false, propagation = Propagation.REQUIRED)\n".tabalign("public void", 32)."update($baseclassonly obj)\n{\n\ttemplate.saveOrUpdate(obj);\n}\n\n");
 	$methodCtx->print("\@Transactional(readOnly = false, propagation = Propagation.REQUIRED)\n".tabalign("public void", 32)."remove($baseclassonly obj)\n{\n\ttemplate.delete(obj);\n}\n\n");
 	$methodCtx->print("\@Transactional(readOnly = false, propagation = Propagation.REQUIRED)\n".tabalign("public boolean", 32)."removeByPk(".dr::prog::java::JavaGenerator::getPkTypeName($model)." pk)\n{\n\treturn template.bulkUpdate(\"DELETE FROM $baseclassonly WHERE ".dr::prog::java::JavaGenerator::getPkFieldName($model)." = ?\", pk) != 0;\n}\n\n");
@@ -903,6 +910,7 @@ sub generateEntityDaoJpa($$$$)
 
 	$methodCtx->print("\@Override\n$transactionUnit\@TransactionAttribute(TransactionAttributeType.REQUIRED)\n".tabalign("public $baseclassonly", 32)."loadByPk(".dr::prog::java::JavaGenerator::getPkTypeName($model)." pk)\n{\n\treturn ($baseclassonly)em.find($baseclassonly.class, pk);\n}\n\n");
 	$methodCtx->print("\@Override\n$transactionUnit\@TransactionAttribute(TransactionAttributeType.REQUIRED)\n".tabalign("public void", 32)."insert($baseclassonly obj)\n{\n\tem.persist(obj);\n\tem.flush();\n}\n\n");
+	$methodCtx->print("\@Override\n$transactionUnit\@TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)\n".tabalign("public void", 32)."insertTxNew($baseclassonly obj)\n{\n\tem.persist(obj);\n\tem.flush();\n}\n\n");
 	$methodCtx->print("\@Override\n$transactionUnit\@TransactionAttribute(TransactionAttributeType.REQUIRED)\n".tabalign("public void", 32)."update($baseclassonly obj)\n{\n\tem.merge(obj);\n\tem.flush();\n}\n\n");
 	$methodCtx->print("\@Override\n$transactionUnit\@TransactionAttribute(TransactionAttributeType.REQUIRED)\n".tabalign("public void", 32)."remove($baseclassonly obj)\n{\n\tem.remove(obj);\n\tem.flush();\n}\n\n");
 	$methodCtx->print("\@Override\n$transactionUnit\@TransactionAttribute(TransactionAttributeType.REQUIRED)\n".tabalign("public boolean", 32)."removeByPk(".dr::prog::java::JavaGenerator::getPkTypeName($model)." pk)\n{\n\treturn em.createQuery(\"DELETE FROM $baseclassonly obj WHERE obj.".dr::prog::java::JavaGenerator::getPkFieldName($model)." = ?1\").setParameter(1, pk).executeUpdate() != 0;\n}\n\n");
