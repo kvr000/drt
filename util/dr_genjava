@@ -272,6 +272,7 @@ sub generateEntityBeanPart($$$)
 			my $athis = $primary_level > 0 ? "this.pk" : "this";
 			if ($primary_level > 0) {
 				$addPkFields .= "\"$field->{name}\", ";
+				$pk_fieldCtx->print($tmap);
 				printFieldDef($context, $javaOut, $pk_fieldCtx, $model, $field, $tagger, $java_type);
 				$pkOrder .= ", \"".escapeString($field->{name})."\"";
 			}
@@ -723,7 +724,7 @@ sub generateEntityDaoHib($$$$)
 					my $sql = "";
 					my $cond = "";
 					my $list = "";
-					if (defined ($sql = $oper->checkDrTagValue("sql"))) {
+					if (defined ($sql = $oper->checkDrTagValue("jql"))) {
 						while ($sql =~ m/^(.*?):(\w+)(.*?)$/s) {
 							$sql = "$1?$3";
 							$list .= ", $2";
@@ -749,7 +750,7 @@ sub generateEntityDaoHib($$$$)
 					my $sql = "";
 					my $cond = "";
 					my $list = "";
-					if (defined ($sql = $oper->checkDrTagValue("sql"))) {
+					if (defined ($sql = $oper->checkDrTagValue("jql"))) {
 						while ($sql =~ m/^(.*?):(\w+)(.*?)$/s) {
 							$sql = "$1?$3";
 							$list .= ", $2";
@@ -772,7 +773,7 @@ sub generateEntityDaoHib($$$$)
 			elsif ($optype eq "list") {
 				my $ret_type = translateJavaType($sysimportCtx, $model, $oper->getReturnTypeWithTagger());
 				$methodCtx->print(tabalign("public $ret_type", 32)."$opname(".generateOperParamList($oper).")\n{\n");
-				my $sql = $oper->getDrTagValue("sql");
+				my $sql = $oper->getDrTagValue("jql");
 				my $cond = "";
 				my $list = "";
 				while ($sql =~ m/^(.*?):(\w+)(.*?)$/s) {
@@ -786,7 +787,7 @@ sub generateEntityDaoHib($$$$)
 			elsif ($optype eq "update") {
 				my $retType = dr::prog::java::JavaGenerator::mapJavaType($oper->getReturnTypeWithTagger());
 				$methodCtx->print(tabalign("public $retType", 32)."$opname(".generateOperParamList($oper).")\n{\n");
-				my $sql = $oper->getDrTagValue("sql");
+				my $sql = $oper->getDrTagValue("jql");
 				my $cond = "";
 				my $list = "";
 				while ($sql =~ m/^(.*?):((\w+\.)*\w+(\(\))?)(.*?)$/s) {
@@ -799,7 +800,7 @@ sub generateEntityDaoHib($$$$)
 			elsif ($optype eq "query") {
 				my $ret_type = dr::prog::java::JavaGenerator::mapJavaType($oper->getReturnTypeWithTagger());
 				$methodCtx->print(tabalign("public $ret_type", 32)."$opname(".generateOperParamList($oper).")\n{\n");
-				my $sql = $oper->getDrTagValue("sql");
+				my $sql = $oper->getDrTagValue("jql");
 				my $cond = "";
 				my $list = "";
 				while ($sql =~ m/^(.*?):(\w+(\(\))?)(.*?)$/s) {
@@ -844,7 +845,7 @@ sub replaceJqlParams($)
 {
 	my $oper			= shift;
 
-	my $sql = $oper->getDrTagValue("sql");
+	my $sql = $oper->getDrTagValue("jql");
 	my $list = "";
 	my $i = 0;
 	while ($sql =~ m/^(.*?):((\w+\.)*\w+(\(\))?)(.*?)$/s) {
@@ -949,7 +950,7 @@ sub generateEntityDaoJpa($$$$)
 				my $contCtx = $methodCtx->indentContext(1);
 				my $sql = "";
 				my $list = "";
-				if (defined ($sql = $oper->checkDrTagValue("sql"))) {
+				if (defined ($sql = $oper->checkDrTagValue("jql"))) {
 					$sql = replaceJqlParams($oper);
 					( $sql, $list ) = replaceJqlParams($oper);
 				}
