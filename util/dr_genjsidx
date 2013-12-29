@@ -80,6 +80,8 @@ STDERR->printf("Total size: %d\n", $files_size);
 #STDERR->print(Dumper(\@files));
 #STDERR->print(Dumper(\%unready));
 
+@files = sort({ $a->{file} cmp $b->{file} } @files);
+
 while (@files) {
 	my $found = 0;
 	my %forward;

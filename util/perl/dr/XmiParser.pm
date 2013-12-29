@@ -332,17 +332,18 @@ sub new
 sub read
 {
 	my $this			= shift;
+	my $buf = \shift;
 
-	my $ret = $this->inputFd(@_);
-	if (defined $ret) {
-		my $buf = \shift;
-		if ($$buf =~ m/^(.*?)([^\t])([\t].*)/) {
-			my ( $p, $f, $c ) = ( $1, $2, $3 );
-			$c =~ s/\t/&09;/g;
-			$$buf = "$p$f$c";
-		}
+	if (!defined ($$buf = $this->{inputFd}->getline())) {
+		$$buf = "";
+		return 0;
 	}
-	return $ret;
+	if ($$buf =~ m/^(.*?)([^\t])([\t].*)/) {
+		my ( $p, $f, $c ) = ( $1, $2, $3 );
+		$c =~ s/\t/&#9;/g;
+		$$buf = "$p$f$c";
+	}
+	return length($$buf);
 }
 
 
@@ -380,8 +381,10 @@ sub new
 		print(Dumper($doc));
 	}
 	else {
-		$reader = XML::LibXML::Reader->new(location => $fname)
+		$reader = XML::LibXML::Reader->new(IO => dr::XmiParser::InputTranslator->new(FileHandle->new($fname, "<")))
 			or die "failed to create XML reader for XMI $fname";
+		#$reader = XML::LibXML::Reader->new(location => $fname)
+		#	or die "failed to create XML reader for XMI $fname";
 		#print(Dumper($reader->document()));
 	}
 

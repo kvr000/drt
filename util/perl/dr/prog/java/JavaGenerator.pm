@@ -276,7 +276,7 @@ sub processLine
 			my $translated = mapJavaAttrType($classmodel->getAttr($field));
 			$line = "$start$translated$end";
 		}
-		if ($line =~ m/^((public|private|protected)\s+|)((abstract)\s+|)class\s+(\w+)(\s*<.*>)?\s+extends\s+((\w+\.)*\w+(<(\w+|\?)(\s*,\s*(\w+|\?))*>)?)(\s+.*|)$/) {
+		if ($line =~ m/^((public|private|protected)\s+|)((abstract)\s+|)class\s+(\w+)(\s*<.*>)?\s+extends\s+((\w+\.)*\w+(<([a-zA-Z_0-9.]+|\?)(\s*,\s*(\w+|\?))*>)?)(\s+.*|)$/) {
 			$this->{class_name} = $5;
 			$this->{ancestor_name} = $7;
 			$this->processClassDef($line);
