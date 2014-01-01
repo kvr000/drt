@@ -58,7 +58,7 @@ foreach (@fnames) {
 				last if ($l =~ m/^}/);
 				if ($l =~ m/^\s+_\$require:\s*\[\s*"(.*?)"\s*\],\s*$/) {
 					foreach (split(/",\s*"/, $1)) {
-						push(@{$finfo->{deps}}, $1);
+						push(@{$finfo->{deps}}, $_);
 					}
 				}
 				elsif ($l =~ m/^\t(_st\$)?(\w+):\s*function\s*\((.*)\)\s*$/) {
