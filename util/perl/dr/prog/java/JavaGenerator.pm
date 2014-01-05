@@ -100,6 +100,33 @@ sub mapJavaType # javaType-string <- modelType
 }
 
 # static
+## converts virtual type to java type
+sub mapJavaPlain # javaType-string <- baseModel elementTypeString
+{
+	my $baseModel			= shift;
+	my $typeString			= shift;
+
+	if ($typeString =~ m/^(\w+)\((\d+)\)$/) {
+		if (my $javat = $JAVA_UML_TYPES{$1}) {
+			return $javat;
+		}
+		dr::Util::doDie("cannot map '$typeString'");
+	}
+	elsif (defined (my $javat = $JAVA_UML_TYPES{$typeString})) {
+		return $javat;
+	}
+	elsif ($typeString =~ m/^\./) {
+		return $baseModel->getSubModel($typeString)->getFullDotName();
+	}
+	elsif ($typeString =~ m/\./) {
+		return $typeString;
+	}
+	else {
+		dr::Util::doDie("cannot map '$typeString'");
+	}
+}
+
+# static
 sub mapJavaDatastruct
 {
 	my $type			= shift;	# string
@@ -295,8 +322,8 @@ sub processLine
 		elsif ($line =~ m,^\s+.*\)\s*;\s*(//.*|/\*.*|)$,) {
 			$this->processMethodDef($line);
 		}
-		elsif ($line =~ m/^\s*((public|protected|private)\s+)*([a-zA-Z_.]+(<.*?>|))\s+(\w+)(|\s*=.*);.*$/) {
-			$this->processAttributeDef($line);
+		elsif ($line =~ m/^\s*((public|protected|private)\s+)*([a-zA-Z_.]+(<.*?>|\[\]|)*)\s+(\w+)(|\s*=.*);.*$/) {
+			$this->processFieldDef($line);
 		}
 		else {
 			$this->processRegularLine($line);
@@ -448,15 +475,15 @@ sub processMethodDef
 }
 
 our %ATTR_TAGS = (
-	getset			=> "processAttributeDefGetset",
+	getset			=> "processFieldDefGetset",
 );
 
-sub processAttributeDef
+sub processFieldDef
 {
 	my $this		= shift;
 	my $line		= shift;
 
-	$this->dieContext($this->getContext(), "failed to match field definition: $line") unless ($line =~ m/^\s*((public|protected|private)\s+)*([a-zA-Z_.]+(<.*?>|))\s+(\w+)(|\s*=.*);.*$/);
+	$this->dieContext($this->getContext(), "failed to match field definition: $line") unless ($line =~ m/^\s*((public|protected|private)\s+)*([a-zA-Z_.]+(<.*?>|\[\])*)\s+(\w+)(|\s*=.*);.*$/);
 	my ( $atype, $aname ) = ( $3, $5 );
 
 	foreach my $pending (@{$this->{pending}}) {
@@ -472,7 +499,7 @@ sub processAttributeDef
 	$this->printLine($line);
 }
 
-sub processAttributeDefGetset
+sub processFieldDefGetset
 {
 	my $this		= shift;
 	my $atype		= shift;
