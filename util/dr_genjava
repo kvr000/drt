@@ -213,6 +213,10 @@ sub generateEntityBeanPart($$$)
 		$javaOut->printSysimport("import dr.meta.SuggestDef;\n");
 		$codeCtx->print("\@SuggestDef(fields = { ".join(", ", map({ "\"$_\"" } split(/,\s*/, $suggestFields)))." })\n");
 	}
+	if (defined (my $orderFields = $model->checkDrTagValue("order"))) {
+		$javaOut->printSysimport("import dr.meta.ListOrder;\n");
+		$codeCtx->print("\@ListOrder(order = { ".join(", ", map({ "\"$_\"" } split(/,\s*/, $orderFields)))." })\n");
+	}
 	$javaOut->printSysimport("import dr.meta.FieldRoles;\n");
 	$codeCtx->print("\@FieldRoles(".dr::prog::java::JavaGenerator::formatClassRoles($model).")\n");
 	$codeCtx->print("\@Entity\n\@Table(name=\"$classonly\")\npublic class $classonly implements java.io.Serializable\n{\n");
