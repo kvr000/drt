@@ -186,7 +186,7 @@ sub generateEntityBeanPart($$$)
 	$codeCtx->print("\@ViewsList(views = {\n");
 	if (!@{$model->{view_list}}) {
 		$javaOut->printSysimport("import dr.meta.ViewInfo;\n");
-		$codeCtx->print("\t\@ViewInfo(name = \"Default\"), ");
+		$codeCtx->print("\t\@ViewInfo(name = \"Default\"),\n");
 	}
 	foreach my $view (@{$model->{view_list}}) {
 		$javaOut->printSysimport("import dr.meta.ViewInfo;\n");
