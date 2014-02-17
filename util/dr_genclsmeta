@@ -68,6 +68,14 @@ sub fixModelInfo($)
 	}
 }
 
+sub dotClassname($)
+{
+	my $s			= shift;
+
+	$s =~ s/::/./g;
+	return $s;
+}
+
 our %opts;
 getopts('', \%opts);
 
@@ -167,7 +175,7 @@ my @models = ();
 
 my $errors = 0;
 
-my $list = dr::GenmapReader::open($listname, "metaobj", @ARGV ? \@ARGV : undef);
+my $list = dr::GenmapReader::open($listname, "clsmeta", @ARGV ? \@ARGV : undef);
 while (my ($section, $classname) = $list->getNext()) {
 	eval {
 		push(@models, readModel($section, $classname));
@@ -179,7 +187,7 @@ while (my ($section, $classname) = $list->getNext()) {
 
 foreach my $model (@models) {
 	my $file = $model->{full}; $file =~ s/::/\//g;
-	my $form = $file_trans->updateChanged("$root/$file.metaobj");
+	my $form = $file_trans->updateChanged("$root/$file.clsmeta");
 	eval {
 		$form->print(tabalign("db_table", 16).$model->{db_table}."\n");
 		if (!$model->checkDrTagValue("virtual")) {
@@ -197,7 +205,7 @@ foreach my $model (@models) {
 				$form->print(tabalign("$_", 16).$model->getDrTagValue($_)."\n");
 			}
 		}
-		foreach (qw(order)) {
+		foreach (qw(order suggestFields displayKeys)) {
 			if (defined (my $v = $model->checkDrTagValue($_))) {
 				$form->print(tabalign("$_", 16).$model->getDrTagValue($_)."\n");
 			}
@@ -208,7 +216,7 @@ foreach my $model (@models) {
 	foreach my $view (@{$model->{view_list}}) {
 		eval {
 			$form->print(tabalign("view", 16).$view->{name}."\n");
-			foreach (qw(nocompos suggest supplier renderer addcompos iniclass gui_filter view_fields)) {
+			foreach (qw(nocompos supplier renderer addcompos iniclass gui_filter view_fields)) {
 				if (defined (my $v = $view->checkDrTagValue($_))) {
 					$form->print(tabalign("\t$_", 24).$v."\n")
 				}
@@ -268,7 +276,7 @@ foreach my $model (@models) {
 				die "association references more than one field, not yet supported" if (@tprimary != 1);
 				my ( $type, $tagger ) = $tprimary[0]->{field}->getFinalTypeWithTagger();
 				$tagger->mergeReplacing($field->getDrTagger());
-				$form->print(tabalign("\tref", 24).$field->{ref}."\n");
+				$form->print(tabalign("\tref", 24).dotClassname($field->{ref})."\n");
 				$form->print(tabalign("\ttext", 24).defvalue($tagger->checkTagValue("text"), $field->{name})."\n");
 				$form->print(tabalign("\ttype", 24).translateFormType($field)."\n");
 				$form->print(tabalign("\tref_display", 24).$tagger->getTagValue("ref_display")."\n") if ($tagger->checkTag("ref_display"));
@@ -276,11 +284,11 @@ foreach my $model (@models) {
 				$form->print(tabalign("\tdisplay", 24).$tagger->getTag("display")->{value}."\n");
 			}
 			elsif ($field->{stype} eq "compos") {
-				$form->print(tabalign("\tref", 24).$field->{ref}."\n");
+				$form->print(tabalign("\tref", 24).dotClassname($field->{ref})."\n");
 				$form->print(tabalign("\ttext", 24).defvalue($field->checkDrTagValue("text"), $field->{name})."\n");
 			}
 			elsif ($field->{stype} eq "child") {
-				$form->print(tabalign("\tref", 24).$field->{ref}."\n");
+				$form->print(tabalign("\tref", 24).dotClassname($field->{ref})."\n");
 				$form->print(tabalign("\ttext", 24).defvalue($field->checkDrTagValue("text"), $field->{name})."\n");
 			}
 			else {

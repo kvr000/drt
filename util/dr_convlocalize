@@ -287,7 +287,7 @@ die "usage: $0 localize-file input-files..." unless (@ARGV > 1);
 
 our $db_name = shift @ARGV;
 our %db_cls;
-our $prefix = ($db_name =~ m,^(.*?)([^/]*)$,)[0];
+our $prefix;
 
 our $lang;
 
@@ -302,13 +302,14 @@ if ($ext eq "properties") {
 	$prefix = $1."localize/$lang/";
 }
 else {
-	if ($db_name !~ m,^(.*/|)(\w+)/([^/]*)$,) {
+	if ($db_name !~ m,^(.*/|)(\w+)/([^/]+)/([^/]*)$,) {
 		die "db file not in language directory";
 	}
 	$lang = $2;
+	$prefix = "$1$2/";
 }
 
-mkdir("${prefix}cls");
+mkdir("${prefix}_cls");
 unlink($_) foreach (glob("${prefix}cls/*.cls.*db"));
 unlink($db_name);
 
@@ -357,7 +358,7 @@ eval {
 				if ($parsed[0] =~ m/^([A-Za-z_]+\.)*[A-Za-z_]+$/) {
 					my $name = $parsed[0];
 					#$name =~ s/\./-/g;
-					$db_class = KeyValueDbWriter::open("${prefix}cls/$name.cls.$ext");
+					$db_class = KeyValueDbWriter::open("${prefix}_cls/$name.cls.$ext");
 					$db_cls{$parsed[0]} = $db_class;
 				}
 			}
