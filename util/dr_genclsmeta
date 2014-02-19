@@ -205,7 +205,12 @@ foreach my $model (@models) {
 				$form->print(tabalign("$_", 16).$model->getDrTagValue($_)."\n");
 			}
 		}
-		foreach (qw(order suggestFields displayKeys)) {
+		foreach (qw(order suggestFields refFields displayKeys)) {
+			if (defined (my $v = $model->checkDrTagValue($_))) {
+				$form->print(tabalign("$_", 16).$model->getDrTagValue($_)."\n");
+			}
+		}
+		foreach (qw(oper)) {
 			if (defined (my $v = $model->checkDrTagValue($_))) {
 				$form->print(tabalign("$_", 16).$model->getDrTagValue($_)."\n");
 			}
@@ -233,7 +238,7 @@ foreach my $model (@models) {
 					$form->print(tabalign("\t$_", 24).$v."\n");
 				}
 			}
-			foreach (qw(reqSys req_mode)) {
+			foreach (qw(reqSys reqMode)) {
 				$form->print(tabalign("\t$_", 24).defvalue($field->checkDrTagValue($_), "")."\n");
 			}
 			if (defined (my $reqView = $field->checkDrTagValue("reqView"))) {
@@ -315,7 +320,7 @@ foreach my $model (@models) {
 			$form->print(tabalign("\ttext", 24).defvalue($action->checkDrTagValue("text"), $action->{name})."\n");
 			$form->print(tabalign("\tclassify", 24).join(",", keys %{$action->{classify}})."\n");
 			$form->print(tabalign("\troleAction", 24).$action->getDrTagValue("roleAction")."\n");
-			foreach (qw(reqSys reqView guiDef guiActions nocompos)) {
+			foreach (qw(reqSys reqView reqMode guiDef guiActions nocompos)) {
 				if (defined (my $v = $action->checkDrTagValue($_))) {
 					$form->print(tabalign("\t$_", 24).$v."\n")
 				}
