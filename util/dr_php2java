@@ -1,0 +1,18 @@
+#!/usr/bin/env perl
+
+sub processLine($)
+{
+	my $line			= shift;
+
+	return "" if ($line =~ m/^<\?php/s);
+	return "" if ($line =~ m/^\?>$/s);
+	return "$1//$2" if ($line =~ m/^(\s*)#(.*)$/s);
+
+	return "package ".translateNs($1).";\n" if (m/^namespace (.*);/);
+
+	return $line;
+}
+
+while (<>) {
+	print(processLine($_));
+}

@@ -643,7 +643,7 @@ sub getIndexes
 	if (!defined $this->{index_list}) {
 		$this->{index_list} = [];
 		foreach my $def (sort({ $a->{order} <=> $b->{order} } values %{$this->{drtag}->getSpec("index")})) {
-			$this->dieContext("invalid index format, expected (unique|nonunique) (col0 [asc|desc], col1...): $def->{value}") unless ($def->{value} =~ m/^(\w+)\s*\(\s*((\w+(\s+(asc|desc))?\s*,\s*)*(\w+(\s+(asc|desc))?))\s*\)\s*$/);
+			$this->dieContext("invalid index format, expected (unique|nonunique) (col0 [asc|desc], col1...): $def->{value}") unless ($def->{value} =~ m/^(\w+)\s*\(\s*((\w+(\s+(asc|desc))?\s*,\s*)*(\w+(\s+(asc|desc))?))\s*\)\s*$/i);
 			my $type = $1;
 			my @fields = split(/\s*,\s*/, $2);
 			push(@{$this->{index_list}}, {
