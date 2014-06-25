@@ -1,5 +1,96 @@
 #!/usr/bin/env perl
 
+use strict;
+use warnings;
+
+use Data::Dumper;
+use File::Basename;
+use lib dirname($0)."/perl";
+use dr::Util;
+
+
+sub translateNs($)
+{
+	my $ns				= shift;
+	$ns =~ s/\\/\./g;
+	return $ns;
+}
+
+sub processStringInner($$)
+{
+	my $sep				= shift;
+	my $inner			= shift;
+
+	$inner =~ s/\\(\w)/\\\\$1/g if ($sep eq "'");
+	my $out = "";
+	while ($inner =~ m/^(.*?)\$(\w+)(\[([^[]]*)\])?(.*)$/) {
+		my ( $pre, $var, $element, $post ) = ( $1, $2, $4, $5 );
+		$out .= $pre;
+		$out .= "\"+$var";
+		$out .= ".get".ucfirst($element)."()" if (defined $element);
+		$out .= "+\"";
+		$inner = $post;
+	}
+
+	$out .= $inner;
+	return $out;
+}
+
+sub processString($$)
+{
+	my $sep				= shift;
+	my $rest			= shift;
+
+	my $str;
+
+	for (my $pos = 0;;) {
+		my $bs;
+		my $end;
+		dr::Util::doDie("failed to find end of string: $rest") unless (($end = index($rest, $sep, $pos)) >= 0);
+		( $str, $rest ) = ( substr($rest, 0, $end), substr($rest, $end+1) ), last unless (($bs = index($rest, $sep, $pos)) >= 0 && $bs < $end);
+		$pos = $bs+2;
+	}
+
+	$str = "\"".processStringInner($sep, $str)."\"";
+
+	return ( $str, $rest );
+}
+
+sub processCode($)
+{
+	my $line			= shift;
+
+	$line =~ s/\./+/gs;
+	$line =~ s/->/./gs;
+	$line =~ s/\$//gs;
+	$line =~ s/([^a-z])\\/$1/gs;
+	$line =~ s/\\/./gs;
+	$line =~ s/^(abstract|class|interface)/public $1/gs;
+	$line =~ s/parent::__construct/super/gs;
+	$line =~ s/parent::/super./gs;
+	$line =~ s/parent::/super./gs;
+	$line =~ s/function/public/gs;
+	$line =~ s/::/./gs;
+	$line =~ s/__CLASS__/getClass()/gs;
+	$line =~ s/\s*==\s*(([^0-9 ].*)?)$/.equals()$1/g;
+	$line =~ s/\s*!=\s*([^0-9 ])/.!equals()$1/g;
+
+	my $out = "";
+	while ($line =~ m/^(.*?)(\w+)\[["'](\w+)["']\](\s*=\s*([^=;][^;]*))?(.*)$/s) {
+		$out .= $1;
+
+		$line = $6;
+		if (defined $4) {
+			$out .= "$2.set".ucfirst($3)."($5)";
+		}
+		else {
+			$out .= "$2.get".ucfirst($3)."()";
+		}
+	}
+
+	return $out.$line;
+}
+
 sub processLine($)
 {
 	my $line			= shift;
@@ -10,9 +101,31 @@ sub processLine($)
 
 	return "package ".translateNs($1).";\n" if (m/^namespace (.*);/);
 
-	return $line;
+
+	my $out = "";
+	while ($line =~ m/^([^'"]*)(['"])(.*)$/s) {
+		my ( $code, $sep, $str ) = ( $1, $2, $3 );
+		if ($code =~ m/\[$/ && $str =~ m/^(\w+$sep\][^"']*)(.*)$/s) {
+			$line = $2;
+			$out .= processCode("$code$sep$1");
+		}
+		else {
+			$out .= processCode($code);
+			my ( $proc, $rest ) = processString($2, $3);
+			$out .= $proc;
+			$line = $rest;
+		}
+	}
+	$out .= processCode($line);
+
+	return $out;
 }
 
+my $lineno = 1;
 while (<>) {
-	print(processLine($_));
+	eval {
+		print(processLine($_));
+		1;
+	}
+		or die "failed to process line $lineno: $@\n$_";
 }

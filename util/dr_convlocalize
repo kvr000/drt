@@ -355,7 +355,7 @@ eval {
 			$db_full->write("$parsed[0]^$parsed[1]", $parsed[$col]);
 			my $db_class;
 			if (!defined ($db_class = $db_cls{$parsed[0]}) && !exists $db_cls{$parsed[0]}) {
-				if ($parsed[0] =~ m/^([A-Za-z_]+\.)*[A-Za-z_]+$/) {
+				if ($parsed[0] =~ m/^([A-Za-z_0-9]+\.)*[A-Za-z_0-9]+$/) {
 					my $name = $parsed[0];
 					#$name =~ s/\./-/g;
 					$db_class = KeyValueDbWriter::open("${prefix}_cls/$name.cls.$ext");

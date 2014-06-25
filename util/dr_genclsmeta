@@ -205,7 +205,7 @@ foreach my $model (@models) {
 				$form->print(tabalign("$_", 16).$model->getDrTagValue($_)."\n");
 			}
 		}
-		foreach (qw(order suggestFields refFields displayKeys)) {
+		foreach (qw(roleProcessor order suggestFields refFields displayKeys)) {
 			if (defined (my $v = $model->checkDrTagValue($_))) {
 				$form->print(tabalign("$_", 16).$model->getDrTagValue($_)."\n");
 			}
@@ -263,7 +263,7 @@ foreach my $model (@models) {
 			$form->print(tabalign("\tforce_new", 24).$field->getDrTagValue("force_new")."\n") if ($field->checkDrTagValue("force_new"));
 			if ($field->{stype} eq "field") {
 				my ( $type, $tagger ) = $field->getFinalTypeWithTagger();
-				foreach (qw(db_conversion db_precision do_mandatory align gui_init)) {
+				foreach (qw(db_conversion db_precision doMandatory align guiInit)) {
 					if (defined (my $val = $tagger->checkTagValue($_))) {
 						$form->print(tabalign("\t$_", 24).$val."\n");
 					}
@@ -337,6 +337,13 @@ foreach my $model (@models) {
 			1;
 		}
 			or STDERR->print("failed to process $model->{full}.$action->{name}:\n$@"), $errors++;
+	}
+	foreach my $filter (sort({ $a->{order} <=> $b->{order} } values %{$model->getDrSpecs("filter")})) {
+		eval {
+			$form->print(tabalign("filter", 16).$filter->{spec}."\n");
+			$form->print(tabalign("\tcontent", 24).$filter->{value}."\n");
+		}
+			or STDERR->print("failed to process $model->{full}.$filter->{name}:\n$@"), $errors++;
 	}
 	foreach my $accfilter (sort({ $a->{order} <=> $b->{order} } values %{$model->getDrSpecs("accfilter")})) {
 		eval {

@@ -73,7 +73,6 @@ getopts('', \%opts);
 die "Usage: $0 [-i] list_file target_file" unless (@ARGV >= 2);
 my $listname = shift(@ARGV);
 my $targname = shift(@ARGV);
-my %datasources = map({ ( $_ => 1 ) } @ARGV);
 die "passed file does not end with suffix .list" unless ($listname =~ m/(.*)\.(db|list)$/);
 
 our $file_trans = dr::FileTransaction->new();
@@ -184,8 +183,8 @@ sub translateSqlTypeDecl($$)
 	my $has_default = 0;
 
 	my $sql_type = translateSqlType($field);
-	if (defined (my $do_mandatory = $main->checkDrTagValue("do_mandatory"))) {
-		$sql_type .= " NOT NULL default $do_mandatory";
+	if (defined (my $doMandatory = $main->checkDrTagValue("doMandatory"))) {
+		$sql_type .= " NOT NULL default $doMandatory";
 		$has_default = 1;
 	}
 	elsif ($main->{mandatory} eq 0) {
@@ -217,7 +216,7 @@ my @models = ();
 
 my $errors = 0;
 
-my $list = dr::GenmapReader::open($listname, "sql");
+my $list = dr::GenmapReader::open($listname, "sql", @ARGV ? \@ARGV : undef);
 while (my ($section, $classname) = $list->getNext()) {
 	eval {
 		push(@models, readModel($section, $classname));
@@ -228,7 +227,6 @@ while (my ($section, $classname) = $list->getNext()) {
 
 my $sql = $file_trans->createTruncated($targname);
 foreach my $model (@models) {
-	next if (%datasources && !$datasources{$model->checkDrTagHierarchicalValue("datasource")});
 	my @primary;
 	$sql->print("create table $model->{db_table} (\n");
 	my $sqlin = dr::SepOutput->new($sql, { sep_in => ",", sep_all => "\n" });

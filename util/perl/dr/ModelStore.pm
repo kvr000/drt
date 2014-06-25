@@ -643,7 +643,7 @@ sub getIndexes
 	if (!defined $this->{index_list}) {
 		$this->{index_list} = [];
 		foreach my $def (sort({ $a->{order} <=> $b->{order} } values %{$this->{drtag}->getSpec("index")})) {
-			$this->dieContext("invalid index format, expected (unique|nonunique) (col0 [asc|desc], col1...): $def->{value}") unless ($def->{value} =~ m/^(\w+)\s*\(\s*((\w+(\s+(asc|desc))?\s*,\s*)*(\w+(\s+(asc|desc))?))\s*\)\s*$/i);
+			$this->dieContext("invalid index format, expected (unique|nonunique) (col0 [ASC|DESC], col1...): $def->{value}") unless ($def->{value} =~ m/^(\w+)\s*\(\s*((\w+(\s+(ASC|DESC))?\s*,\s*)*(\w+(\s+(ASC|DESC))?))\s*\)\s*$/);
 			my $type = $1;
 			my @fields = split(/\s*,\s*/, $2);
 			push(@{$this->{index_list}}, {
@@ -753,7 +753,9 @@ sub readClassAction
 	my $action = dr::ModelStore::Action->new($this, { stype => "action", name => $val });
 	$action->load($base->getSubLeveler());
 
-	push(@{$this->{action_list}}, $action);
+	if (!$action->checkDrTagValue("disabled")) {
+		push(@{$this->{action_list}}, $action);
+	}
 }
 
 sub readClassView
