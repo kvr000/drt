@@ -160,7 +160,7 @@ sub getPkTypeName
 	my $usePk = @primary > 1 || defined $clsmodel->checkCompos();
 
 	if ($usePk) {
-		return $clsmodel->{name}.".Pk";
+		return $clsmodel->getFullDotName().".Pk";
 	}
 	else {
 		my $field = $primary[0];
