@@ -34,6 +34,7 @@ our %JAVA_UML_TYPES = (
 	string				=> "String",
 	String				=> "String",
 	binary				=> "byte[]",
+	blob				=> "byte[]",
 	int				=> "Integer",
 	Integer				=> "Integer",
 	long				=> "Long",

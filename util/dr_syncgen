@@ -48,11 +48,11 @@ use File::Path;
 use lib dirname($0)."/perl";
 use dr::Util;
 
-sub removeFirstChar($)
+sub origToGen($)
 {
 	my $s				= shift;
 
-	return substr($s, 1);
+	return "_".$s;
 }
 
 sub runSys
@@ -100,7 +100,7 @@ sub runBackup
 		--$lastBackup;
 	}
 	mkpath("_tmp/$origSrc/0");
-	runSys(0, ".", undef, undef, "cp", "--reflink=auto", "-Ra", removeFirstChar($origSrc)."/.", "_tmp/$origSrc/0/.");
+	runSys(0, ".", undef, undef, "cp", "--reflink=auto", "-Ra", origToGen($origSrc)."/.", "_tmp/$origSrc/0/.");
 }
 
 
@@ -130,14 +130,14 @@ our $origLen = split(/\//, $origSrc);
 
 mkpath("_tmp");
 if ($opts{d}) {
-	runSys(1, ".", undef, undef, "diff", "-urN", "--exclude=*.sw?", "_tmp/$origSrc/0/", removeFirstChar($origSrc));
+	runSys(1, ".", undef, undef, "diff", "-urN", "--exclude=*.sw?", "_tmp/$origSrc/0/", origToGen($origSrc));
 }
 elsif ($opts{p}) {
 	runSys(0, "$origSrc", undef, undef, "patch", "-p$origLen");
 }
 elsif ($opts{s}) {
 	dr::Util::doDie("_tmp/b-$origSrc/0 does not exist, did you forgot to run -b first?") unless (-d "_tmp/$origSrc/0");
-	runSys(1, ".", undef, FileHandle->new("_tmp/$origSrc.diff", ">"), "diff", "--exclude=*.sw?", "-urN", "_tmp/$origSrc/0/", removeFirstChar($origSrc));
+	runSys(1, ".", undef, FileHandle->new("_tmp/$origSrc.diff", ">"), "diff", "--exclude=*.sw?", "-urN", "_tmp/$origSrc/0/", origToGen($origSrc));
 	runSys(0, "$origSrc", FileHandle->new("_tmp/$origSrc.diff", "<"), undef, "patch", "-p$origLen");
 	runBackup($origSrc);
 }

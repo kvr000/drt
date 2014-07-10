@@ -1,0 +1,13 @@
+config	a.x86
+config	s.posix
+config	s.posix_th
+config	s.posix_vm
+config	os.unix
+config	link.reverse
+
+define	_FILE_OFFSET_BITS=64
+define	DR_OS_UNIX
+undef	DR_HAS_POSIX
+undef	DR_NO_BACKTRACE
+define	DR_HAS_THREAD_LOCAL
+define	DR_RO_VTABLE

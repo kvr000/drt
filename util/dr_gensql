@@ -111,6 +111,10 @@ our %SQL_UML_TYPES_VAR = (
 	binary			=> "varbinary",
 );
 
+our %SQL_UML_TYPES_LOB = (
+	blob			=> "longblob",
+);
+
 sub dieAttrContext($$)
 {
 	my $field		= shift;
@@ -138,6 +142,9 @@ sub translateSqlType($)
 					if (my $sqlt = $SQL_UML_TYPES_VAR{$1}) {
 						return "$sqlt($2)";
 					}
+					if (my $sqlt = $SQL_UML_TYPES_LOB{$1}) {
+						return "$sqlt";
+					}
 					die "cannot map $db_type";
 				}
 				else {
@@ -154,6 +161,9 @@ sub translateSqlType($)
 				if ($ptype =~ m/^(\w+)\((\d+)\)$/) {
 					if (my $sqlt = $SQL_UML_TYPES_VAR{$1}) {
 						return "$sqlt($2)";
+					}
+					if (my $sqlt = $SQL_UML_TYPES_LOB{$1}) {
+						return "$sqlt";
 					}
 					die "cannot map $ptype";
 				}
