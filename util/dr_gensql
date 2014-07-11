@@ -35,6 +35,8 @@
 ## @license	http://www.gnu.org/licenses/lgpl.txt GNU Lesser General Public License v3
 ###
 
+package main;
+
 use strict;
 use warnings;
 
@@ -49,6 +51,330 @@ use dr::SepOutput;
 use dr::ModelStore;
 use dr::GenmapReader;
 use dr::Util qw(defvalue tabalign);
+
+package dr::gensql::adaptor::Adaptor;
+
+use strict;
+use warnings;
+
+use dr::Util qw(defvalue tabalign);
+
+our %SQL_UML_TYPES_PRIM = (
+	Boolean				=> "boolean",
+	Integer				=> "int",
+	Long				=> "bigint",
+	long				=> "bigint",
+	int				=> "int",
+	float				=> "float",
+	Integer				=> "int",
+	date				=> "date",
+	datetime			=> "datetime",
+	timestamp			=> "timestamp",
+);
+
+our %SQL_UML_TYPES_VAR = (
+	string				=> "varchar",
+	binary				=> "varbinary",
+);
+
+our %SQL_UML_TYPES_LOB = (
+	blob				=> "longblob",
+);
+
+sub new
+{
+	my $class = shift; $class = ref($class) || $class;
+	my $out				= shift;
+
+	die "out not specified" unless (defined $out);
+
+	my $this = bless {
+		out				=> $out,
+	}, $class;
+
+	return $this;
+}
+
+sub dieAttrContext($$)
+{
+	my $this			= shift;
+	my $field			= shift;
+	my $msg				= shift;
+
+	dr::Util::doDie("$field->{owner}->{filename}:0: $field->{owner}->{full}.$field->{name}: $msg");
+}
+
+sub startCreateTable
+{
+	my $this			= shift;
+	my $model			= shift;
+
+	return "CREATE TABLE $model->{db_table} (\n";
+}
+
+sub endCreateTable
+{
+	my $this			= shift;
+	my $model			= shift;
+
+	return ");\n";
+}
+
+sub formatIndex
+{
+	my $this			= shift;
+	my $model			= shift;
+	my $index			= shift;
+
+	if (defined (my $type = $this->supportsIndex($index->{type}))) {
+		$this->{out}->print("CREATE ${type}INDEX $model->{name}_$index->{name} ON $model->{name} (\n");
+		my $sqlind = dr::SepOutput->new($this->{out}, { sep_in => ", ", sep_all => "\n" });
+		$sqlind->printObj("\t".$_) foreach (@{$index->{fields}});
+		undef $sqlind;
+		$this->{out}->print(");\n");
+	}
+}
+
+sub retranslateSqlType
+{
+	my $this			= shift;
+	my $sqlType			= shift;
+	my $sqlBase			= shift;
+	my $umlType			= shift;
+	my $umlBase			= shift;
+	my $typeSize			= shift;
+
+	return $sqlType;
+}
+
+sub translateSqlType
+{
+	my $this			= shift;
+	my $field			= shift;
+
+	eval {
+		my ( $type, $tagger ) = $field->getFinalTypeWithTagger();
+
+		if (defined (my $db_type = defvalue($tagger->checkTagValue("db_type"), $tagger->checkTagValue("db_conversion")))) {
+			if (($db_type eq "enum" || $db_type eq "set") && $type->{stype} eq "enum") {
+				return "int";
+				return "$db_type(".join(", ", map({
+							$_->getDrTagger()->getTag("db_value")->{value}
+						} @{$type->{literal_list}})).")";
+			}
+			else {
+				if ($db_type =~ m/^(\w+)\((\d+)\)$/) {
+					if (my $sqlt = $SQL_UML_TYPES_VAR{$1}) {
+						return $this->retranslateSqlType("$sqlt($2)", $sqlt, $db_type, $1, $2);
+					}
+					if (my $sqlt = $SQL_UML_TYPES_LOB{$1}) {
+						return $this->retranslateSqlType($sqlt, $sqlt, $db_type, $1, $2);
+					}
+					die "cannot map $db_type";
+				}
+				else {
+					if (my $sqlt = $SQL_UML_TYPES_PRIM{$db_type}) {
+						return $this->retranslateSqlType($sqlt, $sqlt, $db_type, $db_type, undef);
+					}
+					die "cannot map $db_type";
+				}
+			}
+		}
+		else {
+			if ($type->{stype} eq "primitive") {
+				my $ptype = $type->{type};
+				if ($ptype =~ m/^(\w+)\((\d+)\)$/) {
+					if (my $sqlt = $SQL_UML_TYPES_VAR{$1}) {
+						return $this->retranslateSqlType("$sqlt($2)", $sqlt, $ptype, $1, $2);
+					}
+					if (my $sqlt = $SQL_UML_TYPES_LOB{$1}) {
+						return $this->retranslateSqlType($sqlt, $sqlt, $ptype, $1, $2);
+					}
+					die "cannot map $ptype";
+				}
+				else {
+					if (my $sqlt = $SQL_UML_TYPES_PRIM{$ptype}) {
+						return $this->retranslateSqlType($sqlt, $sqlt, $ptype, $ptype, undef);
+					}
+					die "cannot map $ptype";
+				}
+			}
+			elsif ($type->{stype} eq "enum") {
+				return "int";
+			}
+			else {
+				die "unknown stype $type->{stype} for class $type->{full}";
+			}
+		}
+	}
+		or $this->dieAttrContext($field, $@);
+}
+
+sub translateSqlTypeDecl($$)
+{
+	my $this			= shift;
+	my $main			= shift;
+	my $field			= shift;
+
+	my $nullable;
+	my $defaultValue;
+
+	my $sql_type = $this->translateSqlType($field);
+	if (defined (my $doMandatory = $main->checkDrTagValue("doMandatory"))) {
+		$nullable = 0;
+		$defaultValue = $doMandatory;
+	}
+	elsif ($main->{mandatory} eq 0) {
+		$nullable = 1;
+	}
+	elsif ($main->{mandatory} eq 1) {
+		$nullable = 0;
+	}
+	else {
+		$this->dieAttrContext($main, "unexpected mandatory: $main->{mandatory}");
+	}
+	if ($main->checkDrTagValue("serial")) {
+		$sql_type = $this->addSerial($sql_type);
+	}
+	if (!defined $defaultValue) {
+		if (defined (my $db_default = $main->checkDrTagValue("db_default")) && 0) {
+			$defaultValue = $db_default;
+		}
+		elsif (defined (my $default = $main->{default})) {
+			$defaultValue = $default;
+		}
+	}
+	if (defined $defaultValue) {
+		$defaultValue = $this->translateValue($defaultValue);
+	}
+	return $this->formatColumnDef($field, $sql_type, $nullable, $defaultValue);
+}
+
+sub formatColumnDef
+{
+	my $this			= shift;
+	my $field			= shift;
+	my $sqlType			= shift;
+	my $nullable			= shift;
+	my $defaultValue		= shift;
+
+	return $sqlType." ".($nullable ? "NULL" : "NOT NULL").(defined $defaultValue ? " DEFAULT ".$defaultValue : "");
+}
+
+sub addSerial($$)
+{
+	my $this			= shift;
+	my $def				= shift;
+
+	return $def." AUTO_INCREMENT";
+}
+
+sub needExplicitPkOnSerial
+{
+	my $this			= shift;
+	my $hasSerial			= shift;
+
+	return 1;
+}
+
+sub supportsIndex
+{
+	my $this			= shift;
+	my $type			= shift;
+
+	return $type eq "nonunique" ? "" : $type eq "unique " ? "UNIQUE " : $type." ";
+}
+
+sub translateValue
+{
+	my $this			= shift;
+	my $value			= shift;
+
+	if ($value =~ m/^"(.*)"$/) {
+		$value = $1;
+		$value =~ s/\\(.)/$1/gs;
+		$value =~ s/'/''/gs;
+		$value = "'".$value."'";
+	}
+	return $value;
+}
+
+
+package dr::gensql::adaptor::mysql::Adaptor_mysql;
+
+use strict;
+use warnings;
+
+use base qw(dr::gensql::adaptor::Adaptor);
+
+use dr::Util qw(defvalue tabalign);
+
+sub endCreateTable
+{
+	my $this			= shift;
+	my $model			= shift;
+
+	return ") default charset=utf8;\n";
+}
+
+
+package dr::gensql::adaptor::hsql::Adaptor_hsql;
+
+use strict;
+use warnings;
+
+use base qw(dr::gensql::adaptor::Adaptor);
+
+use dr::Util qw(defvalue tabalign);
+
+our %SQL_RETRANSLATE_SIZED = (
+	longblob			=> "longvarbinary",
+);
+
+sub retranslateSqlType
+{
+	my $this			= shift;
+	my $sqlType			= shift;
+	my $sqlBase			= shift;
+	my $umlType			= shift;
+	my $umlBase			= shift;
+	my $typeSize			= shift;
+
+	return exists $SQL_RETRANSLATE_SIZED{$sqlBase} ? $SQL_RETRANSLATE_SIZED{$sqlBase}."(".$typeSize.")" : $sqlType;
+}
+
+sub addSerial($$)
+{
+	my $this			= shift;
+	my $def				= shift;
+
+	return $def." IDENTITY";
+}
+
+sub formatColumnDef
+{
+	my $this			= shift;
+	my $field			= shift;
+	my $sqlType			= shift;
+	my $nullable			= shift;
+	my $defaultValue		= shift;
+
+	return $sqlType." ".(defined $defaultValue ? " DEFAULT ".$defaultValue : "")." ".($nullable ? "NULL" : "NOT NULL");
+}
+
+sub needExplicitPkOnSerial
+{
+	my $this			= shift;
+	my $hasSerial			= shift;
+
+	return 0;
+}
+
+
+package main;
+
+use strict;
+use warnings;
 
 
 sub fixModelInfo($)
@@ -68,12 +394,14 @@ sub fixModelInfo($)
 }
 
 our %opts;
-getopts('', \%opts);
+getopts('ia:', \%opts);
 
-die "Usage: $0 [-i] list_file target_file" unless (@ARGV >= 2);
+$SIG{__DIE__} = $SIG{__WARN__} = sub { dr::Util::doDie($_[0]); };
+
+die "Usage: $0 -a adaptor [-i] list_file target_file" unless (@ARGV >= 2);
 my $listname = shift(@ARGV);
 my $targname = shift(@ARGV);
-die "passed file does not end with suffix .list" unless ($listname =~ m/(.*)\.(db|list)$/);
+die "passed file $listname does not end with suffix .list" unless ($listname =~ m/(.*)\.(db|list)$/);
 
 our $file_trans = dr::FileTransaction->new();
 
@@ -93,133 +421,6 @@ sub readModel($$)
 	return $model;
 }
 
-our %SQL_UML_TYPES_PRIM = (
-	Boolean			=> "bool",
-	Integer			=> "int",
-	Long			=> "bigint",
-	long			=> "bigint",
-	int			=> "int",
-	float			=> "float",
-	Integer			=> "int",
-	date			=> "date",
-	datetime		=> "datetime",
-	timestamp		=> "timestamp",
-);
-
-our %SQL_UML_TYPES_VAR = (
-	string			=> "varchar",
-	binary			=> "varbinary",
-);
-
-our %SQL_UML_TYPES_LOB = (
-	blob			=> "longblob",
-);
-
-sub dieAttrContext($$)
-{
-	my $field		= shift;
-	my $msg			= shift;
-
-	dr::Util::doDie("$field->{owner}->{filename}:0: $field->{owner}->{full}.$field->{name}: $msg");
-}
-
-sub translateSqlType($)
-{
-	my $field		= shift;
-
-	eval {
-		my ( $type, $tagger ) = $field->getFinalTypeWithTagger();
-
-		if (defined (my $db_type = defvalue($tagger->checkTagValue("db_type"), $tagger->checkTagValue("db_conversion")))) {
-			if (($db_type eq "enum" || $db_type eq "set") && $type->{stype} eq "enum") {
-				return "int";
-				return "$db_type(".join(", ", map({
-							$_->getDrTagger()->getTag("db_value")->{value}
-						} @{$type->{literal_list}})).")";
-			}
-			else {
-				if ($db_type =~ m/^(\w+)\((\d+)\)$/) {
-					if (my $sqlt = $SQL_UML_TYPES_VAR{$1}) {
-						return "$sqlt($2)";
-					}
-					if (my $sqlt = $SQL_UML_TYPES_LOB{$1}) {
-						return "$sqlt";
-					}
-					die "cannot map $db_type";
-				}
-				else {
-					if (my $sqlt = $SQL_UML_TYPES_PRIM{$db_type}) {
-						return $sqlt;
-					}
-					die "cannot map $db_type";
-				}
-			}
-		}
-		else {
-			if ($type->{stype} eq "primitive") {
-				my $ptype = $type->{type};
-				if ($ptype =~ m/^(\w+)\((\d+)\)$/) {
-					if (my $sqlt = $SQL_UML_TYPES_VAR{$1}) {
-						return "$sqlt($2)";
-					}
-					if (my $sqlt = $SQL_UML_TYPES_LOB{$1}) {
-						return "$sqlt";
-					}
-					die "cannot map $ptype";
-				}
-				else {
-					if (my $sqlt = $SQL_UML_TYPES_PRIM{$ptype}) {
-						return $sqlt;
-					}
-					die "cannot map $ptype";
-				}
-			}
-			elsif ($type->{stype} eq "enum") {
-				return "int";
-			}
-			else {
-				die "unknown stype $type->{stype} for class $type->{full}";
-			}
-		}
-	}
-		or dieAttrContext($field, $@);
-}
-
-sub translateSqlTypeDecl($$)
-{
-	my $main		= shift;
-	my $field		= shift;
-
-	my $has_default = 0;
-
-	my $sql_type = translateSqlType($field);
-	if (defined (my $doMandatory = $main->checkDrTagValue("doMandatory"))) {
-		$sql_type .= " NOT NULL default $doMandatory";
-		$has_default = 1;
-	}
-	elsif ($main->{mandatory} eq 0) {
-		$sql_type .= " NULL";
-	}
-	elsif ($main->{mandatory} eq 1) {
-		$sql_type .= " NOT NULL";
-	}
-	else {
-		dieAttrContext($main, "unexpected mandatory: $main->{mandatory}");
-	}
-	if ($main->checkDrTagValue("serial")) {
-		$sql_type .= " AUTO_INCREMENT";
-	}
-	if (!$has_default) {
-		if (defined (my $db_default = $main->checkDrTagValue("db_default")) && 0) {
-			$sql_type .= " default $db_default";
-		}
-		elsif (defined (my $default = $main->{default})) {
-			$sql_type .= " default $default";
-		}
-	}
-	return $sql_type;
-}
-
 my $lineno = 0;
 
 my @models = ();
@@ -236,25 +437,28 @@ while (my ($section, $classname) = $list->getNext()) {
 }
 
 my $sql = $file_trans->createTruncated($targname);
+my $adaptor = ("dr::gensql::adaptor::".$opts{a}."::Adaptor_".$opts{a})->new($sql);
 foreach my $model (@models) {
+	my $hasSerial = undef;
 	my @primary;
-	$sql->print("create table $model->{db_table} (\n");
+	$sql->print($adaptor->startCreateTable($model));
 	my $sqlin = dr::SepOutput->new($sql, { sep_in => ",", sep_all => "\n" });
 	foreach my $field (@{$model->{field_list}}) {
 		eval {
 			if ($field->{stype} eq "field") {
 				$sqlin->printObj("\t".defvalue($field->checkDrTagValue("db_name"), $field->{name}));
-				$sqlin->printAligned(translateSqlTypeDecl($field, $field), 40);
+				$sqlin->printAligned($adaptor->translateSqlTypeDecl($field, $field), 40);
 				if ($field->getRole()->{primary}) {
 					push(@primary, $field->{name});
 				}
+				$hasSerial = $field->getDrTagValue("serial") if (defined $field->checkDrTagValue("serial"));
 			}
 			elsif ($field->{stype} eq "assoc" || $field->{stype} eq "compos") {
 				my @assoc = $field->expandAssocAttrs();
 				foreach my $assoc_field (@assoc) {
 					push(@primary, $assoc_field->{name}) if ($field->getRole()->{primary});
 					$sqlin->printObj("\t$assoc_field->{name}");
-					$sqlin->printAligned(translateSqlTypeDecl($field, $assoc_field->{field}), 40);
+					$sqlin->printAligned($adaptor->translateSqlTypeDecl($field, $assoc_field->{field}), 40);
 					$sqlin->printAlignedAdd("-- $assoc_field->{field}->{owner}->{full}.$assoc_field->{field}->{name}", 72);
 				}
 			}
@@ -268,7 +472,7 @@ foreach my $model (@models) {
 		}
 			or $errors++, STDERR->print($@);
 	}
-	if (@primary) {
+	if (@primary && (!defined $hasSerial || $adaptor->needExplicitPkOnSerial($hasSerial))) {
 		$sqlin->printFlushing("\tprimary key (");
 		my $sqlprim = dr::SepOutput->new($sql, { sep_in => ", ", sep_all => "" });
 		foreach (@primary) {
@@ -277,16 +481,14 @@ foreach my $model (@models) {
 		undef $sqlprim;
 		$sqlin->print(")");
 	}
-	foreach my $index ($model->getIndexes()) {
-		my $type = $index->{type} eq "nonunique" ? "" : "$index->{type} ";
-		$sqlin->printFlushing("\t${type}index $index->{name} (");
-		my $sqlind = dr::SepOutput->new($sql, { sep_in => ", ", sep_all => "" });
-		$sqlind->printObj($_) foreach (@{$index->{fields}});
-		undef $sqlind;
-		$sqlin->print(")");
-	}
 	undef $sqlin;
-	$sql->print(") default charset=utf8;\n\n");
+	$sql->print($adaptor->endCreateTable($model));
+
+	foreach my $index ($model->getIndexes()) {
+		$adaptor->formatIndex($model, $index);
+	}
+
+	$sql->print("\n");
 }
 
 die "Unrecoverable errors occurred" if ($errors);
