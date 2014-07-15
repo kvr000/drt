@@ -393,6 +393,9 @@ sub fixModelInfo($)
 	}
 }
 
+
+dr::Util::installDrEnv();
+
 our %opts;
 getopts('ia:', \%opts);
 

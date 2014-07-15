@@ -2189,6 +2189,9 @@ sub generateDir
 	}
 }
 
+
+dr::Util::installDrEnv();
+
 my $sdir;
 my $config;
 if (@ARGV < 2) {

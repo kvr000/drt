@@ -30,6 +30,9 @@ sub find_checkName
 	push(@fnames, $File::Find::name) if (m/.*\.js$/);
 }
 
+
+dr::Util::installDrEnv();
+
 die "Usage: $0 index-file directories" unless (@ARGV >= 1);
 
 our $file_trans = dr::FileTransaction->new();
