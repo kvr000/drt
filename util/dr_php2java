@@ -121,6 +121,9 @@ sub processLine($)
 	return $out;
 }
 
+
+dr::Util::installDrEnv();
+
 my $lineno = 1;
 while (<>) {
 	eval {

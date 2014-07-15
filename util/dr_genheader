@@ -153,6 +153,9 @@ sub readParagraph($)
 	die "didn't find empty line of paragraph starting at $startline";
 }
 
+
+dr::Util::installDrEnv();
+
 our %opts;
 getopts('i', \%opts);
 

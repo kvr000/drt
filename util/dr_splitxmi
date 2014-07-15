@@ -269,6 +269,9 @@ sub genObject
 	}
 }
 
+
+dr::Util::installDrEnv();
+
 getopts('', \%opts);
 
 die "Usage: $0 xmi_file target_dir" unless (@ARGV == 2);

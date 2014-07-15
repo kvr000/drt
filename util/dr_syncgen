@@ -104,6 +104,8 @@ sub runBackup
 }
 
 
+dr::Util::installDrEnv();
+
 our %opts;
 getopts('hdpsb', \%opts)
 	or exit(2);

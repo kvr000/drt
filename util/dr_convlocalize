@@ -283,6 +283,9 @@ sub compareFormats($$)
 	return 1;
 }
 
+
+dr::Util::installDrEnv();
+
 die "usage: $0 localize-file input-files..." unless (@ARGV > 1);
 
 our $db_name = shift @ARGV;

@@ -45,6 +45,7 @@ use File::Find;
 use FileHandle;
 use Data::Dumper;
 use Getopt::Std;
+use dr::Util;
 
 
 package dr::TagManager;
@@ -182,6 +183,9 @@ our %POSTPROC_MAP = (
 	"Perl"				=> \&postprocPerl,
 	"Java"				=> \&postprocJava,
 );
+
+
+dr::Util::installDrEnv();
 
 our %opts;
 if (!getopts('s:', \%opts) || @ARGV != 1) {
