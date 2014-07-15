@@ -40,9 +40,9 @@ set -e
 if test -n "$CTAGS"; then
 	$CTAGS -o ctags.tags "$@"
 elif which exuberant-ctags >/dev/null 2>&1; then
-	exuberant-ctags --exclude=tmp --exclude=doc --c++-kinds=+p --fields=+iaS --extra=+q -o ctags.tags -R "$@"
+	exuberant-ctags --exclude=tmp --exclude=doc --c++-kinds=+p --fields=+fkstailmnSt --extra=+qf -o ctags.tags -R "$@"
 elif which ctags-exuberant >/dev/null 2>&1; then
-	ctags-exuberant --exclude=tmp --exclude=doc --c++-kinds=+p --fields=+iaS --extra=+q -o ctags.tags -R "$@"
+	ctags-exuberant --exclude=tmp --exclude=doc --c++-kinds=+p --fields=+fkstailmnSt --extra=+qf -o ctags.tags -R "$@"
 else
 	ctags -o ctags.tags -R "$@"
 fi
@@ -51,43 +51,4 @@ while [ $# -gt 0 ] && echo "x$1" | grep ^x- > /dev/null; do
 	shift
 done
 
-for env in `env | grep ^LC_ | cut -d = -f 1`; do unset $env; done
-if false; then
-	find . -name \*.tags -type f -print0 | sort --files0-from=- -m -o tags && rm ctags.tags
-else
-	perl -e '
-	use strict;
-	use warnings;
-	use File::Find;
-	use FileHandle;
-	use Data::Dumper;
-	no locale;
-	my $main_fd = FileHandle->new(shift @ARGV, "<") or die "failed to open main file: $!";
-	my @files = ( { prefix => "", fd => $main_fd } );
-	@ARGV = ( "." ) unless (@ARGV);
-	find({ no_chdir => 1, wanted => sub {
-		if (m/(\.\/)?(.*\/|)(_build\/_gen\/(.*\.tags)|index(\.txt)?\.tags)$/) {
-			if (my $fd = FileHandle->new($_, "<")) {
-				push(@files, { prefix => $2, fd => $fd });
-			}
-			else {
-				STDERR->printf("Failed to open %s: %s\n", $_, $!);
-			}
-		}
-	} }, @ARGV);
-	for (;;) {
-		my $best;
-		foreach my $ft (@files) {
-			if (!defined $ft->{pending}) {
-				next if (!defined $ft->{fd});
-				undef $ft->{fd}, next if (!defined ($ft->{pending} = $ft->{fd}->getline()));
-				$ft->{pending} = "$1\t$ft->{prefix}$2$3" if ($ft->{pending} =~ m/^([^\t]*)\t([^\t]*)(\t.*)$/s);
-			}
-			$best = $ft if (!(defined $best) || $ft->{pending} lt $best->{pending});
-		}
-		last unless ($best);
-		STDOUT->printf("%s", $best->{pending});
-		undef $best->{pending};
-	}
-	' ctags.tags "$@" > tags && rm ctags.tags
-fi
+dr_postproctags ctags.tags "$@" > tags && rm ctags.tags

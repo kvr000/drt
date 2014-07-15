@@ -1,0 +1,220 @@
+#!/usr/bin/perl
+
+##
+## drt library
+##
+## drt multiplatform development toolkit
+##
+## ----------------------------------------------------------------------------------
+##
+## Copyright (C) 2004-2008 Zbyněk Vyškovský
+##
+## ----------------------------------------------------------------------------------
+##
+## LICENSE:
+##
+## This file is part of drt
+##
+## drt is free software; you can redistribute it and/or modify it under the
+## terms of the GNU Lesser General Public License as published by the Free
+## Software Foundation; either version 3 of the License, or (at your option)
+## any later version.
+##
+## drt is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+## FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for
+## more details.
+##
+## You should have received a copy of the GNU Lesser General Public License
+## along with drt; if not, write to the Free Software Foundation, Inc., 51
+## Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+##
+## @author      2004-2008 Zbyněk Vyškovský
+## @link        mailto:kvr@matfyz.cz
+## @link        http://kvr.matfyz.cz/drt/
+## @license     http://www.gnu.org/licenses/lgpl.txt GNU Lesser General Public License v3
+##
+
+# This program post processes generated tags file and adds more useful tags based on existing ones
+
+use strict;
+use warnings;
+
+use FileHandle;
+use File::Find;
+use FileHandle;
+use Data::Dumper;
+use Getopt::Std;
+
+
+package dr::TagManager;
+
+use strict;
+use warnings;
+
+sub new
+{
+	my $class = shift; $class = ref($class) || $class;
+
+	my $this = bless {
+		tags				=> [],
+	}, $class;
+
+	return $this;
+}
+
+sub listTags
+{
+	my $this			= shift;
+
+	return @{$this->{tags}};
+}
+
+sub addTag
+{
+	my $this			= shift;
+	my $tag				= shift;
+
+	push(@{$this->{tags}}, $tag);
+}
+
+sub formatTag
+{
+	my $this			= shift;
+	my $tag				= shift;
+
+	return $this->formatTagNamed($tag, $tag->{name});
+}
+
+sub formatTagNamed
+{
+	my $this			= shift;
+	my $tag				= shift;
+	my $name			= shift;
+
+	my $fields = "";
+	while (my ( $k, $v ) = each(%{$tag->{fieldHash}})) {
+		$fields .= "\t".$k.(defined $v ? ":$v" : "");
+	}
+	return "$name\t$tag->{file}\t$tag->{search}\t$tag->{kind}$fields\n";
+}
+
+
+package main;
+
+use strict;
+use warnings;
+
+sub readInputs
+{
+	my $tagManager			= shift;
+
+	foreach my $inputFilename (@_) {
+		my $intags = FileHandle->new($inputFilename, "<")
+			or die "failed to open $inputFilename: $!";
+
+		foreach my $tag ($intags->getlines()) {
+			$tagManager->addTag($tag);
+		}
+	}
+	return $tagManager;
+}
+
+sub findInputs
+{
+	my $tagManager			= shift;
+	my @searchList			= shift;
+
+	foreach my $searchElement (@searchList) {
+		find({ no_chdir => 1, wanted => sub {
+					if (m/(\.\/)?(.*\/|)(_build\/_gen\/(.*\.tags)|index(\.txt)?\.tags)$/) {
+						readInputs($tagManager, $_);
+					}
+				} }, @ARGV);
+	}
+}
+
+sub addShortcuts($$$$$)
+{
+	my $tagManager			= shift;
+	my $tag				= shift;
+	my $name			= shift;
+	my $separator			= shift;
+	my $finishAbove			= shift;
+
+	for (my $n = $name;;) {
+		my $p = index($n, $separator);
+		$tagManager->addTag($tagManager->formatTagNamed($tag, $n)) unless ($p < 0 && $finishAbove);
+		last if ($p < 0);
+		$n = substr($n, $p+length($separator));
+	}
+}
+
+sub postprocPerl($$)
+{
+	my $tagManager			= shift;
+	my $tag				= shift;
+
+	if (defined (my $contTagName = ($tag->{name} =~ m/^.*?::(.+)$/)[0])) {
+		if ($tag->{kind} eq "p" && $tag->{search} =~ m,^/\^package\s,) {
+			addShortcuts($tagManager, $tag, $contTagName, "::", 0);
+		}
+		else {
+			addShortcuts($tagManager, $tag, $contTagName, "::", 1);
+		}
+	}
+}
+
+sub postprocJava($$)
+{
+	my $tagManager			= shift;
+	my $tag				= shift;
+
+	my $package;
+	($package = $1) =~ s,/,.,g if ($tag->{file} =~ m,^.*?src/java/(.*)/[^/]+\.java,);
+	my $ciname = defined $tag->{fieldHash}{class} ? $tag->{fieldHash}{class} : defined $tag->{fieldHash}{interface} ? $tag->{fieldHash}{interface} : undef;
+	if ((defined $package && defined $ciname) && ($tag->{kind} eq "xyz-c" || $tag->{kind} eq "m" || $tag->{kind} eq "f") && index($tag->{name}, ".") < 0) {
+		addShortcuts($tagManager, $tag, $package.".".$ciname.".".$tag->{name}, ".", 1);
+	}
+}
+
+our %POSTPROC_MAP = (
+	"Perl"				=> \&postprocPerl,
+	"Java"				=> \&postprocJava,
+);
+
+our %opts;
+if (!getopts('s:', \%opts) || @ARGV != 1) {
+	die "Usage: $0 [-s search-dir] input-file";
+}
+
+my $tagManager = dr::TagManager->new();
+readInputs($tagManager, @ARGV);
+if ($opts{s}) {
+	findInputs($tagManager, $opts{s});
+}
+
+
+foreach my $tagLine ($tagManager->listTags()) {
+	if ($tagLine =~ m/^([^\t]+)\t([^\t]+)\t(.*?;")\t(\w)(\t(.*)|)$/) {
+		my $tag = {
+			name				=> $1,
+			file				=> $2,
+			search				=> $3,
+			kind				=> $4,
+			fields				=> defined $6 ? $6 : "",
+		};
+		$tag->{fieldHash} = { map({ m/^(\w+):(.*)$/ ? ( $1 => $2 ) : ( $1 => undef ) } split(/\t/, $tag->{fields})) };
+		if ((exists $tag->{fieldHash}{language}) && defined (my $sub = $POSTPROC_MAP{$tag->{fieldHash}{language}})) {
+			&$sub($tagManager, $tag);
+		}
+	}
+}
+
+my $out = \*STDOUT;
+{
+	my %found;
+	no locale;
+	$out->print(sort({ $a cmp $b; } grep({ exists $found{$_} ? "" : ($found{$_} = $_); } $tagManager->listTags())));
+}
+$out->close();
