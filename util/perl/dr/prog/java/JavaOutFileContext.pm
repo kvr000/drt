@@ -27,6 +27,13 @@ sub new
 	return $this;
 }
 
+sub getSysimportCtx
+{
+	my $this			= shift;
+
+	return $this->{sysimportCtx};
+}
+
 sub printSysimport
 {
 	my $this			= shift;

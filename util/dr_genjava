@@ -86,10 +86,15 @@ sub translateJavaType # translatedString <- importCtx baseModel javaType-string
 	my $baseModel			= shift;
 	my $javaType			= shift;
 
-	if ($javaType->{type} =~ m/^(\w+)\s*<\s*(.*)\s*>$/) {
+	if (!defined $javaType->{type}) {
+		return $javaType->getFullDotName();
+	}
+	elsif ($javaType->{type} =~ m/^((\w+\.)*\w+)\s*<\s*(.*)\s*>$/) {
 		my $structBase = $1;
-		my $elementType = $2;
-		$importCtx->printOnce("import ".dr::prog::java::JavaGenerator::mapJavaDatastruct($structBase).";\n");
+		my $elementType = $3;
+		if ($structBase !~ m/\./) {
+			$importCtx->printOnce("import ".dr::prog::java::JavaGenerator::mapJavaDatastruct($structBase).";\n");
+		}
 		my $elementName;
 		if ($elementType eq ".") {
 			$elementName = $baseModel->getFullDotName();
@@ -262,45 +267,50 @@ sub generateEntityBeanPart($$$)
 		if ($field->{stype} eq "field") {
 			my ( $type, $tagger ) = $field->getFinalTypeWithTagger();
 			my $java_type = dr::prog::java::JavaGenerator::mapJavaAttrType($field);
-			my $method = ucfirst($field->{name});
-			$javaOut->printSysimport("import javax.persistence.Column;\n");
-			my $tmap = "";
-			$tmap .= "\@Column(name=\"".$field->{name}."\")\n";
-			if ($field->checkDrTagValue("serial")) {
-				$javaOut->printSysimport("import javax.persistence.GenerationType;\n");
-				$javaOut->printSysimport("import javax.persistence.GeneratedValue;\n");
-				$tmap .= "\@GeneratedValue(strategy=GenerationType.AUTO)\n";
-			}
-			my $athis = $primary_level > 0 ? "this.pk" : "this";
-			if ($primary_level > 0) {
-				$addPkFields .= "\"$field->{name}\", ";
-				$pk_fieldCtx->print($tmap);
-				printFieldDef($context, $javaOut, $pk_fieldCtx, $model, $field, $tagger, $java_type);
-				$pkOrder .= ", \"".escapeString($field->{name})."\"";
-			}
-			elsif ($primary_level == 0) {
-				$fieldCtx->print($tmap);
-				$javaOut->printSysimport("import javax.persistence.Id;\n");
-				$fieldCtx->print("\@Id\n");
-				printFieldDef($context, $javaOut, $fieldCtx, $model, $field, $tagger, $java_type);
-				$pkClazz = "$java_type";
-				$pkField = $field->{name};
-				$fieldOrder .= ", \"".escapeString($field->{name})."\"";
+			if ($field->checkDrTagValue("transient")) {
+				$fieldCtx->print(tabalign("protected transient $java_type", 32).$field->{name}.";\n");
 			}
 			else {
-				$fieldCtx->print($tmap);
-				printFieldDef($context, $javaOut, $fieldCtx, $model, $field, $tagger, $java_type);
-				$fieldOrder .= ", \"".escapeString($field->{name})."\"";
-			}
-			if ($primary_level == 0) {
-				$methodCtx->print(tabalign("public $java_type", 32)."getPk()\n{\n\treturn $field->{name};\n}\n\n");
-				$methodCtx->print(tabalign("public void", 32)."setPk($java_type $field->{name}_)\n{\n\tthis.$field->{name} = $field->{name}_;\n}\n\n");
-			}
-			$methodCtx->print(tabalign("public void", 32)."set$method($java_type $field->{name}_)\n{\n\t$athis.$field->{name} = $field->{name}_;\n}\n\n");
-			$methodCtx->print(tabalign("public $java_type", 32)."get$method()\n{\n\treturn $athis.$field->{name};\n}\n\n");
-			if ($primary_level > 0) {
-				$pk_methodCtx->print(tabalign("public void", 32)."set$method($java_type $field->{name}_)\n{\n\tthis.$field->{name} = $field->{name}_;\n}\n\n");
-				$pk_methodCtx->print(tabalign("public $java_type", 32)."get$method()\n{\n\treturn this.$field->{name};\n}\n\n");
+				my $method = ucfirst($field->{name});
+				$javaOut->printSysimport("import javax.persistence.Column;\n");
+				my $tmap = "";
+				$tmap .= "\@Column(name=\"".$field->{name}."\")\n";
+				if ($field->checkDrTagValue("serial")) {
+					$javaOut->printSysimport("import javax.persistence.GenerationType;\n");
+					$javaOut->printSysimport("import javax.persistence.GeneratedValue;\n");
+					$tmap .= "\@GeneratedValue(strategy=GenerationType.AUTO)\n";
+				}
+				my $athis = $primary_level > 0 ? "this.pk" : "this";
+				if ($primary_level > 0) {
+					$addPkFields .= "\"$field->{name}\", ";
+					$pk_fieldCtx->print($tmap);
+					printFieldDef($context, $javaOut, $pk_fieldCtx, $model, $field, $tagger, $java_type);
+					$pkOrder .= ", \"".escapeString($field->{name})."\"";
+				}
+				elsif ($primary_level == 0) {
+					$fieldCtx->print($tmap);
+					$javaOut->printSysimport("import javax.persistence.Id;\n");
+					$fieldCtx->print("\@Id\n");
+					printFieldDef($context, $javaOut, $fieldCtx, $model, $field, $tagger, $java_type);
+					$pkClazz = "$java_type";
+					$pkField = $field->{name};
+					$fieldOrder .= ", \"".escapeString($field->{name})."\"";
+				}
+				else {
+					$fieldCtx->print($tmap);
+					printFieldDef($context, $javaOut, $fieldCtx, $model, $field, $tagger, $java_type);
+					$fieldOrder .= ", \"".escapeString($field->{name})."\"";
+				}
+				if ($primary_level == 0) {
+					$methodCtx->print(tabalign("public $java_type", 32)."getPk()\n{\n\treturn $field->{name};\n}\n\n");
+					$methodCtx->print(tabalign("public void", 32)."setPk($java_type $field->{name}_)\n{\n\tthis.$field->{name} = $field->{name}_;\n}\n\n");
+				}
+				$methodCtx->print(tabalign("public void", 32)."set$method($java_type $field->{name}_)\n{\n\t$athis.$field->{name} = $field->{name}_;\n}\n\n");
+				$methodCtx->print(tabalign("public $java_type", 32)."get$method()\n{\n\treturn $athis.$field->{name};\n}\n\n");
+				if ($primary_level > 0) {
+					$pk_methodCtx->print(tabalign("public void", 32)."set$method($java_type $field->{name}_)\n{\n\tthis.$field->{name} = $field->{name}_;\n}\n\n");
+					$pk_methodCtx->print(tabalign("public $java_type", 32)."get$method()\n{\n\treturn this.$field->{name};\n}\n\n");
+				}
 			}
 		}
 		elsif ($field->{stype} eq "child") {
@@ -433,6 +443,15 @@ sub generateEntityBeanPart($$$)
 		$pkField = "pk";
 		$pkDirect = 0;
 	}
+
+	foreach my $method (grep({ substr($_->{name}, 0, 3) ne "dr." } @{$model->getOperations()})) {
+		if (defined (my $code = $method->checkDrTagValue("javaCode"))) {
+			$code .= "\n" unless ($code =~ m/\n/s);
+			my $ret_type = translateJavaType($javaOut->getSysimportCtx(), $model, $method->getReturnTypeWithTagger());
+			$methodCtx->print(tabalign("public $ret_type", 32)."$method->{name}(".generateOperParamList($method).")\n$code\n");
+		}
+	}
+
 	$codeCtx->print("};\n");
 
 	$javaOut->printSysimport("import dr.meta.ActionDefs;\n");
@@ -614,7 +633,7 @@ sub generateEntityDaoIf($$$$)
 
 	#$methodCtx->print("public Collection<EntityHolder<$baseclassonly>> list();\n\n");
 	if ($dao) {
-		for my $oper (grep({ $_->{name} =~ /^dr\.(\w+)\./ } @{$dao->{oper_list}})) {
+		for my $oper (grep({ $_->{name} =~ /^dr\.(\w+)\./ } @{$dao->getOperations()})) {
 			dr::Util::doDie("wrong name for dao operation: $oper->{name}") unless ($oper->{name} =~ m/^dr\.(\w+)\.(\w+)$/);
 			my $optype = $1;
 			my $opname = $2;
@@ -1134,6 +1153,7 @@ sub runDirectories($$)
 	return 0;
 }
 
+dr::Util::installDrEnv();
 
 getopts('dm:l:', \%opts)
 	or exit(2);

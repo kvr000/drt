@@ -338,6 +338,11 @@ sub getSubModel
 	return $this->{owner}->loadModel($this->{location}, $modelName);
 }
 
+sub isPrimitive
+{
+	return 0;
+}
+
 sub formatTyperef
 {
 	my $this			= shift;
@@ -576,6 +581,11 @@ sub new
 	return $this;
 }
 
+sub isPrimitive
+{
+	return 1;
+}
+
 
 package dr::ModelStore::Class;
 
@@ -661,6 +671,13 @@ sub getAttrs
 	my $this		= shift;
 
 	return $this->{field_list};
+}
+
+sub getOperations
+{
+	my $this		= shift;
+
+	return $this->{oper_list};
 }
 
 our %CLASS_MAPPER = (
@@ -1019,17 +1036,18 @@ use warnings;
 
 sub new
 {
-	my $ref			= shift;
-	my $class		= ref($ref) || $ref;
+	my $ref				= shift;
+	my $class			= ref($ref) || $ref;
 
-	my $owner		= shift;
-	my $basic		= shift;
+	my $owner			= shift;
+	my $basic			= shift;
 
 	my $this = bless {
 		owner			=> $owner,
 		name			=> $basic->{name},
 		stype			=> $basic->{stype},
 		mandatory		=> undef,
+		transient		=> 0,
 		comment			=> [],
 		drtag			=> dr::ModelStore::Drtag->new(),
 	}, $class;
@@ -1041,16 +1059,16 @@ sub new
 
 sub dieContext
 {
-	my $this		= shift;
-	my $msg			= shift;
-	my $cause		= shift;
+	my $this			= shift;
+	my $msg				= shift;
+	my $cause			= shift;
 
 	dr::Util::doDie(((defined $cause)) ? "$this->{file_context}: $msg\n$cause" : "$this->{file_context}: $msg");
 }
 
 sub getRole
 {
-	my $this		= shift;
+	my $this			= shift;
 
 	if (!defined $this->{role}) {
 		$this->{role} = {};
@@ -1069,22 +1087,29 @@ sub getRole
 
 sub isPrimary
 {
-	my $this		= shift;
+	my $this			= shift;
 
 	return !!$this->getRole()->{primary};
 }
 
+sub isTransient
+{
+	my $this			= shift;
+
+	return $this->{transient};
+}
+
 sub getDrTagger
 {
-	my $this		= shift;
+	my $this			= shift;
 
 	return $this->{drtag};
 }
 
 sub getDrTag
 {
-	my $this		= shift;
-	my $tag			= shift;
+	my $this			= shift;
+	my $tag				= shift;
 
 	eval {
 		return $this->{drtag}->getTag($tag);
@@ -1094,8 +1119,8 @@ sub getDrTag
 
 sub getDrTagValue
 {
-	my $this		= shift;
-	my $tag			= shift;
+	my $this			= shift;
+	my $tag				= shift;
 
 	eval {
 		return $this->{drtag}->getTagValue($tag);
@@ -1105,16 +1130,16 @@ sub getDrTagValue
 
 sub checkDrTagValue
 {
-	my $this		= shift;
-	my $tag			= shift;
+	my $this			= shift;
+	my $tag				= shift;
 
 	return $this->{drtag}->checkTagValue($tag);
 }
 
 sub getDrSpecs
 {
-	my $this		= shift;
-	my $spec		= shift;
+	my $this			= shift;
+	my $spec			= shift;
 
 	return $this->{drtag}->getSpecs($spec);
 }
@@ -1129,8 +1154,8 @@ our %MODEL_ATTRBASE_MAPPER = (
 
 sub load
 {
-	my $this		= shift;
-	my $reader		= shift;
+	my $this			= shift;
+	my $reader			= shift;
 
 	$this->{file_context} = $reader->getContext();
 
@@ -1141,37 +1166,39 @@ sub load
 
 sub postLoad
 {
-	my $this		= shift;
+	my $this			= shift;
 
 	dr::Util::doDie("$this->{owner}->{full}.$this->{name}: mandatory undefined") unless (defined $this->{mandatory});
+
+	$this->{transient} = $this->checkDrTagValue("transient") || 0;
 }
 
 sub readClassAttrDirect
 {
-	my $this		= shift;
-	my $base		= shift;
-	my $key			= shift;
-	my $val			= shift;
+	my $this			= shift;
+	my $base			= shift;
+	my $key				= shift;
+	my $val				= shift;
 
 	$this->{$key} = $val;
 }
 
 sub readClassAttrDrtag
 {
-	my $this		= shift;
-	my $base		= shift;
-	my $key			= shift;
-	my $val			= shift;
+	my $this			= shift;
+	my $base			= shift;
+	my $key				= shift;
+	my $val				= shift;
 
 	$this->{drtag}->addTag(dr::Util::unescapeString($val));
 }
 
 sub readClassAttrComment
 {
-	my $this		= shift;
-	my $base		= shift;
-	my $key			= shift;
-	my $val			= shift;
+	my $this			= shift;
+	my $base			= shift;
+	my $key				= shift;
+	my $val				= shift;
 
 	push(@{$this->{comment}}, dr::Util::unescapeString($val));
 }

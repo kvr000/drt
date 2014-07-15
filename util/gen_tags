@@ -47,8 +47,8 @@ else
 	ctags -o ctags.tags -R "$@"
 fi
 
-while [ $# -gt 0 ] && echo "x$1" | grep ^x- > /dev/null; do
+while [ $# -gt 0 ]; do
 	shift
 done
 
-dr_postproctags ctags.tags "$@" > tags && rm ctags.tags
+dr_postproctags ctags.tags > tags && rm ctags.tags

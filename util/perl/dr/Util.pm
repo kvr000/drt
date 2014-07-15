@@ -55,15 +55,29 @@ BEGIN
 sub doDie($)
 {
 	my $msg			= shift;
+	die $msg;
+}
+
+sub doDieStack($)
+{
+	my $msg			= shift;
 
 	my $stack = "";
-	for (my $i = 0; ; $i++) {
+
+	my ( $fnOld, $lnOld ) = (caller(0))[1, 2];
+	for (my $i = 1; ; $i++) {
 		my ($pack, $fn, $ln, $sub) = caller($i)
 			or last;
-		$stack .= "$sub ($fn:$ln)\n";
+		$stack .= "$sub ($fnOld:$lnOld)\n";
+		( $fnOld, $lnOld ) = ( $fn, $ln );
 	}
 	$stack =~ s/^/\t/gm;
 	die "$msg\nstack:\n$stack";
+}
+
+sub installDrEnv
+{
+	$SIG{__DIE__} = $SIG{__WARN__} = \&dr::Util::doDieStack;
 }
 
 # perl 5.10 // operator, unfortunately not everywhere is installed perl 5.10

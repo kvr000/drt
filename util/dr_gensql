@@ -396,8 +396,6 @@ sub fixModelInfo($)
 our %opts;
 getopts('ia:', \%opts);
 
-$SIG{__DIE__} = $SIG{__WARN__} = sub { dr::Util::doDie($_[0]); };
-
 die "Usage: $0 -a adaptor [-i] list_file target_file" unless (@ARGV >= 2);
 my $listname = shift(@ARGV);
 my $targname = shift(@ARGV);
@@ -444,6 +442,7 @@ foreach my $model (@models) {
 	$sql->print($adaptor->startCreateTable($model));
 	my $sqlin = dr::SepOutput->new($sql, { sep_in => ",", sep_all => "\n" });
 	foreach my $field (@{$model->{field_list}}) {
+		next if ($field->isTransient());
 		eval {
 			if ($field->{stype} eq "field") {
 				$sqlin->printObj("\t".defvalue($field->checkDrTagValue("db_name"), $field->{name}));
