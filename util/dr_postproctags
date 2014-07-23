@@ -42,9 +42,11 @@ use warnings;
 
 use FileHandle;
 use File::Find;
+use File::Basename;
 use FileHandle;
 use Data::Dumper;
 use Getopt::Std;
+use lib dirname($0)."/perl";
 use dr::Util;
 
 

@@ -139,7 +139,7 @@ elsif ($opts{p}) {
 }
 elsif ($opts{s}) {
 	dr::Util::doDie("_tmp/b-$origSrc/0 does not exist, did you forgot to run -b first?") unless (-d "_tmp/$origSrc/0");
-	runSys(1, ".", undef, FileHandle->new("_tmp/$origSrc.diff", ">"), "diff", "--exclude=*.sw?", "-urN", "_tmp/$origSrc/0/", origToGen($origSrc));
+	runSys(1, ".", undef, FileHandle->new("_tmp/$origSrc.diff", ">"), "diff", "--exclude=*.sw?", "--exclude=*.class", "-urN", "_tmp/$origSrc/0/", origToGen($origSrc));
 	runSys(0, "$origSrc", FileHandle->new("_tmp/$origSrc.diff", "<"), undef, "patch", "-p$origLen");
 	runBackup($origSrc);
 }
