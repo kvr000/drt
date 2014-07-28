@@ -168,6 +168,16 @@ sub tabalign($$)
 	return $str;
 }
 
+sub removeOptionalEnd($$)
+{
+	my $str				= shift;
+	my $over			= shift;
+
+	substr($str, -length($over)) = "" if (substr($str, -length($over)) eq $over);
+
+	return $str;
+}
+
 sub hashUndef
 {
 	my %hash		= @_;

@@ -212,6 +212,7 @@ sub generateEntityBeanPart($$$)
 			or dr::Util::doDie("failed to process view $model->{full}.$view->{name}:\n$@");
 		$codeCtx->print("),\n");
 	}
+	$codeCtx->replaceOptionalEnd(",\n", "\n");
 	$codeCtx->print("})\n");
 
 	if (defined (my $suggestFields = $model->checkDrTagValue("suggestFields"))) {
@@ -479,6 +480,7 @@ sub generateEntityBeanPart($$$)
 				or dr::Util::doDie("failed to process $model->{full}.$action->{name}:\n$@");
 		}
 	}
+	$clsCtx->replaceOptionalEnd(",\n", "\n");
 	$clsCtx->print("})\n");
 
 	if ($relations ne "") {
@@ -486,12 +488,13 @@ sub generateEntityBeanPart($$$)
 		$javaOut->printSysimport("import dr.meta.RelationDefs;\n");
 		$clsCtx->print("\@RelationDefs(relations = {\n");
 		$clsCtx->print($relations);
+		$clsCtx->replaceOptionalEnd(",\n", "\n");
 		$clsCtx->print("})\n");
 	}
 
 	{
 		$javaOut->printSysimport("import dr.meta.KeyDef;\n");
-		$clsCtx->print("\@KeyDef(pkDirect = ".dr::prog::java::JavaGenerator::formatBoolean($pkDirect).", pkClazz = ".(defined $pkClazz ? "$pkClazz.class" : "Object.class").", pkField = \"$pkField\", composPkClazz = ".($composPkClazz ? "$composPkClazz.class" : "Object.class").", pkComposField = \"".($pkComposField ? $pkComposField : "")."\", addPkFields = { $addPkFields })\n");
+		$clsCtx->print("\@KeyDef(pkDirect = ".dr::prog::java::JavaGenerator::formatBoolean($pkDirect).", pkClazz = ".(defined $pkClazz ? "$pkClazz.class" : "Object.class").", pkField = \"$pkField\", composPkClazz = ".($composPkClazz ? "$composPkClazz.class" : "Object.class").", pkComposField = \"".($pkComposField ? $pkComposField : "")."\", addPkFields = { ".dr::Util::removeOptionalEnd($addPkFields, ", ")." })\n");
 	}
 
 	if ($fieldOrder) {
@@ -599,7 +602,7 @@ sub generateEntityDaoIf($$$$)
 	my $importCtx = $fddao->rememberContext();
 	$importCtx->printOnce("import $jbaseclassname;\n");
 
-	$fddao->printIndented("\n\npublic interface $classonly\n{\n");
+	$fddao->printIndented("\n\npublic interface $classonly extends dr.core.DynamicDao<$baseclassonly, ".dr::prog::java::JavaGenerator::getPkTypeName($model).">\n{\n");
 	$fddao->indent(1);
 	my $methodCtx = $fddao->rememberContext();
 

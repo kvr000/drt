@@ -28,10 +28,26 @@ sub printf
 {
 	my $this			= shift;
 	
-	my $content			= sprintf(@_);
+	my $content			= 
 
-	$content =~ s/^(.+)$/$this->{indent}$1/gm;
-	$this->{context}->{content} .= $content;
+	$this->print(sprintf(@_));
+}
+
+sub removeOptionalEnd
+{
+	my $this			= shift;
+	my $over			= shift;
+
+	substr($this->{context}->{content}, -length($over)) = "" if (substr($this->{context}->{content}, -length($over)) eq $over);
+}
+
+sub replaceOptionalEnd
+{
+	my $this			= shift;
+	my $over			= shift;
+	my $replace			= shift;
+
+	substr($this->{context}->{content}, -length($over)) = $replace if (substr($this->{context}->{content}, -length($over)) eq $over);
 }
 
 sub printOnce
@@ -138,7 +154,7 @@ sub printf
 	my $fmt				= shift;
 	my $content			= sprintf($fmt, @_);
 
-	$this->{current} = ($this->{current}->{next} = { content => $content, next => undef });
+	$this->print($content);
 }
 
 sub printIndented
