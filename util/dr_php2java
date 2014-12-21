@@ -111,7 +111,7 @@ sub processLine($)
 		}
 		else {
 			$out .= processCode($code);
-			my ( $proc, $rest ) = processString($2, $3);
+			my ( $proc, $rest ) = processString($sep, $str);
 			$out .= $proc;
 			$line = $rest;
 		}

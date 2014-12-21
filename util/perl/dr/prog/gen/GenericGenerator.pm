@@ -3,6 +3,9 @@ package dr::prog::gen::GenericGenerator;
 use strict;
 use warnings;
 
+use dr::FileParser;
+
+
 sub new
 {
 	my $ref				= shift; my $classname = ref($ref) || $ref;

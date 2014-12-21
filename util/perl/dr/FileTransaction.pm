@@ -43,6 +43,10 @@ use File::Path;
 use File::Slurp;
 use dr::FileWriter;
 
+use constant {
+	TMP_SUFFIX		=> ".tmp",
+};
+
 sub new
 {
 	my $class = shift; $class = ref($class) || $class;
@@ -123,9 +127,9 @@ sub createTruncated
 		chmod(($st[2]&07777)|(0222&~$this->{umask}), $fname);
 	}
 	my $fd;
-	if (!defined ($fd = FileHandle->new($fname, ">"))) {
+	if (!defined ($fd = FileHandle->new($fname.TMP_SUFFIX, ">"))) {
 		mkpath(dirname($fname));
-		$fd = FileHandle->new($fname, ">")
+		$fd = FileHandle->new($fname.TMP_SUFFIX, ">")
 			or die "failed to open file $fname: $!";
 	}
 	$fd = dr::FileWriter->new($fd);
@@ -185,6 +189,7 @@ sub closeOp
 	else {
 		$op->{fd}->close();
 		undef $op->{fd};
+		rename($op->{fname}.TMP_SUFFIX, $op->{fname});
 		chmod((stat($op->{fname}))[2]&07555, $op->{fname}) if (defined $this->{umask});
 	}
 }
