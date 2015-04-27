@@ -116,6 +116,13 @@ sub getDataSource($)
 	return $classdef->checkDrTagHierarchicalValue("datasource") || dr::Util::doDie("failed to find datasource for class $classdef->{name}");
 }
 
+sub getDaoContextBase($)
+{
+	my $classdef			= shift;
+
+	return $classdef->checkDrTagHierarchicalValue("daobase") || dr::Util::doDie("failed to find daobase for class $classdef->{name}");
+}
+
 sub convertPkType($)
 {
 	my $model			= shift;
@@ -156,7 +163,7 @@ sub printFieldDef($$$$$$$)
 		$javaOut->printSysimport("import dr.logical.DisplayUse;\n");
 		my $displayAdd = "";
 		if ($field->{stype} eq "assoc") {
-			$displayAdd .= ", refClass = \"".escapeString($field->getAssocTarget()->getFullDotName())."\"";
+			$displayAdd .= ", refClass = ".$field->getAssocTarget()->getFullDotName().".class";
 		}
 		$printCtx->print("\@DisplayUse(display = \"".escapeString($display)."\"$displayAdd)\n");
 	}
@@ -164,7 +171,7 @@ sub printFieldDef($$$$$$$)
 	$printCtx->print("\@FieldRoles(".dr::prog::java::JavaGenerator::formatFieldRoles($model, $field).")\n");
 	$javaOut->printSysimport("import dr.meta.Mandatory;\n");
 	$printCtx->print("\@Mandatory(mandatory = ".dr::prog::java::JavaGenerator::formatBoolean($field->{mandatory}).(defined $field->checkDrTagValue("doMandatory") ? ", doMandatory = \"".escapeString($field->checkDrTagValue("doMandatory"))."\"" : "").")\n");
-	$printCtx->print(tabalign("protected $javaType", 32)."$field->{name}$dfl;\n");
+	$printCtx->print(tabalign("protected $javaType", 32)."$field->{name}$dfl;\n\n");
 }
 
 sub generateEntityBeanPart($$$)
@@ -285,7 +292,6 @@ sub generateEntityBeanPart($$$)
 					$javaOut->printSysimport("import javax.persistence.GeneratedValue;\n");
 					$tmap .= "\@GeneratedValue(strategy=GenerationType.AUTO)\n";
 				}
-				my $athis = $primary_level > 0 ? "this.pk" : "this";
 				if ($primary_level > 0) {
 					$addPkFields .= "\"$field->{name}\", ";
 					$pk_fieldCtx->print($tmap);
@@ -310,11 +316,15 @@ sub generateEntityBeanPart($$$)
 					$methodCtx->print(tabalign("public $java_type", 32)."getPk()\n{\n\treturn $field->{name};\n}\n\n");
 					$methodCtx->print(tabalign("public void", 32)."setPk($java_type $field->{name}_)\n{\n\tthis.$field->{name} = $field->{name}_;\n}\n\n");
 				}
-				$methodCtx->print(tabalign("public void", 32)."set$method($java_type $field->{name}_)\n{\n\t$athis.$field->{name} = $field->{name}_;\n}\n\n");
-				$methodCtx->print(tabalign("public $java_type", 32)."get$method()\n{\n\treturn $athis.$field->{name};\n}\n\n");
 				if ($primary_level > 0) {
+					$methodCtx->print(tabalign("public void", 32)."set$method($java_type $field->{name}_)\n{\n\tthis.pk.set".ucfirst($field->{name})."($field->{name}_);\n}\n\n");
+					$methodCtx->print(tabalign("public $java_type", 32)."get$method()\n{\n\treturn this.pk.get".ucfirst($field->{name})."();\n}\n\n");
 					$pk_methodCtx->print(tabalign("public void", 32)."set$method($java_type $field->{name}_)\n{\n\tthis.$field->{name} = $field->{name}_;\n}\n\n");
 					$pk_methodCtx->print(tabalign("public $java_type", 32)."get$method()\n{\n\treturn this.$field->{name};\n}\n\n");
+				}
+				else {
+					$methodCtx->print(tabalign("public void", 32)."set$method($java_type $field->{name}_)\n{\n\tthis.$field->{name} = $field->{name}_;\n}\n\n");
+					$methodCtx->print(tabalign("public $java_type", 32)."get$method()\n{\n\treturn this.$field->{name};\n}\n\n");
 				}
 			}
 		}
@@ -357,7 +367,6 @@ sub generateEntityBeanPart($$$)
 				" = ".escapeJavaTypeValue($java_type, $field->{default}) :
 				(defined $field->checkDrTagValue("do_mandatory")) ? " = ".escapeJavaTypeValue($java_type, $field->checkDrTagValue("do_mandatory")) :
 				"";
-			my $athis = $primary_level > 0 ? "this.pk" : "this";
 			if ($primary_level > 0) {
 				$addPkFields .= "\"$field->{name}\", ";
 				printFieldDef($context, $javaOut, $pk_fieldCtx, $model, $field, $tagger, $java_type);
@@ -379,11 +388,15 @@ sub generateEntityBeanPart($$$)
 				$methodCtx->print(tabalign("public $java_type", 32)."getPk()\n{\treturn $field->{name};\n}\n\n");
 				$methodCtx->print(tabalign("public void", 32)."setPk($java_type $field->{name}_)\n{\tthis.$field->{name} = $field->{name}_;\n}\n\n");
 			}
-			$methodCtx->print(tabalign("public void", 32)."set$method($java_type $field->{name}_)\n{\n\t$athis.$field->{name} = $field->{name}_;\n}\n\n");
-			$methodCtx->print(tabalign("public $java_type", 32)."get$method()\n{\n\treturn $athis.$field->{name};\n}\n\n");
 			if ($primary_level > 0) {
+				$methodCtx->print(tabalign("public void", 32)."set$method($java_type $field->{name}_)\n{\n\tthis.pk.set".ucfirst($field->{name})."($field->{name}_);\n}\n\n");
+				$methodCtx->print(tabalign("public $java_type", 32)."get$method()\n{\n\treturn this.pk.get".ucfirst($field->{name})."();\n}\n\n");
 				$pk_methodCtx->print(tabalign("public void", 32)."set$method($java_type $field->{name}_)\n{\n\tthis.$field->{name} = $field->{name}_;\n}\n\n");
 				$pk_methodCtx->print(tabalign("public $java_type", 32)."get$method()\n{\n\treturn this.$field->{name};\n}\n\n");
+			}
+			else {
+				$methodCtx->print(tabalign("public void", 32)."set$method($java_type $field->{name}_)\n{\n\tthis.$field->{name} = $field->{name}_;\n}\n\n");
+				$methodCtx->print(tabalign("public $java_type", 32)."get$method()\n{\n\treturn this.$field->{name};\n}\n\n");
 			}
 		}
 		elsif ($field->{stype} eq "compos") {
@@ -396,9 +409,9 @@ sub generateEntityBeanPart($$$)
 			$composPkClazz = convertPkType($compos);
 			$pk_fieldCtx->print("\@Column(name=\"$field->{name}\")\n");
 			$pk_fieldCtx->print("\@FieldRoles(".dr::prog::java::JavaGenerator::formatFieldRoles($model, $field).")\n");
-			$pk_fieldCtx->print(tabalign("public $pktype", 32)."$field->{name};\n\n");
-			$methodCtx->print(tabalign("public void", 32)."set".ucfirst($field->{name})."($pktype $field->{name}_)\n{\n\tthis.pk.$field->{name} = $field->{name}_;\n}\n\n");
-			$methodCtx->print(tabalign("public $pktype", 32)."get".ucfirst($field->{name})."()\n{\n\treturn this.pk.$field->{name};\n}\n\n");
+			$pk_fieldCtx->print(tabalign("protected $pktype", 32)."$field->{name};\n\n");
+			$methodCtx->print(tabalign("public void", 32)."set".ucfirst($field->{name})."($pktype $field->{name}_)\n{\n\tthis.pk.set".ucfirst($field->{name})."($field->{name}_);\n}\n\n");
+			$methodCtx->print(tabalign("public $pktype", 32)."get".ucfirst($field->{name})."()\n{\n\treturn this.pk.get".ucfirst($field->{name})."();\n}\n\n");
 			$pk_methodCtx->print(tabalign("public void", 32)."set".ucfirst($field->{name})."($pktype $field->{name}_)\n{\n\tthis.$field->{name} = $field->{name}_;\n}\n\n");
 			$pk_methodCtx->print(tabalign("public $pktype", 32)."get".ucfirst($field->{name})."()\n{\n\treturn this.$field->{name};\n}\n\n");
 			$pkOrder .= ", \"".escapeString($field->{name})."\"";
@@ -440,7 +453,7 @@ sub generateEntityBeanPart($$$)
 		$inpkCtx->print("\tif (!(o instanceof Pk))\n\t\treturn false;\n\tPk s = (Pk)o;\n");
 		$inpkCtx->print("\treturn $equals_cont;\n");
 		$inpkCtx->print("}\n\n");
-		$pk_endCtx->print("};\n");
+		$pk_endCtx->print("}\n");
 		$pk_endCtx->print("\n\@EmbeddedId\n".tabalign("protected Pk", 32)."pk = new Pk();\n\n");
 		$methodCtx->print(tabalign("public Pk", 32)."getPk()\n{\n\treturn pk;\n}\n\n");
 		$methodCtx->print(tabalign("public void", 32)."setPk(Pk pk_)\n{\n\tthis.pk = pk_;\n}\n\n");
@@ -457,7 +470,7 @@ sub generateEntityBeanPart($$$)
 		}
 	}
 
-	$codeCtx->print("};\n");
+	$codeCtx->print("}\n");
 
 	$javaOut->printSysimport("import dr.meta.ActionDefs;\n");
 	$clsCtx->print("\@ActionDefs(actions = {\n");
@@ -606,12 +619,12 @@ sub generateEntityDaoIf($$$$)
 	my $importCtx = $fddao->rememberContext();
 	$importCtx->printOnce("import $jbaseclassname;\n");
 
-	$fddao->printIndented("\n\npublic interface $classonly extends dr.core.DynamicDao<$baseclassonly, ".dr::prog::java::JavaGenerator::getPkTypeName($model).">\n{\n");
+	$fddao->printIndented("\n\npublic interface $classonly extends dr.dao.DynamicDao<$baseclassonly, ".dr::prog::java::JavaGenerator::getPkTypeName($model).">\n{\n");
 	$fddao->indent(1);
 	my $methodCtx = $fddao->rememberContext();
 
 	$methodCtx->print(tabalign("public $baseclassonly", 32)."loadByPk(".dr::prog::java::JavaGenerator::getPkTypeName($model)." pk);\n");
-	$methodCtx->print(tabalign("public List<$baseclassonly>", 32)."list();\n");
+	$methodCtx->print(tabalign("public List<$baseclassonly>", 32)."listAll();\n");
 	$methodCtx->print(tabalign("public void", 32)."insert($baseclassonly obj);\n");
 	$methodCtx->print(tabalign("public void", 32)."insertTxNew($baseclassonly obj);\n");
 	$methodCtx->print(tabalign("public $baseclassonly", 32)."update($baseclassonly obj);\n");
@@ -639,7 +652,7 @@ sub generateEntityDaoIf($$$$)
 	$methodCtx->print(tabalign("public <R> R", 32)."runTransactioned(java.util.concurrent.Callable<R> code) throws Exception;\n");
 	$methodCtx->print("\n");
 
-	#$methodCtx->print("public Collection<EntityHolder<$baseclassonly>> list();\n\n");
+	#$methodCtx->print("public Collection<EntityHolder<$baseclassonly>> listAll();\n\n");
 	if ($dao) {
 		for my $oper (grep({ $_->{name} =~ /^dr\.(\w+)\./ } @{$dao->getOperations()})) {
 			dr::Util::doDie("wrong name for dao operation: $oper->{name}") unless ($oper->{name} =~ m/^dr\.(\w+)\.(\w+)$/);
@@ -670,7 +683,7 @@ sub generateEntityDaoIf($$$$)
 	}
 
 	$fddao->indent(-1);
-	$fddao->print("};\n");
+	$fddao->print("}\n");
 
 	$context->{file_trans}->closeFile($fddao);
 }
@@ -686,7 +699,7 @@ sub generateEntityDaoHib($$$$)
 	my $jclassname = $jbaseclassname."DaoHib";
 	my $filename = $jclassname; $filename =~ s/\./\//g;
 	my $pkgbase = $jclassname; $pkgbase =~ s/\.\w+$//;
-	my $pkgname = $jclassname; $pkgname =~ s/\.\w+$//; $pkgname .= ".perhib";
+	my $pkgname = $jclassname; $pkgname =~ s/\.\w+$//; $pkgname .= ".hibdao";
 	my $classonly = $jclassname; $classonly =~ s/^.*\.//g;
 	my $baseclassonly = $jbaseclassname; $baseclassonly =~ s/^.*\.//g;
 
@@ -695,7 +708,7 @@ sub generateEntityDaoHib($$$$)
 	my $model = $context->{model_store}->loadModel($location, $classname);
 	my $dao = $model->checkSubModel("${classname}::Dao");
 
-	my $fddao = $context->{file_trans}->updateChanged($context->{dst_dir}."/java".dr::Util::prependFile("/$filename.java", "perhib/"));
+	my $fddao = $context->{file_trans}->updateChanged($context->{dst_dir}."/java".dr::Util::prependFile("/$filename.java", "hibdao/"));
 	$context->{processed}->{$filename} = 1;
 
 	$fddao->print("package $pkgname;\n\n");
@@ -709,7 +722,7 @@ sub generateEntityDaoHib($$$$)
 
 	my $importCtx = $fddao->rememberContext();
 
-	$fddao->printIndented("\n\n\@Repository\n\@Transactional(readOnly = true)\npublic class $classonly extends dr.core.ContextDao implements $pkgbase.dao.${baseclassonly}Dao\n{\n");
+	$fddao->printIndented("\n\n\@Repository\n\@Transactional(readOnly = true)\npublic class $classonly extends dr.dao.ContextDao implements $pkgbase.dao.${baseclassonly}Dao\n{\n");
 	$fddao->indent(1);
 	my $fieldCtx = $fddao->rememberContext();
 	$fddao->printIndented("\n");
@@ -720,7 +733,7 @@ sub generateEntityDaoHib($$$$)
 	$fddao->printAt($methodCtx, tabalign("public void", 32)."setSessionFactory(SessionFactory sessionFactory)\n{\ttemplate = new HibernateTemplate(sessionFactory);\n}\n\n");
 
 	$methodCtx->print("\@Transactional(readOnly = true, propagation = Propagation.REQUIRED)\n".tabalign("public $baseclassonly", 32)."loadByPk(".dr::prog::java::JavaGenerator::getPkTypeName($model)." pk)\n{\n\tthrow new RuntimeException(\"unsupported\"); /*return template.bulkUpdate(\"FROM $baseclassonly WHERE ".dr::prog::java::JavaGenerator::getPkFieldName($model)." = ?\", pk); */\n}\n\n");
-	$methodCtx->print("\@Transactional(readOnly = true, propagation = Propagation.REQUIRED)\n".tabalign("public $baseclassonly", 32)."list()\n{\n\tthrow new RuntimeException(\"unsupported\"); /*return template.bulkUpdate(\"FROM $baseclassonly WHERE ".dr::prog::java::JavaGenerator::getPkFieldName($model)." = ?\", pk); */\n}\n\n");
+	$methodCtx->print("\@Transactional(readOnly = true, propagation = Propagation.REQUIRED)\n".tabalign("public $baseclassonly", 32)."listAll()\n{\n\tthrow new RuntimeException(\"unsupported\"); /*return template.bulkUpdate(\"FROM $baseclassonly WHERE ".dr::prog::java::JavaGenerator::getPkFieldName($model)." = ?\", pk); */\n}\n\n");
 	$methodCtx->print("\@Transactional(readOnly = false, propagation = Propagation.REQUIRED)\n".tabalign("public void", 32)."insert($baseclassonly obj)\n{\n\ttemplate.saveOrUpdate(obj);\n}\n\n");
 	$methodCtx->print("\@Transactional(readOnly = false, propagation = Propagation.REQUIRES_NEW)\n".tabalign("public void", 32)."insertTxNew($baseclassonly obj)\n{\n\ttemplate.saveOrUpdate(obj);\n}\n\n");
 	$methodCtx->print("\@Transactional(readOnly = false, propagation = Propagation.REQUIRED)\n".tabalign("public $baseclassonly", 32)."update($baseclassonly obj)\n{\n\ttemplate.saveOrUpdate(obj);\n}\n\n");
@@ -742,7 +755,7 @@ sub generateEntityDaoHib($$$$)
 	$methodCtx->print(tabalign("public long", 32)."listDynamic(List<EntityHolder<$baseclassonly>> results, EntityHolder<?> composition, Map<String, Object> filter, List<String> sorts, Long start, Long limit) { throw new UnsupportedOperationException(\"hibernate dao do not support dynamic operations\"); }\n");
 	$methodCtx->print("\n");
 
-	#$fddao->printAt($methodCtx, "\@SuppressWarnings(\"unchecked\")\n".tabalign("public Collection<EntityHolder<$baseclassonly>>", 32)."list()\n{\n\tCollection<EntityHolder<$baseclassonly>> result = new LinkedList<EntityHolder<$baseclassonly>>();\n\tfor ($baseclassonly obj: (Collection<$baseclassonly>)template.find(\"from $baseclassonly\")) {\n\t\tresult.add(new EntityHolder<$baseclassonly>(obj, role));\n\t}\n\treturn result;\n}\n\n");
+	#$fddao->printAt($methodCtx, "\@SuppressWarnings(\"unchecked\")\n".tabalign("public Collection<EntityHolder<$baseclassonly>>", 32)."listAll()\n{\n\tCollection<EntityHolder<$baseclassonly>> result = new LinkedList<EntityHolder<$baseclassonly>>();\n\tfor ($baseclassonly obj: (Collection<$baseclassonly>)template.find(\"from $baseclassonly\")) {\n\t\tresult.add(new EntityHolder<$baseclassonly>(obj, role));\n\t}\n\treturn result;\n}\n\n");
 	if ($dao) {
 		for my $oper (grep({ $_->{name} =~ /^dr\.(\w+)\./ } @{$dao->{oper_list}})) {
 			dr::Util::doDie("wrong name for dao operation: $oper->{name}") unless ($oper->{name} =~ m/^dr\.(\w+)\.(\w+)$/);
@@ -852,7 +865,7 @@ sub generateEntityDaoHib($$$$)
 	}
 
 	$fddao->indent(-1);
-	$fddao->print("};\n");
+	$fddao->print("}\n");
 
 	$context->{file_trans}->closeFile($fddao);
 }
@@ -900,7 +913,7 @@ sub generateEntityDaoJpa($$$$)
 	my $jclassname = $jbaseclassname."DaoJpa";
 	my $filename = $jclassname; $filename =~ s/\./\//g;
 	my $pkgbase = $jclassname; $pkgbase =~ s/\.\w+$//;
-	my $pkgname = $jclassname; $pkgname =~ s/\.\w+$//; $pkgname .= ".perjpa";
+	my $pkgname = $jclassname; $pkgname =~ s/\.\w+$//; $pkgname .= ".jpadao";
 	my $classonly = $jclassname; $classonly =~ s/^.*\.//g;
 	my $baseclassonly = $jbaseclassname; $baseclassonly =~ s/^.*\.//g;
 
@@ -909,14 +922,16 @@ sub generateEntityDaoJpa($$$$)
 	my $model = $context->{model_store}->loadModel($location, $classname);
 	my $dao = $model->checkSubModel("${classname}::Dao");
 
-	my $fddao = $context->{file_trans}->updateChanged($context->{dst_dir}."/java".dr::Util::prependFile("/$filename.java", "perjpa/"));
+	my $pkclassname = dr::prog::java::JavaGenerator::getPkTypeName($model);
+
+	my $fddao = $context->{file_trans}->updateChanged($context->{dst_dir}."/java".dr::Util::prependFile("/$filename.java", "jpadao/"));
 	$context->{processed}->{$filename} = 1;
 
 	$fddao->print("package $pkgname;\n\n");
 	my $sysimportCtx = $fddao->rememberContext();
 	$sysimportCtx->printOnce("import $jbaseclassname;\n");
-	$sysimportCtx->printOnce("import javax.persistence.EntityManager;\n");
-	$sysimportCtx->printOnce("import javax.persistence.PersistenceContext;\n");
+	#$sysimportCtx->printOnce("import javax.persistence.EntityManager;\n");
+	#$sysimportCtx->printOnce("import javax.persistence.PersistenceContext;\n");
 	#$sysimportCtx->printOnce("import javax.persistence.PersistenceUnit;\n");
 	$sysimportCtx->printOnce("import javax.ejb.TransactionAttribute;\n");
 	$sysimportCtx->printOnce("import javax.ejb.TransactionAttributeType;\n");
@@ -927,50 +942,55 @@ sub generateEntityDaoJpa($$$$)
 	my $importCtx = $fddao->rememberContext();
 
 	my $transactionUnit = "\@Transactional(\"".getDataSource($dao || $model)."\")\n";
+	my $daoContextBase = getDaoContextBase($dao || $model);
 
-	$fddao->printIndented("\n\n\@Repository\n$transactionUnit\@TransactionAttribute(TransactionAttributeType.SUPPORTS)\npublic class $classonly extends dr.core.ContextDao implements $pkgbase.dao.${baseclassonly}Dao\n{\n");
+	$fddao->printIndented("\n\n\@Repository\n$transactionUnit\@TransactionAttribute(TransactionAttributeType.SUPPORTS)\npublic class $classonly extends $daoContextBase<$baseclassonly, $pkclassname> implements $pkgbase.dao.${baseclassonly}Dao\n{\n");
 	$fddao->indent(1);
 	my $fieldCtx = $fddao->rememberContext();
 	$fddao->printIndented("\n");
 	my $methodCtx = $fddao->rememberContext();
 
-	$fddao->printAt($fieldCtx, "\@PersistenceContext(unitName=\"".getDataSource($dao || $model)."\")\n");
+	$methodCtx->print(tabalign("public", 32).$classonly."()\n{\n\tsuper($baseclassonly.class, $pkclassname.class);\n}\n\n");
+
+	#$fddao->printAt($fieldCtx, "\@PersistenceContext(unitName=\"".getDataSource($dao || $model)."\")\n");
 	#$fddao->printAt($fieldCtx, "\@PersistenceUnit(name=\"".getDataSource($dao || $model)."\")\n");
-	$fddao->printAt($fieldCtx, tabalign("protected EntityManager", 32)."em;\n\n");
+	#$fddao->printAt($fieldCtx, tabalign("protected EntityManager", 32)."em;\n\n");
+	#$fddao->printAt($fieldCtx, "\@PersistenceContext(name=\"".getDataSource($dao || $model)."\")\n");
+	#$fddao->printAt($fieldCtx, tabalign("public void", 32)."setEntityManager(EntityManager entityManager)\n{\n\tsuper.setEntityManagerInternal(entityManager);\n}\n\n");
 
-	$importCtx->printOnce("import dr.dao.RoleDaoAccessJpa;\n");
-	$fieldCtx->print(tabalign("protected RoleDaoAccessJpa<$baseclassonly>", 32)."roleDaoAccess;\n\n");
-	$methodCtx->print(tabalign("public RoleDaoAccessJpa<$baseclassonly>", 32)."getRoleDaoAccess()\n{\n\tif (roleDaoAccess == null)\n\t\troleDaoAccess = new RoleDaoAccessJpa<$baseclassonly>($baseclassonly.class, em);\n\treturn roleDaoAccess;\n}\n\n");
+	#$importCtx->printOnce("import dr.dao.RoleDaoAccessJpa;\n");
+	#$fieldCtx->print(tabalign("protected RoleDaoAccessJpa<$baseclassonly>", 32)."roleDaoAccess;\n\n");
+	#$methodCtx->print(tabalign("public RoleDaoAccessJpa<$baseclassonly>", 32)."getRoleDaoAccess()\n{\n\tif (roleDaoAccess == null)\n\t\troleDaoAccess = new RoleDaoAccessJpa<$baseclassonly>($baseclassonly.class, em);\n\treturn roleDaoAccess;\n}\n\n");
 
-	$methodCtx->print("\@Override\n$transactionUnit\@TransactionAttribute(TransactionAttributeType.SUPPORTS)\n".tabalign("public $baseclassonly", 32)."loadByPk(".dr::prog::java::JavaGenerator::getPkTypeName($model)." pk)\n{\n\treturn ($baseclassonly)em.find($baseclassonly.class, pk);\n}\n\n");
-	$methodCtx->print("\@SuppressWarnings(\"unchecked\")\n\@Override\n$transactionUnit\@TransactionAttribute(TransactionAttributeType.SUPPORTS)\n".tabalign("public List<$baseclassonly>", 32)."list()\n{\n\treturn (List<$baseclassonly>)em.createQuery(\"SELECT ent FROM $baseclassonly ent ORDER BY ".dr::prog::java::JavaGenerator::getPkFieldName($model)."\").getResultList();\n}\n\n");
-	$methodCtx->print("\@Override\n$transactionUnit\@TransactionAttribute(TransactionAttributeType.REQUIRED)\n".tabalign("public void", 32)."insert($baseclassonly obj)\n{\n\tem.persist(obj);\n\tem.flush();\n}\n\n");
-	$methodCtx->print("\@Override\n$transactionUnit\@TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)\n".tabalign("public void", 32)."insertTxNew($baseclassonly obj)\n{\n\tem.persist(obj);\n\tem.flush();\n}\n\n");
-	$methodCtx->print("\@Override\n$transactionUnit\@TransactionAttribute(TransactionAttributeType.REQUIRED)\n".tabalign("public $baseclassonly", 32)."update($baseclassonly obj)\n{\n\tobj = em.merge(obj);\n\tem.flush();\n\treturn obj;\n}\n\n");
-	$methodCtx->print("\@Override\n$transactionUnit\@TransactionAttribute(TransactionAttributeType.REQUIRED)\n".tabalign("public void", 32)."remove($baseclassonly obj)\n{\n\tem.remove(obj);\n\tem.flush();\n}\n\n");
-	$methodCtx->print("\@Override\n$transactionUnit\@TransactionAttribute(TransactionAttributeType.REQUIRED)\n".tabalign("public boolean", 32)."removeByPk(".dr::prog::java::JavaGenerator::getPkTypeName($model)." pk)\n{\n\treturn em.createQuery(\"DELETE FROM $baseclassonly obj WHERE obj.".dr::prog::java::JavaGenerator::getPkFieldName($model)." = ?1\").setParameter(1, pk).executeUpdate() != 0;\n}\n\n");
+	#$methodCtx->print("\@Override\n$transactionUnit\@TransactionAttribute(TransactionAttributeType.SUPPORTS)\n".tabalign("public $baseclassonly", 32)."loadByPk(".dr::prog::java::JavaGenerator::getPkTypeName($model)." pk)\n{\n\treturn ($baseclassonly)em.find($baseclassonly.class, pk);\n}\n\n");
+	#$methodCtx->print("\@SuppressWarnings(\"unchecked\")\n\@Override\n$transactionUnit\@TransactionAttribute(TransactionAttributeType.SUPPORTS)\n".tabalign("public List<$baseclassonly>", 32)."listAll()\n{\n\treturn (List<$baseclassonly>)em.createQuery(\"SELECT ent FROM $baseclassonly ent ORDER BY ".dr::prog::java::JavaGenerator::getPkFieldName($model)."\").getResultList();\n}\n\n");
+	#$methodCtx->print("\@Override\n$transactionUnit\@TransactionAttribute(TransactionAttributeType.REQUIRED)\n".tabalign("public void", 32)."insert($baseclassonly obj)\n{\n\tem.persist(obj);\n\tem.flush();\n}\n\n");
+	#$methodCtx->print("\@Override\n$transactionUnit\@TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)\n".tabalign("public void", 32)."insertTxNew($baseclassonly obj)\n{\n\tem.persist(obj);\n\tem.flush();\n}\n\n");
+	#$methodCtx->print("\@Override\n$transactionUnit\@TransactionAttribute(TransactionAttributeType.REQUIRED)\n".tabalign("public $baseclassonly", 32)."update($baseclassonly obj)\n{\n\tobj = em.merge(obj);\n\tem.flush();\n\treturn obj;\n}\n\n");
+	#$methodCtx->print("\@Override\n$transactionUnit\@TransactionAttribute(TransactionAttributeType.REQUIRED)\n".tabalign("public void", 32)."remove($baseclassonly obj)\n{\n\tem.remove(obj);\n\tem.flush();\n}\n\n");
+	#$methodCtx->print("\@Override\n$transactionUnit\@TransactionAttribute(TransactionAttributeType.REQUIRED)\n".tabalign("public boolean", 32)."removeByPk(".dr::prog::java::JavaGenerator::getPkTypeName($model)." pk)\n{\n\treturn em.createQuery(\"DELETE FROM $baseclassonly obj WHERE obj.".dr::prog::java::JavaGenerator::getPkFieldName($model)." = ?1\").setParameter(1, pk).executeUpdate() != 0;\n}\n\n");
 	if (defined (my $compos = $model->checkCompos())) {
-		$methodCtx->print("\@SuppressWarnings(\"unchecked\")\n\@Override\n$transactionUnit\@TransactionAttribute(TransactionAttributeType.REQUIRED)\n".tabalign("public List<$baseclassonly>", 32)."listByCompos(".dr::prog::java::JavaGenerator::getPkTypeName($compos->getAssocTarget())." compos)\n{\n\treturn (List<$baseclassonly>)em.createQuery(\"FROM $baseclassonly WHERE ".$compos->{name}." = ?1 ORDER BY ".dr::prog::java::JavaGenerator::getPkFieldName($model)."\").setParameter(1, compos).getResultList();\n}\n\n");
-		$methodCtx->print("\@Override\n$transactionUnit\@TransactionAttribute(TransactionAttributeType.REQUIRED)\n".tabalign("public long", 32)."removeByCompos(".dr::prog::java::JavaGenerator::getPkTypeName($compos->getAssocTarget())." compos)\n{\n\treturn em.createQuery(\"DELETE FROM $baseclassonly obj WHERE obj.pk.".$compos->{name}." = ?1\").setParameter(1, compos).executeUpdate();\n}\n\n");
+		#$sysimportCtx->printOnce("import java.util.Map;\n");
+		$sysimportCtx->printOnce("import java.util.List;\n");
+		$methodCtx->print("\@SuppressWarnings(\"unchecked\")\n\@Override\n$transactionUnit\@TransactionAttribute(TransactionAttributeType.REQUIRED)\n".tabalign("public List<$baseclassonly>", 32)."listByCompos(".dr::prog::java::JavaGenerator::getPkTypeName($compos->getAssocTarget())." compos)\n{\n\treturn (List<$baseclassonly>)entityManager.createQuery(\"FROM $baseclassonly WHERE ".$compos->{name}." = ?1 ORDER BY ".dr::prog::java::JavaGenerator::getPkFieldName($model)."\").setParameter(1, compos).getResultList();\n}\n\n");
+		$methodCtx->print("\@Override\n$transactionUnit\@TransactionAttribute(TransactionAttributeType.REQUIRED)\n".tabalign("public long", 32)."removeByCompos(".dr::prog::java::JavaGenerator::getPkTypeName($compos->getAssocTarget())." compos)\n{\n\treturn entityManager.createQuery(\"DELETE FROM $baseclassonly obj WHERE obj.pk.".$compos->{name}." = ?1\").setParameter(1, compos).executeUpdate();\n}\n\n");
 	}
 
-	$sysimportCtx->printOnce("import java.util.Map;\n");
-	$sysimportCtx->printOnce("import java.util.List;\n");
-	$importCtx->printOnce("import dr.core.EntityHolder;\n");
-	$importCtx->printOnce("import dr.core.CallerContext;\n");
+	#$importCtx->printOnce("import dr.core.EntityHolder;\n");
+	#$importCtx->printOnce("import dr.core.CallerContext;\n");
 
-	$methodCtx->print(tabalign("public ".dr::prog::java::JavaGenerator::getPkTypeName($model), 32)."openRelation(EntityHolder<$baseclassonly> holder, String relation)\n{\n\tthrow new UnsupportedOperationException(\"openRelation not supported yet\");\n}\n\n");
-	$methodCtx->print(tabalign("public ".dr::prog::java::JavaGenerator::getPkTypeName($model), 32)."importDynamicKey(Map<String, Object> data)\n{\n\treturn (".dr::prog::java::JavaGenerator::getPkTypeName($model).")getRoleDaoAccess().importDynamicKey(data);\n}\n\n");
-	$methodCtx->print(tabalign("public Map<String, Object>", 32)."exportDynamicData(EntityHolder<$baseclassonly> holder)\n{\n\treturn getRoleDaoAccess().exportDynamicData(holder);\n}\n\n");
-	$methodCtx->print(tabalign("public Map<String, Object>", 32)."exportEntityData(EntityHolder<$baseclassonly> holder)\n{\n\treturn getRoleDaoAccess().exportEntityData(holder);\n}\n\n");
-	$methodCtx->print("\@Override\n$transactionUnit\@TransactionAttribute(TransactionAttributeType.REQUIRED)\n".tabalign("public $baseclassonly", 32)."createDynamic(EntityHolder<?> composition, Map<String, Object> data)\n{\n\treturn getRoleDaoAccess().createObject(composition, data);\n}\n\n");
-	$methodCtx->print(tabalign("public EntityHolder<$baseclassonly>", 32)."retrieveDynamic(CallerContext baseContext, ".dr::prog::java::JavaGenerator::getPkTypeName($model)." pk)\n{\n\treturn getRoleDaoAccess().retrieveObject(baseContext, pk);\n}\n\n");
-	$methodCtx->print("\@Override\n$transactionUnit\@TransactionAttribute(TransactionAttributeType.REQUIRED)\n".tabalign("public $baseclassonly", 32)."updateDynamic(EntityHolder<$baseclassonly> roleObject, ".dr::prog::java::JavaGenerator::getPkTypeName($model)." pk, Map<String, Object> updates)\n{\n\treturn getRoleDaoAccess().updateObject(roleObject, pk, updates);\n}\n\n");
-	$methodCtx->print("\@Override\n$transactionUnit\@TransactionAttribute(TransactionAttributeType.REQUIRED)\n".tabalign("public boolean", 32)."deleteDynamic(CallerContext roleContext, ".dr::prog::java::JavaGenerator::getPkTypeName($model)." pk)\n{\n\treturn getRoleDaoAccess().deleteObject(roleContext, pk);\n}\n\n");
-	$methodCtx->print(tabalign("public long", 32)."listDynamic(List<EntityHolder<$baseclassonly>> results, EntityHolder<?> composition, Map<String, Object> filter, List<String> sorts, Long start, Long limit)\n{\n\treturn getRoleDaoAccess().listObjects(results, composition, filter, sorts, start, limit);\n}\n\n");
-	$methodCtx->print("\@Override\n$transactionUnit\@TransactionAttribute(TransactionAttributeType.REQUIRED)\n".tabalign("public <R> R", 32)."runTransactioned(java.util.concurrent.Callable<R> code) throws Exception\n{\n\treturn code.call();\n}\n\n");
+	#$methodCtx->print(tabalign("public ".dr::prog::java::JavaGenerator::getPkTypeName($model), 32)."openRelation(EntityHolder<$baseclassonly> holder, String relation)\n{\n\tthrow new UnsupportedOperationException(\"openRelation not supported yet\");\n}\n\n");
+	#$methodCtx->print(tabalign("public ".dr::prog::java::JavaGenerator::getPkTypeName($model), 32)."importDynamicKey(Map<String, Object> data)\n{\n\treturn (".dr::prog::java::JavaGenerator::getPkTypeName($model).")getRoleDaoAccess().importDynamicKey(data);\n}\n\n");
+	#$methodCtx->print(tabalign("public Map<String, Object>", 32)."exportDynamicData(EntityHolder<$baseclassonly> holder)\n{\n\treturn getRoleDaoAccess().exportDynamicData(holder);\n}\n\n");
+	#$methodCtx->print(tabalign("public Map<String, Object>", 32)."exportEntityData(EntityHolder<$baseclassonly> holder)\n{\n\treturn getRoleDaoAccess().exportEntityData(holder);\n}\n\n");
+	#$methodCtx->print("\@Override\n$transactionUnit\@TransactionAttribute(TransactionAttributeType.REQUIRED)\n".tabalign("public $baseclassonly", 32)."createDynamic(EntityHolder<?> composition, Map<String, Object> data)\n{\n\treturn getRoleDaoAccess().createObject(composition, data);\n}\n\n");
+	#$methodCtx->print(tabalign("public EntityHolder<$baseclassonly>", 32)."retrieveDynamic(CallerContext baseContext, ".dr::prog::java::JavaGenerator::getPkTypeName($model)." pk)\n{\n\treturn getRoleDaoAccess().retrieveObject(baseContext, pk);\n}\n\n");
+	#$methodCtx->print("\@Override\n$transactionUnit\@TransactionAttribute(TransactionAttributeType.REQUIRED)\n".tabalign("public $baseclassonly", 32)."updateDynamic(EntityHolder<$baseclassonly> roleObject, ".dr::prog::java::JavaGenerator::getPkTypeName($model)." pk, Map<String, Object> updates)\n{\n\treturn getRoleDaoAccess().updateObject(roleObject, pk, updates);\n}\n\n");
+	#$methodCtx->print("\@Override\n$transactionUnit\@TransactionAttribute(TransactionAttributeType.REQUIRED)\n".tabalign("public boolean", 32)."deleteDynamic(CallerContext roleContext, ".dr::prog::java::JavaGenerator::getPkTypeName($model)." pk)\n{\n\treturn getRoleDaoAccess().deleteObject(roleContext, pk);\n}\n\n");
+	#$methodCtx->print(tabalign("public long", 32)."listDynamic(List<EntityHolder<$baseclassonly>> results, EntityHolder<?> composition, Map<String, Object> filter, List<String> sorts, Long start, Long limit)\n{\n\treturn getRoleDaoAccess().listObjects(results, composition, filter, sorts, start, limit);\n}\n\n");
+	#$methodCtx->print("\@Override\n$transactionUnit\@TransactionAttribute(TransactionAttributeType.REQUIRED)\n".tabalign("public <R> R", 32)."runTransactioned(java.util.concurrent.Callable<R> code) throws Exception\n{\n\treturn code.call();\n}\n\n");
 
-	$methodCtx->print("\n");
+	#$methodCtx->print("\n");
 
 	if ($dao) {
 		for my $oper (grep({ $_->{name} =~ /^dr\.(\w+)\./ } @{$dao->{oper_list}})) {
@@ -1004,7 +1024,7 @@ sub generateEntityDaoJpa($$$$)
 					$cond = substr($cond, 5);
 					$sql = "FROM $baseclassonly WHERE $cond";
 				}
-				$contCtx->print("\@SuppressWarnings(\"unchecked\")\nList<$baseclassonly> result = em.createQuery(\"".escapeString($sql)."\")$list.getResultList();\n");
+				$contCtx->print("\@SuppressWarnings(\"unchecked\")\nList<$baseclassonly> result = entityManager.createQuery(\"".escapeString($sql)."\")$list.getResultList();\n");
 				$contCtx->print("if (result.size() == 0)\n\treturn null;\n");
 				$contCtx->print("return result.get(0);\n");
 				$methodCtx->print("}\n\n");
@@ -1013,7 +1033,7 @@ sub generateEntityDaoJpa($$$$)
 				my $ret_type = translateJavaType($sysimportCtx, $model, $oper->getReturnTypeWithTagger());
 				$methodCtx->print("\@Override\n".getEjbTransactionParams($oper, 0, "SUPPORTS").tabalign("public $ret_type", 32)."$opname(".generateOperParamList($oper).")\n{\n");
 				my ( $sql, $list ) = replaceJqlParams($oper);
-				$methodCtx->print("\t\@SuppressWarnings(\"unchecked\")\n\t$ret_type result = ($ret_type)em.createQuery(\"".escapeString($sql)."\")$list.getResultList();\n");
+				$methodCtx->print("\t\@SuppressWarnings(\"unchecked\")\n\t$ret_type result = ($ret_type)entityManager.createQuery(\"".escapeString($sql)."\")$list.getResultList();\n");
 				$methodCtx->print("\treturn result;\n");
 				$methodCtx->print("}\n\n");
 			}
@@ -1021,7 +1041,7 @@ sub generateEntityDaoJpa($$$$)
 				my ( $retType, $proc ) = translateUpdateRet($oper);
 				$methodCtx->print("\@Override\n".getEjbTransactionParams($oper, 0, "REQUIRED").tabalign("public $retType", 32)."$opname(".generateOperParamList($oper).")\n{\n");
 				my ( $sql, $list ) = replaceJqlParams($oper);
-				$methodCtx->print("\t".(defined $proc ? "return " : "")."em.createQuery(\"".escapeString($sql)."\")$list.executeUpdate()".(defined $proc ? $proc : "").";\n");
+				$methodCtx->print("\t".(defined $proc ? "return " : "")."entityManager.createQuery(\"".escapeString($sql)."\")$list.executeUpdate()".(defined $proc ? $proc : "").";\n");
 				$methodCtx->print("}\n\n");
 			}
 			elsif ($optype eq "query") {
@@ -1029,7 +1049,7 @@ sub generateEntityDaoJpa($$$$)
 				$methodCtx->print("\@Override\n".getEjbTransactionParams($oper, 0, "SUPPORTS").tabalign("public $ret_type", 32)."$opname(".generateOperParamList($oper).")\n{\n");
 				my ( $sql, $list ) = replaceJqlParams($oper);
 				$sysimportCtx->printOnce("import java.util.List;\n");
-				$methodCtx->print("\t\@SuppressWarnings(\"rawtypes\")\n\tList result = em.createQuery(\"".escapeString($sql)."\")$list.getResultList();\n");
+				$methodCtx->print("\t\@SuppressWarnings(\"rawtypes\")\n\tList result = entityManager.createQuery(\"".escapeString($sql)."\")$list.getResultList();\n");
 				$methodCtx->print("\treturn result.size() == 0 ? null : ($ret_type)result.get(0);\n");
 				$methodCtx->print("}\n\n");
 			}
