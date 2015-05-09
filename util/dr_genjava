@@ -271,6 +271,7 @@ sub generateEntityBeanPart($$$)
 	my $pkClazz = undef;
 	my $pkField = "";
 	my $addPkFields = "";
+	my $composClazz = undef;
 	my $composPkClazz = undef;
 	my $pkComposField = undef;
 
@@ -401,7 +402,7 @@ sub generateEntityBeanPart($$$)
 		}
 		elsif ($field->{stype} eq "compos") {
 			my $compos = $field->getAssocTarget();
-			my $compos_class = convertToJavaClass($compos->{name});
+			$composClazz = convertToJavaClass($compos->{full});
 			my $pktype = convertPkType($compos);
 			#$javaOut->printSysimport("import dr.meta.ComposDef;\n");
 			#$clsCtx->print("\@ComposDef(clazz = ".$compos->getFullDotName().".class, pkclazz = ".convertPkType($compos).".class, path = \"pk.$field->{name}\", composKeySetter = \"set".ucfirst($field->{name})."\")\n");
@@ -511,7 +512,7 @@ sub generateEntityBeanPart($$$)
 
 	{
 		$javaOut->printSysimport("import dr.meta.PKeyDef;\n");
-		$clsCtx->print("\@PKeyDef(pkDirect = ".dr::prog::java::JavaGenerator::formatBoolean($pkDirect).", pkClazz = ".(defined $pkClazz ? "$pkClazz.class" : "void.class").", pkField = \"$pkField\", composPkClazz = ".($composPkClazz ? "$composPkClazz.class" : "void.class").", pkComposField = \"".($pkComposField ? $pkComposField : "")."\", addPkFields = { ".dr::Util::removeOptionalEnd($addPkFields, ", ")." })\n");
+		$clsCtx->print("\@PKeyDef(pkDirect = ".dr::prog::java::JavaGenerator::formatBoolean($pkDirect).", pkClazz = ".(defined $pkClazz ? "$pkClazz.class" : "void.class").", pkField = \"$pkField\", composClazz = ".($composClazz ? "$composClazz" : "void").".class, composPkClazz = ".($composPkClazz ? "$composPkClazz" : "void").".class, pkComposField = \"".($pkComposField ? $pkComposField : "")."\", addPkFields = { ".dr::Util::removeOptionalEnd($addPkFields, ", ")." })\n");
 	}
 
 	if ($fieldOrder) {
