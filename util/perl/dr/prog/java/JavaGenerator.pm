@@ -152,20 +152,29 @@ sub mapJavaAttrType
 	return mapJavaType($atype);
 }
 
+sub translateJavaName
+{
+	my ( $typename )		= @_;
+
+	$typename =~ s/::/./g;
+
+	return $typename;
+}
+
 sub getPkTypeName
 {
 	my $clsmodel			= shift;
 
 	my @primary = $clsmodel->getPrimary();
 
-	my $usePk = @primary > 1 || defined $clsmodel->checkCompos();
+	my $usePk = @primary > 1;
 
 	if ($usePk) {
 		return $clsmodel->getFullDotName().".Pk";
 	}
 	else {
 		my $field = $primary[0];
-		my $java_type = dr::prog::java::JavaGenerator::mapJavaAttrType($field);
+		my $java_type = $field->{ref} ? getPkTypeName($clsmodel->getSubModel($field->{ref})) : dr::prog::java::JavaGenerator::mapJavaAttrType($field);
 	}
 }
 

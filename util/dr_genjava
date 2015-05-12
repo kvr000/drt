@@ -188,6 +188,10 @@ sub generateEntityBeanPart($$$)
 	my $pkgname = $jclassname; $pkgname =~ s/\.\w+$//;
 	my $classonly = $jclassname; $classonly =~ s/^.*\.//g;
 
+	my @primary = $model->getPrimary();
+
+	my $usePk = @primary > 1;
+
 	my $dao = $model->checkSubModel("${classname}::Dao");
 
 	$javaOut->printSysimport("import javax.persistence.Entity;\n");
@@ -240,16 +244,20 @@ sub generateEntityBeanPart($$$)
 	my $inner = $codeCtx->indentContext(1);
 	$inner->print(tabalign("private static final long", 32)."serialVersionUID = 1L;\n\n");
 	my $nested_out = $javaOut->dupWithFileContext($inner->subContext());
-	my $pkCtx = $inner->subContext();
-	my $pk_fieldCtx = $pkCtx->subAfterContext()->indentContext(1);
-	my $pk_methodCtx = $pkCtx->subAfterContext()->indentContext(1);
-	my $pk_endCtx = $inner->subContext();
+
+	my $pkCtx;
+	my $pk_fieldCtx;
+	my $pk_methodCtx;
+	my $pk_endCtx;
+	$pkCtx = $inner->subContext();
+	$pk_fieldCtx = $pkCtx->subAfterContext()->indentContext(1);
+	$pk_methodCtx = $pkCtx->subAfterContext()->indentContext(1);
+	$pk_endCtx = $inner->subContext();
+
 	$inner->print("\n");
 	my $fieldCtx = $inner->subContext();
 	$inner->print("\n");
 	my $methodCtx = $inner->subContext();
-
-	my @primary = $model->getPrimary();
 
 	my $fieldOrder = "";
 	my $pkOrder = "";
@@ -265,9 +273,7 @@ sub generateEntityBeanPart($$$)
 		}
 	}
 
-	my $use_pk = @primary > 1;
-
-	my $pkDirect = !$use_pk;
+	my $pkDirect = !$usePk;
 	my $pkClazz = undef;
 	my $pkField = "";
 	my $addPkFields = "";
@@ -276,6 +282,7 @@ sub generateEntityBeanPart($$$)
 	my $pkComposField = undef;
 
 	foreach my $field (@{$model->getAttrs()}) {
+		# $primary_level identifies whether this field is not part of primary key (-1), is a simple primary key (0) or part of complex primary key (1)
 		my $primary_level = $field->getRole()->{primary} ? @primary > 1 : -1;
 		if ($field->{stype} eq "field") {
 			my ( $type, $tagger ) = $field->getFinalTypeWithTagger();
@@ -408,21 +415,29 @@ sub generateEntityBeanPart($$$)
 			#$clsCtx->print("\@ComposDef(clazz = ".$compos->getFullDotName().".class, pkclazz = ".convertPkType($compos).".class, path = \"pk.$field->{name}\", composKeySetter = \"set".ucfirst($field->{name})."\")\n");
 			$pkComposField = $field->{name};
 			$composPkClazz = convertPkType($compos);
-			$pk_fieldCtx->print("\@Column(name=\"$field->{name}\")\n");
-			$pk_fieldCtx->print("\@FieldRoles(".dr::prog::java::JavaGenerator::formatFieldRoles($model, $field).")\n");
-			$pk_fieldCtx->print(tabalign("protected $pktype", 32)."$field->{name};\n\n");
-			$methodCtx->print(tabalign("public void", 32)."set".ucfirst($field->{name})."($pktype $field->{name}_)\n{\n\tthis.pk.set".ucfirst($field->{name})."($field->{name}_);\n}\n\n");
-			$methodCtx->print(tabalign("public $pktype", 32)."get".ucfirst($field->{name})."()\n{\n\treturn this.pk.get".ucfirst($field->{name})."();\n}\n\n");
-			$pk_methodCtx->print(tabalign("public void", 32)."set".ucfirst($field->{name})."($pktype $field->{name}_)\n{\n\tthis.$field->{name} = $field->{name}_;\n}\n\n");
-			$pk_methodCtx->print(tabalign("public $pktype", 32)."get".ucfirst($field->{name})."()\n{\n\treturn this.$field->{name};\n}\n\n");
+			if ($primary_level > 0) {
+				$pk_fieldCtx->print("\@Column(name=\"$field->{name}\")\n");
+				$pk_fieldCtx->print("\@FieldRoles(".dr::prog::java::JavaGenerator::formatFieldRoles($model, $field).")\n");
+				$pk_fieldCtx->print(tabalign("protected $pktype", 32)."$field->{name};\n\n");
+				$methodCtx->print(tabalign("public void", 32)."set".ucfirst($field->{name})."($pktype $field->{name}_)\n{\n\tthis.pk.set".ucfirst($field->{name})."($field->{name}_);\n}\n\n");
+				$methodCtx->print(tabalign("public $pktype", 32)."get".ucfirst($field->{name})."()\n{\n\treturn this.pk.get".ucfirst($field->{name})."();\n}\n\n");
+				$pk_methodCtx->print(tabalign("public void", 32)."set".ucfirst($field->{name})."($pktype $field->{name}_)\n{\n\tthis.$field->{name} = $field->{name}_;\n}\n\n");
+				$pk_methodCtx->print(tabalign("public $pktype", 32)."get".ucfirst($field->{name})."()\n{\n\treturn this.$field->{name};\n}\n\n");
+			}
+			else {
+				$fieldCtx->print("\@Column(name=\"$field->{name}\")\n");
+				$fieldCtx->print("\@FieldRoles(".dr::prog::java::JavaGenerator::formatFieldRoles($model, $field).")\n");
+				$fieldCtx->print(tabalign("protected $pktype", 32)."$field->{name};\n\n");
+				$methodCtx->print(tabalign("public void", 32)."set".ucfirst($field->{name})."($pktype $field->{name}_)\n{\n\tthis.$field->{name} = $field->{name}_;\n}\n\n");
+				$methodCtx->print(tabalign("public $pktype", 32)."get".ucfirst($field->{name})."()\n{\n\treturn this.$field->{name};\n}\n\n");
+			}
 			$pkOrder .= ", \"".escapeString($field->{name})."\"";
-			$use_pk = 1;
 		}
 		else {
 			dr::Util::doDie("unknown field stype: $field->{name} -> $field->{stype}");
 		}
 	}
-	if ($use_pk) {
+	if ($usePk) {
 		$javaOut->printSysimport("import javax.persistence.EmbeddedId;\n");
 		$javaOut->printSysimport("import javax.persistence.Embeddable;\n");
 		$javaOut->printSysimport("import java.io.Serializable;\n");

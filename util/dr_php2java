@@ -43,17 +43,12 @@ sub processString($$)
 
 	my $str;
 
-	for (my $pos = 0;;) {
-		my $bs;
-		my $end;
-		dr::Util::doDie("failed to find end of string: $rest") unless (($end = index($rest, $sep, $pos)) >= 0);
-		( $str, $rest ) = ( substr($rest, 0, $end), substr($rest, $end+1) ), last unless (($bs = index($rest, $sep, $pos)) >= 0 && $bs < $end);
-		$pos = $bs+2;
-	}
+	die "failed find end of string: $rest" unless ($rest =~ m/^(([^\\$sep]|\\.)+)$sep(.*)$/s);
+	my ( $inner, $trailing ) = ( $1, $3 );
 
-	$str = "\"".processStringInner($sep, $str)."\"";
+	$str = "\"".processStringInner($sep, $1)."\"";
 
-	return ( $str, $rest );
+	return ( $str, $trailing );
 }
 
 sub processCode($)
@@ -100,7 +95,6 @@ sub processLine($)
 	return "$1//$2" if ($line =~ m/^(\s*)#(.*)$/s);
 
 	return "package ".translateNs($1).";\n" if (m/^namespace (.*);/);
-
 
 	my $out = "";
 	while ($line =~ m/^([^'"]*)(['"])(.*)$/s) {
