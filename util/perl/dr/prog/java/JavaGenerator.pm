@@ -313,7 +313,7 @@ sub processLine
 			my $translated = mapJavaAttrType($classmodel->getAttr($field));
 			$line = "$start$translated$end";
 		}
-		if ($line =~ m/^((public|private|protected)\s+|)((abstract)\s+|)class\s+(\w+)(\s*<.*>)?\s+extends\s+((\w+\.)*\w+(<([<a-zA-Z_0-9.]+|\?)(\s*,\s*([\w<]+|\?))*>*>)?)(\s+.*|)$/) {
+		if ($line =~ m/^((public|private|protected)\s+|)((abstract)\s+|)class\s+(\w+)(\s*<.*>)?\s+extends\s+((\w+\.)*\w+(<([<a-zA-Z_0-9.]+|\?)(\s*,\s*([\w<]+|\?))*.*?>*>)?)(\s+implements\s+.*|)\s*$/) {
 			$this->{class_name} = $5;
 			$this->{ancestor_name} = $7;
 			$this->processClassDef($line);
@@ -496,6 +496,8 @@ sub processFieldDef
 	$this->dieContext($this->getContext(), "failed to match field definition: $line") unless ($line =~ m/^\s*((public|protected|private)\s+)*([a-zA-Z_.]+(<.*?>|\[\])*)\s+(\w+)(|\s*=.*);.*$/);
 	my ( $atype, $aname ) = ( $3, $5 );
 
+	$this->printLine($line);
+
 	foreach my $pending (@{$this->{pending}}) {
 		if (exists $ATTR_TAGS{$pending->{name}}) {
 			my $func = $ATTR_TAGS{$pending->{name}};
@@ -506,7 +508,6 @@ sub processFieldDef
 		}
 	}
 	$this->{pending} = [];
-	$this->printLine($line);
 }
 
 sub processFieldDefGetset
@@ -517,10 +518,12 @@ sub processFieldDefGetset
 	my $oper		= shift;
 
 	if ($oper->{value} eq "get") {
-		$this->printIndented(tabalign("public $atype", 32)."get".ucfirst($aname)."()\n{\n\treturn this.$aname;\n}\n\n");
+		$this->printLine("\n");
+		$this->printIndented(tabalign("public $atype", 32)."get".ucfirst($aname)."()\n{\n\treturn this.$aname;\n}\n");
 	}
 	elsif ($oper->{value} eq "set") {
-		$this->printIndented(tabalign("public void", 32)."set".ucfirst($aname)."($atype ${aname}_)\n{\n\tthis.$aname = ${aname}_;\n}\n\n");
+		$this->printLine("\n");
+		$this->printIndented(tabalign("public void", 32)."set".ucfirst($aname)."($atype ${aname}_)\n{\n\tthis.$aname = ${aname}_;\n}\n");
 	}
 	else {
 		$this->dieContext($oper->{context}, "invalid value for getset generator: $oper->{value}");
