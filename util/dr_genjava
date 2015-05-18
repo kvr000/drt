@@ -966,7 +966,7 @@ sub generateEntityDaoJpa($$$$)
 	$fddao->printIndented("\n");
 	my $methodCtx = $fddao->rememberContext();
 
-	$methodCtx->print(tabalign("public", 32).$classonly."()\n{\n\tsuper($baseclassonly.class, $pkclassname.class);\n}\n\n");
+	$methodCtx->print(tabalign("public", 32).$classonly."()\n{\n\tsuper($baseclassonly.class);\n}\n\n");
 
 	#$fddao->printAt($fieldCtx, "\@PersistenceContext(unitName=\"".getDataSource($dao || $model)."\")\n");
 	#$fddao->printAt($fieldCtx, "\@PersistenceUnit(name=\"".getDataSource($dao || $model)."\")\n");
