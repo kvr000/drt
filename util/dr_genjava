@@ -234,6 +234,10 @@ sub generateEntityBeanPart($$$)
 		$javaOut->printSysimport("import dr.meta.SuggestDef;\n");
 		$codeCtx->print("\@SuggestDef(fields = { ".join(", ", map({ "\"$_\"" } split(/,\s*/, $suggestFields)))." })\n");
 	}
+	if (defined (my $refFields = $model->checkDrTagValue("refFields"))) {
+		$javaOut->printSysimport("import dr.meta.RefFieldsDef;\n");
+		$codeCtx->print("\@RefFieldsDef(fields = { ".join(", ", map({ "\"$_\"" } split(/,\s*/, $refFields)))." })\n");
+	}
 	if (defined (my $orderFields = $model->checkDrTagValue("order"))) {
 		$javaOut->printSysimport("import dr.meta.ListOrder;\n");
 		$codeCtx->print("\@ListOrder(order = { ".join(", ", map({ "\"$_\"" } split(/,\s*/, $orderFields)))." })\n");
