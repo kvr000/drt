@@ -244,7 +244,7 @@ sub generateEntityBeanPart($$$)
 	}
 	$javaOut->printSysimport("import dr.meta.FieldRoles;\n");
 	$codeCtx->print("\@FieldRoles(".dr::prog::java::JavaGenerator::formatClassRoles($model).")\n");
-	$codeCtx->print("\@Entity\n\@Table(name=\"$classonly\")\npublic class $classonly implements java.io.Serializable\n{\n");
+	$codeCtx->print("\@Entity\n\@Table(name = \"$classonly\")\npublic class $classonly implements java.io.Serializable\n{\n");
 	my $inner = $codeCtx->indentContext(1);
 	$inner->print(tabalign("private static final long", 32)."serialVersionUID = 1L;\n\n");
 	my $nested_out = $javaOut->dupWithFileContext($inner->subContext());
@@ -298,11 +298,11 @@ sub generateEntityBeanPart($$$)
 				my $method = ucfirst($field->{name});
 				$javaOut->printSysimport("import javax.persistence.Column;\n");
 				my $tmap = "";
-				$tmap .= "\@Column(name=\"".$field->{name}."\")\n";
+				$tmap .= "\@Column(name = \"".$field->{name}."\")\n";
 				if ($field->checkDrTagValue("serial")) {
 					$javaOut->printSysimport("import javax.persistence.GenerationType;\n");
 					$javaOut->printSysimport("import javax.persistence.GeneratedValue;\n");
-					$tmap .= "\@GeneratedValue(strategy=GenerationType.AUTO)\n";
+					$tmap .= "\@GeneratedValue(strategy = GenerationType.AUTO)\n";
 				}
 				if ($primary_level > 0) {
 					$addPkFields .= "\"$field->{name}\", ";
@@ -352,7 +352,7 @@ sub generateEntityBeanPart($$$)
 				$javaOut->printSysimport("import java.util.Set;\n");
 				$javaOut->printSysimport("import java.util.HashSet;\n");
 				my $tmap = "";
-				$tmap .= "\@OneToMany(fetch=FetchType.EAGER, cascade=CascadeType.ALL)\n";
+				$tmap .= "\@OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)\n";
 				$tmap .= "\@JoinColumns({ ".
 				join(", ", map({ "\@JoinColumn(name = \"$_->{name}\", referencedColumnName = \"$_->{name}\")" } $assoc_class->getCompos()->expandAssocAttrs())).
 				" })\n";
@@ -369,11 +369,11 @@ sub generateEntityBeanPart($$$)
 			my $method = ucfirst($field->{name});
 			$javaOut->printSysimport("import javax.persistence.Column;\n");
 			my $tmap = "";
-			$tmap .= "\@Column(name=\"".$field->{name}."\")\n";
+			$tmap .= "\@Column(name = \"".$field->{name}."\")\n";
 			if ($field->checkDrTagValue("serial")) {
 				$javaOut->printSysimport("import javax.persistence.GenerationType;\n");
 				$javaOut->printSysimport("import javax.persistence.GeneratedValue;\n");
-				$tmap .= "\@GeneratedValue(strategy=GenerationType.AUTO)\n";
+				$tmap .= "\@GeneratedValue(strategy = GenerationType.AUTO)\n";
 			}
 			my $dfl = (defined $field->{default}) ?
 				" = ".escapeJavaTypeValue($java_type, $field->{default}) :
@@ -420,7 +420,7 @@ sub generateEntityBeanPart($$$)
 			$pkComposField = $field->{name};
 			$composPkClazz = convertPkType($compos);
 			if ($primary_level > 0) {
-				$pk_fieldCtx->print("\@Column(name=\"$field->{name}\")\n");
+				$pk_fieldCtx->print("\@Column(name = \"$field->{name}\")\n");
 				$pk_fieldCtx->print("\@FieldRoles(".dr::prog::java::JavaGenerator::formatFieldRoles($model, $field).")\n");
 				$pk_fieldCtx->print(tabalign("protected $pktype", 32)."$field->{name};\n\n");
 				$methodCtx->print(tabalign("public void", 32)."set".ucfirst($field->{name})."($pktype $field->{name}_)\n{\n\tthis.pk.set".ucfirst($field->{name})."($field->{name}_);\n}\n\n");
@@ -429,7 +429,7 @@ sub generateEntityBeanPart($$$)
 				$pk_methodCtx->print(tabalign("public $pktype", 32)."get".ucfirst($field->{name})."()\n{\n\treturn this.$field->{name};\n}\n\n");
 			}
 			else {
-				$fieldCtx->print("\@Column(name=\"$field->{name}\")\n");
+				$fieldCtx->print("\@Column(name = \"$field->{name}\")\n");
 				$fieldCtx->print("\@FieldRoles(".dr::prog::java::JavaGenerator::formatFieldRoles($model, $field).")\n");
 				$fieldCtx->print(tabalign("protected $pktype", 32)."$field->{name};\n\n");
 				$methodCtx->print(tabalign("public void", 32)."set".ucfirst($field->{name})."($pktype $field->{name}_)\n{\n\tthis.$field->{name} = $field->{name}_;\n}\n\n");
@@ -972,10 +972,10 @@ sub generateEntityDaoJpa($$$$)
 
 	$methodCtx->print(tabalign("public", 32).$classonly."()\n{\n\tsuper($baseclassonly.class);\n}\n\n");
 
-	#$fddao->printAt($fieldCtx, "\@PersistenceContext(unitName=\"".getDataSource($dao || $model)."\")\n");
-	#$fddao->printAt($fieldCtx, "\@PersistenceUnit(name=\"".getDataSource($dao || $model)."\")\n");
+	#$fddao->printAt($fieldCtx, "\@PersistenceContext(unitName = \"".getDataSource($dao || $model)."\")\n");
+	#$fddao->printAt($fieldCtx, "\@PersistenceUnit(name = \"".getDataSource($dao || $model)."\")\n");
 	#$fddao->printAt($fieldCtx, tabalign("protected EntityManager", 32)."em;\n\n");
-	#$fddao->printAt($fieldCtx, "\@PersistenceContext(name=\"".getDataSource($dao || $model)."\")\n");
+	#$fddao->printAt($fieldCtx, "\@PersistenceContext(name = \"".getDataSource($dao || $model)."\")\n");
 	#$fddao->printAt($fieldCtx, tabalign("public void", 32)."setEntityManager(EntityManager entityManager)\n{\n\tsuper.setEntityManagerInternal(entityManager);\n}\n\n");
 
 	#$importCtx->printOnce("import dr.dao.RoleDaoAccessJpa;\n");
