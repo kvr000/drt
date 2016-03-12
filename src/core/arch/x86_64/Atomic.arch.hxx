@@ -62,14 +62,14 @@ public:
 
 DR_RINLINE bool Atomic::cmpxchg(void *volatile *val, void *cmpval, void *newval)
 {
-	bool e;
+	void *e;
 	__asm__ __volatile__(
 			"lock; cmpxchgq %3, %1\n\t"
 			"sete %b0\n\t"
 			: "=a"(e), "+m"(*val)
 			: "0"(cmpval), "r"(newval)
 			);
-	return e;
+	return (bool)e;
 }
 
 DR_RINLINE void *Atomic::xchg(void *volatile *val, void *newval)

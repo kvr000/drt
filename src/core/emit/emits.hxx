@@ -1387,22 +1387,22 @@ public:
 	{
 		typename typeref<R>::nvtyp r;
 		typename typeref<R>::nvtyp *pr = &r;
-		logtype?emitOR_g(pr):emitAND_g(&r);
+		logtype?Emitter0_g::emitOR_g(pr):Emitter0_g::emitAND_g(&r);
 		return *pr;
 	}
 	DR_RINLINE Rnvtyp emitD(Rnvtyp def) /* emit, get result only (with default ret) */
 	{
-		logtype?emitOR_g(&def):emitAND_g(&def);
+		logtype?Emitter0_g::emitOR_g(&def):Emitter0_g::emitAND_g(&def);
 		return def;
 	}
 	DR_RINLINE bool emitI() /* emit, check validity only */
 	{
 		typename typeref<R>::nvtyp r;
-		return logtype?emitOR_g(&r):emitAND_g(&r);
+		return logtype?Emitter0_g::emitOR_g(&r):Emitter0_g::emitAND_g(&r);
 	}
 	DR_RINLINE bool emitC(R *r) /* emit, check both validity and result */
 	{
-		return logtype?emitOR_g(r):emitAND_g(&r);
+		return logtype?Emitter0_g::emitOR_g(r):Emitter0_g::emitAND_g(&r);
 	}
 	DR_MINLINE EmitterBase0(bool vret_): EmitterBaseC0<R>(vret_) {}
 
@@ -1492,22 +1492,22 @@ public:
 	{
 		typename typeref<R>::nvtyp r;
 		typename typeref<R>::nvtyp *pr = &r;
-		logtype?emitOR_g(pr, &a1):emitAND_g(&r, &a1);
+		logtype?Emitter1_g::emitOR_g(pr, &a1):Emitter1_g::emitAND_g(&r, &a1);
 		return *pr;
 	}
 	DR_RINLINE Rnvtyp emitD(Rnvtyp def, A1 a1) /* emit, get result only (with default ret) */
 	{
-		logtype?emitOR_g(&def, &a1):emitAND_g(&def, &a1);
+		logtype?Emitter1_g::emitOR_g(&def, &a1):Emitter1_g::emitAND_g(&def, &a1);
 		return def;
 	}
 	DR_RINLINE bool emitI(A1 a1) /* emit, check validity only */
 	{
 		typename typeref<R>::nvtyp r;
-		return logtype?emitOR_g(&r, &a1):emitAND_g(&r, &a1);
+		return logtype?Emitter1_g::emitOR_g(&r, &a1):Emitter1_g::emitAND_g(&r, &a1);
 	}
 	DR_RINLINE bool emitC(R *r, A1 a1) /* emit, check both validity and result */
 	{
-		return logtype?emitOR_g(r, &a1):emitAND_g(&r, &a1);
+		return logtype?Emitter1_g::emitOR_g(r, &a1):Emitter1_g::emitAND_g(&r, &a1);
 	}
 	DR_MINLINE EmitterBase1(bool vret_): EmitterBaseC1<R, A1>(vret_) {}
 
@@ -1597,22 +1597,22 @@ public:
 	{
 		typename typeref<R>::nvtyp r;
 		typename typeref<R>::nvtyp *pr = &r;
-		logtype?emitOR_g(pr, &a1, &a2):emitAND_g(&r, &a1, &a2);
+		logtype?Emitter2_g::emitOR_g(pr, &a1, &a2):Emitter2_g::emitAND_g(&r, &a1, &a2);
 		return *pr;
 	}
 	DR_RINLINE Rnvtyp emitD(Rnvtyp def, A1 a1, A2 a2) /* emit, get result only (with default ret) */
 	{
-		logtype?emitOR_g(&def, &a1, &a2):emitAND_g(&def, &a1, &a2);
+		logtype?Emitter2_g::emitOR_g(&def, &a1, &a2):Emitter2_g::emitAND_g(&def, &a1, &a2);
 		return def;
 	}
 	DR_RINLINE bool emitI(A1 a1, A2 a2) /* emit, check validity only */
 	{
 		typename typeref<R>::nvtyp r;
-		return logtype?emitOR_g(&r, &a1, &a2):emitAND_g(&r, &a1, &a2);
+		return logtype?Emitter2_g::emitOR_g(&r, &a1, &a2):Emitter2_g::emitAND_g(&r, &a1, &a2);
 	}
 	DR_RINLINE bool emitC(R *r, A1 a1, A2 a2) /* emit, check both validity and result */
 	{
-		return logtype?emitOR_g(r, &a1, &a2):emitAND_g(&r, &a1, &a2);
+		return logtype?Emitter2_g::emitOR_g(r, &a1, &a2):Emitter2_g::emitAND_g(&r, &a1, &a2);
 	}
 	DR_MINLINE EmitterBase2(bool vret_): EmitterBaseC2<R, A1, A2>(vret_) {}
 
@@ -1702,22 +1702,22 @@ public:
 	{
 		typename typeref<R>::nvtyp r;
 		typename typeref<R>::nvtyp *pr = &r;
-		logtype?emitOR_g(pr, &a1, &a2, &a3):emitAND_g(&r, &a1, &a2, &a3);
+		logtype?Emitter3_g::emitOR_g(pr, &a1, &a2, &a3):Emitter3_g::emitAND_g(&r, &a1, &a2, &a3);
 		return *pr;
 	}
 	DR_RINLINE Rnvtyp emitD(Rnvtyp def, A1 a1, A2 a2, A3 a3) /* emit, get result only (with default ret) */
 	{
-		logtype?emitOR_g(&def, &a1, &a2, &a3):emitAND_g(&def, &a1, &a2, &a3);
+		logtype?Emitter3_g::emitOR_g(&def, &a1, &a2, &a3):Emitter3_g::emitAND_g(&def, &a1, &a2, &a3);
 		return def;
 	}
 	DR_RINLINE bool emitI(A1 a1, A2 a2, A3 a3) /* emit, check validity only */
 	{
 		typename typeref<R>::nvtyp r;
-		return logtype?emitOR_g(&r, &a1, &a2, &a3):emitAND_g(&r, &a1, &a2, &a3);
+		return logtype?Emitter3_g::emitOR_g(&r, &a1, &a2, &a3):Emitter3_g::emitAND_g(&r, &a1, &a2, &a3);
 	}
 	DR_RINLINE bool emitC(R *r, A1 a1, A2 a2, A3 a3) /* emit, check both validity and result */
 	{
-		return logtype?emitOR_g(r, &a1, &a2, &a3):emitAND_g(&r, &a1, &a2, &a3);
+		return logtype?Emitter3_g::emitOR_g(r, &a1, &a2, &a3):Emitter3_g::emitAND_g(&r, &a1, &a2, &a3);
 	}
 	DR_MINLINE EmitterBase3(bool vret_): EmitterBaseC3<R, A1, A2, A3>(vret_) {}
 
@@ -1807,22 +1807,22 @@ public:
 	{
 		typename typeref<R>::nvtyp r;
 		typename typeref<R>::nvtyp *pr = &r;
-		logtype?emitOR_g(pr, &a1, &a2, &a3, &a4):emitAND_g(&r, &a1, &a2, &a3, &a4);
+		logtype?Emitter4_g::emitOR_g(pr, &a1, &a2, &a3, &a4):Emitter4_g::emitAND_g(&r, &a1, &a2, &a3, &a4);
 		return *pr;
 	}
 	DR_RINLINE Rnvtyp emitD(Rnvtyp def, A1 a1, A2 a2, A3 a3, A4 a4) /* emit, get result only (with default ret) */
 	{
-		logtype?emitOR_g(&def, &a1, &a2, &a3, &a4):emitAND_g(&def, &a1, &a2, &a3, &a4);
+		logtype?Emitter4_g::emitOR_g(&def, &a1, &a2, &a3, &a4):Emitter4_g::emitAND_g(&def, &a1, &a2, &a3, &a4);
 		return def;
 	}
 	DR_RINLINE bool emitI(A1 a1, A2 a2, A3 a3, A4 a4) /* emit, check validity only */
 	{
 		typename typeref<R>::nvtyp r;
-		return logtype?emitOR_g(&r, &a1, &a2, &a3, &a4):emitAND_g(&r, &a1, &a2, &a3, &a4);
+		return logtype?Emitter4_g::emitOR_g(&r, &a1, &a2, &a3, &a4):Emitter4_g::emitAND_g(&r, &a1, &a2, &a3, &a4);
 	}
 	DR_RINLINE bool emitC(R *r, A1 a1, A2 a2, A3 a3, A4 a4) /* emit, check both validity and result */
 	{
-		return logtype?emitOR_g(r, &a1, &a2, &a3, &a4):emitAND_g(&r, &a1, &a2, &a3, &a4);
+		return logtype?Emitter4_g::emitOR_g(r, &a1, &a2, &a3, &a4):Emitter4_g::emitAND_g(&r, &a1, &a2, &a3, &a4);
 	}
 	DR_MINLINE EmitterBase4(bool vret_): EmitterBaseC4<R, A1, A2, A3, A4>(vret_) {}
 
@@ -1912,22 +1912,22 @@ public:
 	{
 		typename typeref<R>::nvtyp r;
 		typename typeref<R>::nvtyp *pr = &r;
-		logtype?emitOR_g(pr, &a1, &a2, &a3, &a4, &a5):emitAND_g(&r, &a1, &a2, &a3, &a4, &a5);
+		logtype?Emitter5_g::emitOR_g(pr, &a1, &a2, &a3, &a4, &a5):Emitter5_g::emitAND_g(&r, &a1, &a2, &a3, &a4, &a5);
 		return *pr;
 	}
 	DR_RINLINE Rnvtyp emitD(Rnvtyp def, A1 a1, A2 a2, A3 a3, A4 a4, A5 a5) /* emit, get result only (with default ret) */
 	{
-		logtype?emitOR_g(&def, &a1, &a2, &a3, &a4, &a5):emitAND_g(&def, &a1, &a2, &a3, &a4, &a5);
+		logtype?Emitter5_g::emitOR_g(&def, &a1, &a2, &a3, &a4, &a5):Emitter5_g::emitAND_g(&def, &a1, &a2, &a3, &a4, &a5);
 		return def;
 	}
 	DR_RINLINE bool emitI(A1 a1, A2 a2, A3 a3, A4 a4, A5 a5) /* emit, check validity only */
 	{
 		typename typeref<R>::nvtyp r;
-		return logtype?emitOR_g(&r, &a1, &a2, &a3, &a4, &a5):emitAND_g(&r, &a1, &a2, &a3, &a4, &a5);
+		return logtype?Emitter5_g::emitOR_g(&r, &a1, &a2, &a3, &a4, &a5):Emitter5_g::emitAND_g(&r, &a1, &a2, &a3, &a4, &a5);
 	}
 	DR_RINLINE bool emitC(R *r, A1 a1, A2 a2, A3 a3, A4 a4, A5 a5) /* emit, check both validity and result */
 	{
-		return logtype?emitOR_g(r, &a1, &a2, &a3, &a4, &a5):emitAND_g(&r, &a1, &a2, &a3, &a4, &a5);
+		return logtype?Emitter5_g::emitOR_g(r, &a1, &a2, &a3, &a4, &a5):Emitter5_g::emitAND_g(&r, &a1, &a2, &a3, &a4, &a5);
 	}
 	DR_MINLINE EmitterBase5(bool vret_): EmitterBaseC5<R, A1, A2, A3, A4, A5>(vret_) {}
 
@@ -2017,22 +2017,22 @@ public:
 	{
 		typename typeref<R>::nvtyp r;
 		typename typeref<R>::nvtyp *pr = &r;
-		logtype?emitOR_g(pr, &a1, &a2, &a3, &a4, &a5, &a6):emitAND_g(&r, &a1, &a2, &a3, &a4, &a5, &a6);
+		logtype?Emitter6_g::emitOR_g(pr, &a1, &a2, &a3, &a4, &a5, &a6):Emitter6_g::emitAND_g(&r, &a1, &a2, &a3, &a4, &a5, &a6);
 		return *pr;
 	}
 	DR_RINLINE Rnvtyp emitD(Rnvtyp def, A1 a1, A2 a2, A3 a3, A4 a4, A5 a5, A6 a6) /* emit, get result only (with default ret) */
 	{
-		logtype?emitOR_g(&def, &a1, &a2, &a3, &a4, &a5, &a6):emitAND_g(&def, &a1, &a2, &a3, &a4, &a5, &a6);
+		logtype?Emitter6_g::emitOR_g(&def, &a1, &a2, &a3, &a4, &a5, &a6):Emitter6_g::emitAND_g(&def, &a1, &a2, &a3, &a4, &a5, &a6);
 		return def;
 	}
 	DR_RINLINE bool emitI(A1 a1, A2 a2, A3 a3, A4 a4, A5 a5, A6 a6) /* emit, check validity only */
 	{
 		typename typeref<R>::nvtyp r;
-		return logtype?emitOR_g(&r, &a1, &a2, &a3, &a4, &a5, &a6):emitAND_g(&r, &a1, &a2, &a3, &a4, &a5, &a6);
+		return logtype?Emitter6_g::emitOR_g(&r, &a1, &a2, &a3, &a4, &a5, &a6):Emitter6_g::emitAND_g(&r, &a1, &a2, &a3, &a4, &a5, &a6);
 	}
 	DR_RINLINE bool emitC(R *r, A1 a1, A2 a2, A3 a3, A4 a4, A5 a5, A6 a6) /* emit, check both validity and result */
 	{
-		return logtype?emitOR_g(r, &a1, &a2, &a3, &a4, &a5, &a6):emitAND_g(&r, &a1, &a2, &a3, &a4, &a5, &a6);
+		return logtype?Emitter6_g::emitOR_g(r, &a1, &a2, &a3, &a4, &a5, &a6):Emitter6_g::emitAND_g(&r, &a1, &a2, &a3, &a4, &a5, &a6);
 	}
 	DR_MINLINE EmitterBase6(bool vret_): EmitterBaseC6<R, A1, A2, A3, A4, A5, A6>(vret_) {}
 
@@ -2122,22 +2122,22 @@ public:
 	{
 		typename typeref<R>::nvtyp r;
 		typename typeref<R>::nvtyp *pr = &r;
-		logtype?emitOR_g(pr, &a1, &a2, &a3, &a4, &a5, &a6, &a7):emitAND_g(&r, &a1, &a2, &a3, &a4, &a5, &a6, &a7);
+		logtype?Emitter7_g::emitOR_g(pr, &a1, &a2, &a3, &a4, &a5, &a6, &a7):Emitter7_g::emitAND_g(&r, &a1, &a2, &a3, &a4, &a5, &a6, &a7);
 		return *pr;
 	}
 	DR_RINLINE Rnvtyp emitD(Rnvtyp def, A1 a1, A2 a2, A3 a3, A4 a4, A5 a5, A6 a6, A7 a7) /* emit, get result only (with default ret) */
 	{
-		logtype?emitOR_g(&def, &a1, &a2, &a3, &a4, &a5, &a6, &a7):emitAND_g(&def, &a1, &a2, &a3, &a4, &a5, &a6, &a7);
+		logtype?Emitter7_g::emitOR_g(&def, &a1, &a2, &a3, &a4, &a5, &a6, &a7):Emitter7_g::emitAND_g(&def, &a1, &a2, &a3, &a4, &a5, &a6, &a7);
 		return def;
 	}
 	DR_RINLINE bool emitI(A1 a1, A2 a2, A3 a3, A4 a4, A5 a5, A6 a6, A7 a7) /* emit, check validity only */
 	{
 		typename typeref<R>::nvtyp r;
-		return logtype?emitOR_g(&r, &a1, &a2, &a3, &a4, &a5, &a6, &a7):emitAND_g(&r, &a1, &a2, &a3, &a4, &a5, &a6, &a7);
+		return logtype?Emitter7_g::emitOR_g(&r, &a1, &a2, &a3, &a4, &a5, &a6, &a7):Emitter7_g::emitAND_g(&r, &a1, &a2, &a3, &a4, &a5, &a6, &a7);
 	}
 	DR_RINLINE bool emitC(R *r, A1 a1, A2 a2, A3 a3, A4 a4, A5 a5, A6 a6, A7 a7) /* emit, check both validity and result */
 	{
-		return logtype?emitOR_g(r, &a1, &a2, &a3, &a4, &a5, &a6, &a7):emitAND_g(&r, &a1, &a2, &a3, &a4, &a5, &a6, &a7);
+		return logtype?Emitter7_g::emitOR_g(r, &a1, &a2, &a3, &a4, &a5, &a6, &a7):Emitter7_g::emitAND_g(&r, &a1, &a2, &a3, &a4, &a5, &a6, &a7);
 	}
 	DR_MINLINE EmitterBase7(bool vret_): EmitterBaseC7<R, A1, A2, A3, A4, A5, A6, A7>(vret_) {}
 
@@ -2227,22 +2227,22 @@ public:
 	{
 		typename typeref<R>::nvtyp r;
 		typename typeref<R>::nvtyp *pr = &r;
-		logtype?emitOR_g(pr, &a1, &a2, &a3, &a4, &a5, &a6, &a7, &a8):emitAND_g(&r, &a1, &a2, &a3, &a4, &a5, &a6, &a7, &a8);
+		logtype?Emitter8_g::emitOR_g(pr, &a1, &a2, &a3, &a4, &a5, &a6, &a7, &a8):Emitter8_g::emitAND_g(&r, &a1, &a2, &a3, &a4, &a5, &a6, &a7, &a8);
 		return *pr;
 	}
 	DR_RINLINE Rnvtyp emitD(Rnvtyp def, A1 a1, A2 a2, A3 a3, A4 a4, A5 a5, A6 a6, A7 a7, A8 a8) /* emit, get result only (with default ret) */
 	{
-		logtype?emitOR_g(&def, &a1, &a2, &a3, &a4, &a5, &a6, &a7, &a8):emitAND_g(&def, &a1, &a2, &a3, &a4, &a5, &a6, &a7, &a8);
+		logtype?Emitter8_g::emitOR_g(&def, &a1, &a2, &a3, &a4, &a5, &a6, &a7, &a8):Emitter8_g::emitAND_g(&def, &a1, &a2, &a3, &a4, &a5, &a6, &a7, &a8);
 		return def;
 	}
 	DR_RINLINE bool emitI(A1 a1, A2 a2, A3 a3, A4 a4, A5 a5, A6 a6, A7 a7, A8 a8) /* emit, check validity only */
 	{
 		typename typeref<R>::nvtyp r;
-		return logtype?emitOR_g(&r, &a1, &a2, &a3, &a4, &a5, &a6, &a7, &a8):emitAND_g(&r, &a1, &a2, &a3, &a4, &a5, &a6, &a7, &a8);
+		return logtype?Emitter8_g::emitOR_g(&r, &a1, &a2, &a3, &a4, &a5, &a6, &a7, &a8):Emitter8_g::emitAND_g(&r, &a1, &a2, &a3, &a4, &a5, &a6, &a7, &a8);
 	}
 	DR_RINLINE bool emitC(R *r, A1 a1, A2 a2, A3 a3, A4 a4, A5 a5, A6 a6, A7 a7, A8 a8) /* emit, check both validity and result */
 	{
-		return logtype?emitOR_g(r, &a1, &a2, &a3, &a4, &a5, &a6, &a7, &a8):emitAND_g(&r, &a1, &a2, &a3, &a4, &a5, &a6, &a7, &a8);
+		return logtype?Emitter8_g::emitOR_g(r, &a1, &a2, &a3, &a4, &a5, &a6, &a7, &a8):Emitter8_g::emitAND_g(&r, &a1, &a2, &a3, &a4, &a5, &a6, &a7, &a8);
 	}
 	DR_MINLINE EmitterBase8(bool vret_): EmitterBaseC8<R, A1, A2, A3, A4, A5, A6, A7, A8>(vret_) {}
 

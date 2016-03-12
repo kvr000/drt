@@ -61,7 +61,7 @@
 #define DR_IO_NS dr::io
 #define DR_IO_NSP(rest) dr::io::rest
 #define DR_IO_NS_STR "dr::io::"
-#define DR_IO_NS_STRP(rest) "dr::io::"rest
+#define DR_IO_NS_STRP(rest) "dr::io::" rest
 #define DR_IO_NS_BEGIN namespace dr \
 { \
 	namespace io \

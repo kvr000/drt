@@ -322,8 +322,10 @@ sub new
 	my $class			= ref($ref) || $ref;
 	my $inputFd			= shift;
 
+
 	my $this = bless {
 		inputFd				=> $inputFd,
+		cached				=> "",
 	}, $class;
 
 	return $this;
@@ -333,16 +335,31 @@ sub read
 {
 	my $this			= shift;
 	my $buf = \shift;
+	my $len = shift;
+	my $offset = shift;
 
-	if (!defined ($$buf = $this->{inputFd}->getline())) {
-		$$buf = "";
-		return 0;
+	die "non-0 offset unsupported: $offset" if ($offset);
+
+	if ($this->{cached} eq "") {
+		if (defined (my $line = $this->{inputFd}->getline())) {
+			if ($line =~ m/^(.*?)([^\t])([\t].*)/) {
+				my ( $p, $f, $c ) = ( $1, $2, $3 );
+				$c =~ s/\t/&#9;/g;
+				$line = "$p$f$c";
+			}
+			$this->{cached} .= $line;
+		}
+		else {
+			$$buf = "";
+			return 0;
+		}
 	}
-	if ($$buf =~ m/^(.*?)([^\t])([\t].*)/) {
-		my ( $p, $f, $c ) = ( $1, $2, $3 );
-		$c =~ s/\t/&#9;/g;
-		$$buf = "$p$f$c";
+
+	if ($len > length($this->{cached})) {
+		$len = length($this->{cached});
 	}
+	$$buf = substr($this->{cached}, 0, $len);
+	$this->{cached} = substr($this->{cached}, $len);
 	return length($$buf);
 }
 

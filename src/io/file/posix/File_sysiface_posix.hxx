@@ -68,7 +68,11 @@ public:
 	static void			setHandleInvalid(File *handle);
 	static void *			getOsHandleInvalid()			{ return (void *)-1L; }
 
+#if (defined __APPLE__)
+	static DIR *			getDirOsHandle(Directory *handle);
+#else
 	static int			getDirOsHandle(Directory *handle);
+#endif
 	static bool			isDirHandleInvalid(Directory *handle);
 	static void			setDirHandleInvalid(Directory *handle);
 	static void *			getDirHandleInvalid()			{ return (void *)-1L; }
@@ -254,14 +258,25 @@ DR_RINLINE void File_sysiface_posix::rename(const String &filename, const String
 		throwFileStaticSysException(filename, File::rename_string);
 }
 
+#if (defined __APPLE__)
+DR_RINLINE DIR *File_sysiface_posix::getDirOsHandle(Directory *handle)
+{
+	return (DIR *)b_getDirOsHandle(handle);
+}
+#else
 DR_RINLINE int File_sysiface_posix::getDirOsHandle(Directory *handle)
 {
 	return (int)(SintPtr)b_getDirOsHandle(handle);
 }
+#endif
 
 DR_RINLINE bool File_sysiface_posix::isDirHandleInvalid(Directory *handle)
 {
+#if (defined __APPLE__)
+	return getDirOsHandle(handle) != NULL;
+#else
 	return getDirOsHandle(handle) < 0;
+#endif
 }
 
 DR_RINLINE void File_sysiface_posix::setDirHandleInvalid(Directory *handle)
@@ -271,7 +286,13 @@ DR_RINLINE void File_sysiface_posix::setDirHandleInvalid(Directory *handle)
 
 DR_RINLINE void *File_sysiface_posix::openDir(Directory *handle, const String &pathname)
 {
-#ifdef O_DIRECTORY
+#if (defined __APPLE__)
+	DIR *dir = opendir(pathname.utf8().toStr());
+	if (dir == NULL) {
+		throwFileStaticSysException(pathname, File::open_string);
+	}
+	return dir;
+#elif (defined O_DIRECTORY)
 	int fd = ::open(pathname.utf8().toStr(), O_RDONLY|O_DIRECTORY|O_LARGEFILE);
 	if (fd < 0)
 		throwFileStaticSysException(pathname, File::open_string);
@@ -289,15 +310,19 @@ DR_RINLINE void *File_sysiface_posix::openDir(Directory *handle, const String &p
 		errno = ENOTDIR;
 		throwFileStaticSysException(pathname, File::open_string);
 	}
-#endif
 	handle->cache_pos = 0;
 	handle->sys_pos = 0;
 	return (void *)(SintPtr)fd;
+#endif
 }
 
 DR_RINLINE void File_sysiface_posix::closeDir(Directory *handle)
 {
+#if (defined __APPLE__)
+	closedir((DIR *)getDirOsHandle(handle));
+#else
 	::close(getDirOsHandle(handle));
+#endif
 }
 
 DR_RINLINE void File_sysiface_posix::rmdir(const String &dirname)
@@ -315,6 +340,19 @@ DR_RINLINE void File_sysiface_posix::mkdir(const String &dirname)
 DR_RINLINE bool File_sysiface_posix::nextDirEntry(Directory *handle, String *entry)
 {
 	for (;;) {
+#if (defined __APPLE__) && (defined __x86_64)
+		errno = 0;
+		struct dirent *de = readdir(getDirOsHandle(handle));
+		if (de == NULL) {
+			if (errno != 0) {
+				throwSysException(NULL, File::read_string);
+			}
+			return false;
+		}
+		else {
+			entry->setUtf8(de->d_name);
+		}
+#else
 		if (handle->cache.getSize()-handle->cache_pos >= (size_t)&((dirent *)NULL)->d_name[0]) {
 			dirent de;
 			memcpy(&de, handle->cache.toStr()+handle->cache_pos, (size_t)&((dirent *)NULL)->d_name[0]);
@@ -327,7 +365,7 @@ DR_RINLINE bool File_sysiface_posix::nextDirEntry(Directory *handle, String *ent
 		}
 		handle->cache.removeLeft(handle->cache_pos);
 		handle->cache_pos = 0;
-#ifdef __FBSDID
+#if (defined __FBSDID)
 		ssize_t err = getdirentries(getDirOsHandle(handle), handle->cache.lockKeep(2*PATH_MAX)+handle->cache.getSize(), 2*PATH_MAX-handle->cache.getSize(), (long *)(void *)&handle->sys_pos);
 #else
  		ssize_t err = getdirentries(getDirOsHandle(handle), handle->cache.lockKeep(2*PATH_MAX)+handle->cache.getSize(), 2*PATH_MAX-handle->cache.getSize(), (off_t *)(void *)&handle->sys_pos);
@@ -341,6 +379,7 @@ DR_RINLINE bool File_sysiface_posix::nextDirEntry(Directory *handle, String *ent
 		else {
 			handle->cache.unlockAppend(err);
 		}
+#endif
 	}
 }
 

@@ -43,7 +43,7 @@
 #define DR_NS dr::
 #define DR_NSP(rest) dr::rest
 #define DR_NS_STR "dr::"
-#define DR_NS_STRP(rest) "dr::"rest
+#define DR_NS_STRP(rest) "dr::" rest
 #define DR_NS_BEGIN namespace dr \
 {
 #define DR_NS_END };

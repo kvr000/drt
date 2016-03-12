@@ -49,7 +49,7 @@ FLAGS:
 
 OUTPUT:
 	shlib:dr:f=shlib;s=s
-	script:dridl:s=dridl
+	#script:dridl:s=dridl
 
 SOURCES:
 	no:mklist:g=t

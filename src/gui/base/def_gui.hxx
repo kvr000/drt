@@ -63,7 +63,7 @@
 #define DR_GUI_NS dr::gui
 #define DR_GUI_NSP(rest) dr::gui::rest
 #define DR_GUI_NS_STR "dr::gui::"
-#define DR_GUI_NS_STRP(rest) "dr::gui::"rest
+#define DR_GUI_NS_STRP(rest) "dr::gui::" rest
 #define DR_GUI_NS_BEGIN namespace dr \
 { \
 	namespace gui \

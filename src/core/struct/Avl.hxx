@@ -117,7 +117,7 @@ class AvlCompar: public Compar<K>
 {
 	typedef Compar<K> KBase;
 public:
-	static DR_MINLINE int		kcmp(const K &k1, const K &k2)			{ return tcmp(k1, k2); }
+	static DR_MINLINE int		kcmp(const K &k1, const K &k2)			{ return Compar<K>::tcmp(k1, k2); }
 
 	DR_RINLINE			AvlCompar()				{}
 	DR_RINLINE			AvlCompar(const AvlCompar &)	{}

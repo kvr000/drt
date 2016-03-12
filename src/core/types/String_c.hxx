@@ -146,7 +146,12 @@ public:
 	/**
 	 * lock the string setting the new size
 	 */
-	TC *				lock(size_t size = getSize());
+	TC *				lock(size_t size);
+
+	/**
+	 * lock the string setting the new size
+	 */
+	TC *				lock()					{ return lock(getSize()); }
 
 	/**
 	 * lock the string keeping the current size

@@ -124,7 +124,7 @@ public: \
 /* this defines DRIF_PAD_VIRT, number of virtual methods that need to be padded
  * for binary compatibility */
 #if (defined DR_CXX_GCC)
-# if __GNUC__ >= 3 && __GNUC__ < 5
+# if __GNUC__ >= 3
 #  define DRIF_PAD_VIRT 1
 # elif (defined __GCCE__)
 #  define DRIF_PAD_VIRT 1

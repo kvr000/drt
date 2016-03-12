@@ -613,22 +613,22 @@ public:
 	{
 		typename typeref<R>::nvtyp r;
 		typename typeref<R>::nvtyp *pr = &r;
-		logtype?emitOR_g(pr$ralist):emitAND_g(&r$ralist);
+		logtype?Emitter${xid}_g::emitOR_g(pr$ralist):Emitter${xid}_g::emitAND_g(&r$ralist);
 		return *pr;
 	}
 	DR_RINLINE Rnvtyp emitD(Rnvtyp def$arglist) /* emit, get result only (with default ret) */
 	{
-		logtype?emitOR_g(&def$ralist):emitAND_g(&def$ralist);
+		logtype?Emitter${xid}_g::emitOR_g(&def$ralist):Emitter${xid}_g::emitAND_g(&def$ralist);
 		return def;
 	}
 	DR_RINLINE bool emitI($argjoin) /* emit, check validity only */
 	{
 		typename typeref<R>::nvtyp r;
-		return logtype?emitOR_g(&r$ralist):emitAND_g(&r$ralist);
+		return logtype?Emitter${xid}_g::emitOR_g(&r$ralist):Emitter${xid}_g::emitAND_g(&r$ralist);
 	}
 	DR_RINLINE bool emitC(R *r$arglist) /* emit, check both validity and result */
 	{
-		return logtype?emitOR_g(r$ralist):emitAND_g(&r$ralist);
+		return logtype?Emitter${xid}_g::emitOR_g(r$ralist):Emitter${xid}_g::emitAND_g(&r$ralist);
 	}
 	DR_MINLINE EmitterBase$xid(bool vret_): EmitterBaseC$xid<R$tlAlist>(vret_) {}
 

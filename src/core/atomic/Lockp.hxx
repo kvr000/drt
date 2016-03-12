@@ -114,7 +114,7 @@ DR_RINLINE bool Lockp::locked(void *volatile *ptr)
 
 DR_RINLINE void *Lockp::i_lock(void *volatile *ptr)
 {
-	register SintPtr val = (SintPtr)*ptr;
+	SintPtr val = (SintPtr)*ptr;
 	if ((val&1) != 0 || !Atomic::cmpxchg(ptr, (void *)val, (void *)(val|3)))
 		val = (SintPtr)lock(ptr);
 	return (void *)val;
@@ -129,7 +129,7 @@ DR_RINLINE void Lockp::i_unlock(void *volatile *ptr, void *newval)
 
 DR_RINLINE void *Lockp::i_xchg(void *volatile *ptr, void *newval)
 {
-	register void *old = *ptr;
+	void *old = *ptr;
 	if (((SintPtr)old&1) != 0 || !Atomic::cmpxchg(ptr, old, newval))
 		old = xchg(ptr, newval);
 	return old;
@@ -137,7 +137,7 @@ DR_RINLINE void *Lockp::i_xchg(void *volatile *ptr, void *newval)
 
 DR_RINLINE void *Lockp::clock(void *volatile *ptr, bool *locked)
 {
-	register SintPtr ret = (SintPtr)*ptr;
+	SintPtr ret = (SintPtr)*ptr;
 	if ((ret&3) == 0)
 		*locked = false;
 	else
@@ -155,7 +155,7 @@ DR_RINLINE void Lockp::cunlock(void *volatile *ptr, void *newval, bool locked)
 
 DR_RINLINE void *Lockp::cxchg(void *volatile *ptr, void *newval)
 {
-	register void *old = *ptr;
+	void *old = *ptr;
 	if (((SintPtr)old&3) == 0)
 		*ptr = newval;
 	else
@@ -195,7 +195,7 @@ DR_RINLINE bool Lockp::cvlocked(void *val)
 
 DR_RINLINE void *Lockp::i_clock(void *volatile *ptr, bool *locked)
 {
-	register SintPtr ret = (SintPtr)*ptr;
+	SintPtr ret = (SintPtr)*ptr;
 	if ((ret&3) == 0)
 		*locked = false;
 	else if ((ret |= 3), Atomic::cmpxchg(ptr, (char *)ret-1, (void *)ret))
@@ -215,7 +215,7 @@ DR_RINLINE void Lockp::i_cunlock(void *volatile *ptr, void *newval, bool locked)
 
 DR_RINLINE void *Lockp::i_cxchg(void *volatile *ptr, void *newval)
 {
-	register SintPtr old = (SintPtr)*ptr;
+	SintPtr old = (SintPtr)*ptr;
 	if ((old&3) == 0)
 		*ptr = newval;
 	else if (((old |= 3) -= 1), Atomic::cmpxchg(ptr, (char *)old, (char *)newval+2))
@@ -227,7 +227,7 @@ DR_RINLINE void *Lockp::i_cxchg(void *volatile *ptr, void *newval)
 
 DR_RINLINE void *Lockp::i_cref(void *volatile *ptr, SintPtr ref_offs)
 {
-	register SintPtr ret = (SintPtr)*ptr;
+	SintPtr ret = (SintPtr)*ptr;
 	if ((ret&3) == 0)
 		Atomic::inc((Refcnt *)(ret+ref_offs));
 	else if (((ret |= 3)), Atomic::cmpxchg(ptr, (char *)ret-1, (char *)ret)) {
@@ -242,7 +242,7 @@ DR_RINLINE void *Lockp::i_cref(void *volatile *ptr, SintPtr ref_offs)
 
 DR_RINLINE void *Lockp::i_crefc(void *volatile *ptr, bool *refed, SintPtr ref_offs)
 {
-	register SintPtr ret = (SintPtr)*ptr;
+	SintPtr ret = (SintPtr)*ptr;
 	if ((ret&3) == 0)
 		*refed = false;
 	else if (((ret |= 3)), Atomic::cmpxchg(ptr, (char *)ret-1, (char *)ret)) {
@@ -260,7 +260,7 @@ template <typename T>
 DR_RINLINE T Lockp::cmem(void *volatile *ptr, SintPtr t_offs)
 {
 	T out;
-	register SintPtr addr = (SintPtr)*ptr;
+	SintPtr addr = (SintPtr)*ptr;
 	if ((addr&3) == 0)
 		out = *(T *)(addr+t_offs);
 	else
@@ -272,7 +272,7 @@ template <typename T>
 DR_RINLINE T Lockp::i_cmem(void *volatile *ptr, SintPtr t_offs)
 {
 	T out;
-	register SintPtr addr = (SintPtr)*ptr;
+	SintPtr addr = (SintPtr)*ptr;
 	if ((addr&3) == 0)
 		out = *(T *)(addr+t_offs);
 	else if (((addr |= 3)), Atomic::cmpxchg(ptr, (char *)addr-1, (char *)addr)) {

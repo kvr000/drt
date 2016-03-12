@@ -63,6 +63,14 @@ function main
 			DR_ARCH=x86_64
 			;;
 
+		aarch64)
+			DR_ARCH=aarch64
+			;;
+
+		arm)
+			DR_ARCH=arm
+			;;
+
 		*)
 			echo unknown machine `uname -m` >&2
 			DR_ARCH=gen
@@ -86,6 +94,10 @@ function main
 
 		Mac)
 			DR_OSTYPE=mac
+			;;
+
+		Darwin)
+			DR_OSTYPE=unix
 			;;
 
 		CYGWIN_NT-5.1)

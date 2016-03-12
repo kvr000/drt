@@ -10,12 +10,12 @@ FLAGS:
 OUTPUT:
 	exec:tlink_drnet:f=exec;s=tlink_drnet,common
 	exec:t0:f=exec;s=t0,common;r=test
-	exec:tsnmp:f=exec;s=tsnmp,common;r=test
+	#exec:tsnmp:f=exec;s=tsnmp,common;r=test
 
 SOURCES:
 	:tlink_drnet.cxx:f=cxx;g=tlink_drnet,t
 	:t0.cxx:f=cxx;g=t0,t;r=test
-	:tsnmp.cxx:f=cxx;g=tsnmp,t;r=test
+	#:tsnmp.cxx:f=cxx;g=tsnmp,t;r=test
 	no:mklist:g=t
 	lshlib:dr:g=common
 	lshlib:drio:g=common
@@ -25,7 +25,7 @@ SOURCES:
 META:
 	vsid:{5941BE5B-7938-4b8b-A6ED-83E7C6A5E51F}:g=tlink_drnet
 	vsid:{DBBC3073-68C5-42d7-912F-9D7986924F43}:g=t0
-	vsid:{DB1D57CE-5765-055D-A4BD-BBC74B61C6B6}:g=tsnmp
+	#vsid:{DB1D57CE-5765-055D-A4BD-BBC74B61C6B6}:g=tsnmp
 
 FCHECK:
 	*.cxx::s=t

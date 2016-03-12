@@ -7,6 +7,7 @@ all:
 
 include drtetc/p/root.mk
 drtetc/p/root.mk:
+	mkdir -p etc/p
 	touch drtetc/p/root.mk
 
 makes:

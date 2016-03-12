@@ -789,7 +789,7 @@ sub printOutclean
 	$mf->print(dr::build::out::MakeCommon::genParallelAction("outclean", "loutclean", $vars)."\n");
 	$mf->print("loutclean:\n");
 	foreach (@{$vars->{OUTPUT}}) {
-		push(@l, $_->{out}) if (defined $_->{out} && dr::build::findArray("C", $_->{groups}) < 0 && !defined $_->{extern});
+		push(@l, "\$(OBJDIR_)$_->{out}") if (defined $_->{out} && dr::build::findArray("C", $_->{groups}) < 0 && !defined $_->{extern});
 	}
 	$mf->print("\trm -f ".join(" ", @l)."\n") if ($#l >= 0);
 	$mf->print("\n");
@@ -1082,6 +1082,7 @@ sub createOutput
 					$mf->print(" $_->{out}");
 				}
 				$mf->print("\n");
+				$mf->print("\tmkdir -p \$(TOPDIR_)lib\n");
 				$mf->print("\tcd \$(TOPDIR) && \$(LDXX_SO) -o lib/$targ -Llib");
 				foreach (@{$od->{in_source}}) {
 					next unless (defined $_->{ocmd});
@@ -1091,7 +1092,7 @@ sub createOutput
 				$mf->print(dr::build::expandList("\$(FLAGS_", ")", $od->{flags}, "shlib")."\n");
 			}
 			elsif ($od->{prog} eq "exec") {
-				my $targ = "$od->{out}";
+				my $targ = "\$(OBJDIR_)$od->{out}";
 				$ftarg = $targ;
 				$mf->print("$targ:");
 				foreach (@{$od->{in_source}}) {
@@ -1155,7 +1156,7 @@ sub createOutput
 		foreach my $td (@{$vars->{TEST}}) {
 			next if ($td->{disable});
 			if (dr::build::findArray("bench", $td->{roles}) >= 0) {
-				$mf->print("\ttime ./$td->{out}\n");
+				$mf->print("\ttime \$(OBJDIR_)$td->{out}\n");
 			}
 		}
 		$mf->print("\n");
